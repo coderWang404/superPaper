@@ -4,7 +4,7 @@ const { Writable, Readable, PassThrough, Transform } = require('node:stream')
  * A writable stream that stores all data written to it in a node Buffer.
  * @extends Writable
  * @example
- * const { WritableBuffer } = require('@overleaf/stream-utils')
+ * const { WritableBuffer } = require('@superpaper/stream-utils')
  * const bufferStream = new WritableBuffer()
  * bufferStream.write('hello')
  * bufferStream.write('world')
@@ -45,7 +45,7 @@ class WritableBuffer extends Writable {
  * A readable stream created from a string.
  * @extends Readable
  * @example
- * const { ReadableString } = require('@overleaf/stream-utils')
+ * const { ReadableString } = require('@superpaper/stream-utils')
  * const stringStream = new ReadableString('hello world')
  * stringStream.on('data', chunk => console.log(chunk.toString()))
  * stringStream.on('end', () => console.log('done'))

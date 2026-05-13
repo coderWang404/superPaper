@@ -8,7 +8,7 @@ import {
 } from '@codemirror/state'
 import { EditorView, ViewPlugin } from '@codemirror/view'
 import { EventEmitter } from 'events'
-import RangesTracker from '@overleaf/ranges-tracker'
+import RangesTracker from '@superpaper/ranges-tracker'
 import {
   ShareDoc,
   ShareLatexOTShareDoc,
@@ -22,7 +22,7 @@ import {
   InsertOp,
   RemoveOp,
   RetainOp,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import { rangesUpdatedEffect, setTrackChangesUserId } from './history-ot'
 import { trackedDeletesFromState } from '@/features/source-editor/utils/tracked-deletes'
 

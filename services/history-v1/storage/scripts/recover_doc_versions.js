@@ -1,9 +1,9 @@
 const fsPromises = require('node:fs/promises')
 const { ObjectId } = require('mongodb')
 const BPromise = require('bluebird')
-const logger = require('@overleaf/logger')
-const Settings = require('@overleaf/settings')
-const rclient = require('@overleaf/redis-wrapper').createClient(
+const logger = require('@superpaper/logger')
+const Settings = require('@superpaper/settings')
+const rclient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
 const mongodb = require('../lib/mongodb')
@@ -33,8 +33,8 @@ const BAD_MIGRATION_NAME =
   '20231219081700_move_doc_versions_from_docops_to_docs'
 
 const RECOVERY_FILES_502 = [
-  '/var/lib/overleaf/data/history/doc-version-recovery-resyncs.log',
-  '/var/lib/overleaf/data/history/doc-version-recovery-resyncs.log.done',
+  '/var/lib/superpaper/data/history/doc-version-recovery-resyncs.log',
+  '/var/lib/superpaper/data/history/doc-version-recovery-resyncs.log.done',
 ]
 
 let loggingChain = Promise.resolve()
@@ -77,7 +77,7 @@ Detected unflushed changes while recovering doc versions.
 Please go back to version 5.0.1 and follow the recovery procedure
 for flushing document updates:
 
-https://github.com/overleaf/overleaf/wiki/Doc-version-recovery
+https://github.com/superpaper/superpaper/wiki/Doc-version-recovery
 --------------------------------------------------------------------`)
     process.exit(1)
   }
@@ -217,13 +217,13 @@ async function initResyncsNeededFile() {
 }
 
 function getProjects() {
-  return db.projects.find({}, { projection: { _id: 1, overleaf: 1 } })
+  return db.projects.find({}, { projection: { _id: 1, superpaper: 1 } })
 }
 
 function getDeletedProjects() {
   return db.deletedProjects.find(
-    { 'project.overleaf.history.id': { $exists: true } },
-    { projection: { 'project._id': 1, 'project.overleaf': 1 } }
+    { 'project.superpaper.history.id': { $exists: true } },
+    { projection: { 'project._id': 1, 'project.superpaper': 1 } }
   )
 }
 
@@ -278,7 +278,7 @@ async function processProject(project, summary) {
 }
 
 async function getHistoryDocVersions(project) {
-  const historyId = project.overleaf.history.id
+  const historyId = project.superpaper.history.id
   const chunk = await chunkStore.loadLatest(historyId, { persistedOnly: true })
   if (chunk == null) {
     return []

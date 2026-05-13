@@ -1,6 +1,6 @@
 import { callbackify, promisify } from 'node:util'
 import JWT from 'jsonwebtoken'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 const jwtSign = promisify(JWT.sign)
 

@@ -1,12 +1,12 @@
 import MongoManager from './MongoManager.js'
 import Errors from './Errors.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import _ from 'lodash'
 import DocArchive from './DocArchiveManager.js'
 import RangeManager from './RangeManager.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { setTimeout } from 'node:timers/promises'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 /**
  * @import { Document } from 'mongodb'

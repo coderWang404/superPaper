@@ -21,11 +21,7 @@ export interface ProjectMetadata extends ProjectSettings {
   features: {
     collaborators?: number
     compileGroup?: 'alpha' | 'standard' | 'priority'
-    trackChanges?: boolean
-    trackChangesVisible?: boolean
     references?: boolean
-    mendeley?: boolean
-    zotero?: boolean
     versioning?: boolean
     gitBridge?: boolean
     referencesSearch?: boolean

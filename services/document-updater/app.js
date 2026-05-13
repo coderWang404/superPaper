@@ -1,10 +1,10 @@
 // Metrics must be initialized before importing anything else
-require('@overleaf/metrics/initialize')
+require('@superpaper/metrics/initialize')
 
-const Metrics = require('@overleaf/metrics')
+const Metrics = require('@superpaper/metrics')
 const express = require('express')
-const Settings = require('@overleaf/settings')
-const logger = require('@overleaf/logger')
+const Settings = require('@superpaper/settings')
+const logger = require('@superpaper/logger')
 logger.initialize('document-updater')
 
 logger.logger.addSerializers(require('./app/js/LoggerSerializers'))
@@ -36,7 +36,7 @@ app.get('/status', (req, res) => {
   }
 })
 
-const pubsubClient = require('@overleaf/redis-wrapper').createClient(
+const pubsubClient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.pubsub
 )
 app.get('/health_check/redis', (req, res, next) => {
@@ -50,7 +50,7 @@ app.get('/health_check/redis', (req, res, next) => {
   })
 })
 
-const docUpdaterRedisClient = require('@overleaf/redis-wrapper').createClient(
+const docUpdaterRedisClient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
 app.get('/health_check/redis_cluster', (req, res, next) => {

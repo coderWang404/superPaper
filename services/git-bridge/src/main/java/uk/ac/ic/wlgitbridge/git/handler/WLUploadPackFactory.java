@@ -19,7 +19,7 @@ import uk.ac.ic.wlgitbridge.util.Log;
 public class WLUploadPackFactory implements UploadPackFactory<HttpServletRequest> {
 
   /*
-   * This does nothing special. Synchronising the project with Overleaf will
+   * This does nothing special. Synchronising the project with superPaper will
    * have been performed by {@link WLRepositoryResolver}.
    * @param __ Not used, required by the {@link UploadPackFactory} interface
    * @param repository The JGit repository provided by the

@@ -8,7 +8,7 @@ import {
   TextOperation,
   AddFileOperation,
   File,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import { ObjectId } from 'mongodb'
 import testFiles from './support/test_files.js'
 import { BlobStore } from '../../../../storage/lib/blob_store/index.js'

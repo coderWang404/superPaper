@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import {
   getUserFacingMessage,
   getErrorMessageKey,
@@ -22,44 +22,17 @@ type PasswordUpdateResult = {
 
 function PasswordSection() {
   const { t } = useTranslation()
-  const hideChangePassword = getMeta('ol-cannot-change-password')
   return (
     <>
       <h3>{t('change_password')}</h3>
-      {hideChangePassword ? (
-        <CanOnlyLogInThroughSSO />
-      ) : (
-        <PasswordInnerSection />
-      )}
+      <PasswordInnerSection />
     </>
-  )
-}
-
-function CanOnlyLogInThroughSSO() {
-  return (
-    <p>
-      <Trans
-        i18nKey="you_cant_add_or_change_password_due_to_sso"
-        components={[
-          // eslint-disable-next-line react/jsx-key, jsx-a11y/anchor-has-content
-          <a href="/learn/how-to/Logging_in_with_Group_single_sign-on" />,
-        ]}
-      />
-    </p>
   )
 }
 
 function PasswordInnerSection() {
   const { t } = useTranslation()
-  const { isOverleaf } = getMeta('ol-ExposedSettings')
-  const isExternalAuthenticationSystemUsed = getMeta(
-    'ol-isExternalAuthenticationSystemUsed'
-  )
   const hasPassword = getMeta('ol-hasPassword')
-
-  if (isExternalAuthenticationSystemUsed && !isOverleaf) {
-    return <p>{t('password_managed_externally')}</p>
-  }
 
   if (!hasPassword) {
     return (

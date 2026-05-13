@@ -3,7 +3,6 @@ import {
   RailModalKey,
   useRailContext,
 } from '@/features/ide-react/context/rail-context'
-import { RailHelpContactUsModal } from './contact-us'
 import { RailHelpShowHotkeysModal } from './keyboard-shortcuts'
 import DictionarySettingsModal from '@/features/settings/components/editor-settings/dictionary-settings-modal'
 
@@ -14,10 +13,6 @@ const RAIL_MODALS: {
   {
     key: 'keyboard-shortcuts',
     modalComponentFunction: RailHelpShowHotkeysModal,
-  },
-  {
-    key: 'contact-us',
-    modalComponentFunction: RailHelpContactUsModal,
   },
   {
     key: 'dictionary',

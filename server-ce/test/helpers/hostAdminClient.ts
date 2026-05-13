@@ -66,13 +66,13 @@ export async function runScript({
   script,
   args = [],
   user = 'www-data',
-  hasOverleafEnv = true,
+  hassuperPaperEnv = true,
 }: {
   cwd: string
   script: string
   args?: string[]
   user?: string
-  hasOverleafEnv?: boolean
+  hassuperPaperEnv?: boolean
 }) {
   return await fetchJSON(`${hostAdminURL}/run/script`, {
     method: 'POST',
@@ -81,7 +81,7 @@ export async function runScript({
       script,
       args,
       user,
-      hasOverleafEnv,
+      hassuperPaperEnv,
     }),
   })
 }

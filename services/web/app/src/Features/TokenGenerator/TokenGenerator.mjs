@@ -1,10 +1,7 @@
 import crypto from 'node:crypto'
-import V1Api from '../V1/V1Api.mjs'
-import Features from '../../infrastructure/Features.mjs'
 import { callbackify } from 'node:util'
-import OError from '@overleaf/o-error'
 
-// (From Overleaf `random_token.rb`)
+// (From superPaper `random_token.rb`)
 //   Letters (not numbers! see generate_token) used in tokens. They're all
 //   consonants, to avoid embarassing words (I can't think of any that use only
 //   a y), and lower case "l" is omitted, because in many fonts it is
@@ -14,9 +11,9 @@ const TOKEN_NUMERICS = '123456789'
 const TOKEN_ALPHANUMERICS =
   TOKEN_LOWERCASE_ALPHA + TOKEN_LOWERCASE_ALPHA.toUpperCase() + TOKEN_NUMERICS
 
-// This module mirrors the token generation in Overleaf (`random_token.rb`),
+// This module mirrors the token generation in superPaper (`random_token.rb`),
 // for the purposes of implementing token-based project access, like the
-// 'unlisted-projects' feature in Overleaf
+// 'unlisted-projects' feature in superPaper
 
 function _randomString(length, alphabet) {
   const result = crypto
@@ -47,41 +44,7 @@ function generateReferralId() {
 }
 
 async function generateUniqueReadOnlyToken() {
-  const retryOperation = async () => {
-    const token = readOnlyToken()
-
-    if (!Features.hasFeature('saas')) {
-      return token
-    }
-
-    const { response, body } = await V1Api.promises.request({
-      url: `/api/v1/overleaf/docs/read_token/${token}/exists`,
-      json: true,
-    })
-
-    if (response.statusCode !== 200) {
-      throw new OError('non-200 response from v1 read-token-exists api', {
-        statusCode: response.statusCode,
-      })
-    }
-
-    if (body.exists === true) {
-      throw new OError('token already exists in v1', { token })
-    }
-
-    return token
-  }
-
-  const MAX_RETRIES = 10
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      return await retryOperation()
-    } catch (err) {
-      if (attempt === MAX_RETRIES) {
-        throw err
-      }
-    }
-  }
+  return readOnlyToken()
 }
 
 const TokenGenerator = {

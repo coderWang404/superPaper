@@ -1,19 +1,15 @@
 import { FC, memo } from 'react'
 import { EditorState } from '@codemirror/state'
-import { useEditorContext } from '../../../../shared/context/editor-context'
 import { ToolbarButton } from './toolbar-button'
 import { redo, undo } from '@codemirror/commands'
 import * as commands from '../../extensions/toolbar/commands'
 import { SectionHeadingDropdown } from './section-heading-dropdown'
-import getMeta from '../../../../utils/meta'
 import { InsertFigureDropdown } from './insert-figure-dropdown'
 import { useTranslation } from 'react-i18next'
 import { MathDropdown } from './math-dropdown'
 import { TableDropdown } from './table-dropdown'
-import { LegacyTableDropdown } from './table-inserter-dropdown-legacy'
 import { withinFormattingCommand } from '@/features/source-editor/utils/tree-operations/formatting'
 import { isMac } from '@/shared/utils/os'
-import { useProjectContext } from '@/shared/context/project-context'
 import { useEditorPropertiesContext } from '@/features/ide-react/context/editor-properties-context'
 import { usePermissionsContext } from '@/features/ide-react/context/permissions-context'
 import { isCursorOnEmptyLine } from '@/features/source-editor/utils/is-cursor-on-empty-line'
@@ -36,12 +32,8 @@ export const ToolbarItems: FC<{
   const { t } = useTranslation()
   const { showSymbolPalette, toggleSymbolPalette } =
     useEditorPropertiesContext()
-  const { writefullInstance } = useEditorContext()
-  const { features } = useProjectContext()
   const permissions = usePermissionsContext()
   const isActive = withinFormattingCommand(state)
-
-  const symbolPaletteAvailable = getMeta('ol-symbolPaletteAvailable')
   const showGroup = (group: string) => !overflowed || overflowed.has(group)
 
   return (
@@ -108,7 +100,7 @@ export const ToolbarItems: FC<{
               aria-label={t('toolbar_insert_math_and_symbols')}
             >
               <MathDropdown />
-              {symbolPaletteAvailable && (
+              {showSymbolPalette && (
                 <ToolbarButton
                   id="toolbar-toggle-symbol-palette"
                   label={t('toolbar_insert_symbol')}
@@ -133,7 +125,7 @@ export const ToolbarItems: FC<{
                 command={commands.wrapInHref}
                 icon="add_link"
               />
-              {features.trackChangesVisible && permissions.comment && (
+              {permissions.comment && (
                 <ToolbarButton
                   id="toolbar-add-comment"
                   label={t('add_comment')}
@@ -155,7 +147,7 @@ export const ToolbarItems: FC<{
                 icon="book_5"
               />
               <InsertFigureDropdown />
-              {writefullInstance ? <TableDropdown /> : <LegacyTableDropdown />}
+              <TableDropdown />
             </div>
           )}
           {showGroup('group-list') && (

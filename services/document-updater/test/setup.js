@@ -29,9 +29,9 @@ const stubs = {
 // SandboxedModule configuration
 SandboxedModule.configure({
   requires: {
-    '@overleaf/logger': stubs.logger,
+    '@superpaper/logger': stubs.logger,
     'mongodb-legacy': require('mongodb-legacy'), // for ObjectId comparisons
-    'overleaf-editor-core': require('overleaf-editor-core'), // does not play nice with sandbox
+    'superpaper-editor-core': require('superpaper-editor-core'), // does not play nice with sandbox
   },
   globals: { Buffer, JSON, Math, console, process, URL },
   sourceTransformers: {

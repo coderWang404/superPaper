@@ -11,11 +11,9 @@ import ThemeToggle from '@/features/project-list/components/sidebar/theme-toggle
 
 export function AccountMenuItems({
   sessionUser,
-  showSubscriptionLink,
   showThemeToggle = false,
 }: {
   sessionUser: NavbarSessionUser
-  showSubscriptionLink: boolean
   showThemeToggle?: boolean
 }) {
   const { t } = useTranslation()
@@ -32,11 +30,6 @@ export function AccountMenuItems({
       <NavDropdownLinkItem href="/user/settings">
         {t('account_settings')}
       </NavDropdownLinkItem>
-      {showSubscriptionLink ? (
-        <NavDropdownLinkItem href="/user/subscription">
-          {t('subscription')}
-        </NavDropdownLinkItem>
-      ) : null}
       {showThemeToggle && hasOverallThemes && (
         <DropdownListItem>
           <ThemeToggle />

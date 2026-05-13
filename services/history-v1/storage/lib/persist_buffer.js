@@ -1,9 +1,9 @@
 // @ts-check
 'use strict'
 
-const logger = require('@overleaf/logger')
-const metrics = require('@overleaf/metrics')
-const OError = require('@overleaf/o-error')
+const logger = require('@superpaper/logger')
+const metrics = require('@superpaper/metrics')
+const OError = require('@superpaper/o-error')
 const assert = require('./assert')
 const chunkStore = require('./chunk_store')
 const { BlobStore } = require('./blob_store')

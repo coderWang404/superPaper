@@ -5,7 +5,7 @@ const modulePath = '../../../../app/src/Features/Compile/ClsiStateManager.mjs'
 
 describe('ClsiStateManager', function () {
   beforeEach(async function (ctx) {
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {}),
     }))
 

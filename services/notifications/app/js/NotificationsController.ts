@@ -1,8 +1,8 @@
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 import Notifications from './Notifications.js'
-import { expressify } from '@overleaf/promise-utils'
-import { parseReq, z, zz } from '@overleaf/validation-tools'
+import { expressify } from '@superpaper/promise-utils'
+import { parseReq, z, zz } from '@superpaper/validation-tools'
 import type { Request, Response } from 'express'
 
 const getUserNotificationsSchema = z.object({

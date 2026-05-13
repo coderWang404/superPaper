@@ -1,5 +1,5 @@
 import request from 'request'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 const buildUrl = path =>
   `http://${Settings.internal.clsi.host}:${Settings.internal.clsi.port}/${path}`

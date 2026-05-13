@@ -138,7 +138,7 @@ describe('CollaboratorsInviteController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Subscription/LimitationsManager.mjs',
+      '../../../../app/src/Features/Authorization/CollaborationLimitManager.mjs',
       () => ({
         default: ctx.LimitationsManager,
       })
@@ -177,7 +177,7 @@ describe('CollaboratorsInviteController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager.mjs',
+      '../Telemetry/TelemetryManager.mjs',
       () => ({
         default: ctx.AnalyticsManger,
       })
@@ -190,7 +190,7 @@ describe('CollaboratorsInviteController', function () {
       })
     )
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -207,7 +207,7 @@ describe('CollaboratorsInviteController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })

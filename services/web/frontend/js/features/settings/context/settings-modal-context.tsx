@@ -6,7 +6,7 @@ import CodeCheckSetting from '@/features/settings/components/editor-settings/cod
 import PreviewTabsSetting from '@/features/settings/components/editor-settings/preview-tabs-setting'
 import KeybindingSetting from '@/features/settings/components/editor-settings/keybinding-setting'
 import PDFViewerSetting from '@/features/settings/components/editor-settings/pdf-viewer-setting'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import SpellCheckSetting from '@/features/settings/components/editor-settings/spell-check-setting'
 import DictionarySetting from '@/features/settings/components/editor-settings/dictionary-setting'
 import { useTranslation } from 'react-i18next'
@@ -30,19 +30,18 @@ import DarkModePdfSetting from '@/features/settings/components/appearance-settin
 import { useProjectSettingsContext } from '@/features/editor-left-menu/context/project-settings-context'
 import { useFeatureFlag } from '@/shared/context/split-test-context'
 import ProjectNotificationsSetting from '@/features/settings/components/editor-settings/project-notifications-setting'
-import getMeta from '@/utils/meta'
 import type {
   SettingsEntry,
   SettingsSection,
   SettingsSectionHook,
 } from '@/features/settings/context/types'
 
-const [referenceSearchSettingModule] = importOverleafModules(
+const [referenceSearchSettingModule] = importSuperPaperModules(
   'referenceSearchSetting'
 )
 const ReferenceSearchSetting = referenceSearchSettingModule?.import.default
 
-const editorTabExtraSectionHooks: SettingsSectionHook[] = importOverleafModules(
+const editorTabExtraSectionHooks: SettingsSectionHook[] = importSuperPaperModules(
   'settingsModalEditorTabSections'
 )
   .map((m: any) => m?.import?.default)
@@ -68,7 +67,6 @@ export const SettingsModalProvider: FC<React.PropsWithChildren> = ({
   children,
 }) => {
   const { t } = useTranslation()
-  const { isOverleaf } = getMeta('ol-ExposedSettings')
   const { overallTheme } = useProjectSettingsContext()
 
   // TODO ide-redesign-cleanup: Rename this field and move it directly into this context
@@ -254,20 +252,12 @@ export const SettingsModalProvider: FC<React.PropsWithChildren> = ({
         icon: 'settings',
         href: '/user/settings',
       },
-      {
-        key: 'subscription',
-        title: t('subscription'),
-        icon: 'account_balance',
-        href: '/user/subscription',
-        hidden: !isOverleaf,
-      },
     ],
     [
       t,
       hasEditorTabs,
       overallTheme,
       hasEmailNotifications,
-      isOverleaf,
       editorTabExtraSections,
     ]
   )

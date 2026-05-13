@@ -1,22 +1,14 @@
 import { callbackify } from 'node:util'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import { User } from '../../models/User.mjs'
 import { DeletedUser } from '../../models/DeletedUser.mjs'
 import { UserAuditLogEntry } from '../../models/UserAuditLogEntry.mjs'
 import ProjectDeleter from '../Project/ProjectDeleter.mjs'
-import SubscriptionHandler from '../Subscription/SubscriptionHandler.mjs'
-import SubscriptionUpdater from '../Subscription/SubscriptionUpdater.mjs'
-import SubscriptionLocator from '../Subscription/SubscriptionLocator.mjs'
-import UserMembershipsHandler from '../UserMembership/UserMembershipsHandler.mjs'
 import UserSessionsManager from './UserSessionsManager.mjs'
 import UserAuditLogHandler from './UserAuditLogHandler.mjs'
-import InstitutionsAPI from '../Institutions/InstitutionsAPI.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
-import Errors from '../Errors/Errors.js'
-import OnboardingDataCollectionManager from '../OnboardingDataCollection/OnboardingDataCollectionManager.mjs'
 import EmailHandler from '../Email/EmailHandler.mjs'
-import Features from '../../infrastructure/Features.mjs'
 
 export default {
   deleteUser: callbackify(deleteUser),
@@ -45,7 +37,7 @@ async function deleteUser(userId, options) {
     logger.info({ userId }, 'deleting user')
     await ensureCanDeleteUser(user)
 
-    // add audit log entry before _cleanUpUser removes any group subscriptions
+    // Add an audit log entry before cleanup changes the user record.
     logger.info({ userId }, 'adding delete-account audit log entry')
     await UserAuditLogHandler.promises.addEntry(
       userId,
@@ -95,8 +87,6 @@ async function expireDeletedUser(userId) {
   try {
     logger.info({ userId }, 'firing expireDeletedUser hook')
     await Modules.promises.hooks.fire('expireDeletedUser', userId)
-    logger.info({ userId }, 'removing deleted user onboarding data')
-    await OnboardingDataCollectionManager.deleteOnboardingDataCollection(userId)
     logger.info({ userId }, 'redacting PII from the deleted user record')
     const deletedUser = await DeletedUser.findOne({
       'deleterData.deletedUserId': userId,
@@ -154,19 +144,14 @@ async function expireDeletedUsersAfterDuration() {
 }
 
 async function ensureCanDeleteUser(user) {
-  if (!Features.hasFeature('saas')) return
-  const subscription =
-    await SubscriptionLocator.promises.getUsersSubscription(user)
-  if (subscription) {
-    throw new Errors.SubscriptionAdminDeletionError({})
-  }
+  return
 }
 
 async function _sendDeleteEmail(user, force) {
   const emailOptions = {
     to: user.email,
     action: 'account deleted',
-    actionDescribed: 'your Overleaf account was deleted',
+    actionDescribed: 'your superPaper account was deleted',
   }
   try {
     await EmailHandler.promises.sendEmail('securityAlert', emailOptions)
@@ -198,7 +183,7 @@ async function _createDeletedUser(user, options) {
         deletedUserReferralId: user.referal_id,
         deletedUserReferredUsers: user.refered_users,
         deletedUserReferredUserCount: user.refered_user_count,
-        deletedUserOverleafId: user.overleaf ? user.overleaf.id : undefined,
+        deletedUsersuperPaperId: user.superpaper ? user.superpaper.id : undefined,
       },
     },
     { upsert: true }
@@ -210,19 +195,8 @@ async function _cleanupUser(user) {
 
   logger.info({ userId }, '[cleanupUser] removing user sessions from Redis')
   await UserSessionsManager.promises.removeSessionsFromRedis(user)
-  if (Features.hasFeature('saas')) {
-    logger.info({ userId }, '[cleanupUser] cancelling subscription')
-    await SubscriptionHandler.promises.cancelSubscription(user)
-    logger.info({ userId }, '[cleanupUser] deleting affiliations')
-    await InstitutionsAPI.promises.deleteAffiliations(userId)
-    logger.info({ userId }, '[cleanupUser] removing user from groups')
-    await SubscriptionUpdater.promises.removeUserFromAllGroups(userId)
-    logger.info({ userId }, '[cleanupUser] removing user from memberships')
-    await UserMembershipsHandler.promises.removeUserFromAllEntities(userId)
-  }
   logger.info({ userId }, '[cleanupUser] removing personal access tokens')
   await Modules.promises.hooks.fire('cleanupPersonalAccessTokens', userId, [
-    'collabratec',
     'git_bridge',
   ])
 }

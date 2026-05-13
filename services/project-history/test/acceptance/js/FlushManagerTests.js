@@ -1,11 +1,11 @@
 import nock from 'nock'
 import { expect } from 'chai'
-import { fetchNothing, fetchJsonWithResponse } from '@overleaf/fetch-utils'
+import { fetchNothing, fetchJsonWithResponse } from '@superpaper/fetch-utils'
 import assert from 'node:assert'
 import mongodb from 'mongodb-legacy'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
 import * as ProjectHistoryApp from './helpers/ProjectHistoryApp.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 const { ObjectId } = mongodb
 
 const MockHistoryStore = () => nock('http://127.0.0.1:3100')
@@ -29,7 +29,7 @@ describe('Flushing old queues', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: {
+        superpaper: {
           history: {
             id: historyId,
           },

@@ -805,7 +805,7 @@ public class WLGitBridgeIntegrationTest {
 
   private static final List<String> EXPECTED_OUT_PUSH_INVALID_FILES =
       Arrays.asList(
-          "remote: hint: You have 4 invalid files in your Overleaf project:",
+          "remote: hint: You have 4 invalid files in your superPaper project:",
           "remote: hint: file1.invalid (error)",
           "remote: hint: file2.exe (invalid file extension)",
           "remote: hint: hello world.png (rename to: hello_world.png)",
@@ -863,10 +863,10 @@ public class WLGitBridgeIntegrationTest {
 
   private static final List<String> EXPECTED_OUT_PUSH_UNEXPECTED_ERROR =
       Arrays.asList(
-          "remote: hint: There was an internal error with the Overleaf server.",
-          "remote: hint: Please contact Overleaf.",
+          "remote: hint: There was an internal error with the superPaper server.",
+          "remote: hint: Please contact superPaper.",
           "To http://127.0.0.1:33871/" + PROJECT_ID,
-          "! [remote rejected] master -> master (Overleaf error)",
+          "! [remote rejected] master -> master (superPaper error)",
           "error: failed to push some refs to 'http://127.0.0.1:33871/" + PROJECT_ID + "'");
 
   /* this one prints a stack trace */
@@ -894,7 +894,7 @@ public class WLGitBridgeIntegrationTest {
       Arrays.asList(
           "remote: error: invalid files",
           "remote:",
-          "remote: hint: You have 1 invalid files in your Overleaf project:",
+          "remote: hint: You have 1 invalid files in your superPaper project:",
           "remote: hint: file1.exe (invalid file extension)",
           "To http://127.0.0.1:33872/" + PROJECT_ID,
           "! [remote rejected] master -> master (invalid files)",
@@ -1348,7 +1348,7 @@ public class WLGitBridgeIntegrationTest {
     assertEquals(422, gitLfsResponse.getStatusLine().getStatusCode());
     HttpEntity entity = gitLfsResponse.getEntity();
     String responseString = EntityUtils.toString(entity, "UTF-8");
-    assertTrue(responseString.contains("Git LFS is not supported on Overleaf"));
+    assertTrue(responseString.contains("Git LFS is not supported on superPaper"));
   }
 
   @Test
@@ -1378,7 +1378,7 @@ public class WLGitBridgeIntegrationTest {
   }
 
   @Test
-  public void canPullIgnoredFileFromOverleaf() throws IOException, InterruptedException {
+  public void canPullIgnoredFileFromsuperPaper() throws IOException, InterruptedException {
     int gitBridgePort = 33892;
     int mockServerPort = 3892;
     server =
@@ -1494,7 +1494,7 @@ public class WLGitBridgeIntegrationTest {
             + "    \"postbackBaseUrl\": \"http://127.0.0.1:"
             + port
             + "\",\n"
-            + "    \"serviceName\": \"Overleaf\",\n"
+            + "    \"serviceName\": \"superPaper\",\n"
             + "    \"oauth2Server\": \"http://127.0.0.1:"
             + apiPort
             + "\"";
@@ -1505,7 +1505,7 @@ public class WLGitBridgeIntegrationTest {
               + "        \"type\": \"memory\",\n"
               + "        \"awsAccessKey\": null,\n"
               + "        \"awsSecret\": null,\n"
-              + "        \"s3BucketName\": \"com.overleaf.testbucket\"\n"
+              + "        \"s3BucketName\": \"com.superpaper.testbucket\"\n"
               + "    },\n"
               + "    \"swapJob\": {\n"
               + "        \"allowUnsafeStores\": true,"

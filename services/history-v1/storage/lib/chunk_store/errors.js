@@ -1,4 +1,4 @@
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 class ChunkVersionConflictError extends OError {}
 class BaseVersionConflictError extends OError {}

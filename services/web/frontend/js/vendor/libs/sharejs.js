@@ -1085,14 +1085,14 @@ export const { Doc } = (() => {
           }
           return this._closeCallback = null;
         } else if (msg.op === null && error === 'Op already submitted') {
-          // Overleaf: note that this branch is never reached, as `error` is always undefined
+          // superPaper: note that this branch is never reached, as `error` is always undefined
 
           // We've tried to resend an op to the server, which has already been received successfully. Do nothing.
           // The op will be confirmed normally when we get the op itself was echoed back from the server
           // (handled below).
 
         } else if (msg.op === undefined && msg.v !== undefined || msg.op && Array.from(this.inflightSubmittedIds).includes(msg.meta.source)) {
-          // Overleaf: avoid clearing inflightOp on repeated acknowledgement of operations on the same version
+          // superPaper: avoid clearing inflightOp on repeated acknowledgement of operations on the same version
           if (!msg.error) {
             if (msg.op === undefined && msg.v !== undefined) {
               if (msg.v < this.version) {

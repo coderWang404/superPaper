@@ -1,7 +1,7 @@
 {
-  "name": "@overleaf/eslint-plugin",
+  "name": "@superpaper/eslint-plugin",
   "version": "0.1.0",
-  "author": "Overleaf (https://www.overleaf.com)",
+  "author": "superPaper (https://www.superpaper.com)",
   "license": "AGPL-3.0-only",
   "main": "index.js",
   "dependencies": {

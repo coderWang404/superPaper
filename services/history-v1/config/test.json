@@ -1,6 +1,6 @@
 {
-  "databaseUrl": "postgres://overleaf:overleaf@postgres/overleaf-history-v1-test",
-  "databaseUrlReadOnly": "postgres://read_only:password@postgres/overleaf-history-v1-test",
+  "databaseUrl": "postgres://superpaper:superpaper@postgres/superpaper-history-v1-test",
+  "databaseUrlReadOnly": "postgres://read_only:password@postgres/superpaper-history-v1-test",
   "persistor": {
     "backend": "gcs",
     "gcs": {
@@ -12,20 +12,20 @@
     }
   },
   "blobStore": {
-    "globalBucket": "overleaf-test-blobs",
-    "projectBucket": "overleaf-test-project-blobs"
+    "globalBucket": "superpaper-test-blobs",
+    "projectBucket": "superpaper-test-project-blobs"
   },
   "chunkStore": {
-    "bucket": "overleaf-test-chunks"
+    "bucket": "superpaper-test-chunks"
   },
   "zipStore": {
-    "bucket": "overleaf-test-zips"
+    "bucket": "superpaper-test-zips"
   },
   "backupStore": {
-    "chunksBucket": "overleaf-test-history-chunks",
-    "deksBucket": "overleaf-test-history-deks",
-    "globalBlobsBucket": "overleaf-test-history-global-blobs",
-    "projectBlobsBucket": "overleaf-test-history-project-blobs"
+    "chunksBucket": "superpaper-test-history-chunks",
+    "deksBucket": "superpaper-test-history-deks",
+    "globalBlobsBucket": "superpaper-test-history-global-blobs",
+    "projectBlobsBucket": "superpaper-test-history-project-blobs"
   },
   "backupPersistor": {
     "keyEncryptionKeys": "[{\"key\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"salt\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}]",

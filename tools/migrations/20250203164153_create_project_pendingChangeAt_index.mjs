@@ -6,10 +6,10 @@ const tags = ['saas']
 
 const indexes = [
   {
-    key: { 'overleaf.backup.pendingChangeAt': 1 },
-    name: 'overleaf_backup_pendingChangeAt_1',
+    key: { 'superpaper.backup.pendingChangeAt': 1 },
+    name: 'superpaper_backup_pendingChangeAt_1',
     partialFilterExpression: {
-      'overleaf.backup.pendingChangeAt': { $exists: true },
+      'superpaper.backup.pendingChangeAt': { $exists: true },
     },
   },
 ]

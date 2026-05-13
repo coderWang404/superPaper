@@ -6,8 +6,6 @@ import getMeta from '@/utils/meta'
 import OLTooltip from '@/shared/components/ol/ol-tooltip'
 import { NavDropdownMenuItems } from '@/shared/components/navbar/nav-dropdown-from-data'
 import { NavbarDropdownItemData } from '@/shared/components/types/navbar'
-import { useContactUsModal } from '@/shared/hooks/use-contact-us-modal'
-import { UserProvider } from '@/shared/context/user-context'
 import { AccountMenuItems } from '@/shared/components/navbar/account-menu-items'
 import { sendMB } from '@/infrastructure/event-tracking'
 
@@ -25,11 +23,7 @@ export function SidebarLowerSection({
   const { t } = useTranslation()
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
   const [showHelpDropdown, setShowHelpDropdown] = useState(false)
-  const { showModal: showContactUsModal, modal: contactUsModal } =
-    useContactUsModal({
-      autofillProjectUrl: false,
-    })
-  const { sessionUser, showSubscriptionLink, items } = getMeta('ol-navbar')
+  const { sessionUser, items } = getMeta('ol-navbar')
   const helpItem = items.find(
     item => item.text === 'help_and_resources'
   ) as NavbarDropdownItemData
@@ -76,7 +70,6 @@ export function SidebarLowerSection({
             >
               <NavDropdownMenuItems
                 dropdown={helpItem.dropdown}
-                showContactUsModal={showContactUsModal}
                 location="sidebar"
               />
             </Dropdown.Menu>
@@ -121,7 +114,6 @@ export function SidebarLowerSection({
             >
               <AccountMenuItems
                 sessionUser={sessionUser}
-                showSubscriptionLink={showSubscriptionLink}
                 showThemeToggle={showThemeToggle}
               />
             </Dropdown.Menu>
@@ -131,7 +123,6 @@ export function SidebarLowerSection({
       <div className="ds-nav-ds-name" translate="no">
         <span>Digital Science</span>
       </div>
-      <UserProvider>{contactUsModal}</UserProvider>
     </>
   )
 }

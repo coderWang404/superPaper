@@ -17,8 +17,11 @@
   margin: 0;
 }
 
-.overleaf-ds-logo {
-  background-image: url('../../../frontend/js/shared/svgs/overleaf-a-ds-solution-mallard.svg');
+.superpaper-ds-logo {
+  background-image: url('../../../frontend/js/shared/images/superpaper-icon.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .ciam-layout {

@@ -17,7 +17,7 @@ import sinon from 'sinon'
 import RealTimeClient from './helpers/RealTimeClient.js'
 import MockDocUpdaterServer from './helpers/MockDocUpdaterServer.js'
 import FixturesManager from './helpers/FixturesManager.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import async from 'async'
 
 describe('leaveDoc', function () {

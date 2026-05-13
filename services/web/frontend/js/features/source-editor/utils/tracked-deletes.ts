@@ -1,4 +1,4 @@
-import { TrackedChangeList } from 'overleaf-editor-core'
+import { TrackedChangeList } from 'superpaper-editor-core'
 import { EditorState } from '@codemirror/state'
 import { rangesState } from '@/features/source-editor/extensions/history-ot'
 

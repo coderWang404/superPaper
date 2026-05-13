@@ -1,10 +1,9 @@
 import _ from 'lodash'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import crypto from 'node:crypto'
-import { setTimeout } from 'node:timers/promises'
 import pProps from 'p-props'
-import logger from '@overleaf/logger'
-import { expressify } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import { expressify } from '@superpaper/promise-utils'
 import mongodb from 'mongodb-legacy'
 import ProjectDeleter from './ProjectDeleter.mjs'
 import { DeletedProjectReasons } from './DeletedProjectReasons.mjs'
@@ -12,12 +11,9 @@ import ProjectDuplicator from './ProjectDuplicator.mjs'
 import ProjectCreationHandler from './ProjectCreationHandler.mjs'
 import EditorController from '../Editor/EditorController.mjs'
 import ProjectHelper from './ProjectHelper.mjs'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 import { User } from '../../models/User.mjs'
-import SubscriptionLocator from '../Subscription/SubscriptionLocator.mjs'
-import SubscriptionHelper from '../Subscription/SubscriptionHelper.mjs'
-import LimitationsManager from '../Subscription/LimitationsManager.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import AuthorizationManager from '../Authorization/AuthorizationManager.mjs'
 import InactiveProjectManager from '../InactiveData/InactiveProjectManager.mjs'
 import ProjectUpdateHandler from './ProjectUpdateHandler.mjs'
@@ -30,33 +26,22 @@ import CollaboratorsGetter from '../Collaborators/CollaboratorsGetter.mjs'
 import ProjectEntityHandler from './ProjectEntityHandler.mjs'
 import TpdsProjectFlusher from '../ThirdPartyDataStore/TpdsProjectFlusher.mjs'
 import Features from '../../infrastructure/Features.mjs'
-import BrandVariationsHandler from '../BrandVariations/BrandVariationsHandler.mjs'
 import UserController from '../User/UserController.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
-import LocalsHelper from '../SplitTests/LocalsHelper.mjs'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
-import SplitTestSessionHandler from '../SplitTests/SplitTestSessionHandler.mjs'
-import FeaturesUpdater from '../Subscription/FeaturesUpdater.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
+import LocalsHelper from '../FeatureRollouts/LocalsHelper.mjs'
+import SplitTestHandler from '../FeatureRollouts/FeatureRolloutHandler.mjs'
+import SplitTestSessionHandler from '../FeatureRollouts/FeatureRolloutSessionHandler.mjs'
 import SpellingHandler from '../Spelling/SpellingHandler.mjs'
 import AdminAuthorizationHelper from '../Helpers/AdminAuthorizationHelper.mjs'
-import InstitutionsFeatures from '../Institutions/InstitutionsFeatures.mjs'
-import InstitutionsGetter from '../Institutions/InstitutionsGetter.mjs'
 import ProjectAuditLogHandler from './ProjectAuditLogHandler.mjs'
 import PublicAccessLevels from '../Authorization/PublicAccessLevels.mjs'
 import TagsHandler from '../Tags/TagsHandler.mjs'
 import TutorialHandler from '../Tutorial/TutorialHandler.mjs'
-import UserUpdater from '../User/UserUpdater.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
 import { z, zz, parseReq } from '../../infrastructure/Validation.mjs'
 import UserGetter from '../User/UserGetter.mjs'
-import { isStandaloneAiAddOnPlanCode } from '../Subscription/AiHelper.mjs'
-import SubscriptionController from '../Subscription/SubscriptionController.mjs'
-import { formatCurrency } from '../../util/currency.js'
 import UserSettingsHelper from './UserSettingsHelper.mjs'
-import AiFeatureUsageRateLimiter from '../../infrastructure/rate-limiters/AiFeatureUsageRateLimiter.mjs'
-import WorkbenchRateLimiter from '../../infrastructure/rate-limiters/WorkbenchRateLimiter.mjs'
 
-const { isPaidSubscription } = SubscriptionHelper
 const { hasAdminAccess } = AdminAuthorizationHelper
 const { ObjectId } = mongodb
 /**
@@ -174,7 +159,7 @@ const _ProjectController = {
       ipAddress: req.ip,
       deletedReason: DeletedProjectReasons.USER,
     })
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       projectId,
       'project-deleted',
       user._id,
@@ -187,7 +172,7 @@ const _ProjectController = {
     const projectId = req.params.Project_id
     const userId = SessionManager.getLoggedInUserId(req.session)
     await ProjectDeleter.promises.archiveProject(projectId, userId)
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       projectId,
       'project-archived',
       userId,
@@ -200,7 +185,7 @@ const _ProjectController = {
     const projectId = req.params.Project_id
     const userId = SessionManager.getLoggedInUserId(req.session)
     await ProjectDeleter.promises.unarchiveProject(projectId, userId)
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       projectId,
       'project-unarchived',
       userId,
@@ -213,7 +198,7 @@ const _ProjectController = {
     const projectId = req.params.project_id
     const userId = SessionManager.getLoggedInUserId(req.session)
     await ProjectDeleter.promises.trashProject(projectId, userId)
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       projectId,
       'project-trashed',
       userId,
@@ -226,7 +211,7 @@ const _ProjectController = {
     const projectId = req.params.project_id
     const userId = SessionManager.getLoggedInUserId(req.session)
     await ProjectDeleter.promises.untrashProject(projectId, userId)
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       projectId,
       'project-untrashed',
       userId,
@@ -247,13 +232,13 @@ const _ProjectController = {
   },
 
   async restoreProject(req, res) {
-    const user = SessionManager.getLoggedInUserId(req.session)
+    const userId = SessionManager.getLoggedInUserId(req.session)
     const projectId = req.params.Project_id
     await ProjectDeleter.promises.restoreProject(projectId)
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       projectId,
       'project-restored',
-      user._id,
+      userId,
       req.ip
     )
     res.sendStatus(200)
@@ -283,7 +268,7 @@ const _ProjectController = {
         tags,
         { isDebugCopy, cloneHistory, cloneRanges }
       )
-      ProjectAuditLogHandler.addEntryIfManagedInBackground(
+      ProjectAuditLogHandler.addEntryInBackground(
         projectId,
         'project-cloned',
         currentUser._id,
@@ -329,7 +314,7 @@ const _ProjectController = {
         )
       : ProjectCreationHandler.promises.createBasicProject(userId, projectName))
 
-    ProjectAuditLogHandler.addEntryIfManagedInBackground(
+    ProjectAuditLogHandler.addEntryInBackground(
       project._id,
       'project-created',
       project.owner_ref,
@@ -404,36 +389,6 @@ const _ProjectController = {
       userId = null
     }
 
-    if (Features.hasFeature('saas') && userId) {
-      const { variant: domainCaptureRedirect } =
-        await SplitTestHandler.promises.getAssignment(
-          req,
-          res,
-          'domain-capture-redirect'
-        )
-
-      if (domainCaptureRedirect === 'enabled') {
-        const groupsWithEmails = (
-          await Modules.promises.hooks.fire(
-            'findDomainCaptureGroupsUserCouldBePartOf',
-            userId
-          )
-        )?.[0]
-
-        if (groupsWithEmails && groupsWithEmails.length > 0) {
-          if (
-            groupsWithEmails.some(
-              ({ subscription }) => subscription.managedUsersEnabled
-            )
-          ) {
-            return res.redirect('/domain-capture')
-          } else {
-            // TODO show notification or anything else
-          }
-        }
-      }
-    }
-
     const projectId = req.params.Project_id
 
     // should not be used in place of split tests query param overrides (?my-split-test-name=my-variant)
@@ -457,29 +412,12 @@ const _ProjectController = {
       'revert-project',
       !anonymous && 'ro-mirror-on-client',
       'track-pdf-download',
-      !anonymous && 'writefull-oauth-promotion',
-      'hotjar',
       'word-count-client',
-      'editor-popup-ux-survey-03-2026',
       'chat-edit-delete',
-      'ai-workbench-release',
-      'compile-timeout-target-plans',
-      'writefull-keywords-generator',
-      'writefull-figure-generator',
-      'wf-citations-checker',
-      'wf-citations-checker-on-selection',
-      'writefull-asymetric-queue-size-per-model',
-      'writefull-encourage-prompt-for-paraphrase',
       'editor-context-menu',
       'email-notifications',
-      'wf-enable-freemium-super-complete',
-      'wf-enable-super-complete-promotion',
-      'wf-rebrand',
-      'plans-2026-phase-1',
-      'testing-ai-usage',
-      'wf-fake-non-english-suggestions',
       'editor-tabs',
-      'overleaf-code',
+      'superpaper-code',
       'export-docx',
       'sharing-updates',
     ].filter(Boolean)
@@ -490,7 +428,7 @@ const _ProjectController = {
           user: (async () => {
             const user = await User.findById(
               userId,
-              'email first_name last_name referal_id signUpDate featureSwitches features featuresEpoch refProviders alphaProgram betaProgram isAdmin ace labsProgram labsExperiments completedTutorials writefull aiFeatures'
+              'email first_name last_name referal_id signUpDate featureSwitches features featuresEpoch alphaProgram isAdmin ace labsProgram labsExperiments completedTutorials aiFeatures'
             ).exec()
             // Handle case of deleted user
             if (!user) {
@@ -498,32 +436,13 @@ const _ProjectController = {
               return
             }
             logger.debug({ projectId, userId }, 'got user')
-            return FeaturesUpdater.featuresEpochIsCurrent(user)
-              ? user
-              : await ProjectController._refreshFeatures(req, user)
+            return user
           })(),
           learnedWords: SpellingHandler.promises.getUserDictionary(userId),
           projectTags: TagsHandler.promises.getTagsForProject(
             userId,
             projectId
           ),
-          userHasInstitutionLicence: InstitutionsFeatures.promises
-            .hasLicence(userId)
-            .catch(err => {
-              logger.error({ err, userId }, 'failed to get institution licence')
-              return false
-            }),
-          affiliations: InstitutionsGetter.promises
-            .getCurrentAffiliations(userId)
-            .catch(err => {
-              logger.error(
-                { err, userId },
-                'failed to get current affiliations'
-              )
-              return false
-            }),
-          subscription:
-            SubscriptionLocator.promises.getUsersSubscription(userId),
           isTokenMember: CollaboratorsGetter.promises.userIsTokenMember(
             userId,
             projectId
@@ -545,23 +464,13 @@ const _ProjectController = {
           active: 1,
           deferredTpdsFlushCounter: 1,
           lastUpdated: 1,
-          track_changes: 1,
           owner_ref: 1,
-          brandVariationId: 1,
-          overleaf: 1,
+          superpaper: 1,
           tokens: 1,
         }),
-        userIsMemberOfGroupSubscription: sessionUser
-          ? (async () =>
-              (
-                await LimitationsManager.promises.userIsMemberOfGroupSubscription(
-                  sessionUser
-                )
-              ).isMember)()
-          : false,
       })
 
-      const { project, userValues, userIsMemberOfGroupSubscription } = responses
+      const { project, userValues } = responses
 
       await Promise.all([
         InactiveProjectManager.promises.reactivateProjectIfRequired(project),
@@ -572,18 +481,9 @@ const _ProjectController = {
         user,
         learnedWords,
         projectTags,
-        userHasInstitutionLicence,
-        subscription,
         isTokenMember,
         isInvitedMember,
-        affiliations,
       } = userValues
-
-      let inEnterpriseCommons = false
-      for (const affiliation of affiliations || []) {
-        inEnterpriseCommons =
-          inEnterpriseCommons || affiliation.institution?.enterpriseCommons
-      }
 
       const getSplitTestAssignment = async splitTest => {
         return await SplitTestHandler.promises.getAssignment(
@@ -611,12 +511,6 @@ const _ProjectController = {
         'pdf-caching-mode',
         Settings.pdfCachingMode ? 'enabled' : 'disabled'
       )
-
-      const brandVariation = project?.brandVariationId
-        ? await BrandVariationsHandler.promises.getBrandVariationById(
-            project.brandVariationId
-          )
-        : undefined
 
       const anonRequestToken = TokenAccessHandler.getRequestToken(
         req,
@@ -659,16 +553,9 @@ const _ProjectController = {
         return res.sendStatus(401)
       }
 
-      const allowedFreeTrial =
-        subscription == null ||
-        isStandaloneAiAddOnPlanCode(subscription.planCode)
-
       let wsUrl = Settings.wsUrl
       let metricName = 'load-editor-ws'
-      if (user.betaProgram && Settings.wsUrlBeta !== undefined) {
-        wsUrl = Settings.wsUrlBeta
-        metricName += '-beta'
-      } else if (
+      if (
         Settings.wsUrlV2 &&
         Settings.wsUrlV2Percentage > 0 &&
         (new ObjectId(projectId).getTimestamp() / 1000) % 100 <
@@ -706,19 +593,12 @@ const _ProjectController = {
       if (userId) {
         const projectAccess =
           await CollaboratorsGetter.promises.getProjectAccess(projectId)
-        const planLimit = ownerFeatures?.collaborators || 0
         const { namedEditors, pendingEditors, tokenEditors } =
           projectAccess.getStats()
-        const exceedAtLimit = planLimit > -1 && namedEditors >= planLimit
 
         let mode = 'edit'
         if (privilegeLevel === PrivilegeLevels.READ_ONLY) {
           mode = 'view'
-        } else if (
-          project.track_changes === true ||
-          project.track_changes?.[userId] === true
-        ) {
-          mode = 'review'
         }
 
         const projectOpenedSegmentation = {
@@ -729,8 +609,6 @@ const _ProjectController = {
           namedEditors,
           pendingEditors,
           tokenEditors,
-          planLimit,
-          exceedAtLimit,
         }
         AnalyticsManager.recordEventForUserInBackground(
           userId,
@@ -750,84 +628,9 @@ const _ProjectController = {
           )
       }
 
-      const isAdminOrTemplateOwner =
-        hasAdminAccess(user) || Settings.templates?.user_id === userId
-      const showTemplatesServerPro =
-        Features.hasFeature('templates-server-pro') && isAdminOrTemplateOwner
-
       const debugPdfDetach = shouldDisplayFeature('debug_pdf_detach')
 
       const detachRole = req.params.detachRole
-
-      const showSymbolPalette =
-        !Features.hasFeature('saas') ||
-        (user.features && user.features.symbolPalette)
-
-      const userInNonIndividualSub =
-        userIsMemberOfGroupSubscription || userHasInstitutionLicence
-
-      const userHasPremiumSub =
-        subscription && !isStandaloneAiAddOnPlanCode(subscription.planCode)
-
-      // Persistent upgrade prompts
-      // in header & in share project modal
-      const showUpgradePrompt =
-        Features.hasFeature('saas') &&
-        userId &&
-        !userHasPremiumSub &&
-        !userInNonIndividualSub
-
-      let aiFeaturesAllowed = false
-      if (userId && Features.hasFeature('saas')) {
-        try {
-          // exit early if the user couldnt use ai anyways, since permissions checks are expensive
-          const canUserWriteOrReviewProjectContent =
-            privilegeLevel === PrivilegeLevels.READ_AND_WRITE ||
-            privilegeLevel === PrivilegeLevels.OWNER ||
-            privilegeLevel === PrivilegeLevels.REVIEW
-
-          if (canUserWriteOrReviewProjectContent) {
-            // check permissions for user and project owner, to see if they allow AI on the project
-            const permissionsResults = await Modules.promises.hooks.fire(
-              'projectAllowsCapability',
-              project,
-              userId,
-              ['use-ai']
-            )
-            const aiAllowed = permissionsResults.every(
-              result => result === true
-            )
-
-            aiFeaturesAllowed = aiAllowed
-          }
-        } catch (err) {
-          // still allow users to access project if we cant get their permissions, but disable AI feature
-          aiFeaturesAllowed = false
-        }
-      }
-
-      let featureUsage = {}
-
-      if (Features.hasFeature('saas') && !anonymous) {
-        featureUsage = {
-          ...(await AiFeatureUsageRateLimiter.getRemainingFeatureUses(userId)),
-          ...(await WorkbenchRateLimiter.getRemainingTokens(userId)),
-        }
-      }
-
-      await ProjectController._setWritefullTrialState(
-        user,
-        userValues,
-        userId,
-        aiFeaturesAllowed,
-        userIsMemberOfGroupSubscription
-      )
-
-      AnalyticsManager.setUserPropertyForUserInBackground(
-        userId,
-        'customer-io-integration',
-        true
-      )
 
       const template =
         detachRole === 'detached'
@@ -836,16 +639,10 @@ const _ProjectController = {
 
       const capabilities = [...req.capabilitySet]
 
-      // make sure the capability is added to CE/SP when the feature is enabled
-      if (!Features.hasFeature('saas') && Features.hasFeature('chat')) {
+      if (Features.hasFeature('chat')) {
         capabilities.push('chat')
       }
 
-      // Note: this is not part of the default capabilities in the backend.
-      // See services/web/modules/group-settings/app/src/DefaultGroupPolicy.mjs.
-      // We are only using it on the frontend at the moment.
-      // Add !Features.hasFeature('saas') to the conditional, as for chat above
-      // if you define the capability in the backend.
       if (Features.hasFeature('link-sharing')) {
         capabilities.push('link-sharing')
       }
@@ -855,39 +652,7 @@ const _ProjectController = {
         fullFeatureSet = await UserGetter.promises.getUserFeatures(userId)
       }
 
-      const hasPaidSubscription = isPaidSubscription(subscription)
-      const aiFeaturesDisabled = user.aiFeatures?.enabled === false
-
-      const showAiFeatures = aiFeaturesAllowed && !aiFeaturesDisabled
-      // only add-on is ai based, so we only need its pricing info if ai features are usable
-      const addonPrices =
-        showAiFeatures && (await ProjectController._getAddonPrices(req, res))
-
-      let standardPlanPricing
-      let recommendedCurrency
-      if (Features.hasFeature('saas')) {
-        standardPlanPricing = await ProjectController._getPlanPricing(
-          req,
-          res,
-          'collaborator'
-        )
-        const { currency } =
-          await SubscriptionController.getRecommendedCurrency(req, res)
-        recommendedCurrency = currency
-      }
-
-      let planCode = subscription?.planCode
-      if (!planCode && !userInNonIndividualSub) {
-        planCode = 'personal'
-      }
-
-      const planDetails = Settings.plans.find(p => p.planCode === planCode)
-
-      const shouldLoadHotjar =
-        splitTestAssignments['compile-timeout-target-plans']?.variant ===
-          'enabled' &&
-        !userHasPremiumSub &&
-        !userInNonIndividualSub
+      const showAiFeatures = false
 
       const userSettings = await UserSettingsHelper.buildUserSettings(
         req,
@@ -905,9 +670,7 @@ const _ProjectController = {
         bodyClasses: ['editor'],
         project_id: project._id,
         projectName: project.name,
-        canUseClsiCache:
-          Features.hasFeature('saas') &&
-          ownerFeatures?.compileGroup === 'priority',
+        canUseClsiCache: Boolean(Settings.apis?.clsiCache?.instances?.length),
         user: {
           id: userId,
           email: user.email,
@@ -915,25 +678,12 @@ const _ProjectController = {
           last_name: user.last_name,
           referal_id: user.referal_id,
           signUpDate: user.signUpDate,
-          allowedFreeTrial,
-          hasPaidSubscription,
           featureSwitches: user.featureSwitches,
           features: fullFeatureSet,
-          featureUsage,
-          refProviders: _.mapValues(user.refProviders, Boolean),
-          writefull: {
-            autoCreatedAccount: Boolean(user.writefull?.autoCreatedAccount),
-          },
           alphaProgram: user.alphaProgram,
-          betaProgram: user.betaProgram,
           labsProgram: user.labsProgram,
           inactiveTutorials: TutorialHandler.getInactiveTutorials(user),
           isAdmin: hasAdminAccess(user),
-          planCode,
-          planName: planDetails?.name,
-          isAnnualPlan: planCode && planDetails?.annual,
-          isMemberOfGroupSubscription: userIsMemberOfGroupSubscription,
-          hasInstitutionLicence: userHasInstitutionLicence,
         },
         initialLoadingScreenTheme,
         userSettings,
@@ -957,40 +707,21 @@ const _ProjectController = {
         maxDocLength: Settings.max_doc_length,
         maxReconnectGracefullyIntervalMs:
           Settings.maxReconnectGracefullyIntervalMs,
-        brandVariation,
         imageNames,
         gitBridgePublicBaseUrl: Settings.gitBridgePublicBaseUrl,
         gitBridgeEnabled: Features.hasFeature('git-bridge'),
         wsUrl,
-        showSupport: Features.hasFeature('support'),
-        showTemplatesServerPro,
         debugPdfDetach,
-        showSymbolPalette,
-        symbolPaletteAvailable: Features.hasFeature('symbol-palette'),
         userRestrictions: Array.from(req.userRestrictions || []),
         showAiFeatures,
-        // default to free tier if they dont have a quota
-        hasAiFreeTier:
-          fullFeatureSet?.aiUsageQuota === Settings.aiFeatures?.freeQuota ||
-          !fullFeatureSet?.aiUsageQuota,
-        hasUnlimitedAi:
-          fullFeatureSet?.aiUsageQuota === Settings.aiFeatures?.unlimitedQuota,
         detachRole,
         metadata: { viewport: false },
-        showUpgradePrompt,
         fixedSizeDocument: true,
-        hasTrackChangesFeature: Features.hasFeature('track-changes'),
-        otMigrationStage: project.overleaf?.history?.otMigrationStage ?? 0,
+        otMigrationStage: project.superpaper?.history?.otMigrationStage ?? 0,
         projectTags,
-        isSaas: Features.hasFeature('saas'),
-        shouldLoadHotjar,
-        customerIoEnabled: true,
-        addonPrices,
         compileSettings: {
           compileTimeout: ownerFeatures?.compileTimeout,
         },
-        standardPlanPricing,
-        recommendedCurrency,
       })
       timer.done()
     } catch (err) {
@@ -999,126 +730,8 @@ const _ProjectController = {
     }
   },
 
-  async _getPlanPricing(req, res, plan = 'collaborator') {
-    const locale = req.i18n.language
-    const { currency } = await SubscriptionController.getRecommendedCurrency(
-      req,
-      res
-    )
-
-    const pricingForCurrency = Settings.localizedPlanPricing[currency]
-    if (!pricingForCurrency) {
-      return null
-    }
-
-    const planPricing = pricingForCurrency[plan]
-    if (!planPricing) {
-      return null
-    }
-
-    return {
-      monthly: formatCurrency(planPricing.monthly, currency, locale, true),
-      annual: formatCurrency(planPricing.annual, currency, locale, true),
-      monthlyTimesTwelve: formatCurrency(
-        planPricing.monthlyTimesTwelve,
-        currency,
-        locale,
-        true
-      ),
-    }
-  },
-
-  // todo: quota clean-up: these can be removed potentially?
-  async _getAddonPrices(req, res, addonPlans = ['assistant']) {
-    const plansData = {}
-
-    const locale = req.i18n.language
-    const { currency } = await SubscriptionController.getRecommendedCurrency(
-      req,
-      res
-    )
-
-    addonPlans.forEach(plan => {
-      const annualPrice = Settings.localizedAddOnsPricing[currency][plan].annual
-      const monthlyPrice =
-        Settings.localizedAddOnsPricing[currency][plan].monthly
-      const annualDividedByTwelve =
-        Settings.localizedAddOnsPricing[currency][plan].annualDividedByTwelve
-
-      plansData[plan] = {
-        annual: formatCurrency(annualPrice, currency, locale, true),
-        annualDividedByTwelve: formatCurrency(
-          annualDividedByTwelve,
-          currency,
-          locale,
-          true
-        ),
-        monthly: formatCurrency(monthlyPrice, currency, locale, true),
-      }
-    })
-    return plansData
-  },
-
   async _refreshFeatures(req, user) {
-    // If the feature refresh has failed in this session, don't retry
-    // it - require the user to log in again.
-    if (req.session.feature_refresh_failed) {
-      metrics.inc('features-refresh', 1, {
-        path: 'load-editor',
-        status: 'skipped',
-      })
-      return user
-    }
-    // If the refresh takes too long then return the current
-    // features. Note that the user.features property may still be
-    // updated in the background after the promise is resolved.
-    const abortController = new AbortController()
-    const refreshTimeoutHandler = async () => {
-      await setTimeout(5000, { signal: abortController.signal })
-      req.session.feature_refresh_failed = {
-        reason: 'timeout',
-        at: new Date(),
-      }
-      metrics.inc('features-refresh', 1, {
-        path: 'load-editor',
-        status: 'timeout',
-      })
-      return user
-    }
-
-    // try to refresh user features now
-    const timer = new metrics.Timer('features-refresh-on-load-editor')
-
-    return Promise.race([
-      refreshTimeoutHandler(),
-      (async () => {
-        try {
-          const { features } = await FeaturesUpdater.promises.refreshFeatures(
-            user._id,
-            'load-editor'
-          )
-          user.features = features
-          metrics.inc('features-refresh', 1, {
-            path: 'load-editor',
-            status: 'success',
-          })
-        } catch (err) {
-          // keep a record to prevent unneceary retries and leave
-          // the original features unmodified if the refresh failed
-          req.session.feature_refresh_failed = {
-            reason: 'error',
-            at: new Date(),
-          }
-          metrics.inc('features-refresh', 1, {
-            path: 'load-editor',
-            status: 'error',
-          })
-        }
-        abortController.abort()
-        timer.done()
-        return user
-      })(),
-    ])
+    return user
   },
   _buildProjectList(allProjects, userId) {
     let project
@@ -1232,72 +845,6 @@ const _ProjectController = {
     }
     return model
   },
-  _buildPortalTemplatesList(affiliations) {
-    if (affiliations == null) {
-      affiliations = []
-    }
-    const portalTemplates = []
-    for (const aff of affiliations) {
-      if (
-        aff.portal &&
-        aff.portal.slug &&
-        aff.portal.templates_count &&
-        aff.portal.templates_count > 0
-      ) {
-        const portalPath = aff.institution.isUniversity ? '/edu/' : '/org/'
-        portalTemplates.push({
-          name: aff.institution.name,
-          url: Settings.siteUrl + portalPath + aff.portal.slug,
-        })
-      }
-    }
-    return portalTemplates
-  },
-
-  async _setWritefullTrialState(
-    user,
-    userValues,
-    userId,
-    aiFeaturesAllowed,
-    userIsMemberOfGroupSubscription
-  ) {
-    if (!aiFeaturesAllowed) {
-      return
-    }
-
-    const affiliations = userValues.affiliations
-    const affiliateLookupFailed = affiliations === false
-
-    // if affiliations is specifically false instead of empty, we know the affiliate lookup failed, and should defer to blocking auto-loading
-    const inEnterpriseCommons =
-      affiliateLookupFailed ||
-      affiliations.some(
-        affiliation => affiliation.institution?.enterpriseCommons
-      )
-
-    const shouldPushWritefull =
-      user.writefull?.initialized === false && !userIsMemberOfGroupSubscription
-
-    // we dont have legal approval to push enterprise commons into WF auto-account-create, but we are able to auto-load it into the toolbar
-    const shouldAutoCreateAccount = shouldPushWritefull && !inEnterpriseCommons
-    const shouldAutoLoad = shouldPushWritefull && inEnterpriseCommons
-
-    if (shouldAutoCreateAccount) {
-      await UserUpdater.promises.updateUser(userId, {
-        $set: {
-          writefull: { autoCreatedAccount: true, initialized: true },
-        },
-      })
-      user.writefull.autoCreatedAccount = true
-    } else if (shouldAutoLoad) {
-      await UserUpdater.promises.updateUser(userId, {
-        $set: {
-          writefull: { autoCreatedAccount: false, initialized: true },
-        },
-      })
-      user.writefull.autoCreatedAccount = false
-    }
-  },
 }
 
 function getInitialLoadingScreenTheme(overallThemeSetting) {
@@ -1324,19 +871,10 @@ const defaultSettingsForAnonymousUser = userId => ({
     pdfViewer: '',
     syntaxValidation: true,
   },
-  subscription: {
-    freeTrial: {
-      allowed: true,
-    },
-  },
   featureSwitches: {
     github: false,
   },
   alphaProgram: false,
-  betaProgram: false,
-  writefull: {
-    initialized: true,
-  },
   aiFeatures: {
     enabled: false,
   },
@@ -1346,9 +884,6 @@ const defaultUserValues = () => ({
   user: defaultSettingsForAnonymousUser(null),
   learnedWords: [],
   projectTags: [],
-  userHasInstitutionLicence: false,
-  affiliations: [],
-  subscription: undefined,
   isTokenMember: false,
   isInvitedMember: false,
 })
@@ -1358,8 +893,8 @@ const THEME_LIST = [
   { name: 'dracula', dark: true },
   { name: 'eclipse', dark: false },
   { name: 'monokai', dark: true },
-  { name: 'overleaf', dark: false },
-  { name: 'overleaf_dark', dark: true },
+  { name: 'superpaper', dark: false },
+  { name: 'superpaper_dark', dark: true },
   { name: 'textmate', dark: false },
 ]
 
@@ -1422,12 +957,8 @@ const ProjectController = {
   userProjectsJson: expressify(_ProjectController.userProjectsJson),
   _buildProjectList: _ProjectController._buildProjectList,
   _buildProjectViewModel: _ProjectController._buildProjectViewModel,
-  _injectProjectUsers: _ProjectController._injectProjectUsers,
   _isInPercentageRollout: _ProjectController._isInPercentageRollout,
   _refreshFeatures: _ProjectController._refreshFeatures,
-  _getPlanPricing: _ProjectController._getPlanPricing,
-  _getAddonPrices: _ProjectController._getAddonPrices,
-  _setWritefullTrialState: _ProjectController._setWritefullTrialState,
 }
 
 export default ProjectController

@@ -1,4 +1,4 @@
-# @overleaf/object-persistor
+# @superpaper/object-persistor
 
 Stores arbitrary objects in multiple backends, with support for falling back to a secondary backend if the object can't be found in the primary.
 
@@ -25,7 +25,7 @@ const Persistor = ObjectPersistor(config)
 
 ### Errors
 
-Errors returned by persistor methods are all derived from `OError` (`@overleaf/o-error`.) To perform `instanceof` checks, you can use the `Errors` object from the persistor module:
+Errors returned by persistor methods are all derived from `OError` (`@superpaper/o-error`.) To perform `instanceof` checks, you can use the `Errors` object from the persistor module:
 
 ```JavaScript
 const ObjectPersistor = require('object-persistor')
@@ -307,4 +307,4 @@ Contributions should pass lint, formatting and unit test checks. To run these, u
 yarn run test
 ```
 
-There are no acceptance tests in this module, but https://github.com/overleaf/filestore/ contains a comprehensive set of acceptance tests that use this module. These should also pass, with the changes.
+There are no acceptance tests in this module, but https://github.com/superpaper/filestore/ contains a comprehensive set of acceptance tests that use this module. These should also pass, with the changes.

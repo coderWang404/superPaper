@@ -1,6 +1,6 @@
 import sinon from 'sinon'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Errors } from '@overleaf/object-persistor'
+import { Errors } from '@superpaper/object-persistor'
 
 const modulePath = '../../../app/js/LocalFileWriter.js'
 
@@ -33,18 +33,18 @@ describe('LocalFileWriter', function () {
       default: stream,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: settings,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         inc: sinon.stub(),
         Timer: sinon.stub().returns({ done: sinon.stub() }),
       },
     }))
 
-    vi.doMock('@overleaf/object-persistor', () => ObjectPersistor)
+    vi.doMock('@superpaper/object-persistor', () => ObjectPersistor)
 
     LocalFileWriter = (await import(modulePath)).default
   })

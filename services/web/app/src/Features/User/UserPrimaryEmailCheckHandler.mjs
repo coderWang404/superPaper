@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 function requiresPrimaryEmailCheck({
   email,

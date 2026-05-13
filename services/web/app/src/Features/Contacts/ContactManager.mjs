@@ -1,7 +1,7 @@
 import { callbackify } from 'node:util'
-import OError from '@overleaf/o-error'
-import { fetchJson } from '@overleaf/fetch-utils'
-import settings from '@overleaf/settings'
+import OError from '@superpaper/o-error'
+import { fetchJson } from '@superpaper/fetch-utils'
+import settings from '@superpaper/settings'
 
 async function getContactIds(userId, options) {
   options = options ?? { limit: 50 }

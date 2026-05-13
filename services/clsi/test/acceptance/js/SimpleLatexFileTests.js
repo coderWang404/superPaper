@@ -1,9 +1,9 @@
 import Client from './helpers/Client.js'
-import { fetchNothing, fetchString } from '@overleaf/fetch-utils'
+import { fetchNothing, fetchString } from '@superpaper/fetch-utils'
 import ClsiApp from './helpers/ClsiApp.js'
 import { expect } from 'chai'
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
 
 describe('Simple LaTeX file', function () {
   const content = `\

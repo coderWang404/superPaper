@@ -10,7 +10,7 @@
 
 const fs = require('node:fs')
 const BPromise = require('bluebird')
-const { History } = require('overleaf-editor-core')
+const { History } = require('superpaper-editor-core')
 const { historyStore, chunkStore } = require('..')
 
 const CONCURRENCY = 10

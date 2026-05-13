@@ -2,7 +2,7 @@ import minimist from 'minimist'
 import ChatApiHandler from '../app/src/Features/Chat/ChatApiHandler.mjs'
 import DocstoreManager from '../app/src/Features/Docstore/DocstoreManager.mjs'
 import DocumentUpdaterHandler from '../app/src/Features/DocumentUpdater/DocumentUpdaterHandler.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 
 const WRITE_CONCURRENCY = parseInt(process.env.WRITE_CONCURRENCY, 10) || 10
@@ -10,7 +10,7 @@ const WRITE_CONCURRENCY = parseInt(process.env.WRITE_CONCURRENCY, 10) || 10
 /**
  * Remove doc comment ranges that are "orphaned" as they do have matching chat
  * threads. This can happen when adding comments and the HTTP request fails, but
- * the ShareJS op succeeded (eventually). See https://github.com/overleaf/internal/issues/3425
+ * the ShareJS op succeeded (eventually). See https://github.com/superpaper/internal/issues/3425
  * for more detail.
  */
 async function main() {

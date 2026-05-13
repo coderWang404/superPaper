@@ -1,12 +1,12 @@
 # --------------------------------------------------
-# Overleaf Base Image (sharelatex/sharelatex-base)
+# superPaper Base Image (sharelatex/sharelatex-base)
 # --------------------------------------------------
 
 FROM phusion/baseimage:noble-1.0.2
 
 # Makes sure LuaTex cache is writable
 # -----------------------------------
-ENV TEXMFVAR=/var/lib/overleaf/tmp/texmf-var
+ENV TEXMFVAR=/var/lib/superpaper/tmp/texmf-var
 
 # Update to ensure dependencies are updated
 # ------------------------------------------
@@ -81,12 +81,12 @@ RUN mkdir /install-tl-unx \
 &&  rm -rf /install-tl-unx
 
 
-# Set up overleaf user and home directory
+# Set up superpaper user and home directory
 # -----------------------------------------
-RUN adduser --system --group --home /overleaf --no-create-home overleaf && \
-	mkdir -p /var/lib/overleaf && \
-	chown www-data:www-data /var/lib/overleaf && \
-	mkdir -p /var/log/overleaf && \
-	chown www-data:www-data /var/log/overleaf && \
-	mkdir -p /var/lib/overleaf/data/template_files && \
-	chown www-data:www-data /var/lib/overleaf/data/template_files
+RUN adduser --system --group --home /superpaper --no-create-home superpaper && \
+	mkdir -p /var/lib/superpaper && \
+	chown www-data:www-data /var/lib/superpaper && \
+	mkdir -p /var/log/superpaper && \
+	chown www-data:www-data /var/log/superpaper && \
+	mkdir -p /var/lib/superpaper/data/template_files && \
+	chown www-data:www-data /var/lib/superpaper/data/template_files

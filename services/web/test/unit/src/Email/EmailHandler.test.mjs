@@ -31,7 +31,7 @@ describe('EmailHandler', function () {
       default: ctx.EmailSender,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
@@ -112,7 +112,7 @@ describe('EmailHandler', function () {
         to: 'bob@bob.com',
         first_name: 'hello bob',
       }
-      ctx.emailType = 'canceledSubscription'
+      ctx.emailType = 'welcome'
       ctx.ONE_HOUR_IN_MS = 1000 * 60 * 60
       ctx.EmailHandler.sendDeferredEmail(
         ctx.emailType,

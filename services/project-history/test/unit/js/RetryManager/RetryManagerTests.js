@@ -96,7 +96,7 @@ describe('RetryManager', function () {
       '../../../../app/js/ErrorRecorder.js': this.ErrorRecorder,
       '../../../../app/js/SyncManager.js': this.SyncManager,
       '../../../../app/js/UpdatesProcessor.js': this.UpdatesProcessor,
-      '@overleaf/settings': this.settings,
+      '@superpaper/settings': this.settings,
       request: this.request,
     })
   })
@@ -119,7 +119,7 @@ describe('RetryManager', function () {
         await this.RetryManager.promises.retryFailures({ failureType: 'hard' })
       })
 
-      it('should check the overleaf project id', function () {
+      it('should check the superpaper project id', function () {
         expect(
           this.WebApiManager.promises.getHistoryId
         ).to.have.been.calledWith(this.projectId2)

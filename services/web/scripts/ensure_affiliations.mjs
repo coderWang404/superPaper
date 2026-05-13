@@ -1,6 +1,6 @@
 import { User } from '../app/src/models/User.mjs'
 import UserController from '../app/src/Features/User/UserController.mjs'
-import Logger from '@overleaf/logger'
+import Logger from '@superpaper/logger'
 import pLimit from 'p-limit'
 
 Logger.logger.level('error')

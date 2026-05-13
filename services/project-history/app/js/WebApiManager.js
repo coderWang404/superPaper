@@ -1,13 +1,13 @@
 import { callbackify } from 'node:util'
 import { setTimeout } from 'node:timers/promises'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 import {
   fetchNothing,
   fetchJson,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import * as Errors from './Errors.js'
 import * as RedisManager from './RedisManager.js'
 
@@ -23,9 +23,9 @@ async function getHistoryId(projectId) {
   } else {
     const project = await _getProjectDetails(projectId)
     const historyId =
-      project.overleaf &&
-      project.overleaf.history &&
-      project.overleaf.history.id
+      project.superpaper &&
+      project.superpaper.history &&
+      project.superpaper.history.id
     if (historyId != null) {
       await RedisManager.promises.setCachedHistoryId(projectId, historyId)
     }

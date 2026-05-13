@@ -1,6 +1,6 @@
 const fs = require('node:fs')
 const fsExtra = require('fs-extra')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const os = require('node:os')
 const path = require('node:path')
 

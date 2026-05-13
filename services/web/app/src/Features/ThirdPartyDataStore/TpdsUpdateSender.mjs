@@ -1,11 +1,11 @@
 import mongodb from 'mongodb-legacy'
 import _ from 'lodash'
 import { callbackify } from 'node:util'
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 import Path from 'node:path'
-import { fetchNothing } from '@overleaf/fetch-utils'
-import settings from '@overleaf/settings'
+import { fetchNothing } from '@superpaper/fetch-utils'
+import settings from '@superpaper/settings'
 import CollaboratorsGetterModule from '../Collaborators/CollaboratorsGetter.mjs'
 import UserGetterModule from '../User/UserGetter.mjs'
 
@@ -149,7 +149,7 @@ async function deleteEntity(params) {
 }
 
 async function createProject(params) {
-  if (!tpdsUrl) return // Overleaf Community Edition/Server Pro
+  if (!tpdsUrl) return
 
   const { projectId, projectName, userId } = params
 

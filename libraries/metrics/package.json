@@ -1,15 +1,14 @@
 {
-  "name": "@overleaf/metrics",
+  "name": "@superpaper/metrics",
   "version": "4.2.0",
   "description": "A drop-in metrics and monitoring module for node.js apps",
   "repository": {
     "type": "git",
-    "url": "https://github.com/overleaf/metrics-module.git"
+    "url": "https://github.com/superpaper/metrics-module.git"
   },
   "main": "index.js",
   "dependencies": {
     "@google-cloud/opentelemetry-cloud-trace-exporter": "^3.0.0",
-    "@google-cloud/profiler": "^6.0.4",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.72.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
@@ -40,6 +39,6 @@
     "types:check": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@overleaf/logger": "workspace:*"
+    "@superpaper/logger": "workspace:*"
   }
 }

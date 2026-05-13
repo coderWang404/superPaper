@@ -1,6 +1,5 @@
 import { useUserSettingsContext } from '@/shared/context/user-settings-context'
 import { OverallTheme } from '@/shared/utils/styles'
-import { isIEEEBranded } from '@/utils/is-ieee-branded'
 import { useEffect, useMemo, useState } from 'react'
 import { useSplitTestContext } from '../context/split-test-context'
 
@@ -10,9 +9,6 @@ function getTheme(
   overallTheme: OverallTheme,
   prefersDark: boolean
 ): ActiveOverallTheme {
-  if (isIEEEBranded()) {
-    return 'dark'
-  }
   if (overallTheme === 'light-') {
     return 'light'
   }

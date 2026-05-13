@@ -32,7 +32,7 @@ describe('LockManager - trying the lock', function () {
       },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         redis: {},
         lockManager: {

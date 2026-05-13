@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import mongodb from 'mongodb-legacy'
 import nock from 'nock'
-import Core from 'overleaf-editor-core'
+import Core from 'superpaper-editor-core'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
 import * as ProjectHistoryApp from './helpers/ProjectHistoryApp.js'
 import latestChunk from '../fixtures/chunks/7-8.json' with { type: 'json' }
@@ -30,7 +30,7 @@ describe('GetChangesInChunkSince', function () {
       .get(`/project/${projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: olProject.id } },
+        superpaper: { history: { id: olProject.id } },
       })
 
     MockHistoryStore()

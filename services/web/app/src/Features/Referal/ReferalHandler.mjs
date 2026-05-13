@@ -1,4 +1,4 @@
-import { callbackify } from '@overleaf/promise-utils'
+import { callbackify } from '@superpaper/promise-utils'
 import { User } from '../../models/User.mjs'
 
 async function getReferedUsers(userId) {

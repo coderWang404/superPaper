@@ -78,7 +78,7 @@ describe('CollaboratorsInviteHandler', function () {
       err: sinon.stub(),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -86,7 +86,7 @@ describe('CollaboratorsInviteHandler', function () {
       ProjectInvite: ctx.ProjectInvite,
     }))
 
-    vi.doMock('@overleaf/logger', () => ({
+    vi.doMock('@superpaper/logger', () => ({
       default: ctx.logger,
     }))
 
@@ -134,14 +134,14 @@ describe('CollaboratorsInviteHandler', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler.mjs',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler.mjs',
       () => ({
         default: ctx.SplitTestHandler,
       })
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Subscription/LimitationsManager.mjs',
+      '../../../../app/src/Features/Authorization/CollaborationLimitManager.mjs',
       () => ({
         default: ctx.LimitationsManager,
       })

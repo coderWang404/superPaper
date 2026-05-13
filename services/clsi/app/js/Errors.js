@@ -2,7 +2,7 @@
  */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 export function NotFoundError(message) {
   const error = new Error(message)

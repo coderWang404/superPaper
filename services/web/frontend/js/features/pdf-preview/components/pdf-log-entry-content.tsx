@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import PdfLogEntryRawContent from './pdf-log-entry-raw-content'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { LogEntry } from '../util/types'
 import { ElementType } from 'react'
 import classNames from 'classnames'
 
-const pdfLogEntryComponents = importOverleafModules(
+const pdfLogEntryComponents = importSuperPaperModules(
   'pdfLogEntryComponents'
 ) as {
   import: { default: ElementType }

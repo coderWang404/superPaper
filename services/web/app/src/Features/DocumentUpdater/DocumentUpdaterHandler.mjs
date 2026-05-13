@@ -1,14 +1,14 @@
-import OError from '@overleaf/o-error'
-import settings from '@overleaf/settings'
+import OError from '@superpaper/o-error'
+import settings from '@superpaper/settings'
 import {
   fetchJson,
   fetchNothing,
   fetchString,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import _ from 'lodash'
-import logger from '@overleaf/logger'
-import { callbackifyAll } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import { callbackifyAll } from '@superpaper/promise-utils'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
 
@@ -365,11 +365,11 @@ async function updateProjectStructure(
 
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { overleaf: true }
+    { superpaper: true }
   )
   const historyRangesSupport = _.get(
     project,
-    'overleaf.history.rangesSupportEnabled',
+    'superpaper.history.rangesSupportEnabled',
     false
   )
   const {

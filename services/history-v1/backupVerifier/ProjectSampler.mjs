@@ -31,7 +31,7 @@ export async function* getProjectsUpdatedInDateRangeCursor(start, end, N) {
   yield* getSampleProjectsCursor(N, [
     {
       $match: {
-        'overleaf.history.updatedAt': {
+        'superpaper.history.updatedAt': {
           $gt: start,
           $lte: end,
         },
@@ -58,19 +58,19 @@ export async function* getSampleProjectsCursor(
   const cursor = projectsCollection.aggregate([
     ...preSampleAggregationStages,
     { $sample: { size: N } },
-    { $project: { 'overleaf.history.id': 1 } },
+    { $project: { 'superpaper.history.id': 1 } },
   ])
 
   let validProjects = 0
   let hasInvalidProject = false
 
   for await (const project of cursor) {
-    if (HAS_PROJECTS_WITHOUT_HISTORY && !project.overleaf?.history?.id) {
+    if (HAS_PROJECTS_WITHOUT_HISTORY && !project.superpaper?.history?.id) {
       hasInvalidProject = true
       continue
     }
     validProjects++
-    yield project.overleaf.history.id.toString()
+    yield project.superpaper.history.id.toString()
   }
 
   if (validProjects === 0 && hasInvalidProject) {

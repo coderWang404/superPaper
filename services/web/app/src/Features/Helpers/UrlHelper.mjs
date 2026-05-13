@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { URL } from 'node:url'
 
 const PROTO = new URL(Settings.siteUrl).protocol

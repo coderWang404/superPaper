@@ -1,10 +1,10 @@
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import fs from 'node:fs/promises'
 import Path from 'node:path'
 import CommandRunner from './CommandRunner.js'
 import LockManager from './LockManager.js'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 async function convertDocxToLaTeXWithLock(conversionId, inputPath) {
   const conversionDir = Path.join(Settings.path.compilesDir, conversionId)

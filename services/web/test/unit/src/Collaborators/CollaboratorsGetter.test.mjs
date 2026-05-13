@@ -70,7 +70,7 @@ describe('CollaboratorsGetter', function () {
       buildUserModelView: sinon.stub(),
     }
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: { inc: sinon.stub() },
     }))
 

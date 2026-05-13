@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import { Line } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { SyntaxNodeRef } from '@lezer/common'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { noSpellCheckProp } from '@/features/source-editor/utils/node-props'
 
 /* A convenient wrapper around 'Normal' tokens */

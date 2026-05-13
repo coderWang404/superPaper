@@ -21,7 +21,7 @@ const {
   AddFileOperation,
   EditFileOperation,
   TextOperation,
-} = require('overleaf-editor-core')
+} = require('superpaper-editor-core')
 const { chunkStore, historyStore, BlobStore } = require('../../../../storage')
 const redisBackend = require('../../../../storage/lib/chunk_store/redis')
 
@@ -53,7 +53,7 @@ describe('chunkStore', function () {
         projectId = await scenario.createProject()
         // create a record in the mongo projects collection
         projectRecord = await projects.insertOne({
-          overleaf: { history: { id: scenario.idMapping(projectId) } },
+          superpaper: { history: { id: scenario.idMapping(projectId) } },
         })
         blobStore = new BlobStore(projectId)
       })
@@ -101,11 +101,11 @@ describe('chunkStore', function () {
           const project = await projects.findOne({
             _id: new ObjectId(projectRecord.insertedId),
           })
-          expect(project.overleaf.history.currentEndVersion).to.equal(2)
-          expect(project.overleaf.history.currentEndTimestamp).to.deep.equal(
+          expect(project.superpaper.history.currentEndVersion).to.equal(2)
+          expect(project.superpaper.history.currentEndTimestamp).to.deep.equal(
             lastChangeTimestamp
           )
-          expect(project.overleaf.backup.pendingChangeAt).to.deep.equal(
+          expect(project.superpaper.backup.pendingChangeAt).to.deep.equal(
             pendingChangeTimestamp
           )
         })
@@ -185,11 +185,11 @@ describe('chunkStore', function () {
           const project = await projects.findOne({
             _id: new ObjectId(projectRecord.insertedId),
           })
-          expect(project.overleaf.history.currentEndVersion).to.equal(2)
-          expect(project.overleaf.history.currentEndTimestamp).to.deep.equal(
+          expect(project.superpaper.history.currentEndVersion).to.equal(2)
+          expect(project.superpaper.history.currentEndTimestamp).to.deep.equal(
             lastChangeTimestamp
           )
-          expect(project.overleaf.backup.pendingChangeAt).to.deep.equal(
+          expect(project.superpaper.backup.pendingChangeAt).to.deep.equal(
             pendingChangeTimestamp
           )
         })
@@ -321,8 +321,8 @@ describe('chunkStore', function () {
           const project = await projects.findOne({
             _id: new ObjectId(projectRecord.insertedId),
           })
-          expect(project.overleaf.history.currentEndVersion).to.equal(6)
-          expect(project.overleaf.history.currentEndTimestamp).to.deep.equal(
+          expect(project.superpaper.history.currentEndVersion).to.equal(6)
+          expect(project.superpaper.history.currentEndTimestamp).to.deep.equal(
             thirdChunkTimestamp
           )
         })
@@ -331,7 +331,7 @@ describe('chunkStore', function () {
           const project = await projects.findOne({
             _id: new ObjectId(projectRecord.insertedId),
           })
-          expect(project.overleaf.backup.pendingChangeAt).to.deep.equal(
+          expect(project.superpaper.backup.pendingChangeAt).to.deep.equal(
             pendingChangeTimestamp
           )
         })
@@ -453,8 +453,8 @@ describe('chunkStore', function () {
             const project = await projects.findOne({
               _id: new ObjectId(projectRecord.insertedId),
             })
-            expect(project.overleaf.history.currentEndVersion).to.equal(7)
-            expect(project.overleaf.history.currentEndTimestamp).to.deep.equal(
+            expect(project.superpaper.history.currentEndVersion).to.equal(7)
+            expect(project.superpaper.history.currentEndTimestamp).to.deep.equal(
               thirdChunkTimestamp
             )
           })
@@ -463,7 +463,7 @@ describe('chunkStore', function () {
             const project = await projects.findOne({
               _id: new ObjectId(projectRecord.insertedId),
             })
-            expect(project.overleaf.backup.pendingChangeAt).to.deep.equal(
+            expect(project.superpaper.backup.pendingChangeAt).to.deep.equal(
               pendingChangeTimestamp
             )
           })

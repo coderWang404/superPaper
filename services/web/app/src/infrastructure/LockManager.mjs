@@ -1,6 +1,6 @@
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import RedisWrapper from './RedisWrapper.mjs'
-import RedisWebLocker from '@overleaf/redis-wrapper/RedisWebLocker.js'
+import RedisWebLocker from '@superpaper/redis-wrapper/RedisWebLocker.js'
 const rclient = RedisWrapper.client('lock')
 
 // this method creates a lock manager with the provided timeout options

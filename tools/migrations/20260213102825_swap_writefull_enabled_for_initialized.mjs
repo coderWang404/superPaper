@@ -2,7 +2,7 @@
 
 import Helpers from './lib/helpers.mjs'
 
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 const tags = ['saas']
 
 const migrate = async client => {

@@ -8,11 +8,11 @@ require('@babel/register')({
 // Set pretendToBeVisual to enable requestAnimationFrame
 require('jsdom-global')(undefined, {
   pretendToBeVisual: true,
-  url: 'https://www.test-overleaf.com/',
+  url: 'https://www.test-superpaper.com/',
 })
 
 const path = require('path')
-process.env.OVERLEAF_CONFIG = path.resolve(
+process.env.SUPERPAPER_CONFIG = path.resolve(
   __dirname,
   '../../config/settings.webpack.js'
 )

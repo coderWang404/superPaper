@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import fs from 'node:fs'
 
 // Monitor a status file (e.g. /etc/real_time_status) periodically and close the

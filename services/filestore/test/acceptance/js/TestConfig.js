@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import Path from 'node:path'
 import crypto from 'node:crypto'
-import { RootKeyEncryptionKey } from '@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor.js'
+import { RootKeyEncryptionKey } from '@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor.js'
 
 const AWS_S3_USER_FILES_STORAGE_CLASS =
   process.env.AWS_S3_USER_FILES_STORAGE_CLASS

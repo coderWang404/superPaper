@@ -61,7 +61,6 @@ export const CommandRegistryProvider: React.FC<React.PropsWithChildren> = ({
       copy: [{ key: 'Mod-c' }],
       paste: [{ key: 'Mod-v' }],
       'paste-special': [{ key: 'Mod-Shift-V' }],
-      'toggle-track-changes': [{ key: 'Mod-Shift-A' }],
       undo: [
         {
           key: 'Mod-z',

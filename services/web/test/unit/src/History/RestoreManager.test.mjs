@@ -63,7 +63,7 @@ describe('RestoreManager', function () {
                   hash: 'abcdef1234567890abcdef1234567890abcdef12',
                   stringLength: 100,
                   metadata: {
-                    provider: 'mendeley',
+                    provider: 'external-reference',
                   },
                 },
                 'withMainTrue.tex': {
@@ -93,7 +93,7 @@ describe('RestoreManager', function () {
       },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         fileIgnorePattern:
           '**/{{__MACOSX,.git,.texpadtmp,.R}{,/**},.!(latexmkrc),*.{dvi,aux,log,toc,out,pdfsync,synctex,synctex(busy),fdb_latexmk,fls,nlo,ind,glo,gls,glg,bbl,blg,doc,docx,gz,swp}}',
@@ -213,7 +213,7 @@ describe('RestoreManager', function () {
       })
     )
 
-    vi.doMock('overleaf-editor-core', () => ({
+    vi.doMock('superpaper-editor-core', () => ({
       Snapshot: {
         fromRaw: sinon.stub().callsFake(snapshotData => ({
           getFile: pathname => ({
@@ -465,7 +465,7 @@ describe('RestoreManager', function () {
     beforeEach(function (ctx) {
       ctx.ProjectGetter.promises.getProject = sinon.stub()
       ctx.ProjectGetter.promises.getProject.withArgs(ctx.project_id).resolves({
-        overleaf: { history: { rangesSupportEnabled: true } },
+        superpaper: { history: { rangesSupportEnabled: true } },
         rootDoc_id: 'root-doc-id',
       })
       ctx.RestoreManager.promises._findOrCreateFolder = sinon
@@ -479,7 +479,7 @@ describe('RestoreManager', function () {
     describe('reverting a project without ranges support', function () {
       beforeEach(function (ctx) {
         ctx.ProjectGetter.promises.getProject = sinon.stub().resolves({
-          overleaf: { history: { rangesSupportEnabled: false } },
+          superpaper: { history: { rangesSupportEnabled: false } },
         })
       })
 
@@ -627,7 +627,7 @@ describe('RestoreManager', function () {
           ctx.ProjectGetter.promises.getProject
             .withArgs(ctx.project_id)
             .resolves({
-              overleaf: { history: { rangesSupportEnabled: true } },
+              superpaper: { history: { rangesSupportEnabled: true } },
               rootDoc_id: 'root-doc-id',
             })
           ctx.ProjectLocator.promises.findElementByPath = sinon
@@ -667,7 +667,7 @@ describe('RestoreManager', function () {
           ctx.ProjectGetter.promises.getProject
             .withArgs(ctx.project_id)
             .resolves({
-              overleaf: { history: { rangesSupportEnabled: true } },
+              superpaper: { history: { rangesSupportEnabled: true } },
               rootDoc_id: 'root-doc-id',
             })
           ctx.ProjectLocator.promises.findElementByPath = sinon
@@ -738,7 +738,7 @@ describe('RestoreManager', function () {
           ctx.ProjectGetter.promises.getProject
             .withArgs(ctx.project_id)
             .resolves({
-              overleaf: { history: { rangesSupportEnabled: true } },
+              superpaper: { history: { rangesSupportEnabled: true } },
               rootDoc_id: 'root-doc-id',
             })
           ctx.ProjectLocator.promises.findElementByPath = sinon
@@ -840,7 +840,7 @@ describe('RestoreManager', function () {
           ctx.ProjectGetter.promises.getProject
             .withArgs(ctx.project_id)
             .resolves({
-              overleaf: { history: { rangesSupportEnabled: true } },
+              superpaper: { history: { rangesSupportEnabled: true } },
               rootDoc_id: 'root-doc-id',
             })
           ctx.ProjectLocator.promises.findElementByPath = sinon
@@ -915,7 +915,7 @@ describe('RestoreManager', function () {
           ctx.ProjectGetter.promises.getProject
             .withArgs(ctx.project_id)
             .resolves({
-              overleaf: { history: { rangesSupportEnabled: true } },
+              superpaper: { history: { rangesSupportEnabled: true } },
               rootDoc_id: 'root-doc-id',
             })
           ctx.ProjectLocator.promises.findElementByPath = sinon
@@ -1081,7 +1081,7 @@ describe('RestoreManager', function () {
             'mock-folder-id',
             'linkedFile.bib',
             ctx.fsPath,
-            { provider: 'mendeley' },
+            { provider: 'external-reference' },
             {
               kind: 'file-restore',
               path: ctx.pathname,
@@ -1182,7 +1182,7 @@ describe('RestoreManager', function () {
       ctx.ProjectGetter.promises.getProject = sinon.stub()
       ctx.ProjectGetter.promises.getProject
         .withArgs(ctx.project_id)
-        .resolves({ overleaf: { history: { rangesSupportEnabled: true } } })
+        .resolves({ superpaper: { history: { rangesSupportEnabled: true } } })
       ctx.RestoreManager.promises._revertSingleFile = sinon.stub().resolves({
         _id: 'mock-doc-id',
         type: 'doc',
@@ -1206,7 +1206,7 @@ describe('RestoreManager', function () {
     describe('reverting a project without ranges support', function () {
       beforeEach(function (ctx) {
         ctx.ProjectGetter.promises.getProject = sinon.stub().resolves({
-          overleaf: { history: { rangesSupportEnabled: false } },
+          superpaper: { history: { rangesSupportEnabled: false } },
         })
       })
 

@@ -1,7 +1,7 @@
 import { db, ObjectId } from '../../../app/src/infrastructure/mongodb.mjs'
 import { promisify } from 'node:util'
 import { exec } from 'node:child_process'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { expect } from 'chai'
 
 describe('RemoveDeletedUsersFromTokenAccessRefsTests', function () {
@@ -50,7 +50,7 @@ describe('RemoveDeletedUsersFromTokenAccessRefsTests', function () {
     let result
     try {
       result = await promisify(exec)(
-        'cd ../../tools/migrations && yarn run migrations migrate -t saas --force 20240220130452_remove_deleted_users_from_token_access_refs'
+        'cd ../../tools/migrations && yarn run migrations migrate -t server-ce --force 20240220130452_remove_deleted_users_from_token_access_refs'
       )
     } catch (error) {
       // dump details like exit code, stdErr and stdOut

@@ -50,11 +50,11 @@ describe('FileController', () => {
 
     vi.doMock('stream', () => stream)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: settings,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         inc() {},
       },

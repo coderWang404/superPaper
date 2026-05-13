@@ -5,7 +5,7 @@ const modulePath = '../../../../app/src/infrastructure/Views.mjs'
 
 describe('Views', function () {
   beforeEach(async function (ctx) {
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         viewIncludes: {
           someInclude: 'path/to/_include.pug',

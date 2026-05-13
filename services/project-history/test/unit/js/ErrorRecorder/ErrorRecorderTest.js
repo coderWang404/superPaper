@@ -20,7 +20,7 @@ describe('ErrorRecorder', function () {
     this.metrics = { gauge: sinon.stub() }
     this.ErrorRecorder = await esmock(MODULE_PATH, {
       '../../../../app/js/mongodb.js': this.mongodb,
-      '@overleaf/metrics': this.metrics,
+      '@superpaper/metrics': this.metrics,
     })
 
     this.project_id = 'project-id-123'

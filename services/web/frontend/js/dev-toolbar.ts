@@ -1,5 +1,5 @@
-import importOverleafModules from '../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../macros/import-superpaper-module.macro'
 
 if (process.env.NODE_ENV === 'development') {
-  importOverleafModules('devToolbar')
+  importSuperPaperModules('devToolbar')
 }

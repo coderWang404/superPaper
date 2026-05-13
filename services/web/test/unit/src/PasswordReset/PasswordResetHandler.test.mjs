@@ -7,7 +7,7 @@ const modulePath = new URL(
 
 describe('PasswordResetHandler', function () {
   beforeEach(async function (ctx) {
-    ctx.settings = { siteUrl: 'https://www.overleaf.com' }
+    ctx.settings = { siteUrl: 'https://www.superpaper.com' }
     ctx.OneTimeTokenHandler = {
       promises: {
         getNewToken: sinon.stub(),
@@ -62,7 +62,7 @@ describe('PasswordResetHandler', function () {
       })
     )
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -84,11 +84,11 @@ describe('PasswordResetHandler', function () {
     ctx.password = 'my great secret password'
     ctx.callback = sinon.stub()
     // this should not have any effect now
-    ctx.settings.overleaf = true
+    ctx.settings.superpaper = true
   })
 
   afterEach(function (ctx) {
-    ctx.settings.overleaf = false
+    ctx.settings.superpaper = false
   })
 
   describe('generateAndEmailResetToken', function () {
@@ -475,10 +475,10 @@ describe('PasswordResetHandler', function () {
 
     describe('when the token has a v1_user_id and email', function () {
       beforeEach(function (ctx) {
-        ctx.user.overleaf = { id: 184 }
+        ctx.user.superpaper = { id: 184 }
         ctx.OneTimeTokenHandler.promises.peekValueFromToken.resolves({
           data: {
-            v1_user_id: ctx.user.overleaf.id,
+            v1_user_id: ctx.user.superpaper.id,
             email: ctx.email,
           },
         })
@@ -520,7 +520,7 @@ describe('PasswordResetHandler', function () {
           ctx.UserGetter.getUserByMainEmail.withArgs(ctx.email).yields(null, {
             _id: ctx.user._id,
             email: ctx.email,
-            overleaf: { id: 'not-the-same' },
+            superpaper: { id: 'not-the-same' },
           })
         })
 

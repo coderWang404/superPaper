@@ -14,11 +14,11 @@ export const fileTreeItemDrop = () =>
     drop(event, view) {
       if (event.dataTransfer) {
         const fileId = event.dataTransfer.getData(
-          'application/x-overleaf-file-id'
+          'application/x-superpaper-file-id'
         )
 
         const filePath = event.dataTransfer.getData(
-          'application/x-overleaf-file-path'
+          'application/x-superpaper-file-path'
         )
 
         if (fileId && filePath) {

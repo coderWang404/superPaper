@@ -1,5 +1,5 @@
-import Settings from '@overleaf/settings'
-import metrics from '@overleaf/metrics'
+import Settings from '@superpaper/settings'
+import metrics from '@superpaper/metrics'
 
 /**
  * Middleware function to record session cookie metrics.  This allows us to

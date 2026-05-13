@@ -10,8 +10,8 @@
  * DS102: Remove unnecessary code created because of implicit returns
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
 import os from 'node:os'
 import crypto from 'node:crypto'

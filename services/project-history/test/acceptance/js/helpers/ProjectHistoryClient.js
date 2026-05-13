@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import Settings from '@overleaf/settings'
-import RedisWrapper from '@overleaf/redis-wrapper'
+import Settings from '@superpaper/settings'
+import RedisWrapper from '@superpaper/redis-wrapper'
 import { db, ObjectId } from '../../../../app/js/mongodb.js'
 import {
   fetchJson,
@@ -8,7 +8,7 @@ import {
   fetchNothing,
   fetchStringWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 
 const rclient = RedisWrapper.createClient(Settings.redis.project_history)
 const Keys = Settings.redis.project_history.key_schema

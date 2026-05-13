@@ -615,50 +615,6 @@ ul.project-list-filters {
   }
 }
 
-.survey-notification {
-  display: flex;
-  flex-wrap: wrap;
-  padding: var(--spacing-06);
-  background-color: var(--bg-dark-tertiary);
-  border-color: transparent;
-  color: var(--neutral-20);
-  box-shadow: 2px 4px 6px rgb(0 0 0 / 25%);
-  border-radius: var(--border-radius-base);
-
-  @include media-breakpoint-up(md) {
-    flex-wrap: nowrap;
-  }
-
-  button.close {
-    @extend .text-white;
-
-    padding: 0;
-  }
-}
-
-.project-list-sidebar-survey-wrapper {
-  .survey-notification {
-    font-size: var(--font-size-02);
-
-    a {
-      text-decoration: none;
-    }
-  }
-
-  @include media-breakpoint-down(md) {
-    .survey-notification {
-      font-size: unset;
-
-      .project-list-sidebar-survey-link {
-        display: block;
-        align-items: center;
-        min-width: 48px;
-        min-height: 48px;
-        padding-top: var(--spacing-07);
-      }
-    }
-  }
-}
 
 .project-list-load-more-button {
   margin-bottom: var(--spacing-05);

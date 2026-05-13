@@ -73,7 +73,7 @@ describe('DocumentManager', function () {
         './HistoryOTUpdateManager': this.HistoryOTUpdateManager,
         './RangesManager': this.RangesManager,
         './Errors': Errors,
-        '@overleaf/settings': this.Settings,
+        '@superpaper/settings': this.Settings,
       },
     })
     this.project_id = 'project-id-123'

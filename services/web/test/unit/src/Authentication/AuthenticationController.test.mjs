@@ -10,7 +10,7 @@ const modulePath =
 
 const { ObjectId } = mongodb
 
-// We use vi.hoisted + vi.mock for @overleaf/metrics here because it is statically imported
+// We use vi.hoisted + vi.mock for @superpaper/metrics here because it is statically imported
 // by AuthenticationErrors.mjs at the top of this file. If we instead used vi.doMock inside
 // the beforeEach block, AuthenticationErrors.mjs would bind to the real unmocked metrics
 // module before the test setup even begins, causing errors when AuthenticationErrors calls it.
@@ -18,14 +18,14 @@ const hoistedMocks = vi.hoisted(() => ({
   metricsInc: vi.fn(),
 }))
 
-vi.mock('@overleaf/metrics', () => ({
+vi.mock('@superpaper/metrics', () => ({
   default: {
     inc: (...args) => hoistedMocks.metricsInc(...args),
   },
 }))
 
 vi.mock(
-  '../../../../app/src/Features/Analytics/AnalyticsRegistrationSourceHelper.mjs',
+  '../../../../app/src/Features/Telemetry/LoginSourceHelper.mjs',
   () => ({
     default: {
       clearInbound: vi.fn(),
@@ -130,7 +130,7 @@ describe('AuthenticationController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: (ctx.AnalyticsManager = {
           recordEventForUserInBackground: sinon.stub(),
@@ -140,7 +140,7 @@ describe('AuthenticationController', function () {
       })
     )
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {
         siteUrl: 'http://www.foo.bar',
         httpAuthUsers: ctx.httpAuthUsers,
@@ -168,15 +168,6 @@ describe('AuthenticationController', function () {
         promises: { hooks: { fire: sinon.stub().resolves([]) } },
       }),
     }))
-
-    vi.doMock(
-      '../../../../app/src/Features/Notifications/NotificationsBuilder',
-      () => ({
-        default: (ctx.NotificationsBuilder = {
-          ipMatcherAffiliation: sinon.stub().returns({ create: sinon.stub() }),
-        }),
-      })
-    )
 
     vi.doMock('../../../../app/src/models/User', () => ({
       default: { User: ctx.UserModel },
@@ -632,7 +623,7 @@ describe('AuthenticationController', function () {
     beforeEach(function (ctx) {
       ctx.user = {
         _id: 'user-id-123',
-        email: 'user@overleaf.com',
+        email: 'user@superpaper.com',
       }
       ctx.middleware = ctx.AuthenticationController.requireLogin()
     })
@@ -642,7 +633,7 @@ describe('AuthenticationController', function () {
         ctx.req.session = {
           user: (ctx.user = {
             _id: 'user-id-123',
-            email: 'user@overleaf.com',
+            email: 'user@superpaper.com',
           }),
         }
         ctx.middleware(ctx.req, ctx.res, ctx.next)

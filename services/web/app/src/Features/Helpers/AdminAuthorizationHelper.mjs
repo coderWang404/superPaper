@@ -1,8 +1,8 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Modules from '../../infrastructure/Modules.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import SessionManager from '../Authentication/SessionManager.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 export default {
   hasAdminAccess,

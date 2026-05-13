@@ -173,7 +173,7 @@ describe('DocArchiveManager', () => {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: Settings,
     }))
 
@@ -181,7 +181,7 @@ describe('DocArchiveManager', () => {
       default: Crypto,
     }))
 
-    vi.doMock('@overleaf/stream-utils', () => StreamUtils)
+    vi.doMock('@superpaper/stream-utils', () => StreamUtils)
 
     vi.doMock('../../../app/js/MongoManager', () => ({
       default: MongoManager,

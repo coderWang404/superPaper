@@ -27,7 +27,7 @@ export const AiConsentPromptMessageBody = ({
     <div className={className}>
       <ul className={listClassName}>
         <li>
-          AI features in Overleaf, like this one, can help you with writing your
+          AI features in superPaper, like this one, can help you with writing your
           document and fixing errors.
         </li>
         <li>
@@ -37,7 +37,7 @@ export const AiConsentPromptMessageBody = ({
           used for model training. There are more details about how we use your
           data in{' '}
           <a
-            href="https://docs.overleaf.com/integrations-and-add-ons/ai-features#data-privacy-and-responsible-use"
+            href="/learn/how-to/ai-features#data-privacy-and-responsible-use"
             target="_blank"
             rel="noreferrer"
           >
@@ -46,7 +46,7 @@ export const AiConsentPromptMessageBody = ({
           .
         </li>
         <li>
-          Like any AI, AI features in Overleaf can make mistakes, so please
+          Like any AI, AI features in superPaper can make mistakes, so please
           review all suggestions carefully before accepting them.
         </li>
       </ul>

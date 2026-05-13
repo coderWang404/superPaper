@@ -36,10 +36,10 @@ describe('ClsiCookieManager', function () {
         client: () => ctx.redis,
       }),
     }))
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
-    vi.doMock('@overleaf/fetch-utils', () => ctx.fetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.fetchUtils)
 
     ctx.ClsiCookieManager = (await import(modulePath)).default()
   })

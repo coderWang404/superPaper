@@ -1,8 +1,8 @@
 // @ts-check
 
-const metrics = require('@overleaf/metrics')
-const OError = require('@overleaf/o-error')
-const { Change, Snapshot } = require('overleaf-editor-core')
+const metrics = require('@superpaper/metrics')
+const OError = require('@superpaper/o-error')
+const { Change, Snapshot } = require('superpaper-editor-core')
 const redis = require('../redis')
 const rclient = redis.rclientHistory
 const {

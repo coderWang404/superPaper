@@ -19,13 +19,13 @@ describe('UrlCache', () => {
       }),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {
         path: { clsiCacheDir: '/cache/dir' },
       }),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         Timer: sinon.stub().returns({ done: sinon.stub() }),
       },

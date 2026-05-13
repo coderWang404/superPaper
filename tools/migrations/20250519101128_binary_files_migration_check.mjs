@@ -21,7 +21,7 @@ const migrate = async () => {
       )
       console.warn()
       console.warn(
-        '  Docs: https://docs.overleaf.com/on-premises/release-notes/release-notes-5.x.x/binary-files-migration'
+        '  Docs: https://docs.superpaper.com/on-premises/release-notes/release-notes-5.x.x/binary-files-migration'
       )
       console.warn()
       console.warn('-'.repeat(79))

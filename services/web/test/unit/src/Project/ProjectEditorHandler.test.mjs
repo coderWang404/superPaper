@@ -47,8 +47,8 @@ describe('ProjectEditorHandler', function () {
       user: (ctx.owner = {
         _id: 'owner-id',
         first_name: 'Owner',
-        last_name: 'Overleaf',
-        email: 'owner@overleaf.com',
+        last_name: 'superPaper',
+        email: 'owner@superpaper.com',
         features: {
           compileTimeout: 240,
         },
@@ -61,7 +61,7 @@ describe('ProjectEditorHandler', function () {
           _id: 'read-only-id',
           first_name: 'Read',
           last_name: 'Only',
-          email: 'read-only@overleaf.com',
+          email: 'read-only@superpaper.com',
         },
         privilegeLevel: 'readOnly',
       },
@@ -70,7 +70,7 @@ describe('ProjectEditorHandler', function () {
           _id: 'read-write-id',
           first_name: 'Read',
           last_name: 'Write',
-          email: 'read-write@overleaf.com',
+          email: 'read-write@superpaper.com',
         },
         privilegeLevel: 'readAndWrite',
       },
@@ -129,9 +129,9 @@ describe('ProjectEditorHandler', function () {
       it('should include the owner', function (ctx) {
         expect(ctx.result.owner).to.exist
         ctx.result.owner._id.should.equal('owner-id')
-        ctx.result.owner.email.should.equal('owner@overleaf.com')
+        ctx.result.owner.email.should.equal('owner@superpaper.com')
         ctx.result.owner.first_name.should.equal('Owner')
-        ctx.result.owner.last_name.should.equal('Overleaf')
+        ctx.result.owner.last_name.should.equal('superPaper')
         ctx.result.owner.privileges.should.equal('owner')
       })
 
@@ -151,14 +151,14 @@ describe('ProjectEditorHandler', function () {
         findMember('read-only-id').privileges.should.equal('readOnly')
         findMember('read-only-id').first_name.should.equal('Read')
         findMember('read-only-id').last_name.should.equal('Only')
-        findMember('read-only-id').email.should.equal('read-only@overleaf.com')
+        findMember('read-only-id').email.should.equal('read-only@superpaper.com')
 
         expect(findMember('read-write-id')).to.exist
         findMember('read-write-id').privileges.should.equal('readAndWrite')
         findMember('read-write-id').first_name.should.equal('Read')
         findMember('read-write-id').last_name.should.equal('Write')
         findMember('read-write-id').email.should.equal(
-          'read-write@overleaf.com'
+          'read-write@superpaper.com'
         )
       })
 
@@ -370,60 +370,5 @@ describe('ProjectEditorHandler', function () {
       })
     })
 
-    describe('trackChangesState', function () {
-      describe('when the owner does not have the trackChanges feature', function () {
-        beforeEach(function (ctx) {
-          ctx.owner.features = {
-            trackChanges: false,
-          }
-          ctx.result = ctx.handler.buildProjectModelView(
-            ctx.project,
-            ctx.ownerMember,
-            ctx.members,
-            [],
-            false
-          )
-        })
-        it('should not emit trackChangesState', function (ctx) {
-          expect(ctx.result.trackChangesState).to.not.exist
-        })
-      })
-
-      describe('when the owner has got the trackChanges feature', function () {
-        beforeEach(function (ctx) {
-          ctx.owner.features = {
-            trackChanges: true,
-          }
-        })
-
-        function genCase([dbEntry, expected]) {
-          describe(`when track_changes is ${JSON.stringify(
-            dbEntry
-          )}`, function () {
-            beforeEach(function (ctx) {
-              ctx.project.track_changes = dbEntry
-              ctx.result = ctx.handler.buildProjectModelView(
-                ctx.project,
-                ctx.ownerMember,
-                ctx.members,
-                [],
-                false
-              )
-            })
-            it(`should set trackChangesState=${expected}`, function (ctx) {
-              expect(ctx.result.trackChangesState).to.deep.equal(expected)
-            })
-          })
-        }
-
-        const CASES = [
-          [null, false],
-          [false, false],
-          [true, true],
-          [{ someId: true }, { someId: true }],
-        ]
-        CASES.map(genCase)
-      })
-    })
   })
 })

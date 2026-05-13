@@ -15,8 +15,8 @@
 import fs from 'node:fs'
 import Path from 'node:path'
 import { spawn } from 'node:child_process'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
 import _ from 'lodash'
 let OutputFileOptimiser
 

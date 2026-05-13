@@ -1,5 +1,5 @@
-import { fetchNothing } from '@overleaf/fetch-utils'
-import Settings from '@overleaf/settings'
+import { fetchNothing } from '@superpaper/fetch-utils'
+import Settings from '@superpaper/settings'
 
 async function deleteProject(projectId) {
   if (!Settings.apis.historyBackupDeletion.enabled) return

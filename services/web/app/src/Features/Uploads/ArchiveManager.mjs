@@ -1,13 +1,13 @@
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
+import metrics from '@superpaper/metrics'
 import fs from 'node:fs'
 import fsPromises from 'node:fs/promises'
 import Path from 'node:path'
 import { pipeline } from 'node:stream'
 import { callbackify } from 'node:util'
 import yauzl from 'yauzl'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import {
   InvalidZipFileError,
   EmptyZipFileError,

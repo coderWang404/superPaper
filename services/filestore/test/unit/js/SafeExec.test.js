@@ -10,7 +10,7 @@ describe('SafeExec', function () {
     settings = { enableConversions: true }
     options = { timeout: 10 * 1000, killSignal: 'SIGTERM' }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: settings,
     }))
 

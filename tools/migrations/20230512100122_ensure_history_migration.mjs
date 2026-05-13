@@ -11,7 +11,7 @@ const migrate = async client => {
 
   // Does not use an index.
   const count = await db.projects.countDocuments({
-    'overleaf.history.display': { $ne: true },
+    'superpaper.history.display': { $ne: true },
   })
   if (count > 0) {
     console.error(`
@@ -25,7 +25,7 @@ const migrate = async client => {
   Release 3.5 includes a migration process. Please go back to version
    3.5 and run through the migration process:
 
-    Overleaf Toolkit setups:
+    superPaper Toolkit setups:
 
       toolkit$ echo "3.5.13" > config/version
       toolkit$ bin/up
@@ -38,7 +38,7 @@ const migrate = async client => {
       Then use "docker compose up" to apply the changes.
 
   Documentation for the migration process:
-    https://github.com/overleaf/overleaf/wiki/Full-Project-History-Migration
+    https://github.com/superpaper/superpaper/wiki/Full-Project-History-Migration
 
 
   Refusing to start up, exiting in 10s.

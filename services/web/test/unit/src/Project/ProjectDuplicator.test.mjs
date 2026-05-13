@@ -49,7 +49,7 @@ describe('ProjectDuplicator', function () {
       rootDoc_id: ctx.doc0._id,
       rootFolder: [ctx.rootFolder],
       compiler: 'this_is_a_Compiler',
-      overleaf: { history: { id: 123456 } },
+      superpaper: { history: { id: 123456 } },
     }
     ctx.doc0Path = '/rootDocHere'
     ctx.doc1Path = '/level1folder/level1folderDocName'
@@ -69,7 +69,7 @@ describe('ProjectDuplicator', function () {
     ctx.owner = { _id: 'this_is_the_owner' }
     ctx.newBlankProject = {
       _id: 'new_project_id',
-      overleaf: { history: { id: 339123 } },
+      superpaper: { history: { id: 339123 } },
       readOnly_refs: [],
       collaberator_refs: [],
       rootFolder: [{ _id: 'new_root_folder_id' }],
@@ -338,8 +338,8 @@ describe('ProjectDuplicator', function () {
     it('should duplicate the files with hashes by copying the blobs in history v1', function (ctx) {
       for (const file of [ctx.file0, ctx.file1, ctx.file2]) {
         ctx.HistoryManager.promises.copyBlob.should.have.been.calledWith(
-          ctx.project.overleaf.history.id,
-          ctx.newProject.overleaf.history.id,
+          ctx.project.superpaper.history.id,
+          ctx.newProject.superpaper.history.id,
           file.hash
         )
       }
@@ -383,7 +383,7 @@ describe('ProjectDuplicator', function () {
     it('should notify document updater of changes', function (ctx) {
       ctx.DocumentUpdaterHandler.promises.updateProjectStructure.should.have.been.calledWith(
         ctx.newProject._id,
-        ctx.newProject.overleaf.history.id,
+        ctx.newProject.superpaper.history.id,
         ctx.owner._id,
         {
           newDocs: ctx.docEntries,

@@ -8,9 +8,9 @@
  * DS102: Remove unnecessary code created because of implicit returns
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 export default {
   saveTemplateDataInSession(req, res, next) {

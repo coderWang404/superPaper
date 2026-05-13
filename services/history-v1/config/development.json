@@ -14,20 +14,20 @@
     }
   },
   "blobStore": {
-    "globalBucket": "overleaf-development-blobs",
-    "projectBucket": "overleaf-development-project-blobs"
+    "globalBucket": "superpaper-development-blobs",
+    "projectBucket": "superpaper-development-project-blobs"
   },
   "chunkStore": {
-    "bucket": "overleaf-development-chunks"
+    "bucket": "superpaper-development-chunks"
   },
   "zipStore": {
-    "bucket": "overleaf-development-zips"
+    "bucket": "superpaper-development-zips"
   },
   "backupStore": {
-    "chunksBucket": "overleaf-development-history-chunks",
-    "deksBucket": "overleaf-development-history-deks",
-    "globalBlobsBucket": "overleaf-development-history-global-blobs",
-    "projectBlobsBucket": "overleaf-development-history-project-blobs"
+    "chunksBucket": "superpaper-development-history-chunks",
+    "deksBucket": "superpaper-development-history-deks",
+    "globalBlobsBucket": "superpaper-development-history-global-blobs",
+    "projectBlobsBucket": "superpaper-development-history-project-blobs"
   },
   "backupPersistor": {
     "keyEncryptionKeys": "[{\"key\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\"salt\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"}]",

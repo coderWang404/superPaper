@@ -1,5 +1,5 @@
 import { Tag } from '../../models/Tag.mjs'
-import { callbackify } from '@overleaf/promise-utils'
+import { callbackify } from '@superpaper/promise-utils'
 
 const MAX_TAG_LENGTH = 50
 

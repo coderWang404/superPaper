@@ -1,6 +1,6 @@
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
-import settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import UserGetter from '../User/UserGetter.mjs'
 
 const rclient = RedisWrapper.client('health_check')

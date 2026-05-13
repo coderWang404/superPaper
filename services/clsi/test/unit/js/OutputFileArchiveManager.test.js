@@ -59,7 +59,7 @@ describe('OutputFileArchiveManager', () => {
 
     vi.doMock('node:fs/promises', () => ctx.fs)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         path: {
           outputDir: ctx.outputDir,

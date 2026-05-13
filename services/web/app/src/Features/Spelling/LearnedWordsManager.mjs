@@ -1,6 +1,6 @@
 import mongodb from '../../infrastructure/mongodb.mjs'
 import { callbackify } from 'node:util'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Errors from '../Errors/Errors.js'
 
 const { db } = mongodb

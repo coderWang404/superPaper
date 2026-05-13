@@ -17,13 +17,11 @@ export default memo(function HotkeysModal({
   handleHide,
   show,
   isMac = false,
-  trackChangesVisible = false,
 }: {
   animation?: boolean
   handleHide: () => void
   show: boolean
   isMac?: boolean
-  trackChangesVisible?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -170,32 +168,6 @@ export default memo(function HotkeysModal({
           </OLCol>
         </OLRow>
 
-        {trackChangesVisible && (
-          <>
-            <h3>{t('review')}</h3>
-
-            <OLRow>
-              <OLCol xs={4}>
-                <Hotkey
-                  combination={`${ctrl} + J`}
-                  description={t('hotkey_toggle_review_panel')}
-                />
-              </OLCol>
-              <OLCol xs={4}>
-                <Hotkey
-                  combination={`${ctrl} + Shift + A`}
-                  description={t('hotkey_toggle_track_changes')}
-                />
-              </OLCol>
-              <OLCol xs={4}>
-                <Hotkey
-                  combination={`${ctrl} + Shift + C`}
-                  description={t('hotkey_add_a_comment')}
-                />
-              </OLCol>
-            </OLRow>
-          </>
-        )}
         <HotkeysModalBottomText />
       </OLModalBody>
 

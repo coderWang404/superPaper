@@ -1,7 +1,7 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import LoginRateLimiter from './LoginRateLimiter.mjs'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 
 /**
  * Return a rate limiting middleware

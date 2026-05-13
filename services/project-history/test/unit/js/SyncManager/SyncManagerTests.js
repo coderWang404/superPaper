@@ -2,7 +2,7 @@ import sinon from 'sinon'
 import { expect } from 'chai'
 import mongodb from 'mongodb-legacy'
 import tk from 'timekeeper'
-import { File, Comment, TrackedChange, Range } from 'overleaf-editor-core'
+import { File, Comment, TrackedChange, Range } from 'superpaper-editor-core'
 import { strict as esmock } from 'esmock'
 const { ObjectId } = mongodb
 
@@ -66,7 +66,7 @@ describe('SyncManager', function () {
     this.now = new Date()
     tk.freeze(this.now)
     this.projectId = new ObjectId().toString()
-    this.historyId = 'mock-overleaf-id'
+    this.historyId = 'mock-superpaper-id'
     this.syncState = { origin: { kind: 'history-resync' } }
     this.db = {
       projectHistorySyncState: {
@@ -155,8 +155,8 @@ describe('SyncManager', function () {
       '../../../../app/js/SnapshotManager.js': this.SnapshotManager,
       '../../../../app/js/HistoryStoreManager.js': this.HistoryStoreManager,
       '../../../../app/js/HashManager.js': this.HashManager,
-      '@overleaf/metrics': this.Metrics,
-      '@overleaf/settings': this.Settings,
+      '@superpaper/metrics': this.Metrics,
+      '@superpaper/settings': this.Settings,
     })
   })
 

@@ -1,8 +1,8 @@
 // @ts-check
 
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import commandLineArgs from 'command-line-args'
-import { Chunk, History, Snapshot } from 'overleaf-editor-core'
+import { Chunk, History, Snapshot } from 'superpaper-editor-core'
 import {
   getProjectChunks,
   getLatestChunkMetadata,
@@ -40,7 +40,7 @@ import { backupGenerator } from '../lib/backupGenerator.mjs'
 import { promises as fs, createWriteStream } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import Crypto from 'node:crypto'
 import Stream from 'node:stream'
 import { EventEmitter } from 'node:events'
@@ -48,11 +48,11 @@ import {
   objectIdFromInput,
   batchedUpdate,
   READ_PREFERENCE_SECONDARY,
-} from '@overleaf/mongo-utils/batchedUpdate.js'
+} from '@superpaper/mongo-utils/batchedUpdate.js'
 import { createGunzip } from 'node:zlib'
 import { text } from 'node:stream/consumers'
 import { fromStream as blobHashFromStream } from '../lib/blob_hash.js'
-import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
+import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
 
 // Create a singleton promise that loads global blobs once
 let globalBlobsPromise = null
@@ -581,9 +581,9 @@ async function displayPendingBackups(options) {
       'Project:',
       project._id.toHexString(),
       'backup status:',
-      JSON.stringify(project.overleaf.backup),
+      JSON.stringify(project.superpaper.backup),
       'history status:',
-      JSON.stringify(project.overleaf.history, [
+      JSON.stringify(project.superpaper.history, [
         'currentEndVersion',
         'currentEndTimestamp',
       ])
@@ -755,19 +755,19 @@ function convertToISODate(dateStr) {
 export async function fixProjectsWithoutChunks(options) {
   const limit = options.fix || 1
   const query = {
-    'overleaf.history.id': { $exists: true },
-    'overleaf.backup.lastBackedUpVersion': { $in: [null] },
+    'superpaper.history.id': { $exists: true },
+    'superpaper.backup.lastBackedUpVersion': { $in: [null] },
   }
   const cursor = client
     .db()
     .collection('projects')
     .find(query, {
-      projection: { _id: 1, 'overleaf.history.id': 1 },
+      projection: { _id: 1, 'superpaper.history.id': 1 },
       readPreference: READ_PREFERENCE_SECONDARY,
     })
     .limit(limit)
   for await (const project of cursor) {
-    const historyId = project.overleaf.history.id.toString()
+    const historyId = project.superpaper.history.id.toString()
     const chunks = await getProjectChunks(historyId)
     if (chunks.length > 0) {
       continue
@@ -806,7 +806,7 @@ export async function initializeProjects(options) {
   let totalProjects = 0
 
   const query = {
-    'overleaf.backup.lastBackedUpVersion': { $in: [null] },
+    'superpaper.backup.lastBackedUpVersion': { $in: [null] },
   }
 
   if (options['start-date'] && options['end-date']) {
@@ -1421,8 +1421,8 @@ async function compareAllProjects(options) {
   }
 
   const query = {
-    'overleaf.history.id': { $exists: true },
-    'overleaf.backup.lastBackedUpVersion': { $exists: true },
+    'superpaper.history.id': { $exists: true },
+    'superpaper.backup.lastBackedUpVersion': { $exists: true },
   }
 
   await batchedUpdate(
@@ -1431,8 +1431,8 @@ async function compareAllProjects(options) {
     processBatch,
     {
       _id: 1,
-      'overleaf.history': 1,
-      'overleaf.backup': 1,
+      'superpaper.history': 1,
+      'superpaper.backup': 1,
     },
     { readPreference: 'secondary' },
     {

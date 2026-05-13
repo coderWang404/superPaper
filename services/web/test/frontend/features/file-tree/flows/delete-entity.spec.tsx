@@ -35,9 +35,6 @@ describe('FileTree Delete Entity Flow', function () {
             socket={socket}
           >
             <FileTreeRoot
-              refProviders={{}}
-              setRefProviderEnabled={cy.stub()}
-              setStartedFreeTrial={cy.stub()}
               onSelect={cy.stub()}
               onInit={cy.stub()}
               isConnected
@@ -166,9 +163,6 @@ describe('FileTree Delete Entity Flow', function () {
             socket={socket}
           >
             <FileTreeRoot
-              refProviders={{}}
-              setRefProviderEnabled={cy.stub()}
-              setStartedFreeTrial={cy.stub()}
               onSelect={cy.stub()}
               onInit={cy.stub()}
               isConnected
@@ -229,9 +223,6 @@ describe('FileTree Delete Entity Flow', function () {
             socket={socket}
           >
             <FileTreeRoot
-              refProviders={{}}
-              setRefProviderEnabled={cy.stub()}
-              setStartedFreeTrial={cy.stub()}
               onSelect={cy.stub()}
               onInit={cy.stub()}
               isConnected

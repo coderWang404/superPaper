@@ -30,9 +30,6 @@ describe('FileTree Create Folder Flow', function () {
         socket={socket}
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -99,9 +96,6 @@ describe('FileTree Create Folder Flow', function () {
         socket={socket}
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -175,9 +169,6 @@ describe('FileTree Create Folder Flow', function () {
         socket={socket}
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -241,9 +232,6 @@ describe('FileTree Create Folder Flow', function () {
         socket={socket}
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected

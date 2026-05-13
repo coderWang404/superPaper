@@ -27,7 +27,7 @@ describe('HttpController', () => {
       default: ctx.DocArchiveManager,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: settings,
     }))
 

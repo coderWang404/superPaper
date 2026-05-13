@@ -13,10 +13,10 @@ import {
   Prec,
   TransactionSpec,
 } from '@codemirror/state'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 
 const moduleExtensions: Array<(options: Record<string, any>) => Extension> =
-  importOverleafModules('autoCompleteExtensions').map(
+  importSuperPaperModules('autoCompleteExtensions').map(
     (item: { import: { extension: Extension } }) => item.import.extension
   )
 

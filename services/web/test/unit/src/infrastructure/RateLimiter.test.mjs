@@ -25,7 +25,7 @@ describe('RateLimiter', function () {
       default: ctx.RateLimiterFlexible,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 

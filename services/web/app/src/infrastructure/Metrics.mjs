@@ -1,6 +1,6 @@
 // @ts-check
 
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const analyticsQueue = new Metrics.prom.Counter({
   name: 'analytics_queue',

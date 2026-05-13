@@ -9,13 +9,13 @@
  */
 import { promisify } from 'node:util'
 import async from 'async'
-import metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 import os from 'node:os'
 import crypto from 'node:crypto'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 
 const LOCK_TEST_INTERVAL = 50 // 50ms between each test of the lock
 const MAX_LOCK_WAIT_TIME = 10000 // 10s maximum time to spend trying to get the lock

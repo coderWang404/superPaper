@@ -1,7 +1,7 @@
 import { beforeAll, describe, it, expect } from 'vitest'
-import { fetchStringWithResponse } from '@overleaf/fetch-utils'
+import { fetchStringWithResponse } from '@superpaper/fetch-utils'
 import app from '../../../app.ts'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import './MongoHelper.ts'
 
 let runAppPromise: Promise<void> | null = null

@@ -1,6 +1,6 @@
 import Path from 'node:path'
 import fs from 'node:fs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import Errors from './Errors.js'
 import SafeReader from './SafeReader.js'
 

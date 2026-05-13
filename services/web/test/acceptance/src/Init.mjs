@@ -1,5 +1,4 @@
 import './helpers/InitApp.mjs'
-import Features from '../../../app/src/infrastructure/Features.mjs'
 
 import MockAnalyticsApi from './mocks/MockAnalyticsApi.mjs'
 import MockChatApi from './mocks/MockChatApi.mjs'
@@ -15,7 +14,6 @@ import MockV1Api from './mocks/MockV1Api.mjs'
 import MockV1HistoryApi from './mocks/MockV1HistoryApi.mjs'
 import MockHaveIBeenPwnedApi from './mocks/MockHaveIBeenPwnedApi.mjs'
 import MockThirdPartyDataStoreApi from './mocks/MockThirdPartyDataStoreApi.mjs'
-import MockHistoryBackupDeletionApi from './mocks/MockHistoryBackupDeletionApi.mjs'
 
 const mockOpts = {
   debug: ['1', 'true', 'TRUE'].includes(process.env.DEBUG_MOCKS),
@@ -31,13 +29,9 @@ MockSpellingApi.initialize(23005, mockOpts)
 MockHaveIBeenPwnedApi.initialize(1337, mockOpts)
 MockProjectHistoryApi.initialize(23054, mockOpts)
 MockV1HistoryApi.initialize(23100, mockOpts)
-MockHistoryBackupDeletionApi.initialize(23101, mockOpts)
-
-if (Features.hasFeature('saas')) {
-  MockAnalyticsApi.initialize(23050, mockOpts)
-  MockV1Api.initialize(25000, mockOpts)
-  MockThirdPartyDataStoreApi.initialize(23002, mockOpts)
-}
+MockAnalyticsApi.initialize(23050, mockOpts)
+MockV1Api.initialize(25000, mockOpts)
+MockThirdPartyDataStoreApi.initialize(23002, mockOpts)
 
 if (Features.hasFeature('git-bridge')) {
   MockGitBridgeApi.initialize(28000, mockOpts)

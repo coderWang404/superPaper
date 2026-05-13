@@ -83,9 +83,9 @@ describe('SafeHTMLSubstitution', function () {
       it('should handle links', function () {
         expect(
           SafeHTMLSubstitution.render('<0>Go to Login</0>', [
-            { name: 'a', attrs: { href: 'https://www.overleaf.com/login' } },
+            { name: 'a', attrs: { href: 'https://www.superpaper.com/login' } },
           ])
-        ).to.equal('<a href="https://www.overleaf.com/login">Go to Login</a>')
+        ).to.equal('<a href="https://www.superpaper.com/login">Go to Login</a>')
       })
 
       it('should not complain about too many components', function () {

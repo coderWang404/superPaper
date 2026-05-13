@@ -31,9 +31,9 @@ describe('RedisManager', function () {
       globalGauge: sinon.stub(),
     }
     this.RedisManager = await esmock(MODULE_PATH, {
-      '@overleaf/redis-wrapper': this.RedisWrapper,
-      '@overleaf/settings': this.Settings,
-      '@overleaf/metrics': this.Metrics,
+      '@superpaper/redis-wrapper': this.RedisWrapper,
+      '@superpaper/settings': this.Settings,
+      '@superpaper/metrics': this.Metrics,
     })
 
     this.projectId = 'project-id-123'

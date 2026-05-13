@@ -6,9 +6,9 @@ index e22818ebb880..81ec5ccb0aa5 100644
  const TpdsProjectFlusher = require('../ThirdPartyDataStore/TpdsProjectFlusher')
  const ProjectAuditLogHandler = require('../Project/ProjectAuditLogHandler')
  const AnalyticsManager = require('../Analytics/AnalyticsManager')
-+const OError = require('@overleaf/o-error')
++const OError = require('@superpaper/o-error')
 +const TagsHandler = require('../Tags/TagsHandler')
-+const { promiseMapWithLimit } = require('@overleaf/promise-utils')
++const { promiseMapWithLimit } = require('@superpaper/promise-utils')
 
  module.exports = {
 -  promises: { transferOwnership },

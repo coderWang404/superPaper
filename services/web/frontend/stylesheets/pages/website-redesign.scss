@@ -307,7 +307,7 @@
     }
   }
 
-  .badge-premium {
+  .badge-feature {
     --badge-font-weight: 600;
   }
 
@@ -472,82 +472,6 @@
 
     margin-top: var(--spacing-08);
     margin-bottom: var(--spacing-05);
-  }
-
-  .plans-bottom-text {
-    font-size: var(--font-size-04);
-  }
-
-  .plans-cards {
-    @include media-breakpoint-up(lg) {
-      display: flex;
-    }
-
-    .plans-card-container {
-      min-height: 348px;
-      padding-left: var(--spacing-05);
-      padding-right: var(--spacing-05);
-
-      @include media-breakpoint-down(lg) {
-        margin-bottom: var(--spacing-06);
-        min-height: unset;
-      }
-    }
-
-    .plans-card {
-      border-radius: 8px;
-      padding: 0;
-      height: 100%;
-
-      .plans-card-inner {
-        padding: var(--spacing-09);
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        font-size: var(--font-size-03);
-
-        .plans-card-inner-title {
-          font-size: var(--font-size-05);
-          line-height: var(--line-height-04);
-          font-weight: 600;
-          margin-top: 0;
-        }
-
-        ul {
-          list-style-type: none;
-          padding: 0;
-          margin: 0;
-
-          li {
-            margin-bottom: var(--spacing-04);
-          }
-        }
-
-        .plans-card-inner-footer {
-          margin-top: auto;
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-05);
-
-          @include media-breakpoint-down(lg) {
-            margin-top: var(--spacing-06);
-          }
-        }
-      }
-
-      &.grey-border {
-        border: 2px solid var(--neutral-20);
-      }
-
-      &.blue-border {
-        border: solid 2px var(--sapphire-blue);
-        border-radius: 8px;
-
-        .plans-card-inner-title {
-          color: var(--sapphire-blue);
-        }
-      }
-    }
   }
 
   .heading-section-md-align-left {
@@ -824,7 +748,7 @@
     font-size: var(--font-size-05);
   }
 
-  .overleaf-sticker {
+  .superpaper-sticker {
     width: unset;
 
     @include media-breakpoint-down(lg) {

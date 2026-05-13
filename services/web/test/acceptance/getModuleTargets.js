@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 // silence settings module
 console.log = function () {}
-const Settings = require('@overleaf/settings')
+const Settings = require('@superpaper/settings')
 
 const MODULES = Settings.moduleImportSequence
 const TARGET = process.argv.slice(2).pop() || 'test_acceptance'

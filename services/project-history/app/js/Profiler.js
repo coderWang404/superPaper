@@ -10,9 +10,9 @@
  * DS206: Consider reworking classes to avoid initClass
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 
 const LOG_CUTOFF_TIME = 1000
 

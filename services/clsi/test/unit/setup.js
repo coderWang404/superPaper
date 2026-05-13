@@ -34,7 +34,7 @@ chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
 beforeEach(() => {
-  vi.doMock('@overleaf/logger', () => ({
+  vi.doMock('@superpaper/logger', () => ({
     default: {
       debug() {},
       log() {},

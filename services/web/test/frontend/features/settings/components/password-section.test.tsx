@@ -2,35 +2,14 @@ import { expect } from 'chai'
 import { fireEvent, screen, render } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
 import PasswordSection from '../../../../../frontend/js/features/settings/components/password-section'
-import getMeta from '@/utils/meta'
 
 describe('<PasswordSection />', function () {
   beforeEach(function () {
-    Object.assign(getMeta('ol-ExposedSettings'), {
-      isOverleaf: true,
-    })
-    window.metaAttributesCache.set(
-      'ol-isExternalAuthenticationSystemUsed',
-      false
-    )
     window.metaAttributesCache.set('ol-hasPassword', true)
   })
 
   afterEach(function () {
     fetchMock.removeRoutes().clearHistory()
-  })
-
-  it('shows password managed externally message', async function () {
-    Object.assign(getMeta('ol-ExposedSettings'), {
-      isOverleaf: false,
-    })
-    window.metaAttributesCache.set(
-      'ol-isExternalAuthenticationSystemUsed',
-      true
-    )
-    render(<PasswordSection />)
-
-    screen.getByText('Password settings are managed externally.')
   })
 
   it('shows no existing password message', async function () {
@@ -152,7 +131,7 @@ describe('<PasswordSection />', function () {
       body: {
         message: {
           type: 'success',
-          email: 'tim.alby@overleaf.com',
+          email: 'tim.alby@superpaper.com',
           text: 'Password changed',
         },
       },

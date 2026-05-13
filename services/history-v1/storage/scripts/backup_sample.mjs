@@ -1,6 +1,6 @@
 // @ts-check
 import { ObjectId } from 'mongodb'
-import { READ_PREFERENCE_SECONDARY } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { READ_PREFERENCE_SECONDARY } from '@superpaper/mongo-utils/batchedUpdate.js'
 import { db, client } from '../lib/mongodb.js'
 
 const projectsCollection = db.collection('projects')
@@ -32,7 +32,7 @@ async function takeSample(sampleSize) {
       [
         { $sample: { size: sampleSize } },
         {
-          $match: { 'overleaf.backup.lastBackedUpVersion': { $exists: true } },
+          $match: { 'superpaper.backup.lastBackedUpVersion': { $exists: true } },
         },
         {
           $count: 'total',

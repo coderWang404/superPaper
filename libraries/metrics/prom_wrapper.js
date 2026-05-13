@@ -1,4 +1,4 @@
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const prom = require('prom-client')
 const registry = require('prom-client').register
 const metrics = new Map()

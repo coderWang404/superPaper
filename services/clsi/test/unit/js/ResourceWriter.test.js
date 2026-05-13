@@ -33,7 +33,7 @@ describe('ResourceWriter', () => {
       default: (ctx.OutputFileFinder = {}),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       // Mocks allow us to import Metrics.js twice without getting errors.
       prom: {
         Gauge: sinon.stub(),

@@ -1,6 +1,6 @@
 // @ts-check
 
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { RateLimiter } from '../../infrastructure/RateLimiter.mjs'
 import AuthenticationController from '../Authentication/AuthenticationController.mjs'
 import AuthorizationMiddleware from '../Authorization/AuthorizationMiddleware.mjs'

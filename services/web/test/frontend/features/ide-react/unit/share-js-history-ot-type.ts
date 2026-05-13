@@ -4,7 +4,7 @@ import {
   TextOperation,
   AddCommentOperation,
   Range,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import { historyOTType } from '@/features/ide-react/editor/share-js-history-ot-type'
 
 describe('historyOTType', function () {

@@ -2,7 +2,7 @@ import {
   EditOperation,
   EditOperationTransformer,
   StringFileData,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import { ShareDoc } from '../../../../../types/share-doc'
 
 type Api = {

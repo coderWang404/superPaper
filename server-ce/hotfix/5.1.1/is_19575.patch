@@ -1,5 +1,5 @@
---- overleaf.conf
-+++ overleaf.conf
+--- superpaper.conf
++++ superpaper.conf
 @@ -67,6 +67,16 @@ server {
  		proxy_http_version 1.1;
    }
@@ -15,5 +15,5 @@
 +  }
 +
    # Load any extra configuration for this vhost
-   include /etc/nginx/vhost-extras/overleaf/*.conf;
+   include /etc/nginx/vhost-extras/superpaper/*.conf;
  }

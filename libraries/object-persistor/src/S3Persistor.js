@@ -9,7 +9,7 @@ if (https.globalAgent.maxSockets < 300) {
 }
 
 const Crypto = require('node:crypto')
-const Metrics = require('@overleaf/metrics')
+const Metrics = require('@superpaper/metrics')
 const AbstractPersistor = require('./AbstractPersistor')
 const PersistorHelper = require('./PersistorHelper')
 

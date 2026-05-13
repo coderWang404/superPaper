@@ -3,17 +3,17 @@ import EmailHandler from '../../../../app/src/Features/Email/EmailHandler.mjs'
 import EmailOptionsHelper from '../../../../app/src/Features/Email/EmailOptionsHelper.mjs'
 import Errors from '../Errors/Errors.js'
 import _ from 'lodash'
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import { User } from '../../../../app/src/models/User.mjs'
-import { callbackify } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
+import { callbackify } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
 
 const oauthProviders = settings.oauthProviders || {}
 
 async function getUser(providerId, externalUserId) {
   if (providerId == null || externalUserId == null) {
-    throw new OError('invalid SSO arguments', {
+    throw new OError('invalid third-party identity arguments', {
       externalUserId,
       providerId,
     })
@@ -60,7 +60,7 @@ async function link(
 
   await UserAuditLogHandler.promises.addEntry(
     userId,
-    'link-sso',
+    'link-third-party-identity',
     auditLog.initiatorId,
     auditLog.ipAddress,
     {
@@ -127,7 +127,7 @@ async function unlink(userId, providerId, auditLog) {
 
   await UserAuditLogHandler.promises.addEntry(
     userId,
-    'unlink-sso',
+    'unlink-third-party-identity',
     auditLog.initiatorId,
     auditLog.ipAddress,
     {

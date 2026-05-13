@@ -5,7 +5,4 @@ export type Capability =
   | 'delete-own-account'
   | 'dropbox'
   | 'endorse-email'
-  | 'join-subscription'
-  | 'leave-group-subscription'
-  | 'start-subscription'
   | 'use-ai'

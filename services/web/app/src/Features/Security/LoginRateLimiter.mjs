@@ -1,6 +1,6 @@
 import { RateLimiter } from '../../infrastructure/RateLimiter.mjs'
-import { callbackify } from '@overleaf/promise-utils'
-import Settings from '@overleaf/settings'
+import { callbackify } from '@superpaper/promise-utils'
+import Settings from '@superpaper/settings'
 import EmailHelper from '../Helpers/EmailHelper.mjs'
 
 const rateLimiterLoginEmail = new RateLimiter(

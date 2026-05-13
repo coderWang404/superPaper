@@ -1,11 +1,11 @@
-import { fetchJson } from '@overleaf/fetch-utils'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
+import { fetchJson } from '@superpaper/fetch-utils'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
 import DeviceHistory from './DeviceHistory.mjs'
 import AuthenticationController from '../Authentication/AuthenticationController.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import EmailsHelper from '../Helpers/EmailHelper.mjs'
 
 function respondInvalidCaptcha(req, res) {

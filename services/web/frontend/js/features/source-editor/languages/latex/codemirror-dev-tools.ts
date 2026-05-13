@@ -2,7 +2,7 @@ import { toggleVisualEffect } from '../../extensions/visual/visual'
 import customLocalStorage from '../../../../infrastructure/local-storage'
 import { Compartment } from '@codemirror/state'
 import { EditorView, ViewPlugin } from '@codemirror/view'
-import { treeView } from '@overleaf/codemirror-tree-view'
+import { treeView } from '@superpaper/codemirror-tree-view'
 
 // to enable: window.localStorage.setItem('cm6-dev-tools', '"on"')
 // to disable: window.localStorage.removeItem('cm6-dev-tools')

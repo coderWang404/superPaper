@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
 import os from 'node:os'
 
 let CACHED_LOAD = {

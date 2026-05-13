@@ -30,7 +30,7 @@ describe('FileStoreHandler', function () {
     ctx.readStream = { my: 'readStream', on: sinon.stub() }
     ctx.request = sinon.stub()
     ctx.request.head = sinon.stub()
-    ctx.filestoreUrl = 'http://filestore.overleaf.test'
+    ctx.filestoreUrl = 'http://filestore.superpaper.test'
     ctx.settings = {
       apis: { filestore: { url: ctx.filestoreUrl } },
     }
@@ -62,7 +62,7 @@ describe('FileStoreHandler', function () {
     }
     ctx.ProjectDetailsHandler = {
       getDetails: sinon.stub().callsArgWith(1, null, {
-        overleaf: { history: { id: ctx.historyId } },
+        superpaper: { history: { id: ctx.historyId } },
       }),
     }
 
@@ -76,7 +76,7 @@ describe('FileStoreHandler', function () {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

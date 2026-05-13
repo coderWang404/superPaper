@@ -10,8 +10,8 @@ import { Project } from '../../models/Project.mjs'
 import { DeletedProject } from '../../models/DeletedProject.mjs'
 import { ProjectAuditLogEntry } from '../../models/ProjectAuditLogEntry.mjs'
 import Errors from '../Errors/Errors.js'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import TagsHandler from '../Tags/TagsHandler.mjs'
 import ProjectDetailsHandler from './ProjectDetailsHandler.mjs'
@@ -21,7 +21,7 @@ import DocstoreManager from '../Docstore/DocstoreManager.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
 import HistoryManager from '../History/HistoryManager.mjs'
 import ChatApiHandler from '../Chat/ChatApiHandler.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import { DeletedProjectReasons } from './DeletedProjectReasons.mjs'
 
 const PROJECT_EXPIRATION_BATCH_SIZE = 10000
@@ -248,12 +248,12 @@ async function deleteProject(projectId, options = {}) {
       deletedProjectReviewerIds: project.reviewer_refs,
       deletedProjectReadWriteTokenAccessIds:
         project.tokenAccessReadAndWrite_refs,
-      deletedProjectOverleafId: project.overleaf
-        ? project.overleaf.id
+      deletedProjectsuperPaperId: project.superpaper
+        ? project.superpaper.id
         : undefined,
-      deletedProjectOverleafHistoryId:
-        project.overleaf && project.overleaf.history
-          ? project.overleaf.history.id
+      deletedProjectsuperPaperHistoryId:
+        project.superpaper && project.superpaper.history
+          ? project.superpaper.history.id
           : undefined,
       deletedProjectReadOnlyTokenAccessIds: project.tokenAccessReadOnly_refs,
       deletedProjectReadWriteToken: project.tokens.readAndWrite,
@@ -367,9 +367,9 @@ async function expireDeletedProject(projectId) {
     }
     const userId = deletedProject.deleterData?.deletedProjectOwnerId?.toString()
     const historyId =
-      deletedProject.project.overleaf &&
-      deletedProject.project.overleaf.history &&
-      deletedProject.project.overleaf.history.id
+      deletedProject.project.superpaper &&
+      deletedProject.project.superpaper.history &&
+      deletedProject.project.superpaper.history.id
 
     logger.info({ projectId, userId }, 'destroying expired project data')
 

@@ -5,7 +5,7 @@ import {
   batchedUpdate,
   objectIdFromInput,
   READ_PREFERENCE_SECONDARY,
-} from '@overleaf/mongo-utils/batchedUpdate.js'
+} from '@superpaper/mongo-utils/batchedUpdate.js'
 import {
   GLOBAL_BLOBS,
   loadGlobalBlobs,
@@ -88,7 +88,7 @@ async function processBatch(batch) {
   const projectCursor = await projectsCollection.find(
     { _id: { $gte: firstId, $lte: lastId } },
     {
-      projection: { _id: 1, 'overleaf.history.id': 1, lastUpdated: 1 },
+      projection: { _id: 1, 'superpaper.history.id': 1, lastUpdated: 1 },
       readPreference: READ_PREFERENCE_SECONDARY,
     }
   )
@@ -103,11 +103,11 @@ async function processBatch(batch) {
       console.error(`project not found: ${projectId}`)
       continue
     }
-    if (!projectRecord.overleaf?.history?.id) {
+    if (!projectRecord.superpaper?.history?.id) {
       console.error(`project missing history: ${projectId}`)
       continue
     }
-    const historyId = projectRecord.overleaf.history.id.toString()
+    const historyId = projectRecord.superpaper.history.id.toString()
     const prefix = `${projectId},${projectRecord.lastUpdated.toISOString()},`
     const hashes = project.blobs.map(blob => blob.toString('hex'))
     const projectBlobHashes = hashes.filter(hash => !GLOBAL_BLOBS.has(hash))

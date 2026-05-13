@@ -1,13 +1,13 @@
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
 import DocstoreManager from '../Docstore/DocstoreManager.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import ProjectUpdateHandler from '../Project/ProjectUpdateHandler.mjs'
 import { Project } from '../../models/Project.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
 import { READ_PREFERENCE_SECONDARY } from '../../infrastructure/mongodb.mjs'
-import { callbackifyAll } from '@overleaf/promise-utils'
-import Metrics from '@overleaf/metrics'
+import { callbackifyAll } from '@superpaper/promise-utils'
+import Metrics from '@superpaper/metrics'
 
 const MILISECONDS_IN_DAY = 86400000
 

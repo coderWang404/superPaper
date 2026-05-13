@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import * as jose from 'jose'
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 
 const COOKIE_NAME = Settings.deviceHistory.cookieName
 const ENTRY_EXPIRY = Settings.deviceHistory.entryExpiry

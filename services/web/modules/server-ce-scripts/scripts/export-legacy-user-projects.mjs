@@ -1,4 +1,4 @@
-/* eslint-disable @overleaf/require-script-runner */
+/* eslint-disable @superpaper/require-script-runner */
 import minimist from 'minimist'
 import {
   mkdirSync,

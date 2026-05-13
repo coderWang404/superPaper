@@ -12,9 +12,9 @@
  */
 const ShareJsModel = require('./sharejs/server/model')
 const ShareJsDB = require('./ShareJsDB')
-const logger = require('@overleaf/logger')
-const Settings = require('@overleaf/settings')
-const { promisifyAll } = require('@overleaf/promise-utils')
+const logger = require('@superpaper/logger')
+const Settings = require('@superpaper/settings')
+const { promisifyAll } = require('@superpaper/promise-utils')
 const Keys = require('./UpdateKeys')
 const { EventEmitter } = require('node:events')
 const util = require('node:util')

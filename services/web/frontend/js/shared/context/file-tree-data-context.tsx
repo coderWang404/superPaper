@@ -25,12 +25,12 @@ import {
   StubSnapshotUtils,
   useSnapshotContext,
 } from '@/features/ide-react/context/snapshot-context'
-import importOverleafModules from '../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../macros/import-superpaper-module.macro'
 import { useProjectContext } from '@/shared/context/project-context'
 import { useIdeReactContext } from '@/features/ide-react/context/ide-react-context'
 
 const { buildFileTree, createFolder } =
-  (importOverleafModules('snapshotUtils')[0]
+  (importSuperPaperModules('snapshotUtils')[0]
     ?.import as typeof StubSnapshotUtils) || StubSnapshotUtils
 
 export const FileTreeDataContext = createContext<

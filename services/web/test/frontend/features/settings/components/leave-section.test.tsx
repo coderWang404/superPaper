@@ -11,7 +11,7 @@ import getMeta from '@/utils/meta'
 describe('<LeaveSection />', function () {
   beforeEach(function () {
     window.metaAttributesCache.set('ol-usersEmail', 'foo@bar.com')
-    Object.assign(getMeta('ol-ExposedSettings'), { isOverleaf: true })
+    Object.assign(getMeta('ol-ExposedSettings'), { isSuperPaper: true })
     window.metaAttributesCache.set('ol-hasPassword', true)
   })
 

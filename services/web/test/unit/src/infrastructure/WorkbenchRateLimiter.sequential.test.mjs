@@ -80,14 +80,14 @@ describe('WorkbenchRateLimiter', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: {
           recordEventForUser: sinon.stub(),

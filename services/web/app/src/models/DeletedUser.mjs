@@ -15,7 +15,7 @@ const DeleterDataSchema = new Schema({
   deletedUserReferralId: { type: String },
   deletedUserReferredUsers: [{ type: ObjectId, ref: 'User' }],
   deletedUserReferredUserCount: { type: Number },
-  deletedUserOverleafId: { type: Number },
+  deletedUsersuperPaperId: { type: Number },
 })
 
 export const DeletedUserSchema = new Schema(

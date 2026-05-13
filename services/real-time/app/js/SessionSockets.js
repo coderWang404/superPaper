@@ -1,5 +1,5 @@
-import metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
+import metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
 import { EventEmitter } from 'node:events'
 import Errors from './Errors.js'
 

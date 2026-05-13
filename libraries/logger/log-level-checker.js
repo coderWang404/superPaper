@@ -1,4 +1,4 @@
-const { fetchString } = require('@overleaf/fetch-utils')
+const { fetchString } = require('@superpaper/fetch-utils')
 const fs = require('node:fs')
 
 class LogLevelChecker {

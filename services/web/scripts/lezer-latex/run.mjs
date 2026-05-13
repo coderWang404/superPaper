@@ -7,7 +7,7 @@ import { parser as BibTeXParser } from '../../frontend/js/features/source-editor
 // parse tree to stdout
 //
 // show parse tree:     lezer-latex-run.js test/unit/src/LezerLatex/examples/amsmath.tex
-//                      lezer-latex-run.js test/unit/src/LezerLatex/examples/overleaf.bib
+//                      lezer-latex-run.js test/unit/src/LezerLatex/examples/superpaper.bib
 // show error summary:  lezer-latex-run.js coverage test/unit/src/LezerLatex/examples/amsmath.tex
 
 let files = process.argv.slice(2)

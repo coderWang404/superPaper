@@ -1,15 +1,15 @@
 import _ from 'lodash'
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
-import metrics from '@overleaf/metrics'
-import RedisWrapper from '@overleaf/redis-wrapper'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
+import metrics from '@superpaper/metrics'
+import RedisWrapper from '@superpaper/redis-wrapper'
 import Errors from './Errors.js'
 import {
   fetchJson,
   fetchNothing,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import { callbackify } from 'node:util'
 
 const {

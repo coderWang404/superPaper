@@ -10,28 +10,28 @@ export const NotificationInfo = (args: Args) => {
   return <Notification {...args} isDismissible />
 }
 NotificationInfo.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3488-103958&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3488-103958&m=dev'
 )
 
 export const NotificationSuccess = (args: Args) => {
   return <Notification {...args} isDismissible type="success" />
 }
 NotificationSuccess.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-110077&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-110077&m=dev'
 )
 
 export const NotificationWarning = (args: Args) => {
   return <Notification {...args} isDismissible type="warning" />
 }
 NotificationWarning.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-112036&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-112036&m=dev'
 )
 
 export const NotificationError = (args: Args) => {
   return <Notification {...args} isDismissible type="error" />
 }
 NotificationError.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-112059&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-112059&m=dev'
 )
 
 export const NotificationOffer = (args: Args) => {
@@ -57,28 +57,28 @@ export const NotificationWithActionBelowContent = (args: Args) => {
   )
 }
 NotificationWithActionBelowContent.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-118816&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-118816&m=dev'
 )
 
 export const NotificationWithTitle = (args: Args) => {
   return <Notification {...args} title="Some title" />
 }
 NotificationWithTitle.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-115045&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-115045&m=dev'
 )
 
 export const NotificationWithAction = (args: Args) => {
   return <Notification {...args} isDismissible={false} />
 }
 NotificationWithAction.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-117190&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-117190&m=dev'
 )
 
 export const NotificationDismissible = (args: Args) => {
   return <Notification {...args} action={undefined} />
 }
 NotificationDismissible.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-116677&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-116677&m=dev'
 )
 
 export const APlainNotification = (args: Args) => {

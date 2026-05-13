@@ -3,7 +3,6 @@ import { fireEvent, screen, render } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
 import AccountInfoSection from '../../../../../frontend/js/features/settings/components/account-info-section'
 import { UserProvider } from '../../../../../frontend/js/shared/context/user-context'
-import getMeta from '@/utils/meta'
 
 function renderSectionWithUserProvider() {
   render(<AccountInfoSection />, {
@@ -18,13 +17,6 @@ describe('<AccountInfoSection />', function () {
       first_name: 'Sherlock',
       last_name: 'Holmes',
     })
-    Object.assign(getMeta('ol-ExposedSettings'), {
-      hasAffiliationsFeature: false,
-    })
-    window.metaAttributesCache.set(
-      'ol-isExternalAuthenticationSystemUsed',
-      false
-    )
     window.metaAttributesCache.set('ol-shouldAllowEditingDetails', true)
   })
 
@@ -130,7 +122,7 @@ describe('<AccountInfoSection />', function () {
       status: 409,
       body: {
         message:
-          'This email address is already associated with a different Overleaf account.',
+          'This email address is already associated with a different superPaper account.',
       },
     })
     renderSectionWithUserProvider()
@@ -141,61 +133,8 @@ describe('<AccountInfoSection />', function () {
       })
     )
     await screen.findByText(
-      'This email address is already associated with a different Overleaf account.'
+      'This email address is already associated with a different superPaper account.'
     )
-  })
-
-  it('hides email input', async function () {
-    Object.assign(getMeta('ol-ExposedSettings'), {
-      hasAffiliationsFeature: true,
-    })
-    const updateMock = fetchMock.post('/user/settings', 200)
-
-    renderSectionWithUserProvider()
-    expect(screen.queryByLabelText('Email')).to.not.exist
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: /update/i,
-      })
-    )
-    expect(
-      JSON.parse(updateMock.callHistory.calls().at(-1)?.options.body as string)
-    ).to.deep.equal({
-      first_name: 'Sherlock',
-      last_name: 'Holmes',
-    })
-  })
-
-  it('disables email input', async function () {
-    window.metaAttributesCache.set(
-      'ol-isExternalAuthenticationSystemUsed',
-      true
-    )
-    const updateMock = fetchMock.post('/user/settings', 200)
-
-    renderSectionWithUserProvider()
-    expect(screen.getByLabelText('Email')).to.have.property('readOnly', true)
-    expect(screen.getByLabelText('First name')).to.have.property(
-      'readOnly',
-      false
-    )
-    expect(screen.getByLabelText('Last name')).to.have.property(
-      'readOnly',
-      false
-    )
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: /update account info/i,
-      })
-    )
-    expect(
-      JSON.parse(updateMock.callHistory.calls().at(-1)?.options.body as string)
-    ).to.deep.equal({
-      first_name: 'Sherlock',
-      last_name: 'Holmes',
-    })
   })
 
   it('disables names input', async function () {

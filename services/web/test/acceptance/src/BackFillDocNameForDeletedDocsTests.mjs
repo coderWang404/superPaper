@@ -1,10 +1,10 @@
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 import { expect } from 'chai'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { db, ObjectId } from '../../../app/src/infrastructure/mongodb.mjs'
 import UserHelper from './helpers/User.mjs'
-import { renderObjectId } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { renderObjectId } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const User = UserHelper.promises
 
@@ -67,7 +67,7 @@ describe('BackFillDocNameForDeletedDocs', function () {
     let result
     try {
       result = await promisify(exec)(
-        'cd ../../tools/migrations && yarn run migrations migrate -t saas --force 20210727150530_ce_sp_backfill_deleted_docs'
+        'cd ../../tools/migrations && yarn run migrations migrate -t server-ce --force 20210727150530_ce_sp_backfill_deleted_docs'
       )
     } catch (error) {
       // dump details like exit code, stdErr and stdOut

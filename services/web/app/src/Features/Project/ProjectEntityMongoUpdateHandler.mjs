@@ -1,10 +1,10 @@
 import { callbackify } from 'node:util'
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
-import logger from '@overleaf/logger'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
+import logger from '@superpaper/logger'
 import path from 'node:path'
 import mongodb from 'mongodb-legacy'
-import Settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+import Settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 import CooldownManager from '../Cooldown/CooldownManager.mjs'
 import Errors from '../Errors/Errors.js'
 import { Folder } from '../../models/Folder.mjs'
@@ -110,7 +110,7 @@ async function addDoc(projectId, folderId, doc, userId) {
     {
       rootFolder: true,
       name: true,
-      overleaf: true,
+      superpaper: true,
     }
   )
   folderId = _confirmFolder(project, folderId)
@@ -127,7 +127,7 @@ async function addDoc(projectId, folderId, doc, userId) {
 async function addFile(projectId, folderId, fileRef, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   folderId = _confirmFolder(project, folderId)
   const { result, project: newProject } = await _putElement(
@@ -143,7 +143,7 @@ async function addFile(projectId, folderId, fileRef, userId) {
 async function addFolder(projectId, parentFolderId, folderName, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   parentFolderId = _confirmFolder(project, parentFolderId)
   const folder = new Folder({ name: folderName })
@@ -154,7 +154,7 @@ async function addFolder(projectId, parentFolderId, folderName, userId) {
 async function replaceFileWithNew(projectId, fileId, newFileRef, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   const { element: fileRef, path } = await ProjectLocator.promises.findElement({
     project,
@@ -199,7 +199,7 @@ async function replaceFileWithNew(projectId, fileId, newFileRef, userId) {
 async function replaceDocWithFile(projectId, docId, fileRef, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   const { path } = await ProjectLocator.promises.findElement({
     project,
@@ -233,7 +233,7 @@ async function replaceDocWithFile(projectId, docId, fileRef, userId) {
 async function replaceFileWithDoc(projectId, fileId, newDoc, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   const { path } = await ProjectLocator.promises.findElement({
     project,
@@ -313,7 +313,7 @@ async function moveEntity(
 ) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   const { element: entity, path: entityPath } =
     await ProjectLocator.promises.findElement({
@@ -391,7 +391,7 @@ async function moveEntity(
 async function deleteEntity(projectId, entityId, entityType, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { name: true, rootFolder: true, overleaf: true, rootDoc_id: true }
+    { name: true, rootFolder: true, superpaper: true, rootDoc_id: true }
   )
   if (
     entityType === 'folder' &&
@@ -424,7 +424,7 @@ async function deleteEntity(projectId, entityId, entityType, userId) {
 async function renameEntity(projectId, entityId, entityType, newName, userId) {
   const project = await ProjectGetter.promises.getProjectWithoutLock(
     projectId,
-    { rootFolder: true, name: true, overleaf: true }
+    { rootFolder: true, name: true, superpaper: true }
   )
   const {
     element: entity,

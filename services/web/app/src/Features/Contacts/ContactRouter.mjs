@@ -1,7 +1,7 @@
 import AuthenticationController from '../Authentication/AuthenticationController.mjs'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import ContactController from './ContactController.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 function contactsAuthenticationMiddleware() {
   if (!Settings.allowAnonymousReadAndWriteSharing) {

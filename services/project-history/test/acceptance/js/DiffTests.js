@@ -5,7 +5,7 @@ import nock from 'nock'
 import {
   fetchJsonWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
 import * as ProjectHistoryApp from './helpers/ProjectHistoryApp.js'
 const { ObjectId } = mongodb
@@ -36,7 +36,7 @@ describe('Diffs', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: this.historyId } },
+        superpaper: { history: { id: this.historyId } },
       })
 
     await ProjectHistoryClient.initializeProject(this.historyId)
@@ -185,7 +185,7 @@ describe('Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
     MockHistoryStore()
       .get(`/api/projects/${this.historyId}/versions/6/history`)
@@ -225,7 +225,7 @@ describe('Diffs', function () {
           },
           startVersion: 5,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const diff = await ProjectHistoryClient.getDiff(
@@ -364,7 +364,7 @@ describe('Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const diff = await ProjectHistoryClient.getDiff(

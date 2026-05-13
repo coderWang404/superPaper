@@ -20,7 +20,7 @@ describe('<TagsList />', function () {
         project_ids: [projectsData[0].id, projectsData[1].id],
       },
     ])
-    window.metaAttributesCache.set('ol-ExposedSettings', { isOverleaf: true })
+    window.metaAttributesCache.set('ol-ExposedSettings', { isSuperPaper: true })
 
     fetchMock.post('/tag', {
       _id: 'eee888eee888',

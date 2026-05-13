@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const { expressify } = require('@overleaf/promise-utils')
+const { expressify } = require('@superpaper/promise-utils')
 const app = express()
 const MAX_REQUEST_SIZE = 2 * (2 * 1024 * 1024 + 64 * 1024)
 

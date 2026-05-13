@@ -1,5 +1,5 @@
 import app from '../../../../app.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import './MongoHelper.js'
 
 function startApp() {

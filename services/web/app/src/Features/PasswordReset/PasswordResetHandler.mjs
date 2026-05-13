@@ -1,4 +1,4 @@
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import UserAuditLogHandler from '../User/UserAuditLogHandler.mjs'
 import UserGetter from '../User/UserGetter.mjs'
 import OneTimeTokenHandler from '../Security/OneTimeTokenHandler.mjs'
@@ -69,7 +69,7 @@ async function getUserForPasswordResetToken(token) {
 
   const user = await UserGetter.promises.getUserByMainEmail(data.email, {
     _id: 1,
-    'overleaf.id': 1,
+    'superpaper.id': 1,
     email: 1,
     must_reconfirm: 1,
   })
@@ -82,8 +82,8 @@ async function getUserForPasswordResetToken(token) {
     return { user, remainingPeeks }
   } else if (
     data.v1_user_id != null &&
-    user.overleaf != null &&
-    data.v1_user_id === user.overleaf.id
+    user.superpaper != null &&
+    data.v1_user_id === user.superpaper.id
   ) {
     return { user, remainingPeeks }
   } else {

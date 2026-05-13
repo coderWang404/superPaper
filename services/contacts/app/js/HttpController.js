@@ -1,4 +1,4 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import * as ContactManager from './ContactManager.js'
 import { buildContactIds } from './contacts.js'
 

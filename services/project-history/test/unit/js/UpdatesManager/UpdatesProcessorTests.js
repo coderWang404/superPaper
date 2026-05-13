@@ -93,8 +93,8 @@ describe('UpdatesProcessor', function () {
       '../../../../app/js/Profiler.js': this.Profiler,
       '../../../../app/js/RetryManager.js': this.RetryManager,
       '../../../../app/js/Errors.js': Errors,
-      '@overleaf/metrics': this.Metrics,
-      '@overleaf/settings': this.Settings,
+      '@superpaper/metrics': this.Metrics,
+      '@superpaper/settings': this.Settings,
     })
     this.doc_id = 'doc-id-123'
     this.project_id = 'project-id-123'

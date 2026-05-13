@@ -1,5 +1,5 @@
-/* eslint-disable @overleaf/require-script-runner */
-import logger from '@overleaf/logger'
+/* eslint-disable @superpaper/require-script-runner */
+import logger from '@superpaper/logger'
 import { processNotifications } from '../modules/notifications/app/src/ProcessNotifications.mjs'
 
 async function main() {

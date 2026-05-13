@@ -13,7 +13,7 @@ import uk.ac.ic.wlgitbridge.bridge.Bridge;
 import uk.ac.ic.wlgitbridge.snapshot.push.exception.InvalidPostbackKeyException;
 
 /*
- * Serve files referenced by the snapshot that we send to the Overleaf API.
+ * Serve files referenced by the snapshot that we send to the superPaper API.
  *
  * Requests must include the postback key.
  */

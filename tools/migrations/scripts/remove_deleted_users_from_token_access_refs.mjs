@@ -1,8 +1,8 @@
 import { db, READ_PREFERENCE_SECONDARY } from '../lib/mongodb.mjs'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 import mongodb from 'mongodb'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 
 const { ObjectId } = mongodb
 

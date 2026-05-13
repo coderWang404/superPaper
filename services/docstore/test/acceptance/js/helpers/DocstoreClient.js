@@ -2,8 +2,8 @@ import {
   fetchNothing,
   fetchJson,
   fetchJsonWithResponse,
-} from '@overleaf/fetch-utils'
-import settings from '@overleaf/settings'
+} from '@superpaper/fetch-utils'
+import settings from '@superpaper/settings'
 import Persistor from '../../../../app/js/PersistorManager.js'
 
 let DocstoreClient

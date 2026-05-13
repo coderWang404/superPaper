@@ -2,14 +2,14 @@ import _ from 'lodash'
 import ProjectGetter from './ProjectGetter.mjs'
 import UserGetter from '../User/UserGetter.mjs'
 import { Project } from '../../models/Project.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import TpdsUpdateSender from '../ThirdPartyDataStore/TpdsUpdateSender.mjs'
 import PublicAccessLevels from '../Authorization/PublicAccessLevels.mjs'
 import Errors from '../Errors/Errors.js'
 import TokenGenerator from '../TokenGenerator/TokenGenerator.mjs'
 import ProjectHelper from './ProjectHelper.mjs'
 import { sanitizeControlCharacters } from '../../infrastructure/Sanitize.mjs'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import { callbackify } from 'node:util'
 
 const MAX_PROJECT_NAME_LENGTH = 150
@@ -48,7 +48,7 @@ async function getDetails(projectId) {
       compiler: true,
       features: true,
       owner_ref: true,
-      overleaf: true,
+      superpaper: true,
     })
   } catch (err) {
     logger.warn({ err, projectId }, 'error getting project')
@@ -67,8 +67,8 @@ async function getDetails(projectId) {
         ? user.features
         : settings.defaultFeatures,
   }
-  if (project.overleaf != null) {
-    details.overleaf = project.overleaf
+  if (project.superpaper != null) {
+    details.superpaper = project.superpaper
   }
   return details
 }

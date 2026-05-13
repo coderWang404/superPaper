@@ -99,7 +99,7 @@ describe('<MessageGroup />', function () {
   it('renders HTML links within messages', function () {
     const message: MessageType = {
       content:
-        'a message with a <a href="https://overleaf.com">link to Overleaf</a>',
+        'a message with a <a href="https://superpaper.com">link to superPaper</a>',
       user: currentUser,
       id: 'msg_1',
       timestamp: new Date('2025-01-01T00:00:00.000Z').getTime(),
@@ -111,7 +111,7 @@ describe('<MessageGroup />', function () {
       </ChatProviders>
     )
 
-    screen.getByRole('link', { name: 'https://overleaf.com' })
+    screen.getByRole('link', { name: 'https://superpaper.com' })
   })
 
   it('renders edited message with "(edited)" indicator', function () {

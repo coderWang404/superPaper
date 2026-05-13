@@ -36,7 +36,7 @@ export const BadgeDefault: Story = {
     bg: meta.argTypes!.bg!.options![0],
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3458-9502&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3458-9502&m=dev'
   ),
   render: args => (
     <Badge
@@ -51,7 +51,7 @@ export const BadgePrepend: Story = {
     bg: meta.argTypes!.bg!.options![0],
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3458-11319&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3458-11319&m=dev'
   ),
   render: args => {
     return (

@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import nock from 'nock'
 import * as ProjectHistoryApp from './helpers/ProjectHistoryApp.js'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
-import { fetchStringWithResponse } from '@overleaf/fetch-utils'
+import { fetchStringWithResponse } from '@superpaper/fetch-utils'
 
 const MockHistoryStore = () => nock('http://127.0.0.1:3100')
 const MockWeb = () => nock('http://127.0.0.1:3000')
@@ -33,7 +33,7 @@ describe('NumericProjectId', function () {
       .get(`/project/${this.numericProjectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: this.historyId } },
+        superpaper: { history: { id: this.historyId } },
       })
       .persist()
 

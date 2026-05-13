@@ -1,7 +1,6 @@
 import { mockScope } from '../helpers/mock-scope'
 import {
   EditorProviders,
-  makeEditorPropertiesProvider,
   makeProjectProvider,
 } from '../../../helpers/editor-providers'
 import CodeMirrorEditor from '../../../../../frontend/js/features/source-editor/components/codemirror-editor'
@@ -91,10 +90,6 @@ describe('editor context menu', { scrollBehavior: false }, function () {
     window.metaAttributesCache.set('ol-splitTestVariants', {
       'editor-context-menu': 'enabled',
     })
-    cy.intercept('POST', '/project/*/track_changes', {
-      statusCode: 200,
-      body: {},
-    }).as('trackChanges')
     cy.interceptEvents()
     cy.interceptMetadata()
   })
@@ -293,10 +288,7 @@ describe('editor context menu', { scrollBehavior: false }, function () {
 
       cy.mount(
         <TestContainer>
-          <EditorProviders
-            scope={scope}
-            features={{ trackChangesVisible: true }}
-          >
+          <EditorProviders scope={scope}>
             <CodeMirrorEditor />
           </EditorProviders>
         </TestContainer>
@@ -319,9 +311,6 @@ describe('editor context menu', { scrollBehavior: false }, function () {
           'true'
         )
         cy.findByRole('menuitem', { name: /comment/i }).should('be.enabled')
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'be.enabled'
-        )
       })
     })
   })
@@ -332,10 +321,7 @@ describe('editor context menu', { scrollBehavior: false }, function () {
 
       cy.mount(
         <TestContainer>
-          <EditorProviders
-            scope={scope}
-            features={{ trackChangesVisible: true }}
-          >
+          <EditorProviders scope={scope}>
             <CodeMirrorEditor />
           </EditorProviders>
         </TestContainer>
@@ -365,9 +351,6 @@ describe('editor context menu', { scrollBehavior: false }, function () {
           name: /paste with formatting/i,
         }).should('be.enabled')
         cy.findByRole('menuitem', { name: /delete/i }).should('be.enabled')
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'be.enabled'
-        )
         cy.findByRole('menuitem', { name: /comment/i }).should('be.enabled')
       })
     })
@@ -480,167 +463,6 @@ describe('editor context menu', { scrollBehavior: false }, function () {
     })
   })
 
-  describe('when clicking the track changes buttons', function () {
-    let toggleTrackChangesListener: Cypress.Agent<sinon.SinonStub>
-
-    beforeEach(function () {
-      toggleTrackChangesListener = cy.stub().as('toggleTrackChanges')
-      window.addEventListener(
-        'toggle-track-changes',
-        toggleTrackChangesListener
-      )
-    })
-
-    afterEach(function () {
-      window.removeEventListener(
-        'toggle-track-changes',
-        toggleTrackChangesListener
-      )
-    })
-
-    it('should show "Suggest edits" in edit mode and dispatch toggle event when clicked', function () {
-      const scope = mockScope()
-
-      cy.mount(
-        <TestContainer>
-          <EditorProviders
-            scope={scope}
-            providers={{
-              EditorPropertiesProvider: makeEditorPropertiesProvider({
-                wantTrackChanges: false,
-              }),
-              ProjectProvider: makeProjectProvider(
-                mockProject({
-                  trackChangesState: false,
-                  projectFeatures: {
-                    trackChanges: true,
-                    trackChangesVisible: true,
-                  },
-                })
-              ),
-            }}
-          >
-            <CodeMirrorEditor />
-          </EditorProviders>
-        </TestContainer>
-      )
-
-      cy.get('.cm-line').eq(10).rightclick()
-
-      cy.findByRole('menu').within(() => {
-        // Verify we're showing the edit mode label
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'be.visible'
-        )
-        cy.findByRole('menuitem', { name: /back to editing/i }).should(
-          'not.exist'
-        )
-        cy.findByRole('menuitem', { name: /suggest edits/i }).click()
-      })
-
-      cy.findByRole('menu').should('not.exist')
-
-      // Verify the toggle event was dispatched
-      cy.get('@toggleTrackChanges').should('have.been.calledOnce')
-    })
-
-    it('should show "Back to editing" in review mode and dispatch toggle event when clicked', function () {
-      const scope = mockScope()
-
-      cy.mount(
-        <TestContainer>
-          <EditorProviders
-            scope={scope}
-            providers={{
-              ProjectProvider: makeProjectProvider(
-                mockProject({
-                  // Re-assigns `withTrackChanges` value in the `track-changes-state-context` useEffect hook
-                  trackChangesState: true,
-                  projectFeatures: {
-                    trackChanges: true,
-                    trackChangesVisible: true,
-                  },
-                })
-              ),
-            }}
-          >
-            <CodeMirrorEditor />
-          </EditorProviders>
-        </TestContainer>
-      )
-
-      cy.get('.cm-line').eq(10).rightclick()
-
-      cy.findByRole('menu').within(() => {
-        // Verify we're showing the review mode label
-        cy.findByRole('menuitem', { name: /back to editing/i }).should(
-          'be.visible'
-        )
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'not.exist'
-        )
-        cy.findByRole('menuitem', { name: /back to editing/i }).click()
-      })
-
-      cy.findByRole('menu').should('not.exist')
-
-      // Verify the toggle event was dispatched
-      cy.get('@toggleTrackChanges').should('have.been.calledOnce')
-    })
-
-    it('should open upgrade modal when user does not support track changes', function () {
-      const scope = mockScope()
-
-      cy.mount(
-        <TestContainer>
-          <EditorProviders
-            scope={scope}
-            features={{ trackChangesVisible: true, trackChanges: false }}
-          >
-            <CodeMirrorEditor />
-          </EditorProviders>
-        </TestContainer>
-      )
-
-      cy.get('.cm-line').eq(10).rightclick()
-
-      cy.findByRole('menu').within(() => {
-        cy.findByRole('menuitem', { name: /suggest edits/i }).click()
-      })
-
-      cy.findByRole('dialog').should('be.visible')
-      cy.findByRole('dialog').should('contain.text', 'Upgrade to review')
-    })
-  })
-
-  describe('when trackChangesVisible feature is disabled', function () {
-    it('should hide the track changes button', function () {
-      const scope = mockScope()
-
-      cy.mount(
-        <TestContainer>
-          <EditorProviders
-            scope={scope}
-            features={{ trackChangesVisible: false }}
-          >
-            <CodeMirrorEditor />
-          </EditorProviders>
-        </TestContainer>
-      )
-
-      cy.get('.cm-line').eq(10).rightclick()
-
-      cy.findByRole('menu').within(() => {
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'not.exist'
-        )
-        cy.findByRole('menuitem', { name: /back to editing/i }).should(
-          'not.exist'
-        )
-      })
-    })
-  })
-
   describe('when feature flag is disabled', function () {
     it('should not show the context menu', function () {
       window.metaAttributesCache.set('ol-splitTestVariants', {
@@ -708,12 +530,6 @@ describe('editor context menu', { scrollBehavior: false }, function () {
           'not.exist'
         )
         cy.findByRole('menuitem', { name: /delete/i }).should('not.exist')
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'not.exist'
-        )
-        cy.findByRole('menuitem', { name: /back to editing/i }).should(
-          'not.exist'
-        )
         cy.findByRole('menuitem', { name: /comment/i }).should('be.enabled')
       })
     })
@@ -1030,10 +846,7 @@ describe('editor context menu', { scrollBehavior: false }, function () {
 
       cy.mount(
         <TestContainer>
-          <EditorProviders
-            scope={scope}
-            features={{ trackChangesVisible: true }}
-          >
+          <EditorProviders scope={scope}>
             <CodeMirrorEditor />
           </EditorProviders>
         </TestContainer>
@@ -1174,10 +987,7 @@ describe('editor context menu', { scrollBehavior: false }, function () {
 
       cy.mount(
         <TestContainer>
-          <EditorProviders
-            scope={scope}
-            features={{ trackChangesVisible: true }}
-          >
+          <EditorProviders scope={scope}>
             <CodeMirrorEditor />
           </EditorProviders>
         </TestContainer>
@@ -1203,9 +1013,6 @@ describe('editor context menu', { scrollBehavior: false }, function () {
           'be.enabled'
         )
         cy.findByRole('menuitem', { name: /delete/i }).should('be.enabled')
-        cy.findByRole('menuitem', { name: /suggest edits/i }).should(
-          'be.enabled'
-        )
         cy.findByRole('menuitem', { name: /comment/i }).should('be.enabled')
 
         cy.findByRole('menuitem', { name: /copy/i }).click()

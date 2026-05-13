@@ -3,7 +3,7 @@ const MockWebApi = require('./helpers/MockWebApi')
 const DocUpdaterClient = require('./helpers/DocUpdaterClient')
 const DocUpdaterApp = require('./helpers/DocUpdaterApp')
 const { expect } = require('chai')
-const { RequestFailedError } = require('@overleaf/fetch-utils')
+const { RequestFailedError } = require('@superpaper/fetch-utils')
 
 describe('Peeking a document', function () {
   before(async function () {

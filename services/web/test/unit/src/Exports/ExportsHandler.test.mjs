@@ -1,7 +1,7 @@
 import { expect, vi } from 'vitest'
 import sinon from 'sinon'
-import { RequestFailedError } from '@overleaf/fetch-utils'
-import OError from '@overleaf/o-error'
+import { RequestFailedError } from '@superpaper/fetch-utils'
+import OError from '@superpaper/o-error'
 const modulePath = '../../../../app/src/Features/Exports/ExportsHandler.mjs'
 
 describe('ExportsHandler', function () {
@@ -25,7 +25,7 @@ describe('ExportsHandler', function () {
       RequestFailedError,
     }
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.fetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.fetchUtils)
 
     vi.doMock('../../../../app/src/Features/Project/ProjectLocator', () => ({
       default: (ctx.ProjectLocator = {
@@ -44,7 +44,7 @@ describe('ExportsHandler', function () {
       default: (ctx.UserGetter = { promises: {} }),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {}),
     }))
 
@@ -52,7 +52,6 @@ describe('ExportsHandler', function () {
     ctx.project_id = 'project-id-123'
     ctx.project_history_id = 987
     ctx.user_id = 'user-id-456'
-    ctx.brand_variation_id = 789
     ctx.title = 'title'
     ctx.description = 'description'
     ctx.author = 'author'
@@ -60,7 +59,6 @@ describe('ExportsHandler', function () {
     ctx.show_source = true
     ctx.export_params = {
       project_id: ctx.project_id,
-      brand_variation_id: ctx.brand_variation_id,
       user_id: ctx.user_id,
       title: ctx.title,
       description: ctx.description,
@@ -152,7 +150,7 @@ describe('ExportsHandler', function () {
         rootDoc_id: 'doc1_id',
         compiler: 'pdflatex',
         imageName: 'mock-image-name',
-        overleaf: {
+        superpaper: {
           id: ctx.project_history_id, // for projects imported from v1
           history: {
             id: ctx.project_history_id,
@@ -164,7 +162,7 @@ describe('ExportsHandler', function () {
         first_name: 'Arthur',
         last_name: 'Author',
         email: 'arthur.author@arthurauthoring.org',
-        overleaf: {
+        superpaper: {
           id: 876,
         },
       }
@@ -228,9 +226,7 @@ describe('ExportsHandler', function () {
             orcidId: null,
             v1UserId: 876,
           },
-          destination: {
-            brandVariationId: ctx.brand_variation_id,
-          },
+          destination: {},
           options: {
             callbackUrl: null,
           },
@@ -275,9 +271,7 @@ describe('ExportsHandler', function () {
             orcidId: null,
             v1UserId: 876,
           },
-          destination: {
-            brandVariationId: ctx.brand_variation_id,
-          },
+          destination: {},
           options: {
             callbackUrl: null,
           },
@@ -343,9 +337,7 @@ describe('ExportsHandler', function () {
               orcidId: null,
               v1UserId: 876,
             },
-            destination: {
-              brandVariationId: ctx.brand_variation_id,
-            },
+            destination: {},
             options: {
               callbackUrl: null,
             },
@@ -399,9 +391,7 @@ describe('ExportsHandler', function () {
               orcidId: null,
               v1UserId: 876,
             },
-            destination: {
-              brandVariationId: ctx.brand_variation_id,
-            },
+            destination: {},
             options: {
               callbackUrl: null,
             },
@@ -459,7 +449,7 @@ describe('ExportsHandler', function () {
       ctx.settings.apis = {
         v1: {
           url: 'http://127.0.0.1:5000',
-          user: 'overleaf',
+          user: 'superpaper',
           pass: 'pass',
           timeout: 15000,
         },
@@ -477,7 +467,7 @@ describe('ExportsHandler', function () {
 
       it('should issue the request', function (ctx) {
         expect(ctx.fetchUtils.fetchJson).to.have.been.calledWith(
-          new URL('/api/v1/overleaf/exports', ctx.settings.apis.v1.url),
+          new URL('/api/v1/superpaper/exports', ctx.settings.apis.v1.url),
           {
             basicAuth: {
               user: ctx.settings.apis.v1.user,
@@ -519,7 +509,7 @@ describe('ExportsHandler', function () {
           .stub()
           .rejects(
             new RequestFailedError(
-              new URL('/api/v1/overleaf/exports', ctx.settings.apis.v1.url),
+              new URL('/api/v1/superpaper/exports', ctx.settings.apis.v1.url),
               {},
               { status: ctx.error_code },
               ctx.error_json
@@ -548,7 +538,7 @@ describe('ExportsHandler', function () {
       ctx.settings.apis = {
         v1: {
           url: 'http://127.0.0.1:5000',
-          user: 'overleaf',
+          user: 'superpaper',
           pass: 'pass',
           timeout: 15000,
         },
@@ -569,7 +559,7 @@ describe('ExportsHandler', function () {
       it('should issue the request', function (ctx) {
         expect(ctx.fetchUtils.fetchString).to.have.been.calledWith(
           new URL(
-            '/api/v1/overleaf/exports/' + ctx.export_id,
+            '/api/v1/superpaper/exports/' + ctx.export_id,
             ctx.settings.apis.v1.url
           ),
           {
@@ -593,7 +583,7 @@ describe('ExportsHandler', function () {
       ctx.settings.apis = {
         v1: {
           url: 'http://127.0.0.1:5000',
-          user: 'overleaf',
+          user: 'superpaper',
           pass: 'pass',
           timeout: 15000,
         },
@@ -617,7 +607,7 @@ describe('ExportsHandler', function () {
         expect(ctx.fetchUtils.fetchString).to.have.been.calledWith(
           new URL(
             ctx.settings.apis.v1.url +
-              '/api/v1/overleaf/exports/' +
+              '/api/v1/superpaper/exports/' +
               ctx.export_id +
               '/zip_url'
           ),

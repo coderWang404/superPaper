@@ -1,12 +1,12 @@
 {
-  "name": "@overleaf/ranges-tracker",
+  "name": "@superpaper/ranges-tracker",
   "description": "Shared logic for syncing comments and tracked changes with operational transforms",
   "main": "index.cjs",
   "files": [
     "index.cjs",
     "types"
   ],
-  "author": "Overleaf (https://www.overleaf.com)",
+  "author": "superPaper (https://www.superpaper.com)",
   "private": true,
   "scripts": {
     "lint": "eslint --cache --cache-location ../../node_modules/.cache/eslint/ --ext .cjs,.js,.jsx,.mjs,.ts --max-warnings 0 --format unix .",

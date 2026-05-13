@@ -45,10 +45,6 @@ html(
 				nonce=scriptNonce
 			)
 
-		//- Scripts
-		if typeof suppressAnalytics == 'undefined'
-			include _google_analytics
-
 		block meta
 			meta(name='ol-csrfToken' content=csrfToken)
 			//- Configure dynamically loaded assets (via webpack) to be downloaded from CDN
@@ -70,12 +66,6 @@ html(
 			)
 			//- Expose some settings globally to the frontend
 			meta(name='ol-ExposedSettings' data-type='json' content=ExposedSettings)
-			meta(
-				name='ol-splitTestVariants'
-				data-type='json'
-				content=splitTestVariants || {}
-			)
-			meta(name='ol-splitTestInfo' data-type='json' content=splitTestInfo || {})
 
 			if typeof settings.algolia != 'undefined'
 				meta(
@@ -88,11 +78,6 @@ html(
 					}
 				)
 
-			meta(
-				name='ol-isManagedAccount'
-				data-type='boolean'
-				content=isManagedAccount
-			)
 			each restriction in userRestrictions || []
 				meta(name='ol-cannot-' + restriction data-type='boolean' content)
 
@@ -103,7 +88,7 @@ html(
 			'thin-footer': showThinFooter,
 			'website-redesign': isWebsiteRedesign === true || websiteRedesignOverride,
 			'application-page': isApplicationPage,
-			'red-nav-bar-for-admins': !settings.isDevEnv && hasFeature('saas') && hasAdminAccess(),
+			'red-nav-bar-for-admins': !settings.isDevEnv && hasAdminAccess(),
 		}
 		data-theme='light'
 	)
@@ -125,5 +110,3 @@ html(
 
 	block foot-scripts
 		+foot-scripts
-
-	include _customer_io

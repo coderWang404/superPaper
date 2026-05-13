@@ -1,11 +1,11 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 FROM node:24.14.1 AS base
 
-WORKDIR /overleaf/services/real-time
-ENV PATH="/overleaf/node_modules/.bin:$PATH"
+WORKDIR /superpaper/services/real-time
+ENV PATH="/superpaper/node_modules/.bin:$PATH"
 RUN corepack enable
 
 # Google Cloud Storage needs a writable $HOME/.config for resumable uploads
@@ -14,28 +14,30 @@ RUN mkdir /home/node/.config && chown node:node /home/node/.config
 
 FROM base AS app
 
-COPY package.json yarn.lock .yarnrc.yml /overleaf/
-COPY libraries/fetch-utils/package.json /overleaf/libraries/fetch-utils/package.json
-COPY libraries/logger/package.json /overleaf/libraries/logger/package.json
-COPY libraries/metrics/package.json /overleaf/libraries/metrics/package.json
-COPY libraries/o-error/package.json /overleaf/libraries/o-error/package.json
-COPY libraries/promise-utils/package.json /overleaf/libraries/promise-utils/package.json
-COPY libraries/redis-wrapper/package.json /overleaf/libraries/redis-wrapper/package.json
-COPY libraries/settings/package.json /overleaf/libraries/settings/package.json
-COPY libraries/validation-tools/package.json /overleaf/libraries/validation-tools/package.json
-COPY services/real-time/package.json /overleaf/services/real-time/package.json
-COPY .yarn/patches/ /overleaf/.yarn/patches/
+COPY package.json yarn.lock .yarnrc.yml /superpaper/
+COPY libraries/fetch-utils/package.json /superpaper/libraries/fetch-utils/package.json
+COPY libraries/logger/package.json /superpaper/libraries/logger/package.json
+COPY libraries/metrics/package.json /superpaper/libraries/metrics/package.json
+COPY libraries/o-error/package.json /superpaper/libraries/o-error/package.json
+COPY libraries/promise-utils/package.json /superpaper/libraries/promise-utils/package.json
+COPY libraries/redis-wrapper/package.json /superpaper/libraries/redis-wrapper/package.json
+COPY libraries/settings/package.json /superpaper/libraries/settings/package.json
+COPY libraries/validation-tools/package.json /superpaper/libraries/validation-tools/package.json
+COPY services/real-time/package.json /superpaper/services/real-time/package.json
+COPY .yarn/patches/ /superpaper/.yarn/patches/
+COPY .yarn/releases/ /superpaper/.yarn/releases/
+RUN chmod 0755 /superpaper/.yarn/releases/yarn-4.14.1.cjs && ln -sf /superpaper/.yarn/releases/yarn-4.14.1.cjs /usr/local/bin/yarn && ln -sf /superpaper/.yarn/releases/yarn-4.14.1.cjs /usr/local/bin/yarnpkg
 
-RUN cd /overleaf && yarn workspaces focus @overleaf/real-time overleaf
-COPY libraries/fetch-utils/ /overleaf/libraries/fetch-utils/
-COPY libraries/logger/ /overleaf/libraries/logger/
-COPY libraries/metrics/ /overleaf/libraries/metrics/
-COPY libraries/o-error/ /overleaf/libraries/o-error/
-COPY libraries/promise-utils/ /overleaf/libraries/promise-utils/
-COPY libraries/redis-wrapper/ /overleaf/libraries/redis-wrapper/
-COPY libraries/settings/ /overleaf/libraries/settings/
-COPY libraries/validation-tools/ /overleaf/libraries/validation-tools/
-COPY services/real-time/ /overleaf/services/real-time/
+RUN cd /superpaper && yarn workspaces focus @superpaper/real-time superpaper
+COPY libraries/fetch-utils/ /superpaper/libraries/fetch-utils/
+COPY libraries/logger/ /superpaper/libraries/logger/
+COPY libraries/metrics/ /superpaper/libraries/metrics/
+COPY libraries/o-error/ /superpaper/libraries/o-error/
+COPY libraries/promise-utils/ /superpaper/libraries/promise-utils/
+COPY libraries/redis-wrapper/ /superpaper/libraries/redis-wrapper/
+COPY libraries/settings/ /superpaper/libraries/settings/
+COPY libraries/validation-tools/ /superpaper/libraries/validation-tools/
+COPY services/real-time/ /superpaper/services/real-time/
 
 FROM app
 USER node

@@ -1,7 +1,7 @@
 'use strict'
 
-const { z, zz } = require('@overleaf/validation-tools')
-const Blob = require('overleaf-editor-core').Blob
+const { z, zz } = require('@superpaper/validation-tools')
+const Blob = require('superpaper-editor-core').Blob
 
 const hexHashPattern = new RegExp(Blob.HEX_HASH_RX_STRING)
 

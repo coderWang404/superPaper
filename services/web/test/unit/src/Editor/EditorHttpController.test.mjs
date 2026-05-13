@@ -56,7 +56,7 @@ describe('EditorHttpController', function () {
     ctx.res = new MockResponse(vi)
     ctx.next = sinon.stub()
     ctx.token = null
-    ctx.docLines = ['hello', 'overleaf']
+    ctx.docLines = ['hello', 'superpaper']
 
     ctx.AuthorizationManager = {
       isRestrictedUser: sinon.stub().returns(false),
@@ -246,7 +246,7 @@ describe('EditorHttpController', function () {
       })
     )
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler.mjs',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler.mjs',
       () => ({
         default: ctx.SplitTestHandler,
       })

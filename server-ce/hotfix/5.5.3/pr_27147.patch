@@ -103,8 +103,8 @@ index fd39369a7189..4e697b8bec2c 100644
  import chai, { expect } from 'chai'
  import chaiExclude from 'chai-exclude'
  import config from 'config'
--import ObjectPersistor from '@overleaf/object-persistor'
- import { WritableBuffer } from '@overleaf/stream-utils'
+-import ObjectPersistor from '@superpaper/object-persistor'
+ import { WritableBuffer } from '@superpaper/stream-utils'
  import {
    backupPersistor,
 @@ -27,6 +26,9 @@ import {

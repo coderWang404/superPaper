@@ -7,7 +7,7 @@ import {
   makeProjectKey,
   BlobStore,
 } from '../../../../storage/lib/blob_store/index.js'
-import { Blob } from 'overleaf-editor-core'
+import { Blob } from 'superpaper-editor-core'
 import { insertBlob } from '../../../../storage/lib/blob_store/mongo.js'
 import {
   backupBlob,
@@ -23,7 +23,7 @@ import {
   backupPersistor,
   projectBlobsBucket,
 } from '../../../../storage/lib/backupPersistor.mjs'
-import { WritableBuffer } from '@overleaf/stream-utils'
+import { WritableBuffer } from '@superpaper/stream-utils'
 import cleanup from './support/cleanup.js'
 import { ListObjectsV2Command } from '@aws-sdk/client-s3'
 
@@ -100,7 +100,7 @@ describe('backupBlob', function () {
       historyId = '123'
       await projects.insertOne({
         _id: projectId,
-        overleaf: { history: { id: 123 } },
+        superpaper: { history: { id: 123 } },
       })
       await backupBlob(historyId, blob, filePath)
     })

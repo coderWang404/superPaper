@@ -114,7 +114,7 @@ someOperation(user).catch(() => {}) // explicitly ignore errors
 #### Using callbackifyAll for Dual API
 
 ```javascript
-const { callbackifyAll } = require('@overleaf/promise-utils')
+const { callbackifyAll } = require('@superpaper/promise-utils')
 
 const MyModule = {
   async myMethod(param) {

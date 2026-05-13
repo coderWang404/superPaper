@@ -36,7 +36,7 @@ export const urlFile: BinaryFile<'url'> = {
   id: 'url-file',
   name: 'example.tex',
   linkedFileData: {
-    url: 'https://overleaf.com',
+    url: 'https://superpaper.com',
     provider: 'url',
   },
   created: new Date(2021, 1, 17, 3, 24).toISOString(),

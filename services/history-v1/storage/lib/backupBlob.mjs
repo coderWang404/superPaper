@@ -7,20 +7,20 @@ import Crypto from 'node:crypto'
 import assert from './assert.js'
 import { backedUpBlobs, projects } from './mongodb.js'
 import { Binary, ObjectId } from 'mongodb'
-import logger from '@overleaf/logger/logging-manager.js'
-import { AlreadyWrittenError } from '@overleaf/object-persistor/src/Errors.js'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger/logging-manager.js'
+import { AlreadyWrittenError } from '@superpaper/object-persistor/src/Errors.js'
+import metrics from '@superpaper/metrics'
 import zLib from 'node:zlib'
 import Path from 'node:path'
 
 const HIGHWATER_MARK = 1024 * 1024
 
 /**
- * @typedef {import("overleaf-editor-core").Blob} Blob
+ * @typedef {import("superpaper-editor-core").Blob} Blob
  */
 
 /**
- * @typedef {import("@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
+ * @typedef {import("@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
  */
 
 /**
@@ -133,7 +133,7 @@ export async function uploadBlobToBackup(historyId, blob, path, persistor) {
  */
 async function _convertLegacyHistoryIdToProjectId(historyId) {
   const project = await projects.findOne(
-    { 'overleaf.history.id': parseInt(historyId) },
+    { 'superpaper.history.id': parseInt(historyId) },
     { projection: { _id: 1 } }
   )
 

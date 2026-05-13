@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import mongodb from 'mongodb-legacy'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import UserHelper from './helpers/User.mjs'
 
 const ObjectId = mongodb.ObjectId

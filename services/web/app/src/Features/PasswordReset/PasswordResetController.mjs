@@ -5,11 +5,10 @@ import SessionManager from '../Authentication/SessionManager.mjs'
 import UserGetter from '../User/UserGetter.mjs'
 import UserUpdater from '../User/UserUpdater.mjs'
 import UserSessionsManager from '../User/UserSessionsManager.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import EmailsHelper from '../Helpers/EmailHelper.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import { z, parseReq } from '../../infrastructure/Validation.mjs'
-import Features from '../../infrastructure/Features.mjs'
 
 const setNewUserPasswordSchema = z.object({
   body: z.object({
@@ -143,7 +142,7 @@ async function requestReset(req, res, next) {
     ) {
       return res.status(403).json({
         message: {
-          key: 'no-password-allowed-due-to-sso',
+          key: 'no-password-allowed',
         },
       })
     }
@@ -215,14 +214,11 @@ async function renderSetPasswordForm(req, res, next) {
   const passwordResetToken = req.session.resetToken
   delete req.session.resetToken
 
-  res.render(
-    Features.hasFeature('saas') ? 'user/setPasswordCiam' : 'user/setPassword',
-    {
-      title: 'set_password',
-      email,
-      passwordResetToken,
-    }
-  )
+  res.render('user/setPassword', {
+    title: 'set_password',
+    email,
+    passwordResetToken,
+  })
 }
 
 const renderRequestResetFormSchema = z.object({
@@ -239,15 +235,10 @@ async function renderRequestResetForm(req, res) {
     error = 'password_reset_token_expired'
   }
 
-  res.render(
-    Features.hasFeature('saas')
-      ? 'user/passwordResetCiam'
-      : 'user/passwordReset',
-    {
-      title: 'reset_password',
-      error,
-    }
-  )
+  res.render('user/passwordReset', {
+    title: 'reset_password',
+    error,
+  })
 }
 
 export default {

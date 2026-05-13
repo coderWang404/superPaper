@@ -11,7 +11,7 @@ if [[ $(git status --porcelain=2 locales/) ]]; then
   git add locales/*
   git commit -m "auto update translation"
   # Switch the cloudbuild clone from https to ssh authentication.
-  git remote set-url --push origin git@github.com:overleaf/internal.git
+  git remote set-url --push origin git@github.com:superpaper/internal.git
   git push origin "HEAD:$BRANCH_NAME"
 else
   echo 'No changes'

@@ -20,7 +20,7 @@ describe('LockManager - trying the lock', function () {
     let Profiler
     this.LockManager = SandboxedModule.require(modulePath, {
       requires: {
-        '@overleaf/redis-wrapper': {
+        '@superpaper/redis-wrapper': {
           createClient: () => {
             return {
               auth() {},
@@ -28,8 +28,8 @@ describe('LockManager - trying the lock', function () {
             }
           },
         },
-        '@overleaf/metrics': { inc() {} },
-        '@overleaf/settings': {
+        '@superpaper/metrics': { inc() {} },
+        '@superpaper/settings': {
           redis: {
             lock: {
               key_schema: {

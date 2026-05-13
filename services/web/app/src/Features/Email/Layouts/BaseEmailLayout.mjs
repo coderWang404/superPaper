@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 
 export default _.template(`\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -12,22 +12,22 @@ export default _.template(`\
 		<style>.button td {
 	border-radius: 9999px; }
 
-.force-overleaf-style a,
-.force-overleaf-style a[href] {
+.force-superpaper-style a,
+.force-superpaper-style a[href] {
 	color: #138A07 !important;
 	text-decoration: none !important;
 	-moz-hyphens: none;
 	-ms-hyphens: none;
 	-webkit-hyphens: none;
 	hyphens: none; }
-	.force-overleaf-style a:visited,
-	.force-overleaf-style a[href]:visited {
+	.force-superpaper-style a:visited,
+	.force-superpaper-style a[href]:visited {
 		color: #138A07; }
-	.force-overleaf-style a:hover,
-	.force-overleaf-style a[href]:hover {
+	.force-superpaper-style a:hover,
+	.force-superpaper-style a[href]:hover {
 		color: #3d7935; }
-	.force-overleaf-style a:active,
-	.force-overleaf-style a[href]:active {
+	.force-superpaper-style a:active,
+	.force-superpaper-style a[href]:active {
 		color: #3d7935; }
 </style>
 		<style>@media only screen {
@@ -380,7 +380,7 @@ export default _.template(`\
                     settings.siteUrl
                   }</a>
 								</small></p>
-							<% if (footerMessage) { %><p class="force-overleaf-style" style="font-size: 12px; text-align: center;"><%= footerMessage %></p><% } %>
+							<% if (footerMessage) { %><p class="force-superpaper-style" style="font-size: 12px; text-align: center;"><%= footerMessage %></p><% } %>
 							</td></tr></table>
 						</td></tr></tbody></table>
 

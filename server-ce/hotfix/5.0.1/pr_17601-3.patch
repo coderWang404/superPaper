@@ -1,5 +1,5 @@
---- overleaf.conf
-+++ overleaf.conf
+--- superpaper.conf
++++ superpaper.conf
 @@ -10,7 +10,7 @@ server {
  	}
 

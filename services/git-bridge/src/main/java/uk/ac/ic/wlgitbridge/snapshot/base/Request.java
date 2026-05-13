@@ -79,8 +79,8 @@ public abstract class Request<T extends Result> {
               Arrays.asList(
                   "Rate-limit exceeded. Please wait a while and try again.",
                   "",
-                  "If this is unexpected, please contact us at support@overleaf.com, or",
-                  "see https://www.overleaf.com/learn/how-to/Git_integration for more information."));
+                  "If this is unexpected, please contact us at support@superpaper.com, or",
+                  "see https://www.superpaper.com/learn/how-to/Git_integration for more information."));
         } else if (sc == HttpStatus.CONFLICT_409) {
           try {
             JsonObject json = Instance.gson.fromJson(httpCause.getContent(), JsonObject.class);
@@ -89,13 +89,13 @@ public abstract class Request<T extends Result> {
               throw new MissingRepositoryException(
                   Arrays.asList(
                       "This project contains a '.git' entity at the top level, indicating that it is",
-                      "already a git repository. The Overleaf git-bridge cannot work with this project",
+                      "already a git repository. The superPaper git-bridge cannot work with this project",
                       "due to a known problem with handling these '.git' folders.",
                       "",
                       "We recommend removing the .git folder before trying again.",
                       "",
-                      "If this is unexpected, please contact us at support@overleaf.com, or",
-                      "see https://www.overleaf.com/learn/how-to/Git_integration for more information."));
+                      "If this is unexpected, please contact us at support@superpaper.com, or",
+                      "see https://www.superpaper.com/learn/how-to/Git_integration for more information."));
             } else {
               throw new MissingRepositoryException(Arrays.asList("Conflict: 409"));
             }
@@ -118,7 +118,7 @@ public abstract class Request<T extends Result> {
             if ("Exported to v2".equals(message)) {
               throw new MissingRepositoryException(
                   MissingRepositoryException.buildExportedToV2Message(newRemote));
-            } else if ("Overleaf v1 is Deprecated".equals(message)) {
+            } else if ("superPaper v1 is Deprecated".equals(message)) {
               String newUrl;
               if (json.has("newUrl")) {
                 newUrl = json.get("newUrl").getAsString();

@@ -2,7 +2,7 @@ import 'express'
 import OAuth2Server from '@node-oauth/oauth2-server'
 import type SessionData from 'express-session'
 
-// Request-scoped logger attached by @overleaf/metrics http.monitor() middleware.
+// Request-scoped logger attached by @superpaper/metrics http.monitor() middleware.
 // See libraries/metrics/http.js RequestLogger class.
 interface RequestLogger {
   addFields(fields: Record<string, unknown>): void

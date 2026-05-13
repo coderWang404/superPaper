@@ -1,5 +1,5 @@
 {
-  "name": "@overleaf/access-token-encryptor",
+  "name": "@superpaper/access-token-encryptor",
   "version": "3.0.0",
   "description": "",
   "main": "index.js",

@@ -1,10 +1,10 @@
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 
 import Events from 'node:events'
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import express from 'express'
 import fileController from './app/js/FileController.js'
 import keyBuilder from './app/js/KeyBuilder.js'

@@ -5,7 +5,7 @@
 const redisBackend = require('./chunk_store/redis')
 const { BlobStore } = require('./blob_store')
 const chunkStore = require('./chunk_store')
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const Chunk = core.Chunk
 
 /**

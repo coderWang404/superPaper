@@ -15,7 +15,7 @@ describe('displayNameForUser', function () {
     return expect(
       displayNameForUser({
         id: currentUsersId,
-        email: 'james.allen@overleaf.com',
+        email: 'james.allen@superpaper.com',
         first_name: 'James',
         last_name: 'Allen',
       })
@@ -26,7 +26,7 @@ describe('displayNameForUser', function () {
     return expect(
       displayNameForUser({
         id: currentUsersId + 1,
-        email: 'james.allen@overleaf.com',
+        email: 'james.allen@superpaper.com',
         first_name: 'James',
         last_name: 'Allen',
       })
@@ -37,7 +37,7 @@ describe('displayNameForUser', function () {
     return expect(
       displayNameForUser({
         id: currentUsersId + 1,
-        email: 'james.allen@overleaf.com',
+        email: 'james.allen@superpaper.com',
         first_name: 'James',
         last_name: '',
       })
@@ -48,7 +48,7 @@ describe('displayNameForUser', function () {
     return expect(
       displayNameForUser({
         id: currentUsersId + 1,
-        email: 'james.allen@overleaf.com',
+        email: 'james.allen@superpaper.com',
         first_name: '',
         last_name: '',
       })

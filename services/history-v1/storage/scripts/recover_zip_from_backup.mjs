@@ -13,7 +13,7 @@ import knex from '../lib/knex.js'
 import { client } from '../lib/mongodb.js'
 import archiver from 'archiver'
 import Events from 'node:events'
-import { Chunk } from 'overleaf-editor-core'
+import { Chunk } from 'superpaper-editor-core'
 import _ from 'lodash'
 
 // Silence warning.

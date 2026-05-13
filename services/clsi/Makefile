@@ -1,6 +1,6 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 BUILD_NUMBER ?= local
 BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD)
@@ -11,7 +11,7 @@ HERE=$(shell pwd)
 export MONOREPO ?= $(shell cd ../../ && pwd)
 export RETRIES ?= $(if $(CI),3,0)
 IMAGE_CI ?= ci/$(PROJECT_NAME):$(BRANCH_NAME_TAG_SAFE)-$(BUILD_NUMBER)
-IMAGE_REPO ?= us-east1-docker.pkg.dev/overleaf-ops/ol-docker/$(PROJECT_NAME)
+IMAGE_REPO ?= us-east1-docker.pkg.dev/superpaper-ops/ol-docker/$(PROJECT_NAME)
 IMAGE_REPO_FINAL ?= $(IMAGE_REPO):$(BRANCH_NAME_TAG_SAFE)-$(BUILD_NUMBER)
 IMAGE_CACHE ?= $(IMAGE_REPO):cache-$(shell cat \
 	$(MONOREPO)/package.json \
@@ -20,7 +20,7 @@ IMAGE_CACHE ?= $(IMAGE_REPO):cache-$(shell cat \
 	$(MONOREPO)/libraries/logger/package.json \
 	$(MONOREPO)/libraries/metrics/package.json \
 	$(MONOREPO)/libraries/o-error/package.json \
-	$(MONOREPO)/libraries/overleaf-editor-core/package.json \
+	$(MONOREPO)/libraries/superpaper-editor-core/package.json \
 	$(MONOREPO)/libraries/promise-utils/package.json \
 	$(MONOREPO)/libraries/settings/package.json \
 	$(MONOREPO)/libraries/stream-utils/package.json \
@@ -56,8 +56,8 @@ clean:
 RUN_LINTING = docker run --rm -v $(MONOREPO):$(MONOREPO) -w $(HERE) -e PATH=$(MONOREPO)/node_modules/.bin:$$PATH --user node node:24.14.1 corepack yarn run --silent
 RUN_LINTING_MONOREPO = docker run --rm -v $(MONOREPO):$(MONOREPO) -w $(MONOREPO) -e PATH=$(MONOREPO)/node_modules/.bin:$$PATH --user node node:24.14.1 corepack yarn run --silent
 
-RUN_LINTING_CI = docker run --rm --volume $(MONOREPO)/.editorconfig:/overleaf/.editorconfig --volume $(MONOREPO)/.eslintignore:/overleaf/.eslintignore --volume $(MONOREPO)/.eslintrc:/overleaf/.eslintrc --volume $(MONOREPO)/.prettierignore:/overleaf/.prettierignore --volume $(MONOREPO)/.prettierrc:/overleaf/.prettierrc --volume $(MONOREPO)/tsconfig.backend.json:/overleaf/tsconfig.backend.json --volume $(MONOREPO)/services/clsi/reports:/overleaf/services/clsi/reports --volume $(MONOREPO)/node_modules/.cache:/overleaf/node_modules/.cache $(IMAGE_CI) corepack yarn run --silent
-RUN_LINTING_CI_MONOREPO = docker run --rm --volume $(MONOREPO)/.editorconfig:/overleaf/.editorconfig --volume $(MONOREPO)/.eslintignore:/overleaf/.eslintignore --volume $(MONOREPO)/.eslintrc:/overleaf/.eslintrc --volume $(MONOREPO)/.prettierignore:/overleaf/.prettierignore --volume $(MONOREPO)/.prettierrc:/overleaf/.prettierrc --volume $(MONOREPO)/tsconfig.backend.json:/overleaf/tsconfig.backend.json --volume $(MONOREPO)/services/clsi/reports:/overleaf/services/clsi/reports --volume $(MONOREPO)/node_modules/.cache:/overleaf/node_modules/.cache -w /overleaf $(IMAGE_CI) corepack yarn run --silent
+RUN_LINTING_CI = docker run --rm --volume $(MONOREPO)/.editorconfig:/superpaper/.editorconfig --volume $(MONOREPO)/.eslintignore:/superpaper/.eslintignore --volume $(MONOREPO)/.eslintrc:/superpaper/.eslintrc --volume $(MONOREPO)/.prettierignore:/superpaper/.prettierignore --volume $(MONOREPO)/.prettierrc:/superpaper/.prettierrc --volume $(MONOREPO)/tsconfig.backend.json:/superpaper/tsconfig.backend.json --volume $(MONOREPO)/services/clsi/reports:/superpaper/services/clsi/reports --volume $(MONOREPO)/node_modules/.cache:/superpaper/node_modules/.cache $(IMAGE_CI) corepack yarn run --silent
+RUN_LINTING_CI_MONOREPO = docker run --rm --volume $(MONOREPO)/.editorconfig:/superpaper/.editorconfig --volume $(MONOREPO)/.eslintignore:/superpaper/.eslintignore --volume $(MONOREPO)/.eslintrc:/superpaper/.eslintrc --volume $(MONOREPO)/.prettierignore:/superpaper/.prettierignore --volume $(MONOREPO)/.prettierrc:/superpaper/.prettierrc --volume $(MONOREPO)/tsconfig.backend.json:/superpaper/tsconfig.backend.json --volume $(MONOREPO)/services/clsi/reports:/superpaper/services/clsi/reports --volume $(MONOREPO)/node_modules/.cache:/superpaper/node_modules/.cache -w /superpaper $(IMAGE_CI) corepack yarn run --silent
 
 SHELLCHECK_OPTS = \
 	--shell=bash \
@@ -109,7 +109,7 @@ lint:
 
 lint_ci:
 	-$(RUN_LINTING_CI) lint --format json --output-file reports/eslint.json
-	sed -i 's_"filePath":"/overleaf_"filePath":"$(MONOREPO)_g' reports/eslint.json
+	sed -i 's_"filePath":"/superpaper_"filePath":"$(MONOREPO)_g' reports/eslint.json
 
 lint_fix:
 	$(RUN_LINTING) lint:fix
@@ -154,8 +154,8 @@ test_acceptance_clean:
 	$(DOCKER_COMPOSE_TEST_ACCEPTANCE) down -v -t 0
 
 test_acceptance_pre_run:
-	docker pull us-east1-docker.pkg.dev/overleaf-ops/ol-docker/pandoc:3.9
-	docker pull us-east1-docker.pkg.dev/overleaf-ops/ol-docker/pandoc-staging:3.9
+	docker pull us-east1-docker.pkg.dev/superpaper-ops/ol-docker/pandoc:3.9
+	docker pull us-east1-docker.pkg.dev/superpaper-ops/ol-docker/pandoc-staging:3.9
 ifneq (,$(wildcard test/acceptance/js/scripts/pre-run))
 	$(DOCKER_COMPOSE_TEST_ACCEPTANCE) run --rm test_acceptance test/acceptance/js/scripts/pre-run
 endif

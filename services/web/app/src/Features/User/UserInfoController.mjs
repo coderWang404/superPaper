@@ -1,7 +1,7 @@
 import UserGetter from './UserGetter.mjs'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import mongodb from 'mongodb-legacy'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 
 const { ObjectId } = mongodb
 
@@ -16,7 +16,6 @@ function getLoggedInUsersPersonalInfo(req, res, next) {
       first_name: true,
       last_name: true,
       role: true,
-      institution: true,
       email: true,
       signUpDate: true,
     },
@@ -34,7 +33,7 @@ function getPersonalInfo(req, res, next) {
   const userId = req.params.user_id
 
   if (/^\d+$/.test(userId)) {
-    query = { 'overleaf.id': parseInt(userId, 10) }
+    query = { 'superpaper.id': parseInt(userId, 10) }
   } else if (/^[a-f0-9]{24}$/.test(userId)) {
     query = { _id: new ObjectId(userId) }
   } else {
@@ -72,7 +71,6 @@ function formatPersonalInfo(user) {
     'email',
     'signUpDate',
     'role',
-    'institution',
   ]) {
     if (user[key]) {
       formattedUser[key] = user[key]

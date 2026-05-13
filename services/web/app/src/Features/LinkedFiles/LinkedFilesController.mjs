@@ -11,9 +11,9 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 import SessionManager from '../Authentication/SessionManager.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import _ from 'lodash'
-import AnalyticsManager from '../../../../app/src/Features/Analytics/AnalyticsManager.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
 import LinkedFilesHandler from './LinkedFilesHandler.mjs'
 import LinkedFilesErrors from './LinkedFilesErrors.mjs'
 import {
@@ -24,7 +24,7 @@ import Modules from '../../infrastructure/Modules.mjs'
 import { plainTextResponse } from '../../infrastructure/Response.mjs'
 import { z, zz, parseReq } from '../../infrastructure/Validation.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import ProjectOutputFileAgent from './ProjectOutputFileAgent.mjs'
 import ProjectFileAgent from './ProjectFileAgent.mjs'
 import UrlAgent from './UrlAgent.mjs'
@@ -213,7 +213,7 @@ export default LinkedFilesController = {
       res.status(409)
       plainTextResponse(
         res,
-        'Sorry, the source project is not yet imported to Overleaf v2. Please import it to Overleaf v2 to refresh this file'
+        'Sorry, the source project is not yet imported to superPaper v2. Please import it to superPaper v2 to refresh this file'
       )
     } else if (error instanceof CompileFailedError) {
       res.status(422)

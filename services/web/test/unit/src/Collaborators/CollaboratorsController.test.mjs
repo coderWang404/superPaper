@@ -163,14 +163,14 @@ describe('CollaboratorsController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler.mjs',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler.mjs',
       () => ({
         default: ctx.SplitTestHandler,
       })
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Subscription/LimitationsManager.mjs',
+      '../../../../app/src/Features/Authorization/CollaborationLimitManager.mjs',
       () => ({
         default: ctx.LimitationsManager,
       })

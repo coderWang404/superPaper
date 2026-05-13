@@ -1,14 +1,14 @@
 import path from 'node:path'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import {
   fetchJson,
   fetchNothing,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
-import logger from '@overleaf/logger'
+} from '@superpaper/fetch-utils'
+import logger from '@superpaper/logger'
 import _ from 'lodash'
-import { callbackifyAll } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
+import { callbackifyAll } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
 
 const notificationsApi = _.get(settings, ['apis', 'notifications', 'url'])
 const oneSecond = 1000

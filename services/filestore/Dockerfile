@@ -1,13 +1,13 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 FROM node:24.14.1 AS base
 
-WORKDIR /overleaf/services/filestore
-ENV PATH="/overleaf/node_modules/.bin:$PATH"
+WORKDIR /superpaper/services/filestore
+ENV PATH="/superpaper/node_modules/.bin:$PATH"
 RUN corepack enable
-COPY services/filestore/install_deps.sh /overleaf/services/filestore/
+COPY services/filestore/install_deps.sh /superpaper/services/filestore/
 RUN chmod 0755 ./install_deps.sh && ./install_deps.sh
 
 # Google Cloud Storage needs a writable $HOME/.config for resumable uploads
@@ -16,26 +16,28 @@ RUN mkdir /home/node/.config && chown node:node /home/node/.config
 
 FROM base AS app
 
-COPY package.json yarn.lock .yarnrc.yml /overleaf/
-COPY libraries/fetch-utils/package.json /overleaf/libraries/fetch-utils/package.json
-COPY libraries/logger/package.json /overleaf/libraries/logger/package.json
-COPY libraries/metrics/package.json /overleaf/libraries/metrics/package.json
-COPY libraries/o-error/package.json /overleaf/libraries/o-error/package.json
-COPY libraries/object-persistor/package.json /overleaf/libraries/object-persistor/package.json
-COPY libraries/settings/package.json /overleaf/libraries/settings/package.json
-COPY libraries/stream-utils/package.json /overleaf/libraries/stream-utils/package.json
-COPY services/filestore/package.json /overleaf/services/filestore/package.json
-COPY .yarn/patches/ /overleaf/.yarn/patches/
+COPY package.json yarn.lock .yarnrc.yml /superpaper/
+COPY libraries/fetch-utils/package.json /superpaper/libraries/fetch-utils/package.json
+COPY libraries/logger/package.json /superpaper/libraries/logger/package.json
+COPY libraries/metrics/package.json /superpaper/libraries/metrics/package.json
+COPY libraries/o-error/package.json /superpaper/libraries/o-error/package.json
+COPY libraries/object-persistor/package.json /superpaper/libraries/object-persistor/package.json
+COPY libraries/settings/package.json /superpaper/libraries/settings/package.json
+COPY libraries/stream-utils/package.json /superpaper/libraries/stream-utils/package.json
+COPY services/filestore/package.json /superpaper/services/filestore/package.json
+COPY .yarn/patches/ /superpaper/.yarn/patches/
+COPY .yarn/releases/ /superpaper/.yarn/releases/
+RUN chmod 0755 /superpaper/.yarn/releases/yarn-4.14.1.cjs && ln -sf /superpaper/.yarn/releases/yarn-4.14.1.cjs /usr/local/bin/yarn && ln -sf /superpaper/.yarn/releases/yarn-4.14.1.cjs /usr/local/bin/yarnpkg
 
-RUN cd /overleaf && yarn workspaces focus @overleaf/filestore overleaf
-COPY libraries/fetch-utils/ /overleaf/libraries/fetch-utils/
-COPY libraries/logger/ /overleaf/libraries/logger/
-COPY libraries/metrics/ /overleaf/libraries/metrics/
-COPY libraries/o-error/ /overleaf/libraries/o-error/
-COPY libraries/object-persistor/ /overleaf/libraries/object-persistor/
-COPY libraries/settings/ /overleaf/libraries/settings/
-COPY libraries/stream-utils/ /overleaf/libraries/stream-utils/
-COPY services/filestore/ /overleaf/services/filestore/
+RUN cd /superpaper && yarn workspaces focus @superpaper/filestore superpaper
+COPY libraries/fetch-utils/ /superpaper/libraries/fetch-utils/
+COPY libraries/logger/ /superpaper/libraries/logger/
+COPY libraries/metrics/ /superpaper/libraries/metrics/
+COPY libraries/o-error/ /superpaper/libraries/o-error/
+COPY libraries/object-persistor/ /superpaper/libraries/object-persistor/
+COPY libraries/settings/ /superpaper/libraries/settings/
+COPY libraries/stream-utils/ /superpaper/libraries/stream-utils/
+COPY services/filestore/ /superpaper/services/filestore/
 
 FROM app
 RUN mkdir -p uploads template_files \

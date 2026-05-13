@@ -1,7 +1,7 @@
 import { assert, beforeAll, beforeEach, describe, it, vi, expect } from 'vitest'
 import Errors from '../../../../app/src/Features/Errors/Errors.js'
 import tk from 'timekeeper'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 
 const modulePath = '../../../../app/src/Features/Docstore/DocstoreManager'
 
@@ -16,12 +16,12 @@ describe('DocstoreManager', function () {
     settings = {
       apis: {
         docstore: {
-          url: 'http://docstore.overleaf.com',
+          url: 'http://docstore.superpaper.com',
         },
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: settings,
     }))
 
@@ -31,7 +31,7 @@ describe('DocstoreManager', function () {
       RequestFailedError,
     }
 
-    vi.doMock('@overleaf/fetch-utils', () => FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => FetchUtils)
 
     DocstoreManager = (await import(modulePath)).default
 

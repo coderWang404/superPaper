@@ -15,7 +15,7 @@ describe('SessionAutostartMiddleware', () => {
       cookieName,
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: Settings,
     }))
 

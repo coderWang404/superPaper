@@ -5,8 +5,8 @@ import EditorController from '../Editor/EditorController.mjs'
 import Errors from '../Errors/Errors.js'
 import FileTypeManager from './FileTypeManager.mjs'
 import SafePath from '../Project/SafePath.mjs'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 
 export default {
   addEntity: callbackify(addEntity),

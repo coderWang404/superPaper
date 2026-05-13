@@ -16,7 +16,7 @@ describe('CompileManager', function () {
       inc: sinon.stub(),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         apis: {
           clsi: { submissionBackendClass: 'c3d' },
@@ -60,12 +60,12 @@ describe('CompileManager', function () {
       RateLimiter: sinon.stub().returns(ctx.rateLimiter),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: ctx.Metrics,
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/UserAnalyticsIdCache',
+      '../../../../app/src/Features/Telemetry/UserActivityCache',
       () => ({
         default: (ctx.UserAnalyticsIdCache = {
           getWithMetrics: sinon.stub().resolves('abc'),
@@ -74,7 +74,7 @@ describe('CompileManager', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: (ctx.SplitTestHandler = {
           promises: {},
@@ -243,7 +243,6 @@ describe('CompileManager', function () {
           _id: 1,
           alphaProgram: 1,
           analyticsId: 1,
-          betaProgram: 1,
           features: 1,
         })
         .should.equal(true)

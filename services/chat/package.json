@@ -1,6 +1,6 @@
 {
-  "name": "@overleaf/chat",
-  "description": "The backend API that powers Overleaf chat",
+  "name": "@superpaper/chat",
+  "description": "The backend API that powers superPaper chat",
   "private": true,
   "main": "app.js",
   "type": "module",
@@ -16,11 +16,11 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@overleaf/logger": "*",
-    "@overleaf/metrics": "*",
-    "@overleaf/mongo-utils": "*",
-    "@overleaf/promise-utils": "*",
-    "@overleaf/settings": "*",
+    "@superpaper/logger": "*",
+    "@superpaper/metrics": "*",
+    "@superpaper/mongo-utils": "*",
+    "@superpaper/promise-utils": "*",
+    "@superpaper/settings": "*",
     "async": "^3.2.5",
     "body-parser": "1.20.4",
     "exegesis-express": "4.0.0",
@@ -28,7 +28,7 @@
     "mongodb": "6.12.0"
   },
   "devDependencies": {
-    "@overleaf/migrations": "workspace:*",
+    "@superpaper/migrations": "workspace:*",
     "acorn": "^7.1.1",
     "ajv": "^6.12.0",
     "chai": "^4.3.6",

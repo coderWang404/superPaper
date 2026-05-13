@@ -1,7 +1,7 @@
 // @ts-check
 
 import _ from 'lodash'
-import Core from 'overleaf-editor-core'
+import Core from 'superpaper-editor-core'
 import * as Errors from './Errors.js'
 import * as OperationsCompressor from './OperationsCompressor.js'
 import { isInsert, isRetain, isDelete, isComment } from './Utils.js'
@@ -263,15 +263,15 @@ export function _convertPathname(pathname) {
   // in projects in web, but we have some which have gone through
   // into history before this restriction was added. This makes
   // them valid for the history store.
-  // See https://github.com/overleaf/write_latex/issues/4471
+  // See https://github.com/superpaper/write_latex/issues/4471
   pathname = pathname.replace(/\\/g, '_')
   // workaround for filenames containing asterisks, this will
   // fail if a corresponding replacement file already exists but it
   // would fail anyway without this attempt to fix the pathname.
-  // See https://github.com/overleaf/internal/issues/900
+  // See https://github.com/superpaper/internal/issues/900
   pathname = pathname.replace(/\*/g, '__ASTERISK__')
   // workaround for filenames beginning with spaces
-  // See https://github.com/overleaf/internal/issues/1404
+  // See https://github.com/superpaper/internal/issues/1404
   // note: we have already stripped any leading slash above
   pathname = pathname.replace(/^ /, '__SPACE__') // handle top-level
   pathname = pathname.replace(/\/ /g, '/__SPACE__') // handle folders

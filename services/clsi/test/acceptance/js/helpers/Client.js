@@ -4,10 +4,10 @@ import {
   fetchNothing,
   fetchStream,
   fetchString,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import fs from 'node:fs'
 import fsPromises from 'node:fs/promises'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import FormData from 'form-data'
 
 const host = Settings.apis.clsi.url

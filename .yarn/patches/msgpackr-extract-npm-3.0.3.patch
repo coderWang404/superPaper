@@ -1,0 +1,17 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -4,12 +4,12 @@
+   "version": "3.0.3",
+   "description": "Node addon for string extraction for msgpackr",
+   "license": "MIT",
+   "repository": {
+     "type": "git",
+     "url": "http://github.com/kriszyp/msgpackr-extract"
+   },
+   "scripts": {
+-    "install": "node-gyp-build-optional-packages",
++    "install": "node -e \"process.exit(0)\"",
+     "recompile": "node-gyp rebuild",
+     "before-publish": "prebuildify-ci download && node set-optional-deps.cjs",
+     "prebuild": "prebuildify-platform-packages --target 20.14.0",

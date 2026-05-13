@@ -6,7 +6,7 @@ const {
   FileLogLevelChecker,
   GCEMetadataLogLevelChecker,
 } = require('./log-level-checker')
-const { setLogger } = require('@overleaf/fetch-utils')
+const { setLogger } = require('@superpaper/fetch-utils')
 
 const LoggingManager = {
   /**

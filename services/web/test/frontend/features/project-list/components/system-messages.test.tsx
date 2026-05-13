@@ -73,7 +73,7 @@ describe('<SystemMessages />', function () {
 
     expect(
       screen.queryByRole('link', {
-        name: `Click here to use Overleaf in ${data.lngName}`,
+        name: `Click here to use superPaper in ${data.lngName}`,
       })
     ).to.be.null
     expect(screen.queryByRole('img')).to.be.null

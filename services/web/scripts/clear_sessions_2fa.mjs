@@ -1,4 +1,4 @@
-import { promisify, promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promisify, promiseMapWithLimit } from '@superpaper/promise-utils'
 import UserSessionsRedis from '../app/src/Features/User/UserSessionsRedis.mjs'
 import minimist from 'minimist'
 import { scriptRunner } from './lib/ScriptRunner.mjs'

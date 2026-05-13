@@ -35,11 +35,11 @@ describe('GeoIpLookup', function () {
       },
     }
 
-    vi.doMock('@overleaf/fetch-utils', () => ({
+    vi.doMock('@superpaper/fetch-utils', () => ({
       ...ctx.fetchUtils,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

@@ -39,7 +39,7 @@ public class WriteLatexPutHook implements PreReceiveHook {
 
   /*
    * The constructor to use, which provides the hook with the {@link Bridge},
-   * the hostname (used to construct a URL to give to Overleaf to postback),
+   * the hostname (used to construct a URL to give to superPaper to postback),
    * and the oauth2 (used to authenticate with the Snapshot API).
    * @param repoStore
    * @param bridge the {@link Bridge}

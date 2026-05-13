@@ -10,7 +10,7 @@ docker run -t -i --entrypoint /bin/bash --name $CONTAINER_NAME base
 rm -rf /tmp/{a,b}
 
 # Take snapshot of initial container
-mkdir /tmp/a ; docker export $CONTAINER_NAME | tar --exclude node_modules -x -C /tmp/a --strip-components=1 overleaf
+mkdir /tmp/a ; docker export $CONTAINER_NAME | tar --exclude node_modules -x -C /tmp/a --strip-components=1 superpaper
 
 # In the container, run the following commands
 docker exec -i  $CONTAINER_NAME /bin/bash <<'EOF'
@@ -44,7 +44,7 @@ npm audit --audit-level=high
 EOF
 
 # Take snapshot of final container
-mkdir /tmp/b ; docker export $CONTAINER_NAME | tar --exclude node_modules -x -C /tmp/b --strip-components=1 overleaf
+mkdir /tmp/b ; docker export $CONTAINER_NAME | tar --exclude node_modules -x -C /tmp/b --strip-components=1 superpaper
 
 # Find the diff excluding node modules directories
 # The sec_ prefix ensures it applies after pr_* patches.

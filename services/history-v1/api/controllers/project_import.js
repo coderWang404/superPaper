@@ -3,11 +3,11 @@
 'use strict'
 
 const config = require('config')
-const { expressify } = require('@overleaf/promise-utils')
+const { expressify } = require('@superpaper/promise-utils')
 
 const HTTPStatus = require('http-status')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const Change = core.Change
 const Chunk = core.Chunk
 const File = core.File
@@ -15,7 +15,7 @@ const FileMap = core.FileMap
 const Snapshot = core.Snapshot
 const TextOperation = core.TextOperation
 
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 
 const storage = require('../../storage')
 const BatchBlobStore = storage.BatchBlobStore
@@ -27,7 +27,7 @@ const persistBuffer = storage.persistBuffer
 const InvalidChangeError = storage.InvalidChangeError
 
 const render = require('./render')
-const { parseReq } = require('@overleaf/validation-tools')
+const { parseReq } = require('@superpaper/validation-tools')
 const schemas = require('../schema')
 const Rollout = require('../app/rollout')
 const redisBackend = require('../../storage/lib/chunk_store/redis')

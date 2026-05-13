@@ -1,21 +1,21 @@
 // @ts-check
 
-const Settings = require('@overleaf/settings')
-const { callbackifyAll } = require('@overleaf/promise-utils')
+const Settings = require('@superpaper/settings')
+const { callbackifyAll } = require('@superpaper/promise-utils')
 const projectHistoryKeys = Settings.redis?.project_history?.key_schema
-const rclient = require('@overleaf/redis-wrapper').createClient(
+const rclient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.project_history
 )
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const metrics = require('./Metrics')
 const { docIsTooLarge, stringFileDataContentIsTooLarge } = require('./Limits')
 const { addTrackedDeletesToContent, extractOriginOrSource } = require('./Utils')
 const HistoryConversions = require('./HistoryConversions')
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 /**
  * @import { Ranges } from './types'
- * @import { StringFileRawData } from 'overleaf-editor-core/lib/types'
+ * @import { StringFileRawData } from 'superpaper-editor-core/lib/types'
  */
 
 const ProjectHistoryRedisManager = {

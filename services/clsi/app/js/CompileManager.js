@@ -2,9 +2,9 @@ import fsPromises from 'node:fs/promises'
 import os from 'node:os'
 import Path from 'node:path'
 import { callbackify } from 'node:util'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import ResourceWriter from './ResourceWriter.js'
 import LatexRunner from './LatexRunner.js'
 import OutputFileFinder from './OutputFileFinder.js'
@@ -21,7 +21,7 @@ import CLSICacheHandler from './CLSICacheHandler.js'
 import StatsManager from './StatsManager.js'
 import SafeReader from './SafeReader.js'
 import LatexMetrics from './LatexMetrics.js'
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
 import * as HistoryResourceWriter from './HistoryResourceWriter.js'
 
 const { downloadLatestCompileCache, downloadOutputDotSynctexFromCompileCache } =
@@ -169,7 +169,7 @@ async function doCompile(request, stats, timings) {
 
   // set up environment variables for chktex
   const env = {
-    OVERLEAF_PROJECT_ID: request.project_id,
+    SUPERPAPER_PROJECT_ID: request.project_id,
   }
   if (Settings.texliveOpenoutAny && Settings.texliveOpenoutAny !== '') {
     // override default texlive openout_any environment variable

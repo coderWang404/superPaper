@@ -10,7 +10,7 @@ const MODULE_PATH =
 
 describe('TpdsProjectFlusher', function () {
   beforeEach(async function (ctx) {
-    ctx.project = { _id: new ObjectId(), overleaf: { history: { id: 42 } } }
+    ctx.project = { _id: new ObjectId(), superpaper: { history: { id: 42 } } }
     ctx.folder = { _id: new ObjectId() }
     ctx.docs = {
       '/doc/one': {
@@ -132,7 +132,7 @@ describe('TpdsProjectFlusher', function () {
           expect(ctx.TpdsUpdateSender.promises.addFile).to.have.been.calledWith(
             {
               projectId: ctx.project._id,
-              historyId: ctx.project.overleaf.history.id,
+              historyId: ctx.project.superpaper.history.id,
               fileId: file._id,
               hash: file.hash,
               projectName: ctx.project.name,
@@ -263,7 +263,7 @@ describe('TpdsProjectFlusher', function () {
               ctx.TpdsUpdateSender.promises.addFile
             ).to.have.been.calledWith({
               projectId: ctx.project._id,
-              historyId: ctx.project.overleaf.history.id,
+              historyId: ctx.project.superpaper.history.id,
               fileId: file._id,
               hash: file.hash,
               projectName: ctx.project.name,

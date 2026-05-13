@@ -12,7 +12,7 @@ const testFiles = require('../storage/support/test_files')
 const testProjects = require('./support/test_projects')
 const testServer = require('./support/test_server')
 
-const { Change, File, Operation } = require('overleaf-editor-core')
+const { Change, File, Operation } = require('superpaper-editor-core')
 
 describe('project import', function () {
   beforeEach(cleanup.everything)

@@ -21,10 +21,10 @@ async function ensureNoConnectedClients(projectId) {
  */
 export async function advanceOTMigrationStage(projectId, nextStage) {
   const project = await ProjectGetter.promises.getProject(projectId, {
-    overleaf: true,
+    superpaper: true,
   })
   if (!project) throw new NotFoundError()
-  const { otMigrationStage } = project?.overleaf?.history || {}
+  const { otMigrationStage } = project?.superpaper?.history || {}
   if (otMigrationStage >= nextStage) return { otMigrationStage }
 
   // NOTE: For the single connected client case, we could emit a pub/sub event here asking any (inactive) client without pending edits to disconnect briefly.

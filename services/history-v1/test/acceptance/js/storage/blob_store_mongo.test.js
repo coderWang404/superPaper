@@ -1,6 +1,6 @@
 const { expect } = require('chai')
 const { ObjectId, Binary } = require('mongodb')
-const { Blob } = require('overleaf-editor-core')
+const { Blob } = require('superpaper-editor-core')
 const cleanup = require('./support/cleanup')
 const mongoBackend = require('../../../../storage/lib/blob_store/mongo')
 const mongodb = require('../../../../storage/lib/mongodb')

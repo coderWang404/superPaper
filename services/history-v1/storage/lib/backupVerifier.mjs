@@ -1,24 +1,24 @@
 // @ts-check
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import chunkStore from '../lib/chunk_store/index.js'
 import {
   backupPersistor,
   chunksBucket,
   projectBlobsBucket,
 } from './backupPersistor.mjs'
-import { Blob, Chunk, History } from 'overleaf-editor-core'
+import { Blob, Chunk, History } from 'superpaper-editor-core'
 import { BlobStore, GLOBAL_BLOBS, makeProjectKey } from './blob_store/index.js'
 import blobHash from './blob_hash.js'
-import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
-import logger from '@overleaf/logger'
+import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
+import logger from '@superpaper/logger'
 import path from 'node:path'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import streams from './streams.js'
-import objectPersistor from '@overleaf/object-persistor'
+import objectPersistor from '@superpaper/object-persistor'
 import { getEndDateForRPO } from '../../backupVerifier/utils.mjs'
 
 /**
- * @typedef {import("@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor.js").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
+ * @typedef {import("@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor.js").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
  */
 
 /**

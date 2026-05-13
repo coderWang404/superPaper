@@ -39,7 +39,7 @@
  const streams = require('../streams')
  const postgresBackend = require('./postgres')
  const mongoBackend = require('./mongo')
-+const logger = require('@overleaf/logger')
++const logger = require('@superpaper/logger')
 
  const GLOBAL_BLOBS = new Map()
 
@@ -98,9 +98,9 @@
 +++ services/history-v1/storage/lib/history_store.js
 @@ -8,6 +8,7 @@ const path = require('path')
 
- const OError = require('@overleaf/o-error')
- const objectPersistor = require('@overleaf/object-persistor')
-+const logger = require('@overleaf/logger')
+ const OError = require('@superpaper/o-error')
+ const objectPersistor = require('@superpaper/object-persistor')
++const logger = require('@superpaper/logger')
 
  const assert = require('./assert')
  const persistor = require('./persistor')

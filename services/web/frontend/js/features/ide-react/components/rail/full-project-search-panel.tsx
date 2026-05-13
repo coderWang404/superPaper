@@ -1,7 +1,7 @@
 import { ElementType } from 'react'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 
-const componentModule = importOverleafModules('fullProjectSearchPanel')[0] as
+const componentModule = importSuperPaperModules('fullProjectSearchPanel')[0] as
   | {
       import: { default: ElementType }
       path: string

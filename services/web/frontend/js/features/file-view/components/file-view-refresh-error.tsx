@@ -1,6 +1,6 @@
 import type { ElementType } from 'react'
 import { useTranslation } from 'react-i18next'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { BinaryFile } from '../types/binary-file'
 import OLNotification from '@/shared/components/ol/ol-notification'
 
@@ -9,7 +9,7 @@ type FileViewRefreshErrorProps = {
   refreshError: string
 }
 
-const tprFileViewRefreshError = importOverleafModules(
+const tprFileViewRefreshError = importSuperPaperModules(
   'tprFileViewRefreshError'
 ) as {
   import: { TPRFileViewRefreshError: ElementType }

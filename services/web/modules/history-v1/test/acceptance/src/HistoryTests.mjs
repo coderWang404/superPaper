@@ -31,7 +31,7 @@ describe('History', function () {
           },
           {
             $set: {
-              'overleaf.history.id': this.v1_history_id,
+              'superpaper.history.id': this.v1_history_id,
             },
           },
           error => {
@@ -78,7 +78,7 @@ describe('History', function () {
             { _id: new ObjectId(this.project_id) },
             {
               $set: {
-                'overleaf.history.id': this.v1_history_id,
+                'superpaper.history.id': this.v1_history_id,
               },
             },
             done
@@ -191,7 +191,7 @@ describe('History', function () {
           },
           {
             $unset: {
-              'overleaf.history.id': true,
+              'superpaper.history.id': true,
             },
           },
           error => {
@@ -267,7 +267,7 @@ describe('History', function () {
           },
           {
             $set: {
-              'overleaf.history.id': this.v1_history_id,
+              'superpaper.history.id': this.v1_history_id,
             },
           },
           error => {
@@ -331,7 +331,7 @@ describe('History', function () {
           },
           {
             $set: {
-              'overleaf.history.id': this.v1_history_id,
+              'superpaper.history.id': this.v1_history_id,
             },
           },
           error => {

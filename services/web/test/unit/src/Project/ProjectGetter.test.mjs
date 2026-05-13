@@ -382,10 +382,10 @@ describe('ProjectGetter', function () {
   })
 
   describe('findAllDebugProjects', function () {
-    it('should find all projects with overleaf.isDebugCopyOf of type objectId', async function (ctx) {
+    it('should find all projects with superpaper.isDebugCopyOf of type objectId', async function (ctx) {
       await ctx.ProjectGetter.promises.findAllDebugProjects('fields')
       sinon.assert.calledWith(ctx.Project.find, {
-        'overleaf.isDebugCopyOf': { $type: 'objectId' },
+        'superpaper.isDebugCopyOf': { $type: 'objectId' },
       })
       sinon.assert.calledWith(ctx.Project.find().populate, 'owner_ref', [
         'email',
@@ -416,7 +416,7 @@ describe('ProjectGetter', function () {
 
       sinon.assert.calledWith(ctx.Project.exists, {
         owner_ref: ctx.userId,
-        'overleaf.isDebugCopyOf': { $type: 'objectId' },
+        'superpaper.isDebugCopyOf': { $type: 'objectId' },
         lastUpdated: { $lt: cutoffDate },
       })
 

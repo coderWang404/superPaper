@@ -5,11 +5,11 @@ import readline from 'node:readline'
 import fs from 'node:fs'
 import minimist from 'minimist'
 import { ObjectId } from 'mongodb'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import { db, mongoClient } from '../app/js/mongodb.js'
 import * as HistoryStoreManager from '../app/js/HistoryStoreManager.js'
 import * as RedisManager from '../app/js/RedisManager.js'
@@ -87,7 +87,7 @@ const logInterval = setInterval(logStats, 10_000)
  * @property {ObjectId} _id
  * @property {Date} lastUpdated
  * @property {Array<Folder>} rootFolder
- * @property {{history: {id: (number|string)}}} overleaf
+ * @property {{history: {id: (number|string)}}} superpaper
  */
 
 /**
@@ -147,7 +147,7 @@ const conditions = {
     // Resyncs started after soft-deleting can trigger 404s and result in empty files.
     const endTimestamp = await getLastEndTimestamp(
       project._id.toString(),
-      project.overleaf.history.id.toString()
+      project.superpaper.history.id.toString()
     )
     return endTimestamp > FILESTORE_SOFT_DELETE_START
   },
@@ -164,7 +164,7 @@ async function checkProject(project) {
     return null
   }
   const projectId = project._id.toString()
-  const historyId = project.overleaf.history.id.toString()
+  const historyId = project.superpaper.history.id.toString()
   for (const [condition, check] of Object.entries(conditions)) {
     try {
       if (await check(project)) return { projectId, historyId }
@@ -299,7 +299,7 @@ async function main() {
   await batchedUpdate(db.projects, {}, processBatch, {
     _id: 1,
     lastUpdated: 1,
-    'overleaf.history': 1,
+    'superpaper.history': 1,
     rootFolder: 1,
   })
 }

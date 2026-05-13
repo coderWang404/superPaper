@@ -1,6 +1,5 @@
 import { useProjectListContext } from '../context/project-list-context'
 import { useTranslation } from 'react-i18next'
-import CurrentPlanWidget from './current-plan-widget/current-plan-widget'
 import NewProjectButton from './new-project-button'
 import ProjectListTable from './table/project-list-table'
 import UserNotifications from './notifications/user-notifications'
@@ -19,10 +18,8 @@ import DefaultNavbar from '@/shared/components/navbar/default-navbar'
 import Footer from '@/shared/components/footer/footer'
 import SidebarDsNav from '@/features/project-list/components/sidebar/sidebar-ds-nav'
 import SystemMessages from '@/shared/components/system-messages'
-import overleafLogo from '@/shared/svgs/overleaf-a-ds-solution-mallard.svg'
-import overleafLogoDark from '@/shared/svgs/overleaf-a-ds-solution-mallard-dark.svg'
+import superPaperLogo from '@/shared/images/superpaper-icon.png'
 import CookieBanner from '@/shared/components/cookie-banner'
-import { useActiveOverallTheme } from '@/shared/hooks/use-active-overall-theme'
 import { isSplitTestEnabled } from '@/utils/splitTestUtils'
 
 export function ProjectListDsNav() {
@@ -38,8 +35,7 @@ export function ProjectListDsNav() {
     tags,
     selectedTagId,
   } = useProjectListContext()
-  const activeOverallTheme = useActiveOverallTheme()
-  const isLibraryEnabled = isSplitTestEnabled('overleaf-library')
+  const isLibraryEnabled = isSplitTestEnabled('superpaper-library')
 
   const selectedTag = tags.find(tag => tag._id === selectedTagId)
 
@@ -56,14 +52,12 @@ export function ProjectListDsNav() {
           />
           <NewProjectButton
             id="new-project-button-projects-table"
-            showAddAffiliationWidget
           />
         </>
       ) : (
         <>
           <NewProjectButton
             id="new-project-button-projects-table"
-            showAddAffiliationWidget
           />
           <SearchForm
             inputValue={searchText}
@@ -84,9 +78,7 @@ export function ProjectListDsNav() {
       <SystemMessages />
       <DefaultNavbar
         {...navbarProps}
-        overleafLogo={
-          activeOverallTheme === 'dark' ? overleafLogoDark : overleafLogo
-        }
+        brandLogo={superPaperLogo}
         showCloseIcon
       />
       <div className="project-list-wrapper">
@@ -98,24 +90,20 @@ export function ProjectListDsNav() {
               <UserNotifications />
               <main aria-labelledby="main-content">
                 <div className="project-list-header-row">
-                  <ProjectListTitle
-                    filter={filter}
-                    selectedTag={selectedTag}
-                    selectedTagId={selectedTagId}
-                    className="text-truncate d-none d-md-block"
-                  />
-                  <div className="project-tools">
-                    <div className="d-none d-md-block">
-                      {selectedProjects.length === 0 ? (
-                        <CurrentPlanWidget />
-                      ) : (
-                        <ProjectTools />
-                      )}
+                    <ProjectListTitle
+                      filter={filter}
+                      selectedTag={selectedTag}
+                      selectedTagId={selectedTagId}
+                      className="text-truncate d-none d-md-block"
+                    />
+                    <div className="project-tools">
+                      <div className="d-none d-md-block">
+                        {selectedProjects.length > 0 && <ProjectTools />}
+                      </div>
+                      <div className="d-md-none">
+                        {selectedProjects.length > 0 && <ProjectTools />}
+                      </div>
                     </div>
-                    <div className="d-md-none">
-                      <CurrentPlanWidget />
-                    </div>
-                  </div>
                 </div>
                 <div className="project-ds-nav-project-list">
                   <OLRow className="d-none d-md-flex align-items-center">
@@ -131,14 +119,10 @@ export function ProjectListDsNav() {
                       <OLCol className="ms-auto" xs="auto">
                         <NewProjectButton
                           id="new-project-button-projects-table"
-                          showAddAffiliationWidget
                         />
                       </OLCol>
                     )}
                   </OLRow>
-                  <div className="project-list-sidebar-survey-wrapper d-md-none">
-                    {/* Omit the survey card in mobile view for now */}
-                  </div>
                   <div className="mt-1 d-md-none">
                     <div
                       role="toolbar"

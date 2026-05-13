@@ -17,13 +17,13 @@ describe('PersistorManager', () => {
           bucket: 'wombat',
         },
       }
-      vi.doMock('@overleaf/settings', () => ({
+      vi.doMock('@superpaper/settings', () => ({
         default: Settings,
       }))
-      vi.doMock('@overleaf/object-persistor', () => ({
+      vi.doMock('@superpaper/object-persistor', () => ({
         default: () => new FakePersistor(),
       }))
-      vi.doMock('@overleaf/metrics', () => ({ default: {} }))
+      vi.doMock('@superpaper/metrics', () => ({ default: {} }))
       const PersistorManger = (await import(modulePath)).default
 
       expect(PersistorManger).to.be.instanceof(FakePersistor)
@@ -39,13 +39,13 @@ describe('PersistorManager', () => {
           bucket: 'wombat',
         },
       }
-      vi.doMock('@overleaf/settings', () => ({
+      vi.doMock('@superpaper/settings', () => ({
         default: Settings,
       }))
-      vi.doMock('@overleaf/object-persistor', () => ({
+      vi.doMock('@superpaper/object-persistor', () => ({
         default: () => new FakePersistor(),
       }))
-      vi.doMock('@overleaf/metrics', () => ({ default: {} }))
+      vi.doMock('@superpaper/metrics', () => ({ default: {} }))
       const PersistorManger = (await import(modulePath)).default
 
       expect(PersistorManger.constructor.name).to.equal('AbstractPersistor')

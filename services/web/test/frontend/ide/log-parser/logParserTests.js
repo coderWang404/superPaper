@@ -356,7 +356,7 @@ describe('logParser', function () {
     ).to.equal(0)
   })
 
-  // https://github.com/overleaf/overleaf/issues/1023
+  // https://github.com/superpaper/superpaper/issues/1023
   it('should parse logs from issue 1023', function () {
     const { errors, warnings } = parseLatexLog('open-source-issue-1023.log')
     expect(errors.map(x => [x.line, x.message, x.file])).to.deep.equal([

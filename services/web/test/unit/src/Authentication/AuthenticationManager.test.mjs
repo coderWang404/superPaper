@@ -40,7 +40,7 @@ describe('AuthenticationManager', function () {
       }),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -94,7 +94,7 @@ describe('AuthenticationManager', function () {
       beforeEach(function (ctx) {
         ctx.user = {
           _id: 'user-id',
-          email: (ctx.email = 'USER@overleaf.com'),
+          email: (ctx.email = 'USER@superpaper.com'),
         }
         ctx.user.hashedPassword = ctx.testPassword
         ctx.User.findOne = sinon
@@ -240,7 +240,7 @@ describe('AuthenticationManager', function () {
       beforeEach(function (ctx) {
         ctx.user = {
           _id: '5c8791477192a80b5e76ca7e',
-          email: (ctx.email = 'USER@overleaf.com'),
+          email: (ctx.email = 'USER@superpaper.com'),
         }
         ctx.db.users.updateOne = sinon
         ctx.User.findOne = sinon
@@ -322,7 +322,7 @@ describe('AuthenticationManager', function () {
       beforeEach(function (ctx) {
         ctx.user = {
           _id: 'user-id',
-          email: (ctx.email = 'USER@overleaf.com'),
+          email: (ctx.email = 'USER@superpaper.com'),
         }
         ctx.unencryptedPassword = 'banana'
         ctx.User.findOne = sinon
@@ -1085,7 +1085,7 @@ describe('AuthenticationManager', function () {
         ctx.Metrics.inc.reset()
         ctx.UserGetter.promises.getUser = sinon
           .stub()
-          .resolves({ overleaf: null })
+          .resolves({ superpaper: null })
         await ctx.AuthenticationManager.promises.setUserPassword(
           ctx.user,
           ctx.password

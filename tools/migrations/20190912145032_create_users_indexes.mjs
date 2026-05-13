@@ -33,11 +33,11 @@ const indexes = [
   {
     unique: true,
     key: {
-      'overleaf.id': 1,
+      'superpaper.id': 1,
     },
-    name: 'overleaf.id_1',
+    name: 'superpaper.id_1',
     partialFilterExpression: {
-      'overleaf.id': {
+      'superpaper.id': {
         $exists: true,
       },
     },

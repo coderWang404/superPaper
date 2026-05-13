@@ -1,5 +1,5 @@
 import { ObjectId, ReadPreference, MongoClient } from 'mongodb'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 export { ObjectId } from 'mongodb'
 

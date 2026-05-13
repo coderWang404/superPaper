@@ -43,7 +43,7 @@ public class WLReceivePackFactory implements ReceivePackFactory<HttpServletReque
    * the {@link Oauth2Filter}, and the {@link Bridge}.
    *
    * At this point, the repository will have been synced to the latest on
-   * Overleaf, but it's possible that an update happens on Overleaf while our
+   * superPaper, but it's possible that an update happens on superPaper while our
    * put hook is running. In this case, we fail, and the user tries again,
    * triggering another sync, and so on.
    * @param httpServletRequest the original request

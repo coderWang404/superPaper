@@ -2,7 +2,7 @@ import { vi, expect } from 'vitest'
 import sinon from 'sinon'
 import mockFs from 'mock-fs'
 import mongodb from 'mongodb-legacy'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 const { ObjectId } = mongodb
 
@@ -26,7 +26,7 @@ describe('FileSystemImportManager', function () {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         textExtensions: ['tex', 'txt'],
         editableFilenames: [

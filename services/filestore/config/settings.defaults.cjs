@@ -71,8 +71,8 @@ const settings = {
       template_files: process.env.TEMPLATE_FILES_BUCKET_NAME,
 
       // allow signed links to be generated for these buckets
-      project_blobs: process.env.OVERLEAF_EDITOR_PROJECT_BLOBS_BUCKET,
-      global_blobs: process.env.OVERLEAF_EDITOR_BLOBS_BUCKET,
+      project_blobs: process.env.SUPERPAPER_EDITOR_PROJECT_BLOBS_BUCKET,
+      global_blobs: process.env.SUPERPAPER_EDITOR_BLOBS_BUCKET,
     },
 
     fallback: process.env.FALLBACK_BACKEND

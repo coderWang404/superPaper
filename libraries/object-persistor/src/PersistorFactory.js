@@ -1,4 +1,4 @@
-const Logger = require('@overleaf/logger')
+const Logger = require('@superpaper/logger')
 const { SettingsError } = require('./Errors')
 
 function getPersistor(backend, settings) {

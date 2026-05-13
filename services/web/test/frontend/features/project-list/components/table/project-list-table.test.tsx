@@ -94,8 +94,8 @@ describe('<ProjectListTable />', function () {
     const row3 = screen
       .getByRole('cell', { name: currentProjects[2].name })
       .closest('tr')!
-    within(row3).getByText('worf@overleaf.com')
-    within(row3).getAllByText('a month ago by worf@overleaf.com')
+    within(row3).getByText('worf@superpaper.com')
+    within(row3).getAllByText('a month ago by worf@superpaper.com')
     // link sharing project
     const row4 = screen
       .getByRole('cell', { name: currentProjects[3].name })

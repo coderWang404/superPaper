@@ -12,7 +12,7 @@ async function checkAllProjectsAreMigrated() {
   console.log('checking all projects are migrated to Full Project History')
 
   const count = await db.projects.countDocuments({
-    'overleaf.history.display': { $ne: true },
+    'superpaper.history.display': { $ne: true },
   })
 
   if (count === 0) {
@@ -30,10 +30,10 @@ async function setAllowDowngradeToFalse() {
   console.log('unsetting `allowDowngrade` flag in all projects')
   await db.projects.updateMany(
     {
-      'overleaf.history.id': { $exists: true },
-      'overleaf.history.allowDowngrade': true,
+      'superpaper.history.id': { $exists: true },
+      'superpaper.history.allowDowngrade': true,
     },
-    { $unset: { 'overleaf.history.allowDowngrade': 1 } }
+    { $unset: { 'superpaper.history.allowDowngrade': 1 } }
   )
   console.log('unsetting `allowDowngrade` flag in all projects - Done')
 }

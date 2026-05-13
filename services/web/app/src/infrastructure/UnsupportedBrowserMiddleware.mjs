@@ -1,5 +1,5 @@
 import Bowser from 'bowser'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Url from 'node:url'
 import UrlHelper from '../Features/Helpers/UrlHelper.mjs'
 

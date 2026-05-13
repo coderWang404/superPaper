@@ -1,6 +1,6 @@
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 const DMP = require('diff-match-patch')
-const { TextOperation } = require('overleaf-editor-core')
+const { TextOperation } = require('superpaper-editor-core')
 const dmp = new DMP()
 
 // Do not attempt to produce a diff for more than 100ms
@@ -40,7 +40,7 @@ module.exports = {
   },
 
   /**
-   * @param {import("overleaf-editor-core").StringFileData} file
+   * @param {import("superpaper-editor-core").StringFileData} file
    * @param {string} after
    * @return {TextOperation}
    */

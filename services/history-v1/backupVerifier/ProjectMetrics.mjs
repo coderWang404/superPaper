@@ -1,4 +1,4 @@
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import { objectIdFromDate } from './utils.mjs'
 import { db } from '../storage/lib/mongodb.js'
 
@@ -11,7 +11,7 @@ const projectsCollection = db.collection('projects')
  */
 export async function measurePendingChangesBeforeTime(beforeTime) {
   const pendingChangeCount = await projectsCollection.countDocuments({
-    'overleaf.backup.pendingChangeAt': {
+    'superpaper.backup.pendingChangeAt': {
       $lt: beforeTime,
     },
   })
@@ -26,7 +26,7 @@ export async function measurePendingChangesBeforeTime(beforeTime) {
  */
 export async function measureNeverBackedUpProjects(graceTime) {
   const neverBackedUpCount = await projectsCollection.countDocuments({
-    'overleaf.backup.lastBackedUpVersion': null,
+    'superpaper.backup.lastBackedUpVersion': null,
     _id: { $lt: objectIdFromDate(graceTime) },
   })
   Metrics.gauge('backup_verification_never_backed_up', neverBackedUpCount)

@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import async from 'async'
 import * as DiffGenerator from './DiffGenerator.js'
 import * as FileTreeDiffGenerator from './FileTreeDiffGenerator.js'

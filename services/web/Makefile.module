@@ -4,12 +4,12 @@ MODULE_DIR := modules/$(MODULE_NAME)
 PROJECT_NAME = web
 export RETRIES ?= $(if $(CI),3,0)
 
-export OVERLEAF_CONFIG = /overleaf/services/web/$(MODULE_DIR)/test/acceptance/config/settings.test.js
-export BASE_CONFIG ?= /overleaf/services/web/test/acceptance/config/settings.test.saas.js
+export SUPERPAPER_CONFIG = /superpaper/services/web/$(MODULE_DIR)/test/acceptance/config/settings.test.js
+export BASE_CONFIG ?= /superpaper/services/web/test/acceptance/config/settings.test.saas.js
 
-CFG_SAAS=/overleaf/services/web/test/acceptance/config/settings.test.saas.js
-CFG_SERVER_CE=/overleaf/services/web/test/acceptance/config/settings.test.server-ce.js
-CFG_SERVER_PRO=/overleaf/services/web/test/acceptance/config/settings.test.server-pro.js
+CFG_SAAS=/superpaper/services/web/test/acceptance/config/settings.test.saas.js
+CFG_SERVER_CE=/superpaper/services/web/test/acceptance/config/settings.test.server-ce.js
+CFG_SERVER_PRO=/superpaper/services/web/test/acceptance/config/settings.test.server-pro.js
 
 DOCKER_COMPOSE_FLAGS ?= -f docker-compose.yml
 DOCKER_COMPOSE := cd ../../ && \

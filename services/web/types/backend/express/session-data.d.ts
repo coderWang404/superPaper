@@ -10,20 +10,6 @@ declare module 'express-session' {
     postOnboardingRedirect?: string
     sharedProjectData?: any
     templateData?: any
-    saml?: {
-      reconfirmed?: boolean
-      linked?: {
-        universityName?: string
-        providerName?: string
-      }
-      linkedGroup?: any
-      requestedEmail?: string
-      emailNonCanonical?: string
-      institutionEmail?: string
-      registerIntercept?: boolean
-      error?: any
-    }
-    samlBeta?: boolean
     // Add further properties as needed
   }
 }

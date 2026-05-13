@@ -7,8 +7,6 @@ export default function AdminMenu({
   canDisplayAdminMenu,
   canDisplayAdminRedirect,
   canDisplayProjectUrlLookup,
-  canDisplaySplitTestMenu,
-  canDisplaySurveyMenu,
   canDisplayScriptLogMenu,
   adminUrl,
 }: Pick<
@@ -16,8 +14,6 @@ export default function AdminMenu({
   | 'canDisplayAdminMenu'
   | 'canDisplayAdminRedirect'
   | 'canDisplayProjectUrlLookup'
-  | 'canDisplaySplitTestMenu'
-  | 'canDisplaySurveyMenu'
   | 'canDisplayScriptLogMenu'
   | 'adminUrl'
 >) {
@@ -51,16 +47,6 @@ export default function AdminMenu({
       {canDisplayAdminRedirect && adminUrl ? (
         <NavDropdownLinkItem href={adminUrl}>
           Switch to Admin
-        </NavDropdownLinkItem>
-      ) : null}
-      {canDisplaySplitTestMenu ? (
-        <NavDropdownLinkItem href="/admin/split-test">
-          Manage Feature Flags
-        </NavDropdownLinkItem>
-      ) : null}
-      {canDisplaySurveyMenu ? (
-        <NavDropdownLinkItem href="/admin/survey">
-          Manage Surveys
         </NavDropdownLinkItem>
       ) : null}
       {canDisplayScriptLogMenu ? (

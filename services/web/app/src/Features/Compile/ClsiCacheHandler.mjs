@@ -3,14 +3,13 @@ import {
   fetchNothing,
   fetchRedirectWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+} from '@superpaper/fetch-utils'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 import { NotFoundError, InvalidNameError } from '../Errors/Errors.js'
-import Features from '../../infrastructure/Features.mjs'
 import Path from 'node:path'
-import { zz } from '@overleaf/validation-tools'
+import { zz } from '@superpaper/validation-tools'
 
 const TIMEOUT = 4_000
 
@@ -32,7 +31,7 @@ function isAllowedFilename(filename) {
       'output.log',
       'output.pdf',
       'output.synctex.gz',
-      'output.overleaf.json',
+      'output.superpaper.json',
       'output.tar.gz',
       // Not in web: 'history-resync.json.gz' is only read/written by clsi.
       // The user/frontend should not be able to download it directly.
@@ -79,7 +78,7 @@ function getEgressLabel(fsPath) {
  * @return {Promise<void>}
  */
 async function clearCache(projectId, userId) {
-  if (!Features.hasFeature('saas')) return
+  if (!Settings.apis?.clsiCache?.instances?.length) return
 
   let path = `/project/${projectId}`
   if (userId) {

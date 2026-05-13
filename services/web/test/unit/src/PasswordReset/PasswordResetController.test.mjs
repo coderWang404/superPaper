@@ -63,7 +63,7 @@ describe('PasswordResetController', function () {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -111,7 +111,7 @@ describe('PasswordResetController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })

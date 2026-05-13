@@ -1,4 +1,4 @@
-# overleaf/clsi
+# superpaper/clsi
 
 A web api for compiling LaTeX documents in the cloud
 
@@ -28,25 +28,25 @@ The CLSI can be configured through the following environment variables:
 - `LISTEN_ADDRESS` - The address for the RESTful service to listen on. Set to `0.0.0.0` to listen on all network interfaces
 - `PROCESS_LIFE_SPAN_LIMIT_MS` - Process life span limit in milliseconds
 - `SMOKE_TEST` - Whether to run smoke tests
-- `TEXLIVE_IMAGE` - The TeX Live Docker image to use for sibling containers, e.g. `us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2025.1`
-- `TEX_LIVE_IMAGE_NAME_OVERRIDE` - The name of the registry for the Docker image e.g. `us-east1-docker.pkg.dev/overleaf-ops/ol-docker`
+- `TEXLIVE_IMAGE` - The TeX Live Docker image to use for sibling containers, e.g. `us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2025.1`
+- `TEX_LIVE_IMAGE_NAME_OVERRIDE` - The name of the registry for the Docker image e.g. `us-east1-docker.pkg.dev/superpaper-ops/ol-docker`
 - `TEXLIVE_IMAGE_USER` - When using sibling containers, the user to run as in the TeX Live image. Defaults to `tex`
 - `TEXLIVE_OPENOUT_ANY` - Sets the `openout_any` environment variable for TeX Live (see the `\openout` primitive [documentation](http://tug.org/texinfohtml/web2c.html#tex-invocation))
 
-Further environment variables configure the [metrics module](https://github.com/overleaf/metrics-module)
+Further environment variables configure the [metrics module](https://github.com/superpaper/metrics-module)
 
 ## Installation
 
-The CLSI can be installed and set up as part of the entire [Overleaf stack](https://github.com/overleaf/overleaf) (complete with front end editor and document storage), or it can be run as a standalone service. To run is as a standalone service, first checkout this repository:
+The CLSI can be installed and set up as part of the entire [superPaper stack](https://github.com/superpaper/superpaper) (complete with front end editor and document storage), or it can be run as a standalone service. To run is as a standalone service, first checkout this repository:
 
 ```shell
-git clone git@github.com:overleaf/overleaf.git
+git clone git@github.com:superpaper/superpaper.git
 ```
 
 Then build the Docker image:
 
 ```shell
-docker build . -t overleaf/clsi -f services/clsi/Dockerfile
+docker build . -t superpaper/clsi -f services/clsi/Dockerfile
 ```
 
 Then pull the TeX Live image:
@@ -65,11 +65,11 @@ docker run --rm \
   -e TEXLIVE_IMAGE=texlive/texlive \
   -e TEXLIVE_IMAGE_USER=root \
   -e SANDBOXED_COMPILES_HOST_DIR_COMPILES="$PWD/compiles" \
-  -v "$PWD/compiles:/overleaf/services/clsi/compiles" \
-  -v "$PWD/cache:/overleaf/services/clsi/cache" \
+  -v "$PWD/compiles:/superpaper/services/clsi/compiles" \
+  -v "$PWD/cache:/superpaper/services/clsi/cache" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --name clsi \
-  overleaf/clsi
+  superpaper/clsi
 ```
 
 Note: if you're running the CLSI in macOS you may need to use `-v /var/run/docker.sock.raw:/var/run/docker.sock` instead.
@@ -98,14 +98,14 @@ sudo chmod -R g+w compiles
 sudo chmod g+s compiles
 ```
 
-Another solution is to create a `overleaf` group and add both `root` and the user with `uid` `1000` to it. If the host does not have a user with that `uid`, you will need to create one first.
+Another solution is to create a `superpaper` group and add both `root` and the user with `uid` `1000` to it. If the host does not have a user with that `uid`, you will need to create one first.
 
 ```shell
 sudo useradd --uid 1000 host-node-user # If required
-sudo groupadd overleaf
-sudo usermod -a -G overleaf root
-sudo usermod -a -G overleaf $(id -nu 1000)
-sudo chown -R 1000:overleaf compiles
+sudo groupadd superpaper
+sudo usermod -a -G superpaper root
+sudo usermod -a -G superpaper $(id -nu 1000)
+sudo chown -R 1000:superpaper compiles
 sudo chmod -R g+w compiles
 sudo chmod g+s compiles
 ```
@@ -183,4 +183,4 @@ URLs will be downloaded and cached until provided with a more recent modified da
 
 The code in this repository is released under the GNU AFFERO GENERAL PUBLIC LICENSE, version 3. A copy can be found in the `LICENSE` file.
 
-Copyright (c) Overleaf, 2014-2021.
+Copyright (c) superPaper, 2014-2021.

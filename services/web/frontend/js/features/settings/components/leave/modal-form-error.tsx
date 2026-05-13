@@ -9,13 +9,13 @@ type LeaveModalFormErrorProps = {
 
 function LeaveModalFormError({ error }: LeaveModalFormErrorProps) {
   const { t } = useTranslation()
-  const { isOverleaf } = getMeta('ol-ExposedSettings')
+  const { isSuperPaper } = getMeta('ol-ExposedSettings')
 
   let errorMessage
   let errorTip = null
   if (error.response?.status === 403) {
     errorMessage = t('email_or_password_wrong_try_again')
-    if (isOverleaf) {
+    if (isSuperPaper) {
       errorTip = (
         <Trans
           i18nKey="user_deletion_password_reset_tip"
@@ -24,8 +24,6 @@ function LeaveModalFormError({ error }: LeaveModalFormErrorProps) {
         />
       )
     }
-  } else if (error.data?.error === 'SubscriptionAdminDeletionError') {
-    errorMessage = t('subscription_admins_cannot_be_deleted')
   } else {
     errorMessage = t('user_deletion_error')
   }

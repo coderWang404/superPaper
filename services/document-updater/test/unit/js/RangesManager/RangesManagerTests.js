@@ -9,7 +9,7 @@ describe('RangesManager', function () {
   beforeEach(function () {
     this.RangesManager = SandboxedModule.require(MODULE_PATH, {
       requires: {
-        '@overleaf/metrics': (this.Metrics = { histogram: sinon.stub() }),
+        '@superpaper/metrics': (this.Metrics = { histogram: sinon.stub() }),
       },
     })
 
@@ -680,9 +680,9 @@ describe('RangesManager', function () {
     beforeEach(function () {
       this.RangesManager = SandboxedModule.require(MODULE_PATH, {
         requires: {
-          '@overleaf/ranges-tracker': (this.RangesTracker =
-            SandboxedModule.require('@overleaf/ranges-tracker')),
-          '@overleaf/metrics': {},
+          '@superpaper/ranges-tracker': (this.RangesTracker =
+            SandboxedModule.require('@superpaper/ranges-tracker')),
+          '@superpaper/metrics': {},
         },
       })
 
@@ -805,9 +805,9 @@ describe('RangesManager', function () {
       this.clock = sinon.useFakeTimers()
       this.RangesManager = SandboxedModule.require(MODULE_PATH, {
         requires: {
-          '@overleaf/ranges-tracker': (this.RangesTracker =
-            SandboxedModule.require('@overleaf/ranges-tracker')),
-          '@overleaf/metrics': {},
+          '@superpaper/ranges-tracker': (this.RangesTracker =
+            SandboxedModule.require('@superpaper/ranges-tracker')),
+          '@superpaper/metrics': {},
         },
       })
     })

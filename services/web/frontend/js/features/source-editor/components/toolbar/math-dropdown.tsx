@@ -4,20 +4,16 @@ import { emitToolbarEvent } from '../../extensions/toolbar/utils/analytics'
 import MaterialIcon from '../../../../shared/components/material-icon'
 import { useTranslation } from 'react-i18next'
 import { useCodeMirrorViewContext } from '../codemirror-context'
-import { useEditorContext } from '@/shared/context/editor-context'
 import {
   wrapInDisplayMath,
   wrapInInlineMath,
 } from '../../extensions/toolbar/commands'
 import { memo } from 'react'
 import OLListGroupItem from '@/shared/components/ol/ol-list-group-item'
-import sparkleWhite from '@/shared/svgs/sparkle-small-white.svg'
-import sparkle from '@/shared/svgs/ai-sparkle-text.svg'
 
 export const MathDropdown = memo(function MathDropdown() {
   const { t } = useTranslation()
   const view = useCodeMirrorViewContext()
-  const { writefullInstance } = useEditorContext()
 
   return (
     <ToolbarButtonMenu
@@ -25,33 +21,9 @@ export const MathDropdown = memo(function MathDropdown() {
       label={t('toolbar_insert_math')}
       icon={<MaterialIcon type="calculate" />}
     >
-      {writefullInstance && (
-        <>
-          <DropdownHeader className="ol-cm-toolbar-header mx-2">
-            {t('toolbar_insert_math_lowercase')}
-          </DropdownHeader>
-          <OLListGroupItem
-            aria-label={t('toolbar_generate_math')}
-            onClick={() => {
-              writefullInstance?.openEquationGenerator()
-            }}
-          >
-            <img
-              alt="sparkle"
-              className="ol-cm-toolbar-ai-sparkle-gradient"
-              src={sparkle}
-              aria-hidden="true"
-            />
-            <img
-              alt="sparkle"
-              className="ol-cm-toolbar-ai-sparkle-white"
-              src={sparkleWhite}
-              aria-hidden="true"
-            />
-            <span>{t('generate_from_text_or_image')}</span>
-          </OLListGroupItem>
-        </>
-      )}
+      <DropdownHeader className="ol-cm-toolbar-header mx-2">
+        {t('toolbar_insert_math_lowercase')}
+      </DropdownHeader>
       <OLListGroupItem
         aria-label={t('toolbar_insert_inline_math')}
         onClick={event => {

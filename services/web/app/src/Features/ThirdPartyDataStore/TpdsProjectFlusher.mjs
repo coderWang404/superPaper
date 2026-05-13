@@ -1,11 +1,11 @@
 import { callbackify } from 'node:util'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 import { Project } from '../../models/Project.mjs'
 import TpdsUpdateSender from './TpdsUpdateSender.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 export default {
   flushProjectToTpds: callbackify(flushProjectToTpds),
@@ -25,7 +25,7 @@ async function flushProjectToTpds(projectId) {
   const project = await ProjectGetter.promises.getProject(projectId, {
     name: true,
     deferredTpdsFlushCounter: true,
-    'overleaf.history.id': 1,
+    'superpaper.history.id': 1,
   })
   await _flushProjectToTpds(project)
 }
@@ -33,8 +33,8 @@ async function flushProjectToTpds(projectId) {
 /**
  * Flush a project to TPDS if a flush is pending.  This is called when
  * projects are loaded in the editor and triggers a sync to dropbox for
- * projects that were imported from Overleaf v1.
- * @param {{name: string, deferredTpdsFlushCounter: number, overleaf: { history: { id: (string|number)}} }} project
+ * projects that were imported from superPaper v1.
+ * @param {{name: string, deferredTpdsFlushCounter: number, superpaper: { history: { id: (string|number)}} }} project
  * @return {Promise<void>}
  */
 async function flushProjectToTpdsIfNeeded(project) {
@@ -44,7 +44,7 @@ async function flushProjectToTpdsIfNeeded(project) {
 }
 
 async function _flushProjectToTpds(project) {
-  const historyId = project?.overleaf?.history?.id
+  const historyId = project?.superpaper?.history?.id
   if (!historyId) {
     const projectId = project._id
     throw new OError('project does not have a history id', { projectId })
@@ -101,7 +101,7 @@ async function _resetDeferredTpdsFlushCounter(project) {
 
 /**
  * Mark a project as pending a flush to TPDS.
- * This was called as part of the import process for Overleaf v1 projects.
+ * This was called as part of the import process for superPaper v1 projects.
  * We no longer use this method, but imported v1 projects have the
  * deferredTpdsFlushCounter set and will trigger a flush when loaded in
  * the editor.

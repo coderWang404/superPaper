@@ -11,8 +11,8 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 let ShareJsDB
-const logger = require('@overleaf/logger')
-const Metrics = require('@overleaf/metrics')
+const logger = require('@superpaper/logger')
+const Metrics = require('@superpaper/metrics')
 const Keys = require('./UpdateKeys')
 const RedisManager = require('./RedisManager')
 const Errors = require('./Errors')

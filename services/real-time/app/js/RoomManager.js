@@ -1,7 +1,7 @@
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 import { EventEmitter } from 'node:events'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 const IdMap = new Map() // keep track of whether ids are from projects or docs
 const RoomEvents = new EventEmitter() // emits {project,doc}-active and {project,doc}-empty events

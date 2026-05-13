@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Errors from './Errors.js'
 
 const { DataTooLargeToParseError } = Errors

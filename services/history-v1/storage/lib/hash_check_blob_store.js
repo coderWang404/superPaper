@@ -1,4 +1,4 @@
-const Blob = require('overleaf-editor-core').Blob
+const Blob = require('superpaper-editor-core').Blob
 const blobHash = require('./blob_hash')
 const BPromise = require('bluebird')
 

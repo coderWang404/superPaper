@@ -1,4 +1,4 @@
-# Overleaf Community Edition, development environment
+# superPaper Community Edition, development environment
 
 ## Building and running
 
@@ -21,7 +21,7 @@ Once the services are running, open <http://localhost/launchpad> to create the f
 
 ## Development
 
-To avoid running `bin/build && bin/up` after every code change, you can run Overleaf
+To avoid running `bin/build && bin/up` after every code change, you can run superPaper
 Community Edition in _development mode_, where services will automatically update on code changes.
 
 To do this, use the included `bin/dev` script:

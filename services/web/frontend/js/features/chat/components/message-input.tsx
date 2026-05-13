@@ -15,7 +15,7 @@ function MessageInput({ resetUnreadMessages, sendMessage }: MessageInputProps) {
       const target = event.target as HTMLInputElement
       sendMessage(target.value)
       // wrap the form reset in setTimeout so input sources have time to finish
-      // https://github.com/overleaf/internal/pull/9206
+      // https://github.com/superpaper/internal/pull/9206
       window.setTimeout(() => {
         target.blur()
         target.closest('form')?.reset()

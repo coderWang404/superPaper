@@ -1,6 +1,6 @@
 import archiver from 'archiver'
 import async from 'async'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import HistoryManager from '../History/HistoryManager.mjs'

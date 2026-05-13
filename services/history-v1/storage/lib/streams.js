@@ -8,7 +8,7 @@
 
 const Stream = require('node:stream')
 const zlib = require('node:zlib')
-const { WritableBuffer } = require('@overleaf/stream-utils')
+const { WritableBuffer } = require('@superpaper/stream-utils')
 
 /**
  * Create a promise for the result of reading a stream to a buffer.

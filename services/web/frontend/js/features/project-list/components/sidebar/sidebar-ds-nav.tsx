@@ -1,11 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import classnames from 'classnames'
 import NewProjectButton from '../new-project-button'
 import SidebarFilters from './sidebar-filters'
-import AddAffiliation, { useAddAffiliation } from '../add-affiliation'
 import { usePersistedResize } from '@/shared/hooks/use-resize'
 import { useScrolled } from '@/features/project-list/components/sidebar/use-scroll'
-import { SurveyWidgetDsNav } from '@/features/project-list/components/survey-widget-ds-nav'
 import { SidebarLowerSection } from '@/shared/components/sidebar/sidebar-lower-section'
 import { isSplitTestEnabled } from '@/utils/splitTestUtils'
 import { DsNavPageSwitcher } from '@/shared/components/sidebar/ds-nav-page-switcher'
@@ -13,8 +10,7 @@ import { useProjectListContext } from '@/features/project-list/context/project-l
 
 function SidebarDsNav() {
   const { t } = useTranslation()
-  const { show: showAddAffiliationWidget } = useAddAffiliation()
-  const isLibraryEnabled = isSplitTestEnabled('overleaf-library')
+  const isLibraryEnabled = isSplitTestEnabled('superpaper-library')
   const { selectFilter } = useProjectListContext()
   const { mousePos, getHandleProps, getTargetProps } = usePersistedResize({
     name: 'project-sidebar',
@@ -56,21 +52,10 @@ function SidebarDsNav() {
           data-testid="project-list-sidebar-scroll"
         >
           <SidebarFilters />
-          {showAddAffiliationWidget && <hr />}
-          <AddAffiliation />
         </div>
       </nav>
-      <div
-        className={classnames(
-          'ds-nav-sidebar-lower',
-          scrolledUp && 'show-shadow'
-        )}
-      >
-        <SidebarLowerSection showThemeToggle>
-          <div className="project-list-sidebar-survey-wrapper">
-            <SurveyWidgetDsNav />
-          </div>
-        </SidebarLowerSection>
+      <div className="ds-nav-sidebar-lower">
+        <SidebarLowerSection showThemeToggle />
       </div>
       <div
         {...getHandleProps({

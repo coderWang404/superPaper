@@ -2,24 +2,24 @@ import { promisify } from 'node:util'
 import fs from 'node:fs'
 import request from 'request'
 import stream from 'node:stream'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import _ from 'lodash'
 import { URL } from 'node:url'
-import OError from '@overleaf/o-error'
-import Settings from '@overleaf/settings'
+import OError from '@superpaper/o-error'
+import Settings from '@superpaper/settings'
 import {
   fetchStream,
   fetchNothing,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import * as Versions from './Versions.js'
 import * as Errors from './Errors.js'
 import * as LocalFileWriter from './LocalFileWriter.js'
 import * as HashManager from './HashManager.js'
 import * as HistoryBlobTranslator from './HistoryBlobTranslator.js'
-import { callbackify, promisifyMultiResult } from '@overleaf/promise-utils'
+import { callbackify, promisifyMultiResult } from '@superpaper/promise-utils'
 
-const HTTP_REQUEST_TIMEOUT = Settings.overleaf.history.requestTimeout
+const HTTP_REQUEST_TIMEOUT = Settings.superpaper.history.requestTimeout
 
 /**
  * Container for functions that need to be mocked in tests
@@ -230,7 +230,7 @@ export function getProjectBlob(historyId, blobHash, callback) {
  * @param {Callback} callback
  */
 export function getProjectBlobStream(historyId, blobHash, callback) {
-  const url = `${Settings.overleaf.history.host}/projects/${historyId}/blobs/${blobHash}`
+  const url = `${Settings.superpaper.history.host}/projects/${historyId}/blobs/${blobHash}`
   logger.debug(
     { historyId, blobHash },
     'getting blob stream from history service'
@@ -297,7 +297,7 @@ function createBlobFromString(historyId, data, fileId, callback) {
 
 function _checkBlobExists(historyId, hash, callback) {
   if (!hash) return callback(null, false)
-  const url = `${Settings.overleaf.history.host}/projects/${historyId}/blobs/${hash}`
+  const url = `${Settings.superpaper.history.host}/projects/${historyId}/blobs/${hash}`
   fetchNothing(url, {
     method: 'HEAD',
     ...getHistoryFetchOptions(),
@@ -492,7 +492,7 @@ function _createBlob(historyId, fsPath, _callback) {
       { fsPath, historyId, hash, byteLength },
       'sending blob to history service'
     )
-    const url = `${Settings.overleaf.history.host}/projects/${historyId}/blobs/${hash}`
+    const url = `${Settings.superpaper.history.host}/projects/${historyId}/blobs/${hash}`
     fetchNothing(url, {
       method: 'PUT',
       body: outStream,
@@ -533,7 +533,7 @@ export function initializeProject(historyId, callback) {
 
 async function _cloneProject(sourceProjectId, targetProjectId, signal) {
   return await fetchStream(
-    `${Settings.overleaf.history.host}/projects/${sourceProjectId}/clone`,
+    `${Settings.superpaper.history.host}/projects/${sourceProjectId}/clone`,
     {
       method: 'POST',
       json: { targetProjectId },
@@ -577,11 +577,11 @@ export function getBlobStore(projectId) {
 function _requestOptions(options) {
   const requestOptions = {
     method: options.method || 'GET',
-    url: `${Settings.overleaf.history.host}/${options.path}`,
+    url: `${Settings.superpaper.history.host}/${options.path}`,
     timeout: HTTP_REQUEST_TIMEOUT,
     auth: {
-      user: Settings.overleaf.history.user,
-      pass: Settings.overleaf.history.pass,
+      user: Settings.superpaper.history.user,
+      pass: Settings.superpaper.history.pass,
       sendImmediately: true,
     },
   }
@@ -608,8 +608,8 @@ function getHistoryFetchOptions() {
   return {
     signal: AbortSignal.timeout(HTTP_REQUEST_TIMEOUT),
     basicAuth: {
-      user: Settings.overleaf.history.user,
-      password: Settings.overleaf.history.pass,
+      user: Settings.superpaper.history.user,
+      password: Settings.superpaper.history.pass,
     },
   }
 }
@@ -638,7 +638,7 @@ function _requestHistoryService(options, callback) {
 export const cloneProject = callbackify(_cloneProject)
 
 export const promises = {
-  /** @type {(projectId: string, historyId: string) => Promise<{chunk: import('overleaf-editor-core/lib/types.js').RawChunk}>} */
+  /** @type {(projectId: string, historyId: string) => Promise<{chunk: import('superpaper-editor-core/lib/types.js').RawChunk}>} */
   getMostRecentChunk: promisify(getMostRecentChunk),
   getChunkAtVersion: promisify(getChunkAtVersion),
   getMostRecentVersion: promisifyMultiResult(getMostRecentVersion, [

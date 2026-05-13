@@ -1,7 +1,7 @@
 import sinon from 'sinon'
 import { expect } from 'chai'
 import { strict as esmock } from 'esmock'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 
 const MODULE_PATH = '../../../../app/js/WebApiManager.js'
 
@@ -11,7 +11,7 @@ describe('WebApiManager', function () {
       apis: {
         web: {
           url: 'http://example.com',
-          user: 'overleaf',
+          user: 'superpaper',
           pass: 'password',
         },
       },
@@ -33,9 +33,9 @@ describe('WebApiManager', function () {
       RequestFailedError,
     }
     this.WebApiManager = await esmock(MODULE_PATH, {
-      '@overleaf/fetch-utils': this.FetchUtils,
-      '@overleaf/settings': this.settings,
-      '@overleaf/metrics': this.Metrics,
+      '@superpaper/fetch-utils': this.FetchUtils,
+      '@superpaper/settings': this.settings,
+      '@superpaper/metrics': this.Metrics,
       '../../../../app/js/RedisManager.js': this.RedisManager,
     })
     this.WebApiManager.setRetryTimeoutMs(100)
@@ -55,7 +55,7 @@ describe('WebApiManager', function () {
           .withArgs('mock-project-id-2') // no cached value for other project
           .resolves(null)
         this.FetchUtils.fetchJson.resolves({
-          overleaf: { history: { id: this.olProjectId } },
+          superpaper: { history: { id: this.olProjectId } },
         })
       })
 

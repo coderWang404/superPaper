@@ -1,6 +1,6 @@
 // @ts-check
 import { db, ObjectId } from '../app/src/infrastructure/mongodb.mjs'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 
 /**

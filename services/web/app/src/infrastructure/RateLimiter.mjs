@@ -1,9 +1,9 @@
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 import RedisWrapper from './RedisWrapper.mjs'
 import RateLimiterFlexible from 'rate-limiter-flexible'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 const rclient = RedisWrapper.client('ratelimiter')
 
@@ -128,8 +128,8 @@ export const openProjectRateLimiter = new RateLimiter('open-project', {
 })
 
 // Keep in sync with the can-skip-captcha options.
-export const overleafLoginRateLimiter = new RateLimiter(
-  'overleaf-login',
+export const superpaperLoginRateLimiter = new RateLimiter(
+  'superpaper-login',
   Settings.rateLimit?.login?.ip || {
     points: 20,
     subnetPoints: 200,
@@ -140,5 +140,5 @@ export const overleafLoginRateLimiter = new RateLimiter(
 export default {
   RateLimiter,
   openProjectRateLimiter,
-  overleafLoginRateLimiter,
+  superpaperLoginRateLimiter,
 }

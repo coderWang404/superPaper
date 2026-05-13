@@ -1,8 +1,8 @@
 import _ from 'lodash'
 import { callbackify } from 'node:util'
 import { User } from '../../models/User.mjs'
-import Settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+import Settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 
 const ReferalFeatures = {
   async getBonusFeatures(userId) {

@@ -1,10 +1,10 @@
 import { db } from '../../infrastructure/mongodb.mjs'
 import Mongo from '../Helpers/Mongo.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { Project } from '../../models/Project.mjs'
 import LockManager from '../../infrastructure/LockManager.mjs'
 import { DeletedProject } from '../../models/DeletedProject.mjs'
-import { callbackifyAll } from '@overleaf/promise-utils'
+import { callbackifyAll } from '@superpaper/promise-utils'
 import ProjectEntityMongoUpdateHandler from './ProjectEntityMongoUpdateHandler.mjs'
 import CollaboratorsGetter from '../Collaborators/CollaboratorsGetter.mjs'
 
@@ -118,7 +118,7 @@ const ProjectGetter = {
 
     const exists = await Project.exists({
       owner_ref: userId,
-      'overleaf.isDebugCopyOf': { $type: 'objectId' },
+      'superpaper.isDebugCopyOf': { $type: 'objectId' },
       lastUpdated: { $lt: cutoffDate },
     })
 
@@ -128,7 +128,7 @@ const ProjectGetter = {
   async findAllDebugProjects(fields) {
     return Project.find(
       {
-        'overleaf.isDebugCopyOf': { $type: 'objectId' },
+        'superpaper.isDebugCopyOf': { $type: 'objectId' },
       },
       fields
     )

@@ -1,6 +1,6 @@
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
+import Metrics from '@superpaper/metrics'
 import ProjectEntityUpdateHandler from '../Project/ProjectEntityUpdateHandler.mjs'
 import ProjectOptionsHandler from '../Project/ProjectOptionsHandler.mjs'
 import ProjectDetailsHandler from '../Project/ProjectDetailsHandler.mjs'
@@ -9,7 +9,7 @@ import { DeletedProjectReasons } from '../Project/DeletedProjectReasons.mjs'
 import EditorRealTimeController from './EditorRealTimeController.mjs'
 import async from 'async'
 import PublicAccessLevels from '../Authorization/PublicAccessLevels.mjs'
-import { promisify, promisifyMultiResult } from '@overleaf/promise-utils'
+import { promisify, promisifyMultiResult } from '@superpaper/promise-utils'
 
 const EditorController = {
   addDoc(projectId, folderId, docName, docLines, source, userId, callback) {

@@ -21,8 +21,6 @@ const entryPoints = {
   'ide-detached': './frontend/js/ide-detached.ts',
   marketing: './frontend/js/marketing.ts',
   'main-style': './frontend/stylesheets/main-style.scss',
-  tracking: './frontend/js/infrastructure/tracking.ts',
-  'linkedin-insight': './frontend/js/infrastructure/linkedin-insight.ts',
 }
 
 // Add entrypoints for each "page"
@@ -61,7 +59,7 @@ function getModuleDirectory(moduleName) {
 
 const mathjaxDir = getModuleDirectory('mathjax')
 const pdfjsDir = getModuleDirectory('pdfjs-dist')
-const dictionariesDir = getModuleDirectory('@overleaf/dictionaries')
+const dictionariesDir = getModuleDirectory('@superpaper/dictionaries')
 const pyodideDir = getModuleDirectory('pyodide')
 
 const vendorDir = path.join(__dirname, 'frontend/js/vendor')
@@ -74,10 +72,10 @@ if (MATHJAX_VERSION !== PackageVersions.version.mathjax) {
 }
 
 const DICTIONARIES_VERSION =
-  require('@overleaf/dictionaries/package.json').version
+  require('@superpaper/dictionaries/package.json').version
 if (DICTIONARIES_VERSION !== PackageVersions.version.dictionaries) {
   throw new Error(
-    '"@overleaf/dictionaries" version de-synced, update services/web/app/src/infrastructure/PackageVersions.js'
+    '"@superpaper/dictionaries" version de-synced, update services/web/app/src/infrastructure/PackageVersions.js'
   )
 }
 
@@ -114,41 +112,14 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        include: path.resolve(
-          __dirname,
-          'modules/writefull/frontend/js/integration'
-        ),
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              cacheDirectory: true,
-              configFile: path.join(__dirname, './babel.config.json'),
-            },
-          },
-          {
-            loader: 'ts-loader',
-            options: {
-              configFile: path.resolve(
-                __dirname,
-                'modules/writefull/frontend/js/integration/tsconfig.json'
-              ),
-              transpileOnly: true,
-            },
-          },
-        ],
-      },
-      {
         // Pass application JS/TS files through babel-loader,
         // transpiling to targets defined in browserslist
         test: /\.([jt]sx?|[cm]js)$/,
         // Only compile application files and specific dependencies
         // (other npm and vendored dependencies must be in ES5 already)
         exclude: [
-          /node_modules\/(?!(react-dnd|chart\.js|@uppy|@writefull|pdfjs-dist|react-resizable-panels)\/)/,
+          /node_modules\/(?!(react-dnd|chart\.js|@uppy|pdfjs-dist|react-resizable-panels)\/)/,
           vendorDir,
-          path.resolve(__dirname, 'modules/writefull/frontend/js/integration'),
         ],
         use: [
           {
@@ -238,30 +209,6 @@ module.exports = {
             ],
           },
           {
-            // CSS from writefull module - inject directly into DOM
-            include: path.resolve(__dirname, 'modules/writefull/'),
-            use: [
-              'style-loader',
-              {
-                loader: 'css-loader',
-                options: {
-                  importLoaders: 1,
-                },
-              },
-              {
-                loader: 'postcss-loader',
-                options: {
-                  postcssOptions: {
-                    config: path.resolve(
-                      __dirname,
-                      'modules/writefull/frontend/js/integration/postcss.config.js'
-                    ),
-                  },
-                },
-              },
-            ],
-          },
-          {
             // Standard CSS processing (extracted into separate file)
             use: [MiniCssExtractPlugin.loader, 'css-loader'],
           },
@@ -312,10 +259,6 @@ module.exports = {
       '@': path.resolve(__dirname, './frontend/js/'),
       '@modules': path.resolve(__dirname, './modules/'),
       '@ol-types': path.resolve(__dirname, './types/'),
-      '@wf': path.resolve(
-        __dirname,
-        './modules/writefull/frontend/js/integration/src/'
-      ),
       // Ensure all packages use the same jQuery instance (prevents duplicate
       // copies from Yarn hoisting breaking jQuery plugins like daterangepicker)
       jquery: require.resolve('jquery'),

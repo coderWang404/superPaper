@@ -1,9 +1,9 @@
 import async from 'async'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import redis from '@overleaf/redis-wrapper'
-import OError from '@overleaf/o-error'
-import Metrics from '@overleaf/metrics'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import redis from '@superpaper/redis-wrapper'
+import OError from '@superpaper/o-error'
+import Metrics from '@superpaper/metrics'
 const rclient = redis.createClient(Settings.redis.realtime)
 const Keys = Settings.redis.realtime.key_schema
 

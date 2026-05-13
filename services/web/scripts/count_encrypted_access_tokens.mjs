@@ -3,7 +3,7 @@ import {
   READ_PREFERENCE_SECONDARY,
 } from '../app/src/infrastructure/mongodb.mjs'
 import _ from 'lodash'
-import { formatTokenUsageStats } from '@overleaf/access-token-encryptor/scripts/helpers/format-usage-stats.js'
+import { formatTokenUsageStats } from '@superpaper/access-token-encryptor/scripts/helpers/format-usage-stats.js'
 import { ensureMongoTimeout } from './helpers/env_variable_helper.mjs'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 
@@ -15,8 +15,6 @@ if (!process.env.MONGO_SOCKET_TIMEOUT) {
 const CASES = {
   users: {
     dropbox: 'dropbox.access_token_oauth2.encrypted',
-    zotero: 'refProviders.zotero.encrypted',
-    mendeley: 'refProviders.mendeley.encrypted',
   },
   githubSyncUserCredentials: {
     github: 'auth_token_encrypted',

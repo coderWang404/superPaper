@@ -1,6 +1,5 @@
 import { promisify } from 'node:util'
 import { expect } from 'chai'
-import Features from '../../../app/src/infrastructure/Features.mjs'
 import MetricsHelper from './helpers/metrics.mjs'
 import UserHelper from './helpers/User.mjs'
 const sleep = promisify(setTimeout)
@@ -14,12 +13,6 @@ async function getActiveUsersMetric() {
 }
 
 describe('ActiveUsersMetricTests', function () {
-  before(async function () {
-    if (Features.hasFeature('saas')) {
-      this.skip()
-    }
-  })
-
   it('updates "num_active_users" metric after a new user opens a project', async function () {
     expect(await getActiveUsersMetric()).to.equal(0)
 

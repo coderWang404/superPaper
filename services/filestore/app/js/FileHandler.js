@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { callbackify } from 'node:util'
 import fs from 'node:fs'
 import _PersistorManager from './PersistorManager.js'
@@ -7,7 +7,7 @@ import FileConverter from './FileConverter.js'
 import KeyBuilder from './KeyBuilder.js'
 import ImageOptimiser from './ImageOptimiser.js'
 import Errors from './Errors.js'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 
 const { ConversionError, InvalidParametersError } = Errors
 

@@ -2,8 +2,7 @@
 import { ForbiddenError, UserNotFoundError } from '../Errors/Errors.js'
 import PermissionsManager from './PermissionsManager.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
-import { expressify } from '@overleaf/promise-utils'
-import Features from '../../infrastructure/Features.mjs'
+import { expressify } from '@superpaper/promise-utils'
 
 /**
  * @typedef {(import('express').Request)} Request
@@ -110,9 +109,6 @@ function requirePermission(...requiredCapabilities) {
    * @param {NextFunction} next
    */
   const doRequest = async function (req, res, next) {
-    if (!Features.hasFeature('saas')) {
-      return next()
-    }
     const user = req.user || req.oauth_user
     if (!user) {
       return next(new Error('no user'))

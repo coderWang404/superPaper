@@ -7,7 +7,7 @@ import moment from 'moment'
 
 export const owner = {
   id: '624333f147cfd8002622a1d3',
-  email: 'riker@overleaf.com',
+  email: 'riker@superpaper.com',
   firstName: 'William',
   lastName: 'Riker',
 }
@@ -15,20 +15,20 @@ export const owner = {
 const users = {
   laforge: {
     id: '624371e98a21dd0026a5bfef',
-    email: 'laforge@overleaf.com',
+    email: 'laforge@superpaper.com',
     firstName: '',
     lastName: 'La Forge',
   },
   picard: {
     id: '62d6d0b4c5c5030a4d696c7a',
-    email: 'picard@overleaf.com',
+    email: 'picard@superpaper.com',
     firstName: 'Jean-Luc',
     lastName: 'Picard',
   },
   riker: owner,
   worf: {
     id: '624371708a21dd0026a5bf86',
-    email: 'worf@overleaf.com',
+    email: 'worf@superpaper.com',
     firstName: '',
     lastName: '',
   },

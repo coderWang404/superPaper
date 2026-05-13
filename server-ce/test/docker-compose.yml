@@ -10,15 +10,15 @@ services:
       mailtrap:
         condition: service_started
     environment:
-      OVERLEAF_SITE_URL: "http://sharelatex"
-      OVERLEAF_APP_NAME: E2E test
-      OVERLEAF_MONGO_URL: mongodb://mongo/sharelatex?directConnection=true
-      OVERLEAF_REDIS_HOST: redis
+      SUPERPAPER_SITE_URL: "http://sharelatex"
+      SUPERPAPER_APP_NAME: E2E test
+      SUPERPAPER_MONGO_URL: mongodb://mongo/sharelatex?directConnection=true
+      SUPERPAPER_REDIS_HOST: redis
       REDIS_HOST: redis
-      OVERLEAF_EMAIL_FROM_ADDRESS: "welcome@example.com"
-      OVERLEAF_EMAIL_SMTP_HOST: "mailtrap"
-      OVERLEAF_EMAIL_SMTP_PORT: "25"
-      OVERLEAF_EMAIL_SMTP_IGNORE_TLS: "true"
+      SUPERPAPER_EMAIL_FROM_ADDRESS: "welcome@example.com"
+      SUPERPAPER_EMAIL_SMTP_HOST: "mailtrap"
+      SUPERPAPER_EMAIL_SMTP_PORT: "25"
+      SUPERPAPER_EMAIL_SMTP_IGNORE_TLS: "true"
       ENABLED_LINKED_FILE_TYPES: "project_file,project_output_file"
       ENABLE_CONVERSIONS: "true"
       EMAIL_CONFIRMATION_DISABLED: "true"
@@ -35,7 +35,7 @@ services:
 
   mongo:
     image: mongo:8.0.11
-    command: "--replSet overleaf"
+    command: "--replSet superpaper"
     volumes:
       - ../bin/shared/mongodb-init-replica-set.js:/docker-entrypoint-initdb.d/mongodb-init-replica-set.js
       - ../bin/shared/mongodb-docker-entrypoint-wait.sh:/mongodb-docker-entrypoint-wait.sh
@@ -127,22 +127,3 @@ services:
       interval: 3s
       timeout: 3s
       retries: 30
-
-  saml:
-    restart: always
-    image: us-east1-docker.pkg.dev/overleaf-ops/ol-docker/saml-test
-    environment:
-      SAML_TEST_SP_ENTITY_ID: "sharelatex-test-saml"
-      SAML_BASE_URL_PATH: "http://saml/simplesaml/"
-      SAML_TEST_SP_LOCATION: "http://sharelatex/saml/callback"
-
-  ldap:
-    restart: always
-    image: rroemhild/test-openldap:1.1
-    # Workaround large memory allocation (using the max-open-files-limit as socket buffer scale).
-    # REF: https://github.com/moby/moby/issues/8231#issuecomment-63877553
-    # REF: https://github.com/moby/moby/issues/8231#issuecomment-63871343
-    command:
-      - "bash"
-      - "-c"
-      - "ulimit -n 1024 && exec bash /run.sh"

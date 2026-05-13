@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import fs from 'node:fs'
 
 import {
@@ -7,9 +7,8 @@ import {
   addRequiredCleanupHandlerBeforeDrainingConnections,
 } from './GracefulShutdown.mjs'
 
-import Features from './Features.mjs'
 import UserHandler from '../Features/User/UserHandler.mjs'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 
 // Monitor a site maintenance file (e.g. /etc/site_status) periodically and
 // close the site if the file contents contain the string "closed".
@@ -48,7 +47,7 @@ function checkSiteMaintenanceFileSync() {
   updateSiteMaintenanceStatus(content)
 }
 
-const SERVER_PRO_ACTIVE_USERS_METRIC_INTERVAL =
+const ACTIVE_USERS_METRIC_INTERVAL =
   settings.activeUserMetricInterval || 1000 * 60 * 60
 
 function publishActiveUsersMetric() {
@@ -77,18 +76,16 @@ export default {
         }
       )
     }
-    if (!Features.hasFeature('saas')) {
-      publishActiveUsersMetric()
-      const intervalHandle = setInterval(
-        publishActiveUsersMetric,
-        SERVER_PRO_ACTIVE_USERS_METRIC_INTERVAL
-      )
-      addRequiredCleanupHandlerBeforeDrainingConnections(
-        'publish server pro usage metrics',
-        () => {
-          clearInterval(intervalHandle)
-        }
-      )
-    }
+    publishActiveUsersMetric()
+    const intervalHandle = setInterval(
+      publishActiveUsersMetric,
+      ACTIVE_USERS_METRIC_INTERVAL
+    )
+    addRequiredCleanupHandlerBeforeDrainingConnections(
+      'publish active users metrics',
+      () => {
+        clearInterval(intervalHandle)
+      }
+    )
   },
 }

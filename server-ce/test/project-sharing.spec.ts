@@ -351,12 +351,12 @@ describe('Project Sharing', function () {
       })
     })
 
-    describe('with OVERLEAF_ALLOW_PUBLIC_ACCESS=false', function () {
+    describe('with SUPERPAPER_ALLOW_PUBLIC_ACCESS=false', function () {
       describe('wrap startup', function () {
         startWith({
           pro: true,
           vars: {
-            OVERLEAF_ALLOW_PUBLIC_ACCESS: 'false',
+            SUPERPAPER_ALLOW_PUBLIC_ACCESS: 'false',
           },
           withDataDir: true,
         })
@@ -365,12 +365,12 @@ describe('Project Sharing', function () {
         })
       })
 
-      describe('with OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING=true', function () {
+      describe('with SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING=true', function () {
         startWith({
           pro: true,
           vars: {
-            OVERLEAF_ALLOW_PUBLIC_ACCESS: 'false',
-            OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true',
+            SUPERPAPER_ALLOW_PUBLIC_ACCESS: 'false',
+            SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true',
           },
           withDataDir: true,
         })
@@ -380,12 +380,12 @@ describe('Project Sharing', function () {
       })
     })
 
-    describe('with OVERLEAF_ALLOW_PUBLIC_ACCESS=true', function () {
+    describe('with SUPERPAPER_ALLOW_PUBLIC_ACCESS=true', function () {
       describe('wrap startup', function () {
         startWith({
           pro: true,
           vars: {
-            OVERLEAF_ALLOW_PUBLIC_ACCESS: 'true',
+            SUPERPAPER_ALLOW_PUBLIC_ACCESS: 'true',
           },
           withDataDir: true,
         })
@@ -400,12 +400,12 @@ describe('Project Sharing', function () {
         })
       })
 
-      describe('with OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING=true', function () {
+      describe('with SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING=true', function () {
         startWith({
           pro: true,
           vars: {
-            OVERLEAF_ALLOW_PUBLIC_ACCESS: 'true',
-            OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true',
+            SUPERPAPER_ALLOW_PUBLIC_ACCESS: 'true',
+            SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true',
           },
           withDataDir: true,
         })
@@ -423,7 +423,7 @@ describe('Project Sharing', function () {
       })
     })
 
-    describe('with OVERLEAF_DISABLE_LINK_SHARING=true', function () {
+    describe('with SUPERPAPER_DISABLE_LINK_SHARING=true', function () {
       const email = 'collaborator-email@example.com'
       ensureUserExists({ email })
 
@@ -463,9 +463,9 @@ describe('Project Sharing', function () {
           reloadWith({
             pro: true,
             vars: {
-              OVERLEAF_ALLOW_PUBLIC_ACCESS: 'true',
-              OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true',
-              OVERLEAF_DISABLE_LINK_SHARING: 'true',
+              SUPERPAPER_ALLOW_PUBLIC_ACCESS: 'true',
+              SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true',
+              SUPERPAPER_DISABLE_LINK_SHARING: 'true',
             },
             withDataDir: true,
           }),

@@ -13,7 +13,7 @@ export const project: Project = {
   },
   owner: {
     _id: 'project-owner',
-    email: 'stories@overleaf.com',
+    email: 'stories@superpaper.com',
   },
   members: [
     {

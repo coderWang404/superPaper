@@ -170,11 +170,11 @@ describe('CompileManager', () => {
       default: ctx.OutputCacheManager,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         inc: sinon.stub(),
         timing: sinon.stub(),
@@ -250,7 +250,7 @@ describe('CompileManager', () => {
         },
       }
       ctx.env = {
-        OVERLEAF_PROJECT_ID: ctx.projectId,
+        SUPERPAPER_PROJECT_ID: ctx.projectId,
       }
     })
 
@@ -389,7 +389,7 @@ describe('CompileManager', () => {
               CHKTEX_OPTIONS: '-nall -e9 -e10 -w15 -w16',
               CHKTEX_EXIT_ON_ERROR: 1,
               CHKTEX_ULIMIT_OPTIONS: '-t 5 -v 64000',
-              OVERLEAF_PROJECT_ID: ctx.projectId,
+              SUPERPAPER_PROJECT_ID: ctx.projectId,
             },
             compileGroup: ctx.compileGroup,
             stopOnFirstError: ctx.request.stopOnFirstError,

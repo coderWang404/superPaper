@@ -11,7 +11,7 @@ const chunkStore = storage.chunkStore
 const queueChanges = storage.queueChanges
 const redisBackend = require('../../../../storage/lib/chunk_store/redis')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const AddFileOperation = core.AddFileOperation
 const EditFileOperation = core.EditFileOperation
 const TextOperation = core.TextOperation

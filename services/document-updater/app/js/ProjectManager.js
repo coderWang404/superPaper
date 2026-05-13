@@ -2,10 +2,10 @@ const RedisManager = require('./RedisManager')
 const ProjectHistoryRedisManager = require('./ProjectHistoryRedisManager')
 const DocumentManager = require('./DocumentManager')
 const HistoryManager = require('./HistoryManager')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const Metrics = require('./Metrics')
 const Errors = require('./Errors')
-const { callbackifyAll } = require('@overleaf/promise-utils')
+const { callbackifyAll } = require('@superpaper/promise-utils')
 
 async function flushProjectWithLocks(projectId) {
   const timer = new Metrics.Timer('projectManager.flushProjectWithLocks')

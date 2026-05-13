@@ -23,7 +23,7 @@ describe('LaunchpadController', function () {
       adminPrivilegeAvailable: true,
     }
 
-    vi.doMock('@overleaf/settings', () => ({ default: ctx.Settings }))
+    vi.doMock('@superpaper/settings', () => ({ default: ctx.Settings }))
 
     vi.doMock(
       '../../../../../app/src/Features/User/UserRegistrationHandler.mjs',
@@ -654,9 +654,9 @@ describe('LaunchpadController', function () {
       })
     })
 
-    describe('when overleaf', function () {
+    describe('when superpaper', function () {
       beforeEach(async function (ctx) {
-        ctx.Settings.overleaf = { one: 1 }
+        ctx.Settings.superpaper = { one: 1 }
         ctx._atLeastOneAdminExists.resolves(false)
         ctx.email = 'someone@example.com'
         ctx.password = 'a_really_bad_password'

@@ -11,7 +11,7 @@ const {
 const asyncPool = require('tiny-async-pool')
 const AbstractPersistor = require('./AbstractPersistor')
 const PersistorHelper = require('./PersistorHelper')
-const Logger = require('@overleaf/logger')
+const Logger = require('@superpaper/logger')
 const zlib = require('node:zlib')
 
 module.exports = class GcsPersistor extends AbstractPersistor {

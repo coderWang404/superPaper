@@ -24,7 +24,7 @@ describe('ProjectOptionsHandler', function () {
       Project: ctx.projectModel,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         languages: [
           { name: 'English', code: 'en' },
@@ -151,43 +151,13 @@ describe('ProjectOptionsHandler', function () {
     })
   })
 
-  describe('setting the brandVariationId', function () {
-    it('should perform and update on mongo', async function (ctx) {
-      await ctx.handler.promises.setBrandVariationId(projectId, '123')
-      const args = ctx.projectModel.updateOne.args[0]
-      args[0]._id.should.equal(projectId)
-      args[1].brandVariationId.should.equal('123')
-    })
-
-    it('should not perform and update on mongo if there is no brand variation', async function (ctx) {
-      await ctx.handler.promises.setBrandVariationId(projectId, null)
-      ctx.projectModel.updateOne.called.should.equal(false)
-    })
-
-    it('should not perform and update on mongo if brand variation is an empty string', async function (ctx) {
-      await ctx.handler.promises.setBrandVariationId(projectId, '')
-      ctx.projectModel.updateOne.called.should.equal(false)
-    })
-
-    describe('when mongo update error occurs', function () {
-      beforeEach(function (ctx) {
-        ctx.projectModel.updateOne = sinon.stub().yields('error')
-      })
-
-      it('should be rejected', async function (ctx) {
-        await expect(ctx.handler.promises.setBrandVariationId(projectId, '123'))
-          .to.be.rejected
-      })
-    })
-  })
-
   describe('setting the rangesSupportEnabled', function () {
     it('should perform and update on mongo', async function (ctx) {
       await ctx.handler.promises.setHistoryRangesSupport(projectId, true)
       sinon.assert.calledWith(
         ctx.db.projects.updateOne,
         { _id: new ObjectId(projectId) },
-        { $set: { 'overleaf.history.rangesSupportEnabled': true } }
+        { $set: { 'superpaper.history.rangesSupportEnabled': true } }
       )
     })
 
@@ -204,23 +174,4 @@ describe('ProjectOptionsHandler', function () {
     })
   })
 
-  describe('unsetting the brandVariationId', function () {
-    it('should perform and update on mongo', async function (ctx) {
-      await ctx.handler.promises.unsetBrandVariationId(projectId)
-      const args = ctx.projectModel.updateOne.args[0]
-      args[0]._id.should.equal(projectId)
-      expect(args[1]).to.deep.equal({ $unset: { brandVariationId: 1 } })
-    })
-
-    describe('when mongo update error occurs', function () {
-      beforeEach(function (ctx) {
-        ctx.projectModel.updateOne = sinon.stub().yields('error')
-      })
-
-      it('should be rejected', async function (ctx) {
-        expect(ctx.handler.promises.unsetBrandVariationId(projectId)).to.be
-          .rejected
-      })
-    })
-  })
 })

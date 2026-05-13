@@ -6,11 +6,6 @@ const APP_CODE_PATH = ['app', 'modules', 'scripts', 'test']
 
 // These have already been converted but don't have a `.mjs` extension
 const converted = new Set([
-  'scripts/ukamf/check-certs.js',
-  'scripts/ukamf/check-idp-metadata.js',
-  'scripts/ukamf/metadata-processor.js',
-  'scripts/ukamf/ukamf-db.js',
-  'scripts/ukamf/ukamf-entity.js',
   'scripts/translations/checkCoverage.js',
   'scripts/translations/checkSanitizeOptions.js',
   'scripts/translations/checkVariables.js',
@@ -30,8 +25,6 @@ const converted = new Set([
 // These files are not to be converted (e.g. they use CommonJS features that are not available in ES Modules)
 const excluded = new Set([
   'modules/server-ce-scripts/scripts/create-user.js', // must be CJS for backwards compatibility
-  'test/acceptance/config/settings.test.saas.js', // must be CJS for @overleaf/settings module
-  'test/acceptance/config/settings.test.server-pro.js', // must be CJS for @overleaf/settings module
   'app/src/infrastructure/PackageVersions.js', // required by webpack
 ])
 

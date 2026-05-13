@@ -8,7 +8,6 @@ import {
 } from '@/features/ide-react/types/permissions'
 import { DeepReadonly } from '../../../../../types/utils'
 import useViewerPermissions from '@/shared/hooks/use-viewer-permissions'
-import { useProjectContext } from '@/shared/context/project-context'
 
 export const PermissionsContext = createContext<Permissions | undefined>(
   undefined
@@ -98,7 +97,6 @@ export const PermissionsProvider: React.FC<React.PropsWithChildren> = ({
   const { permissionsLevel } = useIdeReactContext()
   const hasViewerPermissions = useViewerPermissions()
   const anonymous = getMeta('ol-anonymous')
-  const { features } = useProjectContext()
 
   useEffect(() => {
     let activePermissionsMap
@@ -106,10 +104,8 @@ export const PermissionsProvider: React.FC<React.PropsWithChildren> = ({
       activePermissionsMap = linkSharingWarningPermissionsMap
     } else if (anonymous) {
       activePermissionsMap = anonymousPermissionsMap
-    } else if (!features.trackChanges) {
-      activePermissionsMap = noTrackChangesPermissionsMap
     } else {
-      activePermissionsMap = permissionsMap
+      activePermissionsMap = noTrackChangesPermissionsMap
     }
     setPermissions(activePermissionsMap[permissionsLevel])
   }, [
@@ -117,7 +113,6 @@ export const PermissionsProvider: React.FC<React.PropsWithChildren> = ({
     permissionsLevel,
     setPermissions,
     hasViewerPermissions,
-    features.trackChanges,
   ])
 
   useEffect(() => {

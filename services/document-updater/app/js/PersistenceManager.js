@@ -1,11 +1,11 @@
 // @ts-check
 const { setTimeout } = require('node:timers/promises')
-const Settings = require('@overleaf/settings')
+const Settings = require('@superpaper/settings')
 const Errors = require('./Errors')
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 const Metrics = require('./Metrics')
-const logger = require('@overleaf/logger')
-const { fetchJson, RequestFailedError } = require('@overleaf/fetch-utils')
+const logger = require('@superpaper/logger')
+const { fetchJson, RequestFailedError } = require('@superpaper/fetch-utils')
 
 const MAX_ATTEMPTS = 2
 const RETRY_DELAY_MS = 10

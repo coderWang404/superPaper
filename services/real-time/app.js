@@ -1,13 +1,13 @@
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 import async from 'async'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import express from 'express'
 import session from 'express-session'
-import redis from '@overleaf/redis-wrapper'
+import redis from '@superpaper/redis-wrapper'
 import ConnectRedis from 'connect-redis'
 import SessionSockets from './app/js/SessionSockets.js'
 import CookieParser from 'cookie-parser'

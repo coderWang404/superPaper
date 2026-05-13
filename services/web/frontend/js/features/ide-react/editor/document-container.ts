@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 // Migrated from services/web/frontend/js/ide/editor/Document.js
 
-import RangesTracker from '@overleaf/ranges-tracker'
+import RangesTracker from '@superpaper/ranges-tracker'
 import { OTType, ShareJsDoc } from './share-js-doc'
 import { debugConsole } from '@/utils/debugging'
 import { Socket } from '@/features/ide-react/connection/types/socket'
@@ -28,7 +28,7 @@ import {
 } from '@/features/ide-react/editor/types/document'
 import { ThreadId } from '../../../../../types/review-panel/review-panel'
 import getMeta from '@/utils/meta'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import {
   HistoryOTShareDoc,
   ShareLatexOTShareDoc,

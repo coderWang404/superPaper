@@ -27,19 +27,16 @@ import { minimumListDepthForSelection } from '../utils/tree-operations/ancestors
 import { debugConsole } from '@/utils/debugging'
 import { useTranslation } from 'react-i18next'
 import { ToggleSearchButton } from '@/features/source-editor/components/toolbar/toggle-search-button'
-import ReviewPanelHeader from '@/features/review-panel/components/review-panel-header'
-import useReviewPanelLayout from '@/features/review-panel/hooks/use-review-panel-layout'
 import Breadcrumbs from '@/features/source-editor/extensions/breadcrumbs'
-import classNames from 'classnames'
 import { useUserSettingsContext } from '@/shared/context/user-settings-context'
 import { useFeatureFlag } from '@/shared/context/split-test-context'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 
-const sourceEditorToolbarComponents = importOverleafModules(
+const sourceEditorToolbarComponents = importSuperPaperModules(
   'sourceEditorToolbarComponents'
 ) as { import: { default: ElementType }; path: string }[]
 
-const sourceEditorToolbarEndButtons = importOverleafModules(
+const sourceEditorToolbarEndButtons = importSuperPaperModules(
   'sourceEditorToolbarEndButtons'
 ) as { import: { default: ElementType }; path: string }[]
 
@@ -71,8 +68,6 @@ const Toolbar = memo(function Toolbar() {
   const visual = isVisual(view)
 
   const listDepth = minimumListDepthForSelection(state)
-
-  const { showHeader: showReviewPanelHeader } = useReviewPanelLayout()
 
   const {
     open: overflowOpen,
@@ -160,12 +155,9 @@ const Toolbar = memo(function Toolbar() {
 
   return (
     <>
-      {showReviewPanelHeader && <ReviewPanelHeader />}
       <div
         id="ol-cm-toolbar-wrapper"
-        className={classNames('ol-cm-toolbar-wrapper', {
-          'ol-cm-toolbar-wrapper-indented': showReviewPanelHeader,
-        })}
+        className="ol-cm-toolbar-wrapper"
       >
         <div
           role="toolbar"

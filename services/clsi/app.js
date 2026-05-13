@@ -1,12 +1,12 @@
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 
 import CompileController from './app/js/CompileController.js'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import LoggerSerializers from './app/js/LoggerSerializers.js'
 
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import smokeTest from './test/smoke/js/SmokeTests.js'
 import Errors from './app/js/Errors.js'
 import OutputController from './app/js/OutputController.js'
@@ -19,7 +19,7 @@ import bodyParser from 'body-parser'
 
 import net from 'node:net'
 import os from 'node:os'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import ConversionController from './app/js/ConversionController.js'
 import FileUploadMiddleware from './app/js/FileUploadMiddleware.js'
 logger.initialize('clsi')
@@ -142,7 +142,7 @@ if (process.env.NODE_ENV === 'development' && global.__coverage__) {
     for (const [key, value] of Object.entries(global.__coverage__)) {
       coverage[key] = {
         ...value,
-        path: value.path.replace('/overleaf/', '/workspace/'),
+        path: value.path.replace('/superpaper/', '/workspace/'),
       }
     }
     res.json({ coverage })

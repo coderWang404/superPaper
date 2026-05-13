@@ -11,26 +11,12 @@ import { FC } from 'react'
 // FileTreeSelectable: handles selection and multi-selection
 const FileTreeContext: FC<
   React.PropsWithChildren<{
-    refProviders: Record<string, boolean>
-    setRefProviderEnabled: (provider: string, value: boolean) => void
-    setStartedFreeTrial: (value: boolean) => void
     onSelect: () => void
     fileTreeContainer?: HTMLDivElement
   }>
-> = ({
-  refProviders,
-  setRefProviderEnabled,
-  setStartedFreeTrial,
-  onSelect,
-  fileTreeContainer,
-  children,
-}) => {
+> = ({ onSelect, fileTreeContainer, children }) => {
   return (
-    <FileTreeMainProvider
-      refProviders={refProviders}
-      setRefProviderEnabled={setRefProviderEnabled}
-      setStartedFreeTrial={setStartedFreeTrial}
-    >
+    <FileTreeMainProvider>
       <FileTreeSelectableProvider onSelect={onSelect}>
         <FileTreeActionableProvider>
           <FileTreeDraggableProvider fileTreeContainer={fileTreeContainer}>

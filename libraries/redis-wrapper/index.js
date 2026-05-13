@@ -34,7 +34,7 @@ function createClient(opts) {
 
   if (standardOpts.endpoints) {
     throw new Error(
-      '@overleaf/redis-wrapper: redis-sentinel is no longer supported'
+      '@superpaper/redis-wrapper: redis-sentinel is no longer supported'
     )
   }
 

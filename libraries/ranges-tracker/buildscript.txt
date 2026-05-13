@@ -5,6 +5,6 @@ ranges-tracker
 --esmock-loader=False
 --is-library=True
 --node-version=24.14.1
---package-name=@overleaf/ranges-tracker
+--package-name=@superpaper/ranges-tracker
 --pipeline-owner=44
 --public-repo=False

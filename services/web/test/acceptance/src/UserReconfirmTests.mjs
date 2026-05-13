@@ -52,7 +52,7 @@ describe('User Must Reconfirm', function () {
 
     it('should return a 404 to client for non-existent account', function (done) {
       return this.user.reconfirmAccountRequest(
-        'fake@overleaf.com',
+        'fake@superpaper.com',
         (err, response) => {
           expect(err != null).to.equal(false)
           expect(response.statusCode).to.equal(404)

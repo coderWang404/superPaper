@@ -1,10 +1,10 @@
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import _ from 'lodash'
 import { URL } from 'node:url'
 import Path from 'node:path'
 import moment from 'moment'
-import { fetchJson } from '@overleaf/fetch-utils'
+import { fetchJson } from '@superpaper/fetch-utils'
 import contentDisposition from 'content-disposition'
 import Features from './Features.mjs'
 import SessionManager from '../Features/Authentication/SessionManager.mjs'
@@ -14,7 +14,7 @@ import Errors from '../Features/Errors/Errors.js'
 import AdminAuthorizationHelper from '../Features/Helpers/AdminAuthorizationHelper.mjs'
 import { addOptionalCleanupHandlerAfterDrainingConnections } from './GracefulShutdown.mjs'
 import { sanitizeSessionUserForFrontEnd } from './FrontEndUser.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 
 const {
   canRedirectToAdminDomain,
@@ -115,10 +115,6 @@ export default async function (webRouter, privateApiRouter, publicApiRouter) {
   publicApiRouter.use(addSetContentDisposition)
 
   webRouter.use(function (req, res, next) {
-    req.externalAuthenticationSystemUsed =
-      Features.externalAuthenticationSystemUsed
-    res.locals.externalAuthenticationSystemUsed =
-      Features.externalAuthenticationSystemUsed
     req.hasFeature = res.locals.hasFeature = Features.hasFeature
     next()
   })
@@ -328,7 +324,7 @@ export default async function (webRouter, privateApiRouter, publicApiRouter) {
   })
 
   webRouter.use(function (req, res, next) {
-    res.locals.showThinFooter = !Features.hasFeature('saas')
+    res.locals.showThinFooter = true
     next()
   })
 
@@ -365,16 +361,12 @@ export default async function (webRouter, privateApiRouter, publicApiRouter) {
 
   webRouter.use(function (req, res, next) {
     res.locals.ExposedSettings = {
-      isOverleaf: Settings.overleaf != null,
+      isSuperPaper: true,
       appName: Settings.appName,
       adminEmail: Settings.adminEmail,
       dropboxAppName:
-        Settings.apis.thirdPartyDataStore?.dropboxAppName || 'Overleaf',
+        Settings.apis.thirdPartyDataStore?.dropboxAppName || 'superPaper',
       ieeeBrandId: IEEE_BRAND_ID,
-      hasSamlBeta: req.session.samlBeta,
-      hasAffiliationsFeature: Features.hasFeature('affiliations'),
-      hasSamlFeature: Features.hasFeature('saml'),
-      samlInitPath: _.get(Settings, ['saml', 'ukamf', 'initPath']),
       hasLinkUrlFeature: Features.hasFeature('link-url'),
       hasLinkedProjectFileFeature: Features.hasFeature('linked-project-file'),
       hasLinkedProjectOutputFileFeature: Features.hasFeature(
@@ -396,30 +388,12 @@ export default async function (webRouter, privateApiRouter, publicApiRouter) {
       sentryDsn: Settings.sentry.publicDSN,
       sentryEnvironment: Settings.sentry.environment,
       sentryRelease: Settings.sentry.release,
-      hotjarId: Settings.hotjar?.id,
-      hotjarVersion: Settings.hotjar?.version,
-      enableSubscriptions: Settings.enableSubscriptions,
-      gaToken:
-        Settings.analytics &&
-        Settings.analytics.ga &&
-        Settings.analytics.ga.token,
-      gaTokenV4:
-        Settings.analytics &&
-        Settings.analytics.ga &&
-        Settings.analytics.ga.tokenV4,
-      propensityId: Settings?.analytics?.propensity?.id,
       cookieDomain: Settings.cookieDomain,
       templateLinks: Settings.templateLinks,
       labsEnabled: Settings.labs && Settings.labs.enable,
-      wikiEnabled: Settings.overleaf != null || Settings.proxyLearn,
-      templatesEnabled:
-        Settings.overleaf != null || Settings.templates?.user_id != null,
-      cioWriteKey: Settings.analytics?.cio?.writeKey,
-      cioSiteId: Settings.analytics?.cio?.siteId,
-      linkedInInsightsPartnerId: Settings.analytics?.linkedIn?.partnerId,
+      wikiEnabled: Settings.proxyLearn,
+      templatesEnabled: Settings.templates?.user_id != null,
       enablePandocConversions: Settings.enablePandocConversions,
-      mixpanelLabsToken:
-        Settings.labs?.enable && Settings.analytics?.mixpanel?.labsToken,
     }
     next()
   })

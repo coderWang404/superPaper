@@ -1,6 +1,6 @@
 import RealTimeClient from './helpers/RealTimeClient.js'
 import FixturesManager from './helpers/FixturesManager.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import signature from 'cookie-signature'
 import { expect } from 'chai'
 

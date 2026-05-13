@@ -7,7 +7,6 @@ import OLTooltip from '@/shared/components/ol/ol-tooltip'
 import OLIconButton, {
   OLIconButtonProps,
 } from '@/shared/components/ol/ol-icon-button'
-import getMeta from '@/utils/meta'
 
 type DeleteButtonProps = Pick<
   OLIconButtonProps,
@@ -38,12 +37,8 @@ type RemoveProps = {
 function Remove({ userEmailData, deleteEmailAsync }: RemoveProps) {
   const { t } = useTranslation()
   const { state, deleteEmail, setLoading } = useUserEmailsContext()
-  const isManaged = getMeta('ol-isManagedAccount')
 
   const getTooltipText = () => {
-    if (isManaged) {
-      return t('your_account_is_managed_by_your_group_admin')
-    }
     return userEmailData.default
       ? t('please_change_primary_to_remove')
       : t('remove')

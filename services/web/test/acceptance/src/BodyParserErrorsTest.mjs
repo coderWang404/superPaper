@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import request from './helpers/request.js'
 
 // create a string that is longer than the max allowed (as defined in Server.js)

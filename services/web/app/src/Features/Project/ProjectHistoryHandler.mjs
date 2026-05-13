@@ -13,8 +13,8 @@ const ProjectHistoryHandler = {
 
     // use $exists:false to prevent overwriting any existing history id, atomically
     const result = await Project.updateOne(
-      { _id: projectId, 'overleaf.history.id': { $exists: false } },
-      { 'overleaf.history.id': historyId }
+      { _id: projectId, 'superpaper.history.id': { $exists: false } },
+      { 'superpaper.history.id': historyId }
     )
 
     if (result.matchedCount === 0) {
@@ -24,7 +24,7 @@ const ProjectHistoryHandler = {
 
   async getHistoryId(projectId) {
     const project = await ProjectDetailsHandler.promises.getDetails(projectId)
-    return project?.overleaf?.history?.id
+    return project?.superpaper?.history?.id
   },
 
   async ensureHistoryExistsForProject(projectId) {

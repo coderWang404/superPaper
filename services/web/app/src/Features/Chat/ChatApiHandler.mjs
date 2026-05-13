@@ -1,8 +1,8 @@
 // @ts-check
 
-import { fetchJson, fetchNothing } from '@overleaf/fetch-utils'
+import { fetchJson, fetchNothing } from '@superpaper/fetch-utils'
 
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import { callbackify } from 'node:util'
 
 /**

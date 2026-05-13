@@ -1,14 +1,13 @@
 import { beforeEach, describe, it, vi } from 'vitest'
 import sinon from 'sinon'
-import { RequestFailedError } from '@overleaf/fetch-utils'
-import { ReadableString } from '@overleaf/stream-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
+import { ReadableString } from '@superpaper/stream-utils'
 
 const modulePath = '../../../../app/src/Features/Templates/TemplatesManager'
 
 describe('TemplatesManager', function () {
   beforeEach(async function (ctx) {
     ctx.project_id = 'project-id'
-    ctx.brandVariationId = 'brand-variation-id'
     ctx.compiler = 'pdflatex'
     ctx.imageName = 'TL2017'
     ctx.mainFile = 'main.tex'
@@ -48,7 +47,6 @@ describe('TemplatesManager', function () {
       promises: {
         setCompiler: sinon.stub().resolves(),
         setImageName: sinon.stub().resolves(),
-        setBrandVariationId: sinon.stub().resolves(),
         normalizeCompiler: sinon.stub().returnsArg(0),
         normalizeImageName: sinon.stub().returnsArg(0),
       },
@@ -79,7 +77,7 @@ describe('TemplatesManager', function () {
       }),
       RequestFailedError,
     }
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
     vi.doMock(
       '../../../../app/src/Features/Uploads/ProjectUploadManager',
       () => ({ default: ctx.ProjectUploadManager })
@@ -106,7 +104,7 @@ describe('TemplatesManager', function () {
       () => ({ default: ctx.SessionManager })
     )
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         path: {
           dumpFolder: ctx.dumpFolder,
@@ -114,13 +112,13 @@ describe('TemplatesManager', function () {
         siteUrl: (ctx.siteUrl = 'http://127.0.0.1:3000'),
         apis: {
           v1: {
-            url: (ctx.v1Url = 'http://overleaf.com'),
-            user: 'overleaf',
+            url: (ctx.v1Url = 'http://superpaper.com'),
+            user: 'superpaper',
             pass: 'password',
             timeout: 10,
           },
         },
-        overleaf: {
+        superpaper: {
           host: ctx.v1Url,
         },
       },
@@ -157,7 +155,6 @@ describe('TemplatesManager', function () {
     describe('when all options passed', function () {
       beforeEach(async function (ctx) {
         await ctx.TemplatesManager.createProjectFromV1Template(
-          ctx.brandVariationId,
           ctx.compiler,
           ctx.mainFile,
           ctx.templateId,
@@ -170,7 +167,7 @@ describe('TemplatesManager', function () {
 
       it('should fetch zip from v1 based on template id', function (ctx) {
         ctx.FetchUtils.fetchStreamWithResponse.should.have.been.calledWith(
-          `${ctx.v1Url}/api/v1/overleaf/templates/${ctx.templateVersionId}`
+          `${ctx.v1Url}/api/v1/superpaper/templates/${ctx.templateVersionId}`
         )
       })
 
@@ -188,7 +185,6 @@ describe('TemplatesManager', function () {
             fromV1TemplateVersionId: ctx.templateVersionId,
             compiler: ctx.compiler,
             imageName: ctx.imageName,
-            brandVariationId: ctx.brandVariationId,
           }
         )
       })

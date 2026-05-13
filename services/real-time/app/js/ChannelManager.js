@@ -1,7 +1,7 @@
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
-import settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
+import settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 
 const ClientMap = new Map() // for each redis client, store a Map of subscribed channels (channelname -> subscribe promise)
 

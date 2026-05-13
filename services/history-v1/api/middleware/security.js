@@ -5,7 +5,7 @@ const config = require('config')
 const HTTPStatus = require('http-status')
 const jwt = require('jsonwebtoken')
 const tsscmp = require('tsscmp')
-const { parseReq } = require('@overleaf/validation-tools')
+const { parseReq } = require('@superpaper/validation-tools')
 const schemas = require('../schema')
 
 function hasValidBasicAuthCredentials(req) {

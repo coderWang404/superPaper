@@ -1,8 +1,8 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import Errors from './Errors.js'
 import RequestParser from './RequestParser.js'
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 
 // The lock timeout should be higher than the maximum end-to-end compile time.
 // Here, we use the maximum compile timeout plus 2 minutes.

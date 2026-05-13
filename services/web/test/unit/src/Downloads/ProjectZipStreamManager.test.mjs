@@ -32,7 +32,7 @@ describe('ProjectZipStreamManager', function () {
       default: (ctx.archiver = sinon.stub().returns(ctx.archive)),
     }))
 
-    vi.doMock('@overleaf/logger', () => ({
+    vi.doMock('@superpaper/logger', () => ({
       default: ctx.logger,
     }))
 

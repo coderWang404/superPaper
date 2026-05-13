@@ -9,9 +9,9 @@
 // docker run --rm $(docker ps -lq) scripts/clear_deleted.js
 
 import async from 'async'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 import { db, ObjectId } from '../app/js/mongodb.js'
 
 logger.logger.level('fatal')
@@ -36,7 +36,7 @@ function checkAndClear(project, callback) {
   function checkDeleted(cb) {
     db.projects.findOne(
       { _id: new ObjectId(projectId) },
-      { projection: { overleaf: true } },
+      { projection: { superpaper: true } },
       (err, result) => {
         console.log(
           '1. looking in mongo projects collection: err',
@@ -52,26 +52,26 @@ function checkAndClear(project, callback) {
         }
         if (
           result &&
-          result.overleaf &&
-          !result.overleaf.id &&
-          result.overleaf.history &&
-          !result.overleaf.history.id &&
-          result.overleaf.history.deleted_id
+          result.superpaper &&
+          !result.superpaper.id &&
+          result.superpaper.history &&
+          !result.superpaper.history.id &&
+          result.superpaper.history.deleted_id
         ) {
           console.log(
             ' - project is not imported from v1 and has a deleted_id - ok to clear'
           )
           return cb()
-        } else if (result && result.overleaf && result.overleaf.id) {
+        } else if (result && result.superpaper && result.superpaper.id) {
           console.log(' - project is imported from v1')
           return cb(
             new Error('project is imported from v1 - will not clear it')
           )
         } else if (
           result &&
-          result.overleaf &&
-          result.overleaf.history &&
-          result.overleaf.history.id
+          result.superpaper &&
+          result.superpaper.history &&
+          result.superpaper.history.id
         ) {
           console.log(' - project has a history id')
           return cb(new Error('project has a history id - will not clear it'))

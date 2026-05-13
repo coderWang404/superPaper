@@ -49,7 +49,7 @@ export default {
             entry.message = message[0]
             // removing the messageComponent, as the markup possible in it was causing crashes when
             //  attempting to broadcast it in the detach-context (cant structuredClone an html node)
-            // see https://github.com/overleaf/internal/discussions/15031 for context
+            // see https://github.com/superpaper/internal/discussions/15031 for context
             // entry.messageComponent = message[1]
           } else {
             entry.message = message

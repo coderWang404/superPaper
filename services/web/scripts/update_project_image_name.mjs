@@ -1,4 +1,4 @@
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 import { db } from '../app/src/infrastructure/mongodb.mjs'
 
 const oldImage = process.argv[2]

@@ -1,17 +1,12 @@
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
 import { UserAuditLogEntry } from '../../models/UserAuditLogEntry.mjs'
 import { callbackify } from 'node:util'
-import SubscriptionLocator from '../Subscription/SubscriptionLocator.mjs'
-import Features from '../../infrastructure/Features.mjs'
 
 function _canHaveNoIpAddressId(operation, info) {
   if (operation === 'add-email' && info.script) return true
-  if (operation === 'join-group-subscription') return true
-  if (operation === 'leave-group-subscription') return true
   if (operation === 'must-reset-password-set') return true
   if (operation === 'remove-email' && info.script) return true
-  if (operation === 'release-managed-user' && info.script) return true
   if (operation === 'unlink-dropbox' && info.batch) return true
   return false
 }
@@ -19,34 +14,11 @@ function _canHaveNoIpAddressId(operation, info) {
 function _canHaveNoInitiatorId(operation, info) {
   if (operation === 'add-email' && info.script) return true
   if (operation === 'reset-password') return true
-  if (operation === 'unlink-sso' && info.providerId === 'collabratec')
-    return true
-  if (operation === 'unlink-sso' && info.script === true) return true
-  if (operation === 'unlink-institution-sso-not-migrated') return true
   if (operation === 'remove-email' && info.script) return true
-  if (operation === 'join-group-subscription') return true
-  if (operation === 'leave-group-subscription') return true
   if (operation === 'must-reset-password-set') return true
   if (operation === 'must-reset-password-unset') return true
   if (operation === 'account-suspension' && info.script) return true
-  if (operation === 'release-managed-user' && info.script) return true
 }
-
-// events that are visible to managed user admins in Group Audit Logs view
-const MANAGED_GROUP_USER_EVENTS = [
-  'login',
-  'logout',
-  'reset-password',
-  'update-password',
-  'link-dropbox',
-  'unlink-dropbox',
-  'link-github',
-  'unlink-github',
-  'delete-account',
-  'leave-group-subscription',
-  'integration-account-linked',
-  'integration-account-unlinked',
-]
 
 /**
  * Add an audit log entry
@@ -89,23 +61,6 @@ async function addEntry(userId, operation, initiatorId, ipAddress, info = {}) {
     ipAddress,
   }
 
-  if (
-    MANAGED_GROUP_USER_EVENTS.includes(operation) &&
-    Features.hasFeature('saas')
-  ) {
-    try {
-      const managedSubscription =
-        await SubscriptionLocator.promises.getUniqueManagedSubscriptionMemberOf(
-          userId
-        )
-      if (managedSubscription) {
-        entry.managedSubscriptionId = managedSubscription._id
-      }
-    } catch (err) {
-      logger.error({ err, userId }, 'failed to lookup managed subscription')
-    }
-  }
-
   await UserAuditLogEntry.create(entry)
 }
 
@@ -126,7 +81,6 @@ function addEntryInBackground(
 }
 
 const UserAuditLogHandler = {
-  MANAGED_GROUP_USER_EVENTS,
   addEntry: callbackify(addEntry),
   promises: {
     addEntry,

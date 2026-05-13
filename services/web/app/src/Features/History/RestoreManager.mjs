@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Path from 'node:path'
 import fs from 'node:fs'
 import FileWriter from '../../infrastructure/FileWriter.mjs'
@@ -8,19 +8,19 @@ import FileTypeManager from '../Uploads/FileTypeManager.mjs'
 import EditorController from '../Editor/EditorController.mjs'
 import Errors from '../Errors/Errors.js'
 import moment from 'moment'
-import { callbackifyAll } from '@overleaf/promise-utils'
+import { callbackifyAll } from '@superpaper/promise-utils'
 import ProjectLocator from '../Project/ProjectLocator.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import ChatApiHandler from '../Chat/ChatApiHandler.mjs'
 import DocstoreManager from '../Docstore/DocstoreManager.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
 import ChatManager from '../Chat/ChatManager.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 import HistoryManager from './HistoryManager.mjs'
-import { Snapshot, getDocUpdaterCompatibleRanges } from 'overleaf-editor-core'
+import { Snapshot, getDocUpdaterCompatibleRanges } from 'superpaper-editor-core'
 
 async function getCommentThreadIds(projectId) {
   await DocumentUpdaterHandler.promises.flushProjectToMongo(projectId)
@@ -113,13 +113,13 @@ const RestoreManager = {
   ) {
     const endTimer = Metrics.revertFileDurationSeconds.startTimer()
     const project = await ProjectGetter.promises.getProject(projectId, {
-      overleaf: true,
+      superpaper: true,
       rootDoc_id: true,
     })
-    if (!project?.overleaf?.history?.rangesSupportEnabled) {
+    if (!project?.superpaper?.history?.rangesSupportEnabled) {
       throw new OError('project does not have ranges support', { projectId })
     }
-    const historyId = project.overleaf.history.id
+    const historyId = project.superpaper.history.id
 
     const basename = Path.basename(pathname)
     let dirname = Path.dirname(pathname)
@@ -368,9 +368,9 @@ const RestoreManager = {
   async revertProject(userId, projectId, version) {
     const endTimer = Metrics.revertProjectDurationSeconds.startTimer()
     const project = await ProjectGetter.promises.getProject(projectId, {
-      overleaf: true,
+      superpaper: true,
     })
-    if (!project?.overleaf?.history?.rangesSupportEnabled) {
+    if (!project?.superpaper?.history?.rangesSupportEnabled) {
       throw new OError('project does not have ranges support', { projectId })
     }
 

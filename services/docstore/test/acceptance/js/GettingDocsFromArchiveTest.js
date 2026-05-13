@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import mongodb from '../../../app/js/mongodb.js'
 import DocstoreApp from './helpers/DocstoreApp.js'
 import DocstoreClient from './helpers/DocstoreClient.js'

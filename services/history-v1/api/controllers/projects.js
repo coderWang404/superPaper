@@ -7,12 +7,12 @@ const HTTPStatus = require('http-status')
 const fs = require('node:fs')
 const { promisify } = require('node:util')
 const config = require('config')
-const OError = require('@overleaf/o-error')
-const { expressify } = require('@overleaf/promise-utils')
-const { parseReq } = require('@overleaf/validation-tools')
+const OError = require('@superpaper/o-error')
+const { expressify } = require('@superpaper/promise-utils')
+const { parseReq } = require('@superpaper/validation-tools')
 
-const logger = require('@overleaf/logger')
-const { Chunk, ChunkResponse, Blob } = require('overleaf-editor-core')
+const logger = require('@superpaper/logger')
+const { Chunk, ChunkResponse, Blob } = require('superpaper-editor-core')
 const {
   BlobStore,
   BatchBlobStore,
@@ -32,7 +32,7 @@ const StreamSizeLimit = require('./stream_size_limit')
 const { getProjectBlobsBatch } = require('../../storage/lib/blob_store')
 const assert = require('../../storage/lib/assert')
 const { getChunkMetadataForVersion } = require('../../storage/lib/chunk_store')
-const { IncrementalResponse } = require('@overleaf/stream-utils')
+const { IncrementalResponse } = require('@superpaper/stream-utils')
 
 const pipeline = promisify(Stream.pipeline)
 

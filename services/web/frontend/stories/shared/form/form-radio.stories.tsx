@@ -23,7 +23,7 @@ export const Radio: Story = {
     disabled: false,
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3495-259211&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3495-259211&m=dev'
   ),
 }
 
@@ -36,6 +36,6 @@ export const RadioChecked: Story = {
     defaultChecked: true,
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3495-259218&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3495-259218&m=dev'
   ),
 }

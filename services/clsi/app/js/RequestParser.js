@@ -1,5 +1,5 @@
 import { promisify } from 'node:util'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import OutputCacheManager from './OutputCacheManager.js'
 
 const VALID_COMPILERS = ['pdflatex', 'latex', 'xelatex', 'lualatex']

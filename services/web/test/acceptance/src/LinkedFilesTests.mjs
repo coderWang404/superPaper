@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import _ from 'lodash'
 import timekeeper from 'timekeeper'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import UserHelper from './helpers/User.mjs'
 import express from 'express'
 import { plainTextResponse } from '../../../app/src/infrastructure/Response.mjs'
@@ -237,7 +237,7 @@ describe('LinkedFiles', function () {
       })
       expect(response.statusCode).to.equal(409)
       expect(body).to.equal(
-        'Sorry, the source project is not yet imported to Overleaf v2. Please import it to Overleaf v2 to refresh this file'
+        'Sorry, the source project is not yet imported to superPaper v2. Please import it to superPaper v2 to refresh this file'
       )
     })
   })
@@ -520,7 +520,7 @@ describe('LinkedFiles', function () {
       })
       expect(response.statusCode).to.equal(409)
       expect(body).to.equal(
-        'Sorry, the source project is not yet imported to Overleaf v2. Please import it to Overleaf v2 to refresh this file'
+        'Sorry, the source project is not yet imported to superPaper v2. Please import it to superPaper v2 to refresh this file'
       )
     })
   })

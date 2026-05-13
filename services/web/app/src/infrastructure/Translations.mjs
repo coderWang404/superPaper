@@ -1,8 +1,8 @@
 import i18n from 'i18next'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { URL } from 'node:url'
 import pug from 'pug-runtime'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import SafeHTMLSubstitution from '../Features/Helpers/SafeHTMLSubstitution.mjs'
 import cs from '../../../locales/cs.json' with { type: 'json' }
 import da from '../../../locales/da.json' with { type: 'json' }

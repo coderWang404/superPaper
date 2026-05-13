@@ -1,5 +1,5 @@
 import FileHandler from './FileHandler.js'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 import parseRange from 'range-parser'
 import Errors from './Errors.js'
 import { pipeline } from 'node:stream'

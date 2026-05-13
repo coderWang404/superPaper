@@ -1,4 +1,4 @@
-This directory contains fonts used by the Overleaf web application.
+This directory contains fonts used by the superPaper web application.
 
 - [DM Mono](https://github.com/googlefonts/dm-mono)
 - [Inter](https://rsms.me/inter/)

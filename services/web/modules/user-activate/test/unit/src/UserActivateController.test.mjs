@@ -49,7 +49,7 @@ describe('UserActivateController', function () {
     )
 
     vi.doMock(
-      '../../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })

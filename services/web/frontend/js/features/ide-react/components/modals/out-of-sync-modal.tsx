@@ -23,7 +23,7 @@ function OutOfSyncModal({ editorContent, show, onHide }: OutOfSyncModalProps) {
   const editorContentRows = (editorContent.match(/\n/g)?.length || 0) + 1
 
   // Reload the page to avoid staying in an inconsistent state.
-  // https://github.com/overleaf/issues/issues/3694
+  // https://github.com/superpaper/issues/issues/3694
   function done() {
     onHide()
     location.reload()

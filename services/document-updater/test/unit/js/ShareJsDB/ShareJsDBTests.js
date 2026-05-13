@@ -28,7 +28,7 @@ describe('ShareJsDB', function () {
           getPreviousDocOps: sinon.stub(),
         }),
         './Errors': Errors,
-        '@overleaf/metrics': {
+        '@superpaper/metrics': {
           inc: sinon.stub(),
           histogram: sinon.stub(),
           Timer: class Timer {

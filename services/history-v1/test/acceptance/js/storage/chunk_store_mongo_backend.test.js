@@ -7,7 +7,7 @@ const {
   Change,
   AddFileOperation,
   File,
-} = require('overleaf-editor-core')
+} = require('superpaper-editor-core')
 const cleanup = require('./support/cleanup')
 const backend = require('../../../../storage/lib/chunk_store/mongo')
 const { ChunkVersionConflictError } = require('../../../../storage')

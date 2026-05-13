@@ -1,7 +1,7 @@
 import React, { ElementType, FC } from 'react'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 
-const symbolPaletteComponents = importOverleafModules(
+const symbolPaletteComponents = importSuperPaperModules(
   'sourceEditorSymbolPalette'
 ) as { import: { default: ElementType }; path: string }[]
 

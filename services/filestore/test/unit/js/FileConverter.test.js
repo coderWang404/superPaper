@@ -1,6 +1,6 @@
 import sinon from 'sinon'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import _ObjectPersistor, { Errors } from '@overleaf/object-persistor'
+import _ObjectPersistor, { Errors } from '@superpaper/object-persistor'
 
 const modulePath = '../../../app/js/FileConverter.js'
 
@@ -27,21 +27,21 @@ describe('FileConverter', () => {
       default: SafeExec,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         inc: sinon.stub(),
         Timer: sinon.stub().returns({ done: sinon.stub() }),
       },
     }))
 
-    vi.doMock('@overleaf/settings', async importOriginal => {
+    vi.doMock('@superpaper/settings', async importOriginal => {
       const originalModule = (await importOriginal()).default
       return {
         default: { ...originalModule, ...Settings },
       }
     })
 
-    vi.doMock('@overleaf/object-persistor', () => ({
+    vi.doMock('@superpaper/object-persistor', () => ({
       ...ObjectPersistor,
       default: _ObjectPersistor,
     }))

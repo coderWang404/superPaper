@@ -1,5 +1,5 @@
 export const bibliographyStyles: Record<string, string[]> = {
-  // https://www.overleaf.com/learn/latex/Bibtex_bibliography_styles
+  // https://www.superpaper.com/learn/latex/Bibtex_bibliography_styles
   bibtex: [
     'abbrv',
     'acm',
@@ -10,9 +10,9 @@ export const bibliographyStyles: Record<string, string[]> = {
     'siam',
     'unsrt',
   ],
-  // https://www.overleaf.com/learn/latex/Natbib_bibliography_styles
+  // https://www.superpaper.com/learn/latex/Natbib_bibliography_styles
   natbib: ['dinat', 'plainnat', 'abbrvnat', 'unsrtnat', 'rusnat', 'ksfh_nat'],
-  // https://www.overleaf.com/learn/latex/Biblatex_bibliography_styles
+  // https://www.superpaper.com/learn/latex/Biblatex_bibliography_styles
   biblatex: [
     'numeric',
     'alphabetic',

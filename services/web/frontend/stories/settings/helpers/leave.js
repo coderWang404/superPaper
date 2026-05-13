@@ -11,7 +11,7 @@ export function defaultSetupMocks(fetchMock) {
 export function setDefaultMeta() {
   window.metaAttributesCache.set('ol-usersEmail', 'user@primary.com')
   Object.assign(getMeta('ol-ExposedSettings'), {
-    isOverleaf: true,
+    isSuperPaper: true,
   })
   window.metaAttributesCache.set('ol-hasPassword', true)
 }

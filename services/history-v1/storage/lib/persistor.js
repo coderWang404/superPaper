@@ -1,7 +1,7 @@
 const _ = require('lodash')
 const config = require('config')
-const metrics = require('@overleaf/metrics')
-const objectPersistor = require('@overleaf/object-persistor')
+const metrics = require('@superpaper/metrics')
+const objectPersistor = require('@superpaper/object-persistor')
 
 const persistorConfig = _.cloneDeep(config.get('persistor'))
 

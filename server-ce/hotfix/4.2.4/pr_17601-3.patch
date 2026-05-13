@@ -7,7 +7,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS  /overleaf/services/chat/app.js >> /var/log/sharelatex/chat.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS  /superpaper/services/chat/app.js >> /var/log/sharelatex/chat.log 2>&1
 --- clsi-sharelatex/run
 +++ clsi-sharelatex/run
 @@ -15,4 +15,7 @@ if [ -e '/var/run/docker.sock' ]; then
@@ -17,7 +17,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/clsi/app.js >> /var/log/sharelatex/clsi.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/clsi/app.js >> /var/log/sharelatex/clsi.log 2>&1
 --- contacts-sharelatex/run
 +++ contacts-sharelatex/run
 @@ -6,4 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then
@@ -27,7 +27,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/contacts/app.js >> /var/log/sharelatex/contacts.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/contacts/app.js >> /var/log/sharelatex/contacts.log 2>&1
 --- docstore-sharelatex/run
 +++ docstore-sharelatex/run
 @@ -6,4 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then
@@ -37,7 +37,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/docstore/app.js >> /var/log/sharelatex/docstore.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/docstore/app.js >> /var/log/sharelatex/docstore.log 2>&1
 --- document-updater-sharelatex/run
 +++ document-updater-sharelatex/run
 @@ -6,4 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then
@@ -47,7 +47,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/document-updater/app.js >> /var/log/sharelatex/document-updater.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/document-updater/app.js >> /var/log/sharelatex/document-updater.log 2>&1
 --- filestore-sharelatex/run
 +++ filestore-sharelatex/run
 @@ -1,2 +1,6 @@
@@ -56,7 +56,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node /overleaf/services/filestore/app.js >> /var/log/sharelatex/filestore.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node /superpaper/services/filestore/app.js >> /var/log/sharelatex/filestore.log 2>&1
 --- notifications-sharelatex/run
 +++ notifications-sharelatex/run
 @@ -6,4 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then
@@ -66,7 +66,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/notifications/app.js >> /var/log/sharelatex/notifications.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/notifications/app.js >> /var/log/sharelatex/notifications.log 2>&1
 --- project-history-sharelatex/run
 +++ project-history-sharelatex/run
 @@ -6,4 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then
@@ -76,7 +76,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/project-history/app.js >> /var/log/sharelatex/project-history.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/project-history/app.js >> /var/log/sharelatex/project-history.log 2>&1
 --- real-time-sharelatex/run
 +++ real-time-sharelatex/run
 @@ -1,2 +1,6 @@
@@ -85,7 +85,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node /overleaf/services/real-time/app.js >> /var/log/sharelatex/real-time.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node /superpaper/services/real-time/app.js >> /var/log/sharelatex/real-time.log 2>&1
 --- spelling-sharelatex/run
 +++ spelling-sharelatex/run
 @@ -6,4 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then
@@ -95,7 +95,7 @@
 +source /etc/sharelatex/env.sh
 +export LISTEN_ADDRESS=127.0.0.1
 +
- exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /overleaf/services/spelling/app.js >> /var/log/sharelatex/spelling.log 2>&1
+ exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/spelling/app.js >> /var/log/sharelatex/spelling.log 2>&1
 --- web-api-sharelatex/run
 +++ web-api-sharelatex/run
 @@ -6,6 +6,7 @@ if [ "$DEBUG_NODE" == "true" ]; then

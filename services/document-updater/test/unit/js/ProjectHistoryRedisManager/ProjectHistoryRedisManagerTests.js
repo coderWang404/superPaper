@@ -20,7 +20,7 @@ describe('ProjectHistoryRedisManager', function () {
 
     this.ProjectHistoryRedisManager = SandboxedModule.require(modulePath, {
       requires: {
-        '@overleaf/settings': (this.settings = {
+        '@superpaper/settings': (this.settings = {
           max_doc_length: 123,
           redis: {
             project_history: {
@@ -35,7 +35,7 @@ describe('ProjectHistoryRedisManager', function () {
             },
           },
         }),
-        '@overleaf/redis-wrapper': {
+        '@superpaper/redis-wrapper': {
           createClient: () => this.rclient,
         },
         './Metrics': (this.metrics = { summary: sinon.stub() }),

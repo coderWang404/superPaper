@@ -94,7 +94,7 @@ describe('<EditorCloneProjectModalWrapper />', function () {
 
     const { url, options } = callLog!
     expect(url).to.equal(
-      'https://www.test-overleaf.com/project/project-1/clone'
+      'https://www.test-superpaper.com/project/project-1/clone'
     )
 
     expect(options.body).to.exist

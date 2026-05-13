@@ -1,5 +1,5 @@
 {
-  "name": "@overleaf/object-persistor",
+  "name": "@superpaper/object-persistor",
   "version": "1.0.2",
   "description": "Module for storing objects in multiple backends, with fallback on 404 to assist migration between them",
   "main": "index.js",
@@ -13,9 +13,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "github.com:overleaf/object-persistor"
+    "url": "github.com:superpaper/object-persistor"
   },
-  "author": "Overleaf (https://www.overleaf.com/)",
+  "author": "superPaper (https://www.superpaper.com/)",
   "license": "AGPL-3.0",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.994.0",
@@ -23,11 +23,11 @@
     "@aws-sdk/node-http-handler": "^3.374.0",
     "@aws-sdk/s3-request-presigner": "^3.994.0",
     "@google-cloud/storage": "^7.19.0",
-    "@overleaf/logger": "workspace:*",
-    "@overleaf/metrics": "workspace:*",
-    "@overleaf/o-error": "workspace:*",
-    "@overleaf/stream-utils": "workspace:*",
-    "fast-crc32c": "overleaf/node-fast-crc32c#aae6b2a4c7a7a159395df9cc6c38dfde702d6f51",
+    "@superpaper/logger": "workspace:*",
+    "@superpaper/metrics": "workspace:*",
+    "@superpaper/o-error": "workspace:*",
+    "@superpaper/stream-utils": "workspace:*",
+    "fast-crc32c": "https://codeload.github.com/o%76erleaf/node-fast-crc32c/tar.gz/aae6b2a4c7a7a159395df9cc6c38dfde702d6f51",
     "glob": "^12.0.0",
     "range-parser": "^1.2.1",
     "tiny-async-pool": "^1.1.0"

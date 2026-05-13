@@ -1,7 +1,7 @@
 import express from 'express'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 import csp, { removeCSPHeaders } from './CSP.mjs'
 import Router from '../router.mjs'
 import helmet from 'helmet'
@@ -9,7 +9,6 @@ import UserSessionsRedis from '../Features/User/UserSessionsRedis.mjs'
 import Csrf, { Csrf as CsrfClass } from './Csrf.mjs'
 import HttpPermissionsPolicyMiddleware from './HttpPermissionsPolicy.mjs'
 import SessionAutostartMiddleware from './SessionAutostartMiddleware.mjs'
-import AnalyticsManager from '../Features/Analytics/AnalyticsManager.mjs'
 import session from 'express-session'
 import CookieMetrics from './CookieMetrics.mjs'
 import CustomSessionStore from './CustomSessionStore.mjs'
@@ -19,11 +18,9 @@ import cookieParser from 'cookie-parser'
 import bearerTokenMiddleware from 'express-bearer-token'
 import passport from 'passport'
 import { Strategy as LocalStrategy } from 'passport-local'
-import ReferalConnect from '../Features/Referal/ReferalConnect.mjs'
 import RedirectManager from './RedirectManager.mjs'
 import translations from './Translations.mjs'
 import Views from './Views.mjs'
-import Features from './Features.mjs'
 import ErrorController from '../Features/Errors/ErrorController.mjs'
 import HttpErrorHandler from '../Features/Errors/HttpErrorHandler.mjs'
 import UserSessionsManager from '../Features/User/UserSessionsManager.mjs'
@@ -37,7 +34,7 @@ import os from 'node:os'
 import http from 'node:http'
 import { fileURLToPath } from 'node:url'
 import serveStaticWrapper from './ServeStaticWrapper.mjs'
-import { handleValidationError } from '@overleaf/validation-tools'
+import { handleValidationError } from '@superpaper/validation-tools'
 
 const { hasAdminAccess } = AdminAuthorizationHelper
 const sessionsRedisClient = UserSessionsRedis.client()
@@ -203,10 +200,6 @@ webRouter.use(
   })
 )
 
-if (Features.hasFeature('saas')) {
-  webRouter.use(AnalyticsManager.analyticsIdMiddleware)
-}
-
 // passport
 webRouter.use(passport.initialize())
 webRouter.use(passport.session())
@@ -255,8 +248,6 @@ if (Settings.cookieRollingSession) {
     next()
   })
 }
-
-webRouter.use(ReferalConnect.use)
 await expressLocals(webRouter, privateApiRouter, publicApiRouter)
 webRouter.use(SessionAutostartMiddleware.invokeCallbackMiddleware)
 
@@ -331,8 +322,7 @@ webRouter.use(
     // Disabled because it's impractical to include every resource via CORS or
     // with the magic CORP header
     crossOriginEmbedderPolicy: false,
-    // We need to be able to share the context of some popups. For example,
-    // when Recurly opens Paypal in a popup.
+    // We need to be able to share the context of some popups.
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     // Disabled because it's not a security header and has possibly-unwanted
     // effects

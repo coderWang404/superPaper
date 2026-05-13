@@ -1,7 +1,7 @@
 import { vi, expect } from 'vitest'
 import path from 'node:path'
 import sinon from 'sinon'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 
 const MODULE_PATH = path.join(
   import.meta.dirname,
@@ -13,7 +13,7 @@ describe('ChatApiHandler', function () {
     ctx.settings = {
       apis: {
         chat: {
-          internal_url: 'http://chat.overleaf.env',
+          internal_url: 'http://chat.superpaper.env',
         },
       },
     }
@@ -22,11 +22,11 @@ describe('ChatApiHandler', function () {
       fetchNothing: sinon.stub().resolves(),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
 
     ctx.ChatApiHandler = (await import(MODULE_PATH)).default
     ctx.project_id = '3213213kl12j'

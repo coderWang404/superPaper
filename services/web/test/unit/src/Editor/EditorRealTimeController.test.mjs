@@ -22,7 +22,7 @@ describe('EditorRealTimeController', function () {
       },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: { redis: {} },
     }))
 

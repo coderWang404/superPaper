@@ -63,7 +63,7 @@ describe('ConversionController', function () {
       pipeline: ctx.pipeline,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 

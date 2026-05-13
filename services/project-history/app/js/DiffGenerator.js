@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 export class ConsistencyError extends OError {}
 

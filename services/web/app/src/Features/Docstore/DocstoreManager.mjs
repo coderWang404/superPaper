@@ -1,14 +1,14 @@
 // @ts-check
-import { callbackify, callbackifyMultiResult } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import { callbackify, callbackifyMultiResult } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import Errors from '../Errors/Errors.js'
 import {
   fetchJson,
   fetchNothing,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import path from 'node:path'
 
 /**

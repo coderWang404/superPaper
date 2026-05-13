@@ -1,8 +1,8 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import DocumentUpdaterHandler from './DocumentUpdaterHandler.mjs'
 import ProjectLocator from '../Project/ProjectLocator.mjs'
 import { plainTextResponse } from '../../infrastructure/Response.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 
 async function getDoc(req, res) {
   const projectId = req.params.Project_id

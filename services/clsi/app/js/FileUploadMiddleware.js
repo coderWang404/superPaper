@@ -1,6 +1,6 @@
 import multer from 'multer'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 
 const upload = multer({
   dest: Settings.path.uploadFolder,

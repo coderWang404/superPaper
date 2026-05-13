@@ -23,9 +23,9 @@
  */
 
 const config = require('config')
-const OError = require('@overleaf/o-error')
-const metrics = require('@overleaf/metrics')
-const { Chunk, History, Snapshot } = require('overleaf-editor-core')
+const OError = require('@superpaper/o-error')
+const metrics = require('@superpaper/metrics')
+const { Chunk, History, Snapshot } = require('superpaper-editor-core')
 
 const assert = require('../assert')
 const BatchBlobStore = require('../batch_blob_store')
@@ -38,10 +38,10 @@ const {
   ChunkVersionConflictError,
   VersionOutOfBoundsError,
 } = require('./errors')
-const { promiseMapWithLimit } = require('@overleaf/promise-utils')
+const { promiseMapWithLimit } = require('@superpaper/promise-utils')
 
 /**
- * @import { Change } from 'overleaf-editor-core'
+ * @import { Change } from 'superpaper-editor-core'
  */
 
 const DEFAULT_DELETE_BATCH_SIZE = parseInt(config.get('maxDeleteKeys'), 10)

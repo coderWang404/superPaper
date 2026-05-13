@@ -1,16 +1,16 @@
 // @ts-check
 
 import { callbackify } from 'node:util'
-import Core from 'overleaf-editor-core'
+import Core from 'superpaper-editor-core'
 import { Readable as StringStream } from 'node:stream'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import * as HistoryStoreManager from './HistoryStoreManager.js'
 import * as WebApiManager from './WebApiManager.js'
 import * as Errors from './Errors.js'
 import _ from 'lodash'
 
 /**
- * @import { Snapshot } from 'overleaf-editor-core'
+ * @import { Snapshot } from 'superpaper-editor-core'
  * @import { RangesSnapshot } from './types'
  */
 
@@ -82,7 +82,7 @@ async function getRangesSnapshot(projectId, version, pathname) {
   const historyId = await WebApiManager.promises.getHistoryId(projectId)
   await file.load('eager', HistoryStoreManager.getBlobStore(historyId))
 
-  // Use the utility function from overleaf-editor-core
+  // Use the utility function from superpaper-editor-core
   const { changes, comments } = Core.getDocUpdaterCompatibleRanges(file)
   return { changes, comments }
 }
@@ -168,7 +168,7 @@ async function _getSnapshotAtVersion(projectId, version) {
 /**
  * @param {string} projectId
  * @param {string} historyId
- * @return {Promise<Record<string, import('overleaf-editor-core').File>>}
+ * @return {Promise<Record<string, import('superpaper-editor-core').File>>}
  */
 async function getLatestSnapshotFiles(projectId, historyId) {
   const data = await HistoryStoreManager.promises.getMostRecentChunk(
@@ -180,8 +180,8 @@ async function getLatestSnapshotFiles(projectId, historyId) {
 
 /**
  * @param {string} historyId
- * @param {{chunk: import('overleaf-editor-core/lib/types.js').RawChunk}} chunk
- * @return {Promise<Record<string, import('overleaf-editor-core').File>>}
+ * @param {{chunk: import('superpaper-editor-core/lib/types.js').RawChunk}} chunk
+ * @return {Promise<Record<string, import('superpaper-editor-core').File>>}
  */
 async function getLatestSnapshotFilesForChunk(historyId, chunk) {
   const { snapshot } = getLatestSnapshotFromChunk(chunk)
@@ -195,7 +195,7 @@ async function getLatestSnapshotFilesForChunk(historyId, chunk) {
 /**
  * @param {string} projectId
  * @param {string} historyId
- * @return {Promise<{version: number, snapshot: import('overleaf-editor-core').Snapshot}>}
+ * @return {Promise<{version: number, snapshot: import('superpaper-editor-core').Snapshot}>}
  */
 async function getLatestSnapshot(projectId, historyId) {
   const data = await HistoryStoreManager.promises.getMostRecentChunk(
@@ -206,8 +206,8 @@ async function getLatestSnapshot(projectId, historyId) {
 }
 
 /**
- * @param {{chunk: import('overleaf-editor-core/lib/types.js').RawChunk}} data
- * @return {{version: number, snapshot: import('overleaf-editor-core').Snapshot}}
+ * @param {{chunk: import('superpaper-editor-core/lib/types.js').RawChunk}} data
+ * @return {{version: number, snapshot: import('superpaper-editor-core').Snapshot}}
  */
 function getLatestSnapshotFromChunk(data) {
   if (data == null || data.chunk == null) {

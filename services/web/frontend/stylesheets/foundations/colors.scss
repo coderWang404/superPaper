@@ -231,13 +231,13 @@ $link-ui-visited-dark: $blue-40;
   --link-ui-visited-dark: var(--blue-40);
 
   /* ====== Gradients ====== */
-  --premium-gradient: linear-gradient(
+  --feature-gradient: linear-gradient(
     246deg,
     var(--blue-70) 0%,
     #254c84 29%,
     var(--blue-40) 97%
   );
-  --premium-gradient-dark: linear-gradient(
+  --feature-gradient-dark: linear-gradient(
     246deg,
     #6f8bcd 0%,
     #8ea3d7 29%,

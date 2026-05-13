@@ -7,7 +7,7 @@ divert`'dnl
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Overleaf Storybook builds</title>
+    <title>SuperPaper Storybook builds</title>
       <style>
         body {
           background-color: #fff;
@@ -41,7 +41,7 @@ divert`'dnl
           display: block;
         }
         .navbar-default .navbar-brand {
-          background-image: url(https://cdn.overleaf.com/images/overleaf-white-65b70e33f35fccdf6f8d.svg);
+          background-image: url(https://cdn.superpaper.com/images/superpaper-white-65b70e33f35fccdf6f8d.svg);
           background-position: 0;
           background-repeat: no-repeat;
           background-size: contain;
@@ -55,15 +55,15 @@ divert`'dnl
   </head>
   <body>
     <nav class="navbar-default">
-      <a class="navbar-brand" href="https://www.overleaf.com/"></a>
+      <a class="navbar-brand" href="https://www.superpaper.com/"></a>
     </nav>
-    <h1>Overleaf Storybook builds</h1>
+    <h1>SuperPaper Storybook builds</h1>
     <h2>Branches:</h2>
     <ul>
       foreach(DIR, (LIST),
       <li>
         <a href="DIR/">DIR/</a>
-        <a href="https://github.com/overleaf/internal/tree/DIR">
+        <a href="https://github.com/superpaper/internal/tree/DIR">
           <img src="https://github.com/favicon.ico" alt="GitHub" width="15em">
         </a>
       </li>
@@ -72,7 +72,7 @@ divert`'dnl
     <small>
       Last updated on syscmd(date)dnl
       for ifdef(`BRANCH_NAME',<a href="BRANCH_NAME/">BRANCH_NAME</a>,unknown branch)
-      (<a href="https://jenkins.ops-overleaf.com/job/Storybook/view/default/builds">build history</a>).
+      (<a href="https://jenkins.ops-superpaper.com/job/Storybook/view/default/builds">build history</a>).
     </small>
   </body>
 </html>

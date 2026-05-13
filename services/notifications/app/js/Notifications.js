@@ -1,4 +1,4 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { db, ObjectId } from './mongodb.js'
 
 async function getUserNotifications(userId) {

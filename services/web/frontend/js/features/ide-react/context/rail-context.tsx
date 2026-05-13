@@ -25,7 +25,7 @@ export type RailTabKey =
   | 'full-project-search'
   | 'workbench'
 
-export type RailModalKey = 'keyboard-shortcuts' | 'contact-us' | 'dictionary'
+export type RailModalKey = 'keyboard-shortcuts' | 'dictionary'
 
 const RailContext = createContext<
   | {
@@ -106,17 +106,6 @@ export const RailProvider: FC<React.PropsWithChildren> = ({ children }) => {
       setIsOpen(true)
     },
     [setIsOpen, setSelectedTab]
-  )
-
-  useEventListener(
-    'ui.toggle-review-panel',
-    useCallback(() => {
-      if (isOpen && selectedTab === 'review-panel') {
-        handlePaneCollapse()
-      } else {
-        openTab('review-panel')
-      }
-    }, [handlePaneCollapse, selectedTab, isOpen, openTab])
   )
 
   useEventListener(

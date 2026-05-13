@@ -37,10 +37,10 @@ describe('<CompileAndDownloadProjectPDFButton />', function () {
 
   it('downloads the project PDF from cache when clicked', async function () {
     Object.assign(getMeta('ol-ExposedSettings'), {
-      isOverleaf: true,
+      isSuperPaper: true,
     })
     fetchMock.get(
-      `/project/${projectsData[0].id}/output/cached/output.overleaf.json`,
+      `/project/${projectsData[0].id}/output/cached/output.superpaper.json`,
       {
         status: 'success',
         compileGroup: 'standard',
@@ -79,10 +79,10 @@ describe('<CompileAndDownloadProjectPDFButton />', function () {
 
   it('ignores cached draft PDF and downloads the project PDF when clicked', async function () {
     Object.assign(getMeta('ol-ExposedSettings'), {
-      isOverleaf: true,
+      isSuperPaper: true,
     })
     fetchMock.get(
-      `/project/${projectsData[0].id}/output/cached/output.overleaf.json`,
+      `/project/${projectsData[0].id}/output/cached/output.superpaper.json`,
       {
         status: 'success',
         compileGroup: 'standard',

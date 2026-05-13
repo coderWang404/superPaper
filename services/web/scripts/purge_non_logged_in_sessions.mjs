@@ -1,5 +1,5 @@
-import RedisWrapper from '@overleaf/redis-wrapper'
-import Settings from '@overleaf/settings'
+import RedisWrapper from '@superpaper/redis-wrapper'
+import Settings from '@superpaper/settings'
 import SessionManager from '../app/src/Features/Authentication/SessionManager.mjs'
 import minimist from 'minimist'
 

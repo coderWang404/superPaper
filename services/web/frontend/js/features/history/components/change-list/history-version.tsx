@@ -28,7 +28,6 @@ type HistoryVersionProps = {
   currentUserId: string
   projectId: string
   selectable: boolean
-  faded: boolean
   showDivider: boolean
   selectionState: ItemSelectionState
   setSelection: HistoryContextValue['setSelection']
@@ -45,7 +44,6 @@ function HistoryVersion({
   currentUserId,
   projectId,
   selectable,
-  faded,
   showDivider,
   selectionState,
   setSelection,
@@ -87,42 +85,35 @@ function HistoryVersion({
           <time>{relativeDate(update.meta.end_ts)}</time>
         </div>
       ) : null}
-      <div
-        data-testid="history-version"
-        className={classNames({
-          'history-version-faded': faded,
-        })}
-      >
+      <div data-testid="history-version">
         <HistoryVersionDetails
           selectionState={selectionState}
           setSelection={setSelection}
           updateRange={updateRangeForUpdate(update)}
           selectable={selectable}
         >
-          {faded ? null : (
-            <HistoryDropdown
-              id={`${update.fromV}_${update.toV}`}
-              isOpened={dropdownOpen}
-              setIsOpened={(isOpened: boolean) =>
-                setActiveDropdownItem({
-                  item: update.toV,
-                  isOpened,
-                  whichDropDown: 'moreOptions',
-                })
-              }
-            >
-              {dropdownActive ? (
-                <HistoryDropdownContent
-                  version={update.toV}
-                  endTimestamp={update.meta.end_ts}
-                  projectId={projectId}
-                  closeDropdownForItem={closeDropdownForItem}
-                />
-              ) : null}
-            </HistoryDropdown>
-          )}
+          <HistoryDropdown
+            id={`${update.fromV}_${update.toV}`}
+            isOpened={dropdownOpen}
+            setIsOpened={(isOpened: boolean) =>
+              setActiveDropdownItem({
+                item: update.toV,
+                isOpened,
+                whichDropDown: 'moreOptions',
+              })
+            }
+          >
+            {dropdownActive ? (
+              <HistoryDropdownContent
+                version={update.toV}
+                endTimestamp={update.meta.end_ts}
+                projectId={projectId}
+                closeDropdownForItem={closeDropdownForItem}
+              />
+            ) : null}
+          </HistoryDropdown>
 
-          {selectionState !== 'selected' && !faded ? (
+          {selectionState !== 'selected' ? (
             <div data-testid="compare-icon-version" className="float-end">
               {selectionState !== 'withinSelected' ? (
                 <CompareItems

@@ -12,7 +12,7 @@ const { promisify } = require('node:util')
 const cleanup = require('./support/cleanup')
 const testFiles = require('./support/test_files')
 
-const { Blob, TextOperation } = require('overleaf-editor-core')
+const { Blob, TextOperation } = require('superpaper-editor-core')
 const {
   BlobStore,
   loadGlobalBlobs,

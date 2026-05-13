@@ -10,7 +10,7 @@ describe('RateLimiterMiddleware', function () {
       getLoggedInUserId: () => ctx.req.session?.user?._id,
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {}),
     }))
 

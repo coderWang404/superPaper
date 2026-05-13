@@ -9,11 +9,11 @@
   - By now the node app should exit on its own.
  */
 
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
-import OError from '@overleaf/o-error'
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
+import OError from '@superpaper/o-error'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 const optionalCleanupHandlersBeforeStoppingTraffic = []

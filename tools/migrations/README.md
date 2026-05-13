@@ -19,11 +19,11 @@ rake deploy:migrations:list[staging]
 
 ### Environments and Tags
 
-Overleaf is deployed in three different environments:
+superPaper is deployed in three different environments:
 
 - `server-ce`: community edition installations (the base system)
 - `server-pro`: server pro installations
-- `saas`: the production overleaf site
+- `saas`: the production superpaper site
 
 All migrations are tagged with the environments they should run in.
 For example, a migration that should run in every environment would be tagged with `['server-ce', 'server-pro', 'saas']`.

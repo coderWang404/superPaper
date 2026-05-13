@@ -1,10 +1,10 @@
-const logger = require('@overleaf/logger')
-const { promiseMapWithLimit } = require('@overleaf/promise-utils')
-const Settings = require('@overleaf/settings')
+const logger = require('@superpaper/logger')
+const { promiseMapWithLimit } = require('@superpaper/promise-utils')
+const Settings = require('@superpaper/settings')
 const ProjectHistoryRedisManager = require('./ProjectHistoryRedisManager')
 const metrics = require('./Metrics')
-const { fetchNothing } = require('@overleaf/fetch-utils')
-const OError = require('@overleaf/o-error')
+const { fetchNothing } = require('@superpaper/fetch-utils')
+const OError = require('@superpaper/o-error')
 
 const FLUSH_PROJECT_EVERY_N_OPS = 500
 const MAX_PARALLEL_REQUESTS = 4

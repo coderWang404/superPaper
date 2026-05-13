@@ -7,7 +7,6 @@ import { isDropdownLinkItem } from '@/shared/components/navbar/util'
 import NavDropdownLinkItem from '@/shared/components/navbar/nav-dropdown-link-item'
 import DropdownListItem from '@/shared/components/dropdown/dropdown-list-item'
 import NavDropdownMenu from '@/shared/components/navbar/nav-dropdown-menu'
-import ContactUsItem from '@/shared/components/navbar/contact-us-item'
 import {
   type ExtraSegmentations,
   useSendProjectListMB,
@@ -15,10 +14,8 @@ import {
 
 export default function NavDropdownFromData({
   item,
-  showContactUsModal,
 }: {
   item: NavbarDropdownItemData
-  showContactUsModal: (event?: Event) => void
 }) {
   const sendProjectListMB = useSendProjectListMB()
   return (
@@ -36,7 +33,6 @@ export default function NavDropdownFromData({
     >
       <NavDropdownMenuItems
         dropdown={item.dropdown}
-        showContactUsModal={showContactUsModal}
         location="top-menu"
       />
     </NavDropdownMenu>
@@ -45,11 +41,9 @@ export default function NavDropdownFromData({
 
 export function NavDropdownMenuItems({
   dropdown,
-  showContactUsModal,
   location,
 }: {
   dropdown: NavbarItemDropdownData
-  showContactUsModal: (event?: Event) => void
   location: ExtraSegmentations['menu-expand']['location']
 }) {
   const sendProjectListMB = useSendProjectListMB()
@@ -59,13 +53,7 @@ export function NavDropdownMenuItems({
         if ('divider' in child) {
           return <NavDropdownDivider key={index} />
         } else if ('isContactUs' in child) {
-          return (
-            <ContactUsItem
-              key={index}
-              showModal={showContactUsModal}
-              location={location}
-            />
-          )
+          return null
         } else if (isDropdownLinkItem(child)) {
           return (
             <NavDropdownLinkItem

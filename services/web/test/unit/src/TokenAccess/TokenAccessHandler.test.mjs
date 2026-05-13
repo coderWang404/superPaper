@@ -41,7 +41,7 @@ describe('TokenAccessHandler', function () {
       Project: (ctx.Project = {}),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = { disableLinkSharing: false }),
     }))
 
@@ -56,7 +56,7 @@ describe('TokenAccessHandler', function () {
     ctx.Crypto = (await vi.importMock('node:crypto')).default
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: (ctx.Analytics = {
           recordEventForUserInBackground: sinon.stub(),
@@ -686,7 +686,7 @@ describe('TokenAccessHandler', function () {
 
           expect(
             ctx.V1Api.promises.request.calledWith({
-              url: `/api/v1/overleaf/docs/${ctx.token}/is_published`,
+              url: `/api/v1/superpaper/docs/${ctx.token}/is_published`,
             })
           ).to.equal(true)
           expect(info).to.equal('mock-data')
@@ -743,7 +743,7 @@ describe('TokenAccessHandler', function () {
 
           expect(
             ctx.V1Api.promises.request.calledWith({
-              url: `/api/v1/overleaf/docs/${ctx.token}/info`,
+              url: `/api/v1/superpaper/docs/${ctx.token}/info`,
             })
           ).to.equal(true)
           expect(info).to.equal('mock-data')

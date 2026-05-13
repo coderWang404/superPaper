@@ -17,7 +17,7 @@ describe('Deleting project', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: this.historyId } },
+        superpaper: { history: { id: this.historyId } },
       })
     MockHistoryStore()
       .get(`/api/projects/${this.historyId}/latest/history`)

@@ -7,13 +7,13 @@ import FileTreeCreateNameProvider from '../../contexts/file-tree-create-name'
 import { useFileTreeActionable } from '../../contexts/file-tree-actionable'
 import { useFileTreeData } from '../../../../shared/context/file-tree-data-context'
 
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 import { ElementType, lazy, Suspense } from 'react'
 import { FullSizeLoadingSpinner } from '@/shared/components/loading-spinner'
 import getMeta from '@/utils/meta'
 import OLNotification from '@/shared/components/ol/ol-notification'
 
-const createFileModeModules = importOverleafModules('createFileModes') as {
+const createFileModeModules = importSuperPaperModules('createFileModes') as {
   import: { CreateFilePane: ElementType; CreateFileMode: ElementType }
   path: string
 }[]

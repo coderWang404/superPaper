@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 import { addConnectionDrainer } from './GracefulShutdown.mjs'
 
 mongoose.set('autoIndex', false)

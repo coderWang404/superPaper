@@ -2,16 +2,11 @@ import { beforeEach, describe, expect, vi, it } from 'vitest'
 import sinon from 'sinon'
 import tk from 'timekeeper'
 import moment from 'moment'
-import Errors from '../../../../app/src/Features/Errors/Errors.js'
 import mongoose from 'mongoose'
 import { DeletedUser } from '../../../../app/src/models/DeletedUser.mjs'
 import { User } from '../../../../app/src/models/User.mjs'
 
 const ObjectId = mongoose.Types.ObjectId
-
-vi.mock('../../../../app/src/Features/Errors/Errors.js', () =>
-  vi.importActual('../../../../app/src/Features/Errors/Errors.js')
-)
 
 const modulePath = '../../../../app/src/Features/User/UserDeleter.mjs'
 
@@ -32,7 +27,7 @@ describe('UserDeleter', function () {
         lastLoggedIn: Date.now() + 1000,
         signUpDate: Date.now() + 2000,
         loginCount: 10,
-        overleaf: {
+        superpaper: {
           id: 1234,
         },
         refered_users: ['wombat', 'potato'],
@@ -48,40 +43,9 @@ describe('UserDeleter', function () {
       },
     }
 
-    ctx.SubscriptionHandler = {
-      promises: {
-        cancelSubscription: sinon.stub().resolves(),
-      },
-    }
-
-    ctx.SubscriptionUpdater = {
-      promises: {
-        removeUserFromAllGroups: sinon.stub().resolves(),
-      },
-    }
-
-    ctx.SubscriptionLocator = {
-      promises: {
-        getUsersSubscription: sinon.stub().resolves(),
-        getUniqueManagedSubscriptionMemberOf: sinon.stub().resolves(),
-      },
-    }
-
-    ctx.UserMembershipsHandler = {
-      promises: {
-        removeUserFromAllEntities: sinon.stub().resolves(),
-      },
-    }
-
     ctx.UserSessionsManager = {
       promises: {
         removeSessionsFromRedis: sinon.stub().resolves(),
-      },
-    }
-
-    ctx.InstitutionsApi = {
-      promises: {
-        deleteAffiliations: sinon.stub().resolves(),
       },
     }
 
@@ -91,10 +55,6 @@ describe('UserDeleter', function () {
 
     ctx.Modules = {
       promises: { hooks: { fire: sinon.stub().resolves() } },
-    }
-
-    ctx.OnboardingDataCollectionManager = {
-      deleteOnboardingDataCollection: sinon.stub().resolves(),
     }
 
     ctx.EmailHandler = {
@@ -121,44 +81,9 @@ describe('UserDeleter', function () {
       default: ctx.UserSessionsManager,
     }))
 
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionHandler',
-      () => ({
-        default: ctx.SubscriptionHandler,
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionUpdater',
-      () => ({
-        default: ctx.SubscriptionUpdater,
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionLocator',
-      () => ({
-        default: ctx.SubscriptionLocator,
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/UserMembership/UserMembershipsHandler',
-      () => ({
-        default: ctx.UserMembershipsHandler,
-      })
-    )
-
     vi.doMock('../../../../app/src/Features/Project/ProjectDeleter', () => ({
       default: ctx.ProjectDeleter,
     }))
-
-    vi.doMock(
-      '../../../../app/src/Features/Institutions/InstitutionsAPI',
-      () => ({
-        default: ctx.InstitutionsApi,
-      })
-    )
 
     vi.doMock('../../../../app/src/models/UserAuditLogEntry', () => ({
       UserAuditLogEntry: ctx.UserAuditLogEntry,
@@ -171,13 +96,6 @@ describe('UserDeleter', function () {
     vi.doMock('../../../../app/src/infrastructure/Modules', () => ({
       default: ctx.Modules,
     }))
-
-    vi.doMock(
-      '../../../../app/src/Features/OnboardingDataCollection/OnboardingDataCollectionManager',
-      () => ({
-        default: ctx.OnboardingDataCollectionManager,
-      })
-    )
 
     vi.doMock('../../../../app/src/Features/Email/EmailHandler', () => ({
       default: ctx.EmailHandler,
@@ -216,7 +134,7 @@ describe('UserDeleter', function () {
             deletedUserReferralId: ctx.user.referal_id,
             deletedUserReferredUsers: ctx.user.refered_users,
             deletedUserReferredUserCount: ctx.user.refered_user_count,
-            deletedUserOverleafId: ctx.user.overleaf.id,
+            deletedUsersuperPaperId: ctx.user.superpaper.id,
           },
         }
       })
@@ -233,7 +151,7 @@ describe('UserDeleter', function () {
             .resolves()
         })
 
-        describe('when unsubscribing in Mailchimp succeeds', function () {
+        describe('when cleanup succeeds', function () {
           beforeEach(function (ctx) {
             ctx.UserMock.expects('deleteOne')
               .withArgs({ _id: ctx.userId })
@@ -257,32 +175,14 @@ describe('UserDeleter', function () {
             ).to.have.been.calledWith(ctx.userId)
           })
 
-          it("should cancel the user's subscription", async function (ctx) {
-            await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
-              ipAddress: ctx.ipAddress,
-            })
-            expect(
-              ctx.SubscriptionHandler.promises.cancelSubscription
-            ).to.have.been.calledWith(ctx.user)
-          })
-
-          it('should delete user affiliations', async function (ctx) {
-            await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
-              ipAddress: ctx.ipAddress,
-            })
-            expect(
-              ctx.InstitutionsApi.promises.deleteAffiliations
-            ).to.have.been.calledWith(ctx.userId)
-          })
-
-          it('should cleanup collabratec access tokens', async function (ctx) {
+          it('should cleanup personal access tokens', async function (ctx) {
             await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
               ipAddress: ctx.ipAddress,
             })
             expect(ctx.Modules.promises.hooks.fire).to.have.been.calledWith(
               'cleanupPersonalAccessTokens',
               ctx.userId,
-              ['collabratec', 'git_bridge']
+              ['git_bridge']
             )
           })
 
@@ -305,32 +205,6 @@ describe('UserDeleter', function () {
             ).to.have.been.calledWith(ctx.user)
           })
 
-          it('should remove user from group subscriptions', async function (ctx) {
-            await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
-              ipAddress: ctx.ipAddress,
-            })
-            expect(
-              ctx.SubscriptionUpdater.promises.removeUserFromAllGroups
-            ).to.have.been.calledWith(ctx.userId)
-          })
-
-          it('should remove user memberships', async function (ctx) {
-            await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
-              ipAddress: ctx.ipAddress,
-            })
-            expect(
-              ctx.UserMembershipsHandler.promises.removeUserFromAllEntities
-            ).to.have.been.calledWith(ctx.userId)
-          })
-
-          it('rejects if the user is a subscription admin', async function (ctx) {
-            ctx.SubscriptionLocator.promises.getUsersSubscription.rejects({
-              _id: 'some-subscription',
-            })
-            await expect(ctx.UserDeleter.promises.deleteUser(ctx.userId, {})).to
-              .be.rejected
-          })
-
           it('should create a deletedUser', async function (ctx) {
             await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
               ipAddress: ctx.ipAddress,
@@ -346,7 +220,7 @@ describe('UserDeleter', function () {
               const emailOptions = {
                 to: 'bob@bob.com',
                 action: 'account deleted',
-                actionDescribed: 'your Overleaf account was deleted',
+                actionDescribed: 'your superPaper account was deleted',
               }
               expect(
                 ctx.EmailHandler.promises.sendEmail
@@ -481,112 +355,11 @@ describe('UserDeleter', function () {
         })
       })
 
-      describe('when the user is part of a managed subscription', function () {
-        beforeEach(function (ctx) {
-          ctx.managedSubscriptionId = new ObjectId()
-          ctx.SubscriptionLocator.promises.getUniqueManagedSubscriptionMemberOf.resolves(
-            {
-              _id: ctx.managedSubscriptionId,
-            }
-          )
-
-          ctx.DeletedUserMock.expects('updateOne')
-            .withArgs(
-              { 'deleterData.deletedUserId': ctx.userId },
-              ctx.deletedUser,
-              { upsert: true }
-            )
-            .chain('exec')
-            .resolves()
-          ctx.UserMock.expects('deleteOne')
-            .withArgs({ _id: ctx.userId })
-            .chain('exec')
-            .resolves()
-        })
-
-        it('should include managedSubscriptionId in audit log', async function (ctx) {
-          await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
-            ipAddress: ctx.ipAddress,
-          })
-          expect(
-            ctx.UserAuditLogHandler.promises.addEntry
-          ).to.have.been.calledWith(
-            ctx.userId,
-            'delete-account',
-            ctx.userId,
-            ctx.ipAddress,
-            {}
-          )
-        })
-      })
-
-      describe('when checking managed subscription fails', function () {
-        beforeEach(function (ctx) {
-          ctx.SubscriptionLocator.promises.getUniqueManagedSubscriptionMemberOf.rejects(
-            new Error('subscription lookup failed')
-          )
-
-          ctx.DeletedUserMock.expects('updateOne')
-            .withArgs(
-              { 'deleterData.deletedUserId': ctx.userId },
-              ctx.deletedUser,
-              { upsert: true }
-            )
-            .chain('exec')
-            .resolves()
-          ctx.UserMock.expects('deleteOne')
-            .withArgs({ _id: ctx.userId })
-            .chain('exec')
-            .resolves()
-        })
-
-        it('should continue with deletion and not include managedSubscriptionId', async function (ctx) {
-          await ctx.UserDeleter.promises.deleteUser(ctx.userId, {
-            ipAddress: ctx.ipAddress,
-          })
-          expect(
-            ctx.UserAuditLogHandler.promises.addEntry
-          ).to.have.been.calledWith(
-            ctx.userId,
-            'delete-account',
-            ctx.userId,
-            ctx.ipAddress,
-            {}
-          )
-        })
-      })
-    })
-
-    describe('when the user cannot be deleted because they are a subscription admin', function () {
-      beforeEach(function (ctx) {
-        ctx.SubscriptionLocator.promises.getUsersSubscription.resolves({
-          _id: 'some-subscription',
-        })
-      })
-
-      it('fails with a SubscriptionAdminDeletionError', async function (ctx) {
-        await expect(
-          ctx.UserDeleter.promises.deleteUser(ctx.userId)
-        ).to.be.rejectedWith(Errors.SubscriptionAdminDeletionError)
-      })
-
-      it('should not create a deletedUser', async function (ctx) {
-        await expect(ctx.UserDeleter.promises.deleteUser(ctx.userId)).to.be
-          .rejected
-        ctx.DeletedUserMock.verify()
-      })
-
-      it('should not remove the user from mongo', async function (ctx) {
-        await expect(ctx.UserDeleter.promises.deleteUser(ctx.userId)).to.be
-          .rejected
-        ctx.UserMock.verify()
-      })
     })
   })
 
   describe('ensureCanDeleteUser', function () {
     it('should not return error when user can be deleted', async function (ctx) {
-      ctx.SubscriptionLocator.promises.getUsersSubscription.resolves(null)
       let error
       try {
         await ctx.UserDeleter.promises.ensureCanDeleteUser(ctx.user)
@@ -594,34 +367,6 @@ describe('UserDeleter', function () {
         error = e
       } finally {
         expect(error).not.to.exist
-      }
-    })
-
-    it('should return custom error when user is group admin', async function (ctx) {
-      ctx.SubscriptionLocator.promises.getUsersSubscription.resolves({
-        _id: '123abc',
-      })
-      let error
-      try {
-        await ctx.UserDeleter.promises.ensureCanDeleteUser(ctx.user)
-      } catch (e) {
-        error = e
-      } finally {
-        expect(error).to.be.instanceof(Errors.SubscriptionAdminDeletionError)
-      }
-    })
-
-    it('propagates errors', async function (ctx) {
-      ctx.SubscriptionLocator.promises.getUsersSubscription.rejects(
-        new Error('Some error')
-      )
-      let error
-      try {
-        await ctx.UserDeleter.promises.ensureCanDeleteUser(ctx.user)
-      } catch (e) {
-        error = e
-      } finally {
-        expect(error).to.be.instanceof(Error)
       }
     })
   })

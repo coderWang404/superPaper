@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import ProjectGetter from './ProjectGetter.mjs'
 import Errors from '../Errors/Errors.js'
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
 import { iterablePaths } from './IterablePath.mjs'
 
 function findDeep(project, predicate) {

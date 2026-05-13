@@ -1,14 +1,14 @@
 import sinon from 'sinon'
 import { expect } from 'chai'
 import { strict as esmock } from 'esmock'
-import Core from 'overleaf-editor-core'
+import Core from 'superpaper-editor-core'
 
 const MODULE_PATH = '../../../../app/js/UpdateTranslator.js'
 
 describe('UpdateTranslator', function () {
   beforeEach(async function () {
     this.UpdateTranslator = await esmock(MODULE_PATH, {
-      'overleaf-editor-core': Core,
+      'superpaper-editor-core': Core,
     })
     this.callback = sinon.stub()
 

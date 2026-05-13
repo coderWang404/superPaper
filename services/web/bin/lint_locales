@@ -37,7 +37,7 @@ You will need to replace the quote with a similar looking character.
 
 Links:
  - https://en.wikipedia.org/wiki/Right_single_quotation_mark
- - https://github.com/overleaf/issues/issues/4478
+ - https://github.com/superpaper/issues/issues/4478
 
 MSG
   exit 1

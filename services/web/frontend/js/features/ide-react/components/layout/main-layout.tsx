@@ -13,17 +13,17 @@ import EditorPanel from '../editor/editor-panel'
 import { useRailContext } from '../../context/rail-context'
 import HistoryContainer from '@/features/ide-react/components/history-container'
 import { DefaultSynctexControl } from '@/features/pdf-preview/components/detach-synctex-control'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 
 const mainEditorLayoutPanels: Array<{
   import: { default: ElementType }
   path: string
-}> = importOverleafModules('mainEditorLayoutPanels')
+}> = importSuperPaperModules('mainEditorLayoutPanels')
 
 const mainEditorLayoutModalsModules: Array<{
   import: { default: ElementType }
   path: string
-}> = importOverleafModules('mainEditorLayoutModals')
+}> = importSuperPaperModules('mainEditorLayoutModals')
 
 export default function MainLayout() {
   const [resizing, setResizing] = useState(false)

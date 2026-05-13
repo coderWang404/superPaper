@@ -137,7 +137,7 @@ async function initialiseJobs({ historyId, hash, input }) {
 }
 
 /**
- * @typedef {import("@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
+ * @typedef {import("@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
  */
 
 /** @type {Map<string, Promise<CachedPerProjectEncryptedS3Persistor>>} */

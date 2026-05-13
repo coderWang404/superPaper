@@ -421,38 +421,12 @@ history-root {
     }
   }
 
-  .history-paywall-prompt {
-    padding: var(--history-change-list-padding);
-
-    .history-feature-list {
-      list-style: none;
-      padding-left: var(--spacing-04);
-
-      li {
-        margin-bottom: var(--spacing-06);
-      }
-    }
-
-    button {
-      width: 100%;
-    }
-  }
-
   .history-version-faded .history-version-details {
     max-height: 6em;
 
     @include mask-image(var(--history-change-list-gradient));
 
     overflow: hidden;
-  }
-
-  .history-paywall-heading {
-    @include heading-sm;
-    @include premium-text;
-
-    font-family: inherit;
-    font-weight: 700;
-    margin-top: var(--spacing-08);
   }
 
   .history-content {

@@ -2,9 +2,9 @@
 import { callbackify } from 'node:util'
 import { ObjectId } from 'mongodb'
 import config from 'config'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { db } from './mongodb.js'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import chunkStore from '../lib/chunk_store/index.js'
 import {
   backupPersistor,
@@ -37,7 +37,7 @@ async function deleteProjectBackup(projectId) {
     { 'deleterData.deletedProjectId': new ObjectId(projectId) },
     {
       projection: {
-        'deleterData.deletedProjectOverleafHistoryId': 1,
+        'deleterData.deletedProjectsuperPaperHistoryId': 1,
         'deleterData.deletedAt': 1,
       },
     }
@@ -52,7 +52,7 @@ async function deleteProjectBackup(projectId) {
   }
 
   const historyId =
-    deletedProject.deleterData.deletedProjectOverleafHistoryId?.toString()
+    deletedProject.deleterData.deletedProjectsuperPaperHistoryId?.toString()
   if (!historyId) {
     throw new NotReadyToDelete(
       'refusing to delete project with unknown historyId'

@@ -1,4 +1,4 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import commandLineArgs from 'command-line-args'
 import { verifyBlobs } from '../lib/backupVerifier.mjs'
 

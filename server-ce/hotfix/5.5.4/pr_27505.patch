@@ -104,7 +104,7 @@ index f67a0e81d7ef..66c738171033 100644
 --- a/services/filestore/app/js/KeyBuilder.js
 +++ b/services/filestore/app/js/KeyBuilder.js
 @@ -1,4 +1,5 @@
- const settings = require('@overleaf/settings')
+ const settings = require('@superpaper/settings')
 +const projectKey = require('./project_key')
 
  module.exports = {
@@ -160,7 +160,7 @@ index 6f11297248ee..19370684dd80 100644
 --- a/services/web/app/src/Features/Compile/ClsiManager.js
 +++ b/services/web/app/src/Features/Compile/ClsiManager.js
 @@ -26,7 +26,7 @@ const DocumentUpdaterHandler = require('../DocumentUpdater/DocumentUpdaterHandle
- const Metrics = require('@overleaf/metrics')
+ const Metrics = require('@superpaper/metrics')
  const Errors = require('../Errors/Errors')
  const ClsiCacheHandler = require('./ClsiCacheHandler')
 -const { getBlobLocation } = require('../History/HistoryManager')
@@ -183,8 +183,8 @@ index 42d7e229bf97..a2fb201399d1 100644
 --- a/services/web/app/src/Features/History/HistoryManager.js
 +++ b/services/web/app/src/Features/History/HistoryManager.js
 @@ -15,11 +15,6 @@ const { db, ObjectId, waitForDb } = require('../../infrastructure/mongodb')
- const Metrics = require('@overleaf/metrics')
- const logger = require('@overleaf/logger')
+ const Metrics = require('@superpaper/metrics')
+ const logger = require('@superpaper/logger')
  const { NotFoundError } = require('../Errors/Errors')
 -const projectKey = require('./project_key')
 -

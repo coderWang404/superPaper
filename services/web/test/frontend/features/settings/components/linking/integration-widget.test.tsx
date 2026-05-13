@@ -17,39 +17,11 @@ describe('<IntegrationLinkingWidgetTest/>', function () {
     unlinkConfirmationText: 'you will be unlinked',
   }
 
-  describe('when the feature is not available', function () {
+  describe('when the integration is not linked', function () {
     let sendMBSpy: sinon.SinonSpy
     beforeEach(function () {
       sendMBSpy = sinon.spy(eventTracking, 'sendMB')
-      render(<IntegrationLinkingWidget {...defaultProps} hasFeature={false} />)
-    })
-
-    afterEach(function () {
-      sendMBSpy.restore()
-    })
-
-    it("should render 'Premium feature' label", function () {
-      screen.getByText('Premium feature')
-    })
-
-    it('should render an upgrade link and track clicks', function () {
-      const upgradeLink = screen.getByRole('link', {
-        name: 'Integration Upgrade',
-      })
-      expect(upgradeLink.getAttribute('href')).to.equal(
-        '/user/subscription/plans'
-      )
-      fireEvent.click(upgradeLink)
-      expect(sendMBSpy).to.be.calledOnce
-      expect(sendMBSpy).calledWith('settings-upgrade-click')
-    })
-  })
-
-  describe('when the integration is not linked', function () {
-    beforeEach(function () {
-      render(
-        <IntegrationLinkingWidget {...defaultProps} hasFeature linked={false} />
-      )
+      render(<IntegrationLinkingWidget {...defaultProps} />)
     })
 
     it('should render a link to initiate integration linking', function () {
@@ -60,10 +32,17 @@ describe('<IntegrationLinkingWidgetTest/>', function () {
       ).to.equal('/link')
     })
 
-    it("should not render 'premium feature' labels", function () {
-      expect(screen.queryByText('premium_feature')).to.not.exist
-      expect(screen.queryByText('integration_is_a_premium_feature')).to.not
-        .exist
+    it('should track clicks on the link action', function () {
+      fireEvent.click(screen.getByRole('link', { name: 'Link Integration' }))
+      expect(sendMBSpy).to.be.calledOnce
+      expect(sendMBSpy).calledWith('link-integration-click', {
+        integration: 'Integration',
+        location: 'Settings',
+      })
+    })
+
+    afterEach(function () {
+      sendMBSpy.restore()
     })
   })
 
@@ -72,7 +51,6 @@ describe('<IntegrationLinkingWidgetTest/>', function () {
       render(
         <IntegrationLinkingWidget
           {...defaultProps}
-          hasFeature
           linked
           statusIndicator={<div>status indicator</div>}
         />
@@ -81,12 +59,6 @@ describe('<IntegrationLinkingWidgetTest/>', function () {
 
     it('should render a status indicator', function () {
       screen.getByText('status indicator')
-    })
-
-    it("should not render 'premium feature' labels", function () {
-      expect(screen.queryByText('premium_feature')).to.not.exist
-      expect(screen.queryByText('integration_is_a_premium_feature')).to.not
-        .exist
     })
 
     it('should display an `unlink` button', function () {

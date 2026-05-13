@@ -1,15 +1,15 @@
 // @ts-check
 
-import Metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
+import Metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
 import DMP from 'diff-match-patch'
-import { EditOperationBuilder } from 'overleaf-editor-core'
+import { EditOperationBuilder } from 'superpaper-editor-core'
 import zlib from 'node:zlib'
-import { ReadableString, WritableBuffer } from '@overleaf/stream-utils'
+import { ReadableString, WritableBuffer } from '@superpaper/stream-utils'
 import Stream from 'node:stream'
-import logger from '@overleaf/logger'
-import { callbackify } from '@overleaf/promise-utils'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import { callbackify } from '@superpaper/promise-utils'
+import Settings from '@superpaper/settings'
 
 /**
  * @import { DeleteOp, InsertOp, Op, Update } from './types'

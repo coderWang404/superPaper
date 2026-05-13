@@ -1,8 +1,9 @@
-/* eslint-disable @overleaf/require-script-runner */
+/* eslint-disable @superpaper/require-script-runner */
 // This script doesn't work with ScriptRunner because it is run during the build process.
 import { buildParserFile } from '@lezer/generator'
 import { writeFileSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const grammars = [
   {
@@ -61,8 +62,8 @@ function compile(grammar) {
 export default { compile, grammars }
 
 if (
-  import.meta.url === process.argv[1] ||
-  import.meta.url === `file://${process.argv[1]}`
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   try {
     grammars.forEach(compile)

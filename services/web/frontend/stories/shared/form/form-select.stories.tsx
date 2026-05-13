@@ -61,7 +61,7 @@ Default.args = {
   disabled: false,
 }
 Default.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-199797&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-199797&m=dev'
 )
 
 export const Info: Story = {
@@ -152,7 +152,7 @@ export const Error: Story = {
   },
 }
 Error.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-200123&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-200123&m=dev'
 )
 
 export const Warning: Story = {
@@ -199,7 +199,7 @@ export const Warning: Story = {
   },
 }
 Warning.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-199800&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-199800&m=dev'
 )
 
 export const Success: Story = {
@@ -246,5 +246,5 @@ export const Success: Story = {
   },
 }
 Success.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3489-199800&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3489-199800&m=dev'
 )

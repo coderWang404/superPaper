@@ -1,6 +1,6 @@
-import { LoggerStream, WritableBuffer } from '@overleaf/stream-utils'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger/logging-manager.js'
+import { LoggerStream, WritableBuffer } from '@superpaper/stream-utils'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger/logging-manager.js'
 import { pipeline } from 'node:stream/promises'
 
 export async function streamToBuffer(projectId, docId, stream) {

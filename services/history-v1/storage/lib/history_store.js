@@ -1,7 +1,7 @@
 // @ts-check
 'use strict'
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 
 const config = require('config')
 const path = require('node:path')
@@ -9,13 +9,13 @@ const Stream = require('node:stream')
 const { promisify } = require('node:util')
 const zlib = require('node:zlib')
 
-const OError = require('@overleaf/o-error')
-const objectPersistor = require('@overleaf/object-persistor')
-const logger = require('@overleaf/logger')
+const OError = require('@superpaper/o-error')
+const objectPersistor = require('@superpaper/object-persistor')
+const logger = require('@superpaper/logger')
 
 const assert = require('./assert')
 const persistor = require('./persistor')
-const projectKey = require('@overleaf/object-persistor/src/ProjectKey.js')
+const projectKey = require('@superpaper/object-persistor/src/ProjectKey.js')
 const streams = require('./streams')
 
 const Chunk = core.Chunk
@@ -91,7 +91,7 @@ class HistoryStore {
    *
    * @param {string} projectId
    * @param {string} chunkId
-   * @return {Promise<import('overleaf-editor-core/lib/types').RawHistory>}
+   * @return {Promise<import('superpaper-editor-core/lib/types').RawHistory>}
    */
   async loadRaw(projectId, chunkId) {
     assert.projectId(projectId, 'bad projectId')
@@ -146,7 +146,7 @@ class HistoryStore {
    *
    * @param {string} projectId
    * @param {string} chunkId
-   * @param {import('overleaf-editor-core/lib/types').RawHistory} rawHistory
+   * @param {import('superpaper-editor-core/lib/types').RawHistory} rawHistory
    */
   async storeRaw(projectId, chunkId, rawHistory) {
     assert.projectId(projectId, 'bad projectId')

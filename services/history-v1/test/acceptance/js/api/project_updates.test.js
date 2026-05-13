@@ -10,7 +10,7 @@ const testFiles = require('../storage/support/test_files')
 const expectResponse = require('./support/expect_response')
 const testServer = require('./support/test_server')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const testProjects = require('./support/test_projects')
 const Change = core.Change
 const ChunkResponse = core.ChunkResponse

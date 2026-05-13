@@ -55,7 +55,7 @@ describe('<PdfPreview/>', function () {
     window.metaAttributesCache.set('ol-preventCompileOnLoad', true)
     window.metaAttributesCache.set(
       'ol-compilesUserContentDomain',
-      'https://compiles-user.dev-overleaf.com'
+      'https://compiles-user.dev-superpaper.com'
     )
     window.metaAttributesCache.set('ol-canUseClsiCache', true)
     window.metaAttributesCache.set('ol-compileSettings', {

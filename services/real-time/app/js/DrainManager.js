@@ -1,4 +1,4 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 export default {
   startDrainTimeWindow(io, minsToDrain, callback) {

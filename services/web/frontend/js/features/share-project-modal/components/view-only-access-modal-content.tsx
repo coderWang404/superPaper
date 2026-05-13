@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { sendMB } from '@/infrastructure/event-tracking'
 import OLButton from '@/shared/components/ol/ol-button'
 import {
   OLModalBody,
@@ -24,33 +23,13 @@ export default function ViewOnlyAccessModalContent({
       </OLModalHeader>
 
       <OLModalBody>
-        <p>{t('this_project_already_has_maximum_collaborators')}</p>
-        <p>{t('please_ask_the_project_owner_to_upgrade_more_collaborators')}</p>
+        <p>You currently have view-only access to this project.</p>
+        <p>Ask the project owner to update your role if you need to edit.</p>
       </OLModalBody>
       <OLModalFooter>
         <OLButton
-          variant="secondary"
-          href="/blog/changes-to-project-sharing"
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => {
-            sendMB('notification-click', {
-              name: 'link-sharing-collaborator-limit',
-              button: 'learn',
-            })
-          }}
-        >
-          {t('learn_more')}
-        </OLButton>
-        <OLButton
           variant="primary"
-          onClick={() => {
-            sendMB('notification-click', {
-              name: 'link-sharing-collaborator-limit',
-              button: 'ok',
-            })
-            handleHide()
-          }}
+          onClick={handleHide}
         >
           {t('ok')}
         </OLButton>

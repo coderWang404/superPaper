@@ -1,9 +1,9 @@
 'use strict'
 
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 const check = require('check-types')
-const { Blob } = require('overleaf-editor-core')
+const { Blob } = require('superpaper-editor-core')
 
 const assert = check.assert
 

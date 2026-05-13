@@ -10,12 +10,3 @@ mixin foot-scripts
 				src=file
 				defer=deferScripts
 			)
-
-	if typeof suppressAnalytics == 'undefined'
-		each file in entrypointScripts('tracking')
-			script(
-				type='text/javascript'
-				nonce=scriptNonce
-				src=file
-				defer=deferScripts
-			)

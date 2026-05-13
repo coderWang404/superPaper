@@ -161,8 +161,8 @@ describe('<TokenAccessPage/>', function () {
 
     cy.wait('@grantRequest')
 
-    cy.get('h1').should('have.text', 'Overleaf v1 Project')
-    cy.get('h2').should('have.text', 'Cannot Access Overleaf v1 Project')
+    cy.get('h1').should('have.text', 'superPaper v1 Project')
+    cy.get('h2').should('have.text', 'Cannot Access superPaper v1 Project')
   })
 
   it('handles a v1 "can download zip" response', function () {
@@ -189,12 +189,12 @@ describe('<TokenAccessPage/>', function () {
 
     cy.wait('@grantRequest')
 
-    cy.get('h1').should('have.text', 'Overleaf v1 Project')
+    cy.get('h1').should('have.text', 'superPaper v1 Project')
 
     cy.findByRole('link', { name: 'Download project zip file' }).should(
       'have.attr',
       'href',
-      '/overleaf/project/123/download/zip'
+      '/superpaper/project/123/download/zip'
     )
   })
 })

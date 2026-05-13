@@ -1,4 +1,4 @@
-# overleaf/metrics-module
+# superpaper/metrics-module
 
 Wrappers the [prom-client](https://github.com/siimon/prom-client) npm module to provide [Prometheus](https://prometheus.io/) metrics at `/metrics`.
 
@@ -6,10 +6,10 @@ Use:
 
 ```
 // Metrics must be initialized before importing anything else
-require('@overleaf/metrics/initialize')
+require('@superpaper/metrics/initialize')
 
 const express = require('express')
-const metrics = require('@overleaf/metrics')
+const metrics = require('@superpaper/metrics')
 const app = express()
 metrics.injectMetricsRoute(app)
 ```
@@ -17,7 +17,7 @@ metrics.injectMetricsRoute(app)
 Request logging can be enabled:
 
 ```
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 ...
 app.use(metrics.http.monitor(logger))
 ```

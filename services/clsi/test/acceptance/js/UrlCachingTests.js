@@ -3,8 +3,8 @@ import Path from 'node:path'
 import Client from './helpers/Client.js'
 import sinon from 'sinon'
 import ClsiApp from './helpers/ClsiApp.js'
-import { fetchString } from '@overleaf/fetch-utils'
-import Settings from '@overleaf/settings'
+import { fetchString } from '@superpaper/fetch-utils'
+import Settings from '@superpaper/settings'
 
 const Server = {
   run() {

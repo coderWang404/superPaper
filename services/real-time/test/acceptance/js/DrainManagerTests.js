@@ -10,7 +10,7 @@ import RealTimeClient from './helpers/RealTimeClient.js'
 import FixturesManager from './helpers/FixturesManager.js'
 import { expect } from 'chai'
 import async from 'async'
-import { fetchNothing } from '@overleaf/fetch-utils'
+import { fetchNothing } from '@superpaper/fetch-utils'
 
 const drain = async function (rate) {
   await fetchNothing(`http://127.0.0.1:3026/drain?rate=${rate}`, {

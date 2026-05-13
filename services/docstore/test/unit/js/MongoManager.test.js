@@ -29,7 +29,7 @@ describe('MongoManager', () => {
       },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         max_deleted_docs: 42,
         docstore: { archivingLockDurationMs: 5000 },

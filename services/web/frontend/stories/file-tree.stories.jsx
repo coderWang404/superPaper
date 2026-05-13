@@ -151,13 +151,6 @@ export default {
   title: 'Editor / File Tree',
   component: FileTreeRoot,
   args: {
-    setStartedFreeTrial: () => {
-      console.log('started free trial')
-    },
-    refProviders: {},
-    setRefProviderEnabled: provider => {
-      console.log(`ref provider ${provider} enabled`)
-    },
     isConnected: true,
   },
   argTypes: {

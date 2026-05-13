@@ -7,13 +7,13 @@ import {
   CommentList,
   Comment,
   TrackingProps,
-} from 'overleaf-editor-core'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+} from 'superpaper-editor-core'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 
 /**
  * @import { AddDocUpdate } from './types'
- * @import { CommentRawData, TrackedChangeRawData } from 'overleaf-editor-core/lib/types'
+ * @import { CommentRawData, TrackedChangeRawData } from 'superpaper-editor-core/lib/types'
  */
 
 /**

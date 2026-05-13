@@ -5,8 +5,8 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 let commandRunnerPath
 
 if ((Settings.clsi != null ? Settings.clsi.dockerRunner : undefined) === true) {

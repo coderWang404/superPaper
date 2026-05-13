@@ -23,7 +23,7 @@ describe('ProjectUploadManager', function () {
     ctx.project = {
       _id: new ObjectId(),
       rootFolder: [{ _id: ctx.rootFolderId }],
-      overleaf: { history: { id: 12345 } },
+      superpaper: { history: { id: 12345 } },
     }
     ctx.doc = {
       _id: new ObjectId(),
@@ -274,7 +274,7 @@ describe('ProjectUploadManager', function () {
       it('should notify document updater', function (ctx) {
         ctx.DocumentUpdaterHandler.promises.updateProjectStructure.should.have.been.calledWith(
           ctx.project._id,
-          ctx.project.overleaf.history.id,
+          ctx.project.superpaper.history.id,
           ctx.ownerId,
           {
             newDocs: ctx.docEntries,
@@ -407,7 +407,7 @@ describe('ProjectUploadManager', function () {
     it('should notify document updater', function (ctx) {
       ctx.DocumentUpdaterHandler.promises.updateProjectStructure.should.have.been.calledWith(
         ctx.project._id,
-        ctx.project.overleaf.history.id,
+        ctx.project.superpaper.history.id,
         ctx.ownerId,
         {
           newDocs: ctx.docEntries,

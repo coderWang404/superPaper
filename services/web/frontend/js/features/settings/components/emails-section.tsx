@@ -41,8 +41,7 @@ function EmailsSectionContent() {
 
   return (
     <>
-      <h2 className="h3">{t('emails_and_affiliations_title')}</h2>
-      <p className="small">{t('emails_and_affiliations_explanation')}</p>
+      <h2 className="h3">{t('emails')}</h2>
       <p className="small">
         <Trans
           i18nKey="change_primary_email_address_instructions"
@@ -51,7 +50,7 @@ function EmailsSectionContent() {
             <strong />,
             // eslint-disable-next-line jsx-a11y/anchor-has-content, react/jsx-key
             <a
-              href="/learn/how-to/Managing_your_Overleaf_emails"
+              href="/learn/how-to/Managing_your_superPaper_emails"
               target="_blank"
             />,
           ]}
@@ -88,11 +87,6 @@ function EmailsSectionContent() {
 }
 
 function EmailsSection() {
-  const { hasAffiliationsFeature } = getMeta('ol-ExposedSettings')
-  if (!hasAffiliationsFeature) {
-    return null
-  }
-
   return (
     <>
       <UserEmailsProvider>

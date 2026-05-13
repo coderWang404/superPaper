@@ -26,9 +26,6 @@ describe('FileTree Context Menu Flow', function () {
         rootDocId="456def"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -59,9 +56,6 @@ describe('FileTree Context Menu Flow', function () {
         rootDocId="456def"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -98,9 +92,6 @@ describe('FileTree Context Menu Flow', function () {
         rootDocId="456def"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -142,9 +133,6 @@ describe('FileTree Context Menu Flow', function () {
         rootDocId="456def"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -178,9 +166,6 @@ describe('FileTree Context Menu Flow', function () {
         permissionsLevel="readOnly"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -213,9 +198,6 @@ describe('FileTree Context Menu Flow', function () {
         rootDocId="main-doc"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected

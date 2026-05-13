@@ -7,7 +7,7 @@ describe('SessionSockets', function () {
   beforeEach(async function (ctx) {
     ctx.metrics = { inc: sinon.stub() }
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: ctx.metrics,
     }))
 

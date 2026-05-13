@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next'
 import PreviewLogsPaneMaxEntries from '../../preview/components/preview-logs-pane-max-entries'
 import PdfLogEntry from './pdf-log-entry'
 import { useDetachCompileContext } from '../../../shared/context/detach-compile-context'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { LogEntry } from '../util/types'
 
 const LOG_PREVIEW_LIMIT = 100
 
-const pdfLogEntriesComponents = importOverleafModules(
+const pdfLogEntriesComponents = importSuperPaperModules(
   'pdfLogEntriesComponents'
 ) as {
   import: { default: ElementType }

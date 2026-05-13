@@ -41,13 +41,9 @@ import { captureException } from '@/infrastructure/error-reporter'
 import grammarlyExtensionPresent from '@/shared/utils/grammarly'
 import { debugConsole } from '@/utils/debugging'
 import { useMetadataContext } from '@/features/ide-react/context/metadata-context'
-import { useUserContext } from '@/shared/context/user-context'
 import { useReferencesContext } from '@/features/ide-react/context/references-context'
 import { setMathPreview } from '@/features/source-editor/extensions/math-preview'
 import { setNonBlinkingCursor } from '@/features/source-editor/extensions/non-blinking-cursor'
-import { useRangesContext } from '@/features/review-panel/context/ranges-context'
-import { updateRanges } from '@/features/source-editor/extensions/ranges'
-import { useThreadsContext } from '@/features/review-panel/context/threads-context'
 import { useHunspell } from '@/features/source-editor/hooks/use-hunspell'
 import { Permissions } from '@/features/ide-react/types/permissions'
 import { GotoOffsetOptions } from '@/features/ide-react/context/editor-manager-context'
@@ -78,7 +74,6 @@ function useCodeMirrorScope(view: EditorView) {
   const { openDocName, currentDocument } = useEditorOpenDocContext()
   const metadata = useMetadataContext()
 
-  const { id: userId } = useUserContext()
   const { userSettings } = useUserSettingsContext()
   const {
     fontFamily,
@@ -107,14 +102,11 @@ function useCodeMirrorScope(view: EditorView) {
 
   const hunspellManager = useHunspell(spellCheckLanguage)
 
-  const { showVisual: visual, trackChanges } = useEditorPropertiesContext()
+  const { showVisual: visual } = useEditorPropertiesContext()
 
   const { referenceKeys, searchLocalReferences } = useReferencesContext()
 
   const { setEditorSelection } = useEditorSelectionContext()
-
-  const ranges = useRangesContext()
-  const threads = useThreadsContext()
 
   // build the translation phrases
   const phrases = usePhrases()
@@ -166,7 +158,6 @@ function useCodeMirrorScope(view: EditorView) {
 
   const currentDocRef = useRef({
     currentDocument,
-    trackChanges,
   })
 
   useEffect(() => {
@@ -175,27 +166,7 @@ function useCodeMirrorScope(view: EditorView) {
     }
   }, [view, currentDocument])
 
-  useEffect(() => {
-    if (ranges && threads) {
-      window.setTimeout(() => {
-        view.dispatch(updateRanges({ ranges, threads }))
-      })
-    }
-  }, [view, ranges, threads])
-
   const docNameRef = useRef(openDocName)
-
-  useEffect(() => {
-    currentDocRef.current.trackChanges = trackChanges
-
-    if (currentDocument) {
-      if (trackChanges) {
-        currentDocument.setTrackChangesUserId(userId ?? 'anonymous')
-      } else {
-        currentDocument.setTrackChangesUserId(null)
-      }
-    }
-  }, [userId, currentDocument, trackChanges])
 
   const spellingRef = useRef({
     spellCheckLanguage,
@@ -304,8 +275,6 @@ function useCodeMirrorScope(view: EditorView) {
         ol_editor_mode: visualRef.current.visual ? 'visual' : 'code',
         // which editor keybindings are active ('default' | 'vim' | 'emacs')
         ol_editor_keybindings: settingsRef.current.mode,
-        // whether Writefull is present ('extension' | 'integration' | 'none')
-        ol_extensions_writefull: window.writefull ? 'integration' : 'none',
         // whether Grammarly is present
         ol_extensions_grammarly: grammarlyExtensionPresent(),
       },

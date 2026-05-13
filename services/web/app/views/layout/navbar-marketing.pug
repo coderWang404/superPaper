@@ -17,23 +17,10 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 				if !nav.title && !settings.nav.custom_logo
 					.navbar-logo
 
-			- var enableUpgradeButton = projectDashboardReact && usersBestSubscription && (usersBestSubscription.type === 'free' || usersBestSubscription.type === 'standalone-ai-add-on')
-			if enableUpgradeButton
-				a.btn.btn-primary.me-2.d-md-none(
-					href='/user/subscription/plans'
-					event-tracking='upgrade-button-click'
-					event-tracking-mb='true'
-					event-tracking-label='upgrade'
-					event-tracking-trigger='click'
-					event-segmentation={source: 'dashboard-top', projectDashboardReact: 'enabled', isDashboardSidebarHidden: 'true', isScreenWidthLessThan768px: 'true'}
-				) #{translate("upgrade")}
-
 		- var canDisplayAdminMenu = hasAdminAccess()
 		- var canDisplayAdminRedirect = canRedirectToAdminDomain()
 		- var canDisplayProjectUrlLookup = settings.adminPrivilegeAvailable && canDisplayAdminMenu && hasAdminCapability('view-project-setting', false)
-		- var canDisplaySplitTestMenu = hasFeature('saas') && hasNonAdminDomainCapability('view-split-test')
-		- var canDisplaySurveyMenu = hasFeature('saas') && canDisplayAdminMenu && hasAdminCapability('manage-survey', false)
-		- var canDisplayScriptLogMenu = hasFeature('saas') && hasAdminCapability('view-script-log', false) && canDisplayAdminMenu
+		- var canDisplayScriptLogMenu = hasAdminCapability('view-script-log', false) && canDisplayAdminMenu
 
 		if typeof suppressNavbarRight === 'undefined'
 			button#navbar-toggle-btn.navbar-toggler.collapsed(
@@ -48,7 +35,7 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 
 			#navbar-main-collapse.navbar-collapse.collapse
 				ul.nav.navbar-nav.navbar-right.ms-auto(role='menubar')
-					if canDisplayAdminMenu || canDisplayAdminRedirect || canDisplayProjectUrlLookup || canDisplaySplitTestMenu
+					if canDisplayAdminMenu || canDisplayAdminRedirect || canDisplayProjectUrlLookup
 						+nav-item.dropdown.subdued
 							button.dropdown-toggle(
 								aria-haspopup='true'
@@ -69,10 +56,6 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 									+dropdown-menu-link-item(href='/admin/project') Project URL Lookup
 								if canDisplayAdminRedirect
 									+dropdown-menu-link-item(href=settings.adminUrl) Switch to Admin
-								if canDisplaySplitTestMenu
-									+dropdown-menu-link-item(href='/admin/split-test') Manage Feature Flags
-								if canDisplaySurveyMenu
-									+dropdown-menu-link-item(href='/admin/survey') Manage Surveys
 								if canDisplayScriptLogMenu
 									+dropdown-menu-link-item(href='/admin/script-logs') View Script Logs
 
@@ -109,10 +92,8 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 												+dropdown-menu-divider
 											else if child.isContactUs
 												+dropdown-menu-link-item(
-													data-ol-open-contact-form-modal='contact-us'
-													data-bs-target='#contactUsModal'
-													href
-													data-bs-toggle='modal'
+													href='/learn'
+													target='_blank'
 													event-tracking='menu-click'
 													event-tracking-mb='true'
 													event-tracking-trigger='click'
@@ -193,8 +174,6 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 									.disabled.dropdown-item #{getSessionUser().email}
 								+dropdown-menu-divider
 								+dropdown-menu-link-item(href='/user/settings') #{translate('account_settings')}
-								if nav.showSubscriptionLink
-									+dropdown-menu-link-item(href='/user/subscription') #{translate('subscription')}
 								+dropdown-menu-divider
 								+dropdown-menu-item
 									//-

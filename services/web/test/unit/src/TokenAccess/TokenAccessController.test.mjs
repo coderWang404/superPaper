@@ -28,10 +28,10 @@ describe('TokenAccessController', function () {
     ctx.next = sinon.stub().returns()
 
     ctx.Settings = {
-      siteUrl: 'https://www.dev-overleaf.com',
+      siteUrl: 'https://www.dev-superpaper.com',
       adminPrivilegeAvailable: false,
-      adminUrl: 'https://admin.dev-overleaf.com',
-      adminDomains: ['overleaf.com'],
+      adminUrl: 'https://admin.dev-superpaper.com',
+      adminDomains: ['superpaper.com'],
     }
     ctx.TokenAccessHandler = {
       TOKEN_TYPES: {
@@ -140,7 +140,7 @@ describe('TokenAccessController', function () {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
@@ -187,7 +187,7 @@ describe('TokenAccessController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })
@@ -257,7 +257,7 @@ describe('TokenAccessController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: ctx.AnalyticsManager,
       })
@@ -268,7 +268,7 @@ describe('TokenAccessController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Subscription/LimitationsManager',
+      '../../../../app/src/Features/Authorization/CollaborationLimitManager',
       () => ({
         default: ctx.LimitationsManager,
       })
@@ -632,9 +632,9 @@ describe('TokenAccessController', function () {
       })
     })
 
-    describe('when Overleaf SaaS', function () {
+    describe('when V1 import flow is enabled', function () {
       beforeEach(function (ctx) {
-        ctx.Settings.overleaf = {}
+        ctx.Settings.superpaper = {}
       })
       describe('when token is for v1 project', function () {
         beforeEach(async function (ctx) {
@@ -716,7 +716,7 @@ describe('TokenAccessController', function () {
       })
     })
 
-    describe('not Overleaf SaaS', function () {
+    describe('when V1 import flow is disabled', function () {
       beforeEach(function (ctx) {
         ctx.TokenAccessHandler.promises.getProjectByToken.resolves(undefined)
         ctx.req.params = { token: ctx.token }
@@ -762,7 +762,7 @@ describe('TokenAccessController', function () {
       it('redirects if project owner is non-admin', async function (ctx) {
         ctx.UserGetter.promises.getUserConfirmedEmails = sinon
           .stub()
-          .resolves([{ email: 'test@not-overleaf.com' }])
+          .resolves([{ email: 'test@not-superpaper.com' }])
 
         await ctx.TokenAccessController.grantTokenAccessReadAndWrite(
           ctx.req,
@@ -785,7 +785,7 @@ describe('TokenAccessController', function () {
         ctx.UserGetter.promises.getUser = sinon.stub().resolves(internalStaff)
         ctx.UserGetter.promises.getUserConfirmedEmails = sinon
           .stub()
-          .resolves([{ email: 'test@overleaf.com' }])
+          .resolves([{ email: 'test@superpaper.com' }])
         ctx.TokenAccessHandler.promises.getProjectByToken = sinon
           .stub()
           .resolves(projectFromInternalStaff)

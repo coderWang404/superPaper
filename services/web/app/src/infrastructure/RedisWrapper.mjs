@@ -1,5 +1,5 @@
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 import { addConnectionDrainer } from './GracefulShutdown.mjs'
 
 /**

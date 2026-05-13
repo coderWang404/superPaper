@@ -10,16 +10,16 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-const Settings = require('@overleaf/settings')
-const { promisifyAll } = require('@overleaf/promise-utils')
-const rclient = require('@overleaf/redis-wrapper').createClient(
+const Settings = require('@superpaper/settings')
+const { promisifyAll } = require('@superpaper/promise-utils')
+const rclient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
-const pubsubClient = require('@overleaf/redis-wrapper').createClient(
+const pubsubClient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.pubsub
 )
 const Keys = Settings.redis.documentupdater.key_schema
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const os = require('node:os')
 const crypto = require('node:crypto')
 const metrics = require('./Metrics')

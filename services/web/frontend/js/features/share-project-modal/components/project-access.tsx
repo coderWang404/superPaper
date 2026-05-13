@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import ShareProjectModalRow from '@/features/share-project-modal/components/share-project-modal-row'
 import MaterialIcon from '@/shared/components/material-icon'
 import OLButton from '@/shared/components/ol/ol-button'
-import OLTooltip from '@/shared/components/ol/ol-tooltip'
 import OLDropdownMenuItem from '@/shared/components/ol/ol-dropdown-menu-item'
 import {
   Dropdown,
@@ -42,8 +41,6 @@ function ProjectAccess({
   const [privileges, setPrivileges] =
     useState<Exclude<PermissionsLevel, 'owner'>>('readOnly')
   const { isProjectOwner } = useEditorContext()
-  // TODO set company name
-  const companyName = 'XYZ'
 
   const {
     monitorRequest,
@@ -92,8 +89,6 @@ function ProjectAccess({
         return t('via_sharing_links_legacy')
       case 'onlyInvitedPeople':
         return t('only_invited_people')
-      case 'anyoneInXyzWithTheLink':
-        return t('anyone_in_x_with_the_link', { companyName })
       case 'anyoneWithTheLink':
         return t('anyone_with_the_link')
       default:
@@ -125,9 +120,6 @@ function ProjectAccess({
             {projectAccess === 'linkSharing' && <MaterialIcon type="link" />}
             {projectAccess === 'onlyInvitedPeople' && (
               <MaterialIcon type="lock" unfilled />
-            )}
-            {projectAccess === 'anyoneInXyzWithTheLink' && (
-              <MaterialIcon type="domain" unfilled />
             )}
             {projectAccess === 'anyoneWithTheLink' && (
               <MaterialIcon type="globe" unfilled />
@@ -177,21 +169,6 @@ function ProjectAccess({
                 <DropdownListItem className="d-flex align-items-center">
                   <DropdownItem
                     as="button"
-                    eventKey="anyoneInXyzWithTheLink"
-                    leadingIcon={<MaterialIcon type="domain" unfilled />}
-                    trailingIcon={
-                      projectAccess === 'anyoneInXyzWithTheLink'
-                        ? 'check'
-                        : undefined
-                    }
-                    active={projectAccess === 'anyoneInXyzWithTheLink'}
-                  >
-                    {t('anyone_in_x_with_the_link', { companyName })}
-                  </DropdownItem>
-                </DropdownListItem>
-                <DropdownListItem className="d-flex align-items-center gap-2">
-                  <DropdownItem
-                    as="button"
                     eventKey="anyoneWithTheLink"
                     leadingIcon={<MaterialIcon type="globe" unfilled />}
                     trailingIcon={
@@ -203,19 +180,6 @@ function ProjectAccess({
                   >
                     {t('anyone_with_the_link')}
                   </DropdownItem>
-                  <OLTooltip
-                    id="tooltip-anyone-with-link"
-                    description={t('not_permitted_by_your_organization')}
-                    overlayProps={{ placement: 'left' }}
-                  >
-                    <span style={{ cursor: 'default' }}>
-                      <MaterialIcon
-                        type="info"
-                        unfilled
-                        className="align-middle px-2"
-                      />
-                    </span>
-                  </OLTooltip>
                 </DropdownListItem>
               </DropdownMenu>
             </Dropdown>

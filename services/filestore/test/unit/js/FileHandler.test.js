@@ -1,7 +1,7 @@
 import sinon from 'sinon'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ObjectId } from 'mongodb'
-import OriginalSettings from '@overleaf/settings'
+import OriginalSettings from '@superpaper/settings'
 
 const modulePath = '../../../app/js/FileHandler.js'
 
@@ -94,13 +94,13 @@ describe('FileHandler', () => {
       default: ImageOptimiser,
     }))
 
-    vi.doMock('@overleaf/settings', () => {
+    vi.doMock('@superpaper/settings', () => {
       return {
         default: Settings,
       }
     })
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         gauge: sinon.stub(),
         Timer: sinon.stub().returns({ done: sinon.stub() }),

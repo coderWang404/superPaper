@@ -10,14 +10,14 @@ describe('LockManager', () => {
     ctx.key = '/local/compile/directory'
     ctx.clock = sinon.useFakeTimers()
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.Metrics = {
         inc: sinon.stub(),
         gauge: sinon.stub(),
       }),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {
         compileConcurrencyLimit: 5,
       }),

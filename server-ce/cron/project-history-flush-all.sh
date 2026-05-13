@@ -8,7 +8,7 @@ echo "---------------------------------"
 date
 
 source /etc/container_environment.sh
-source /etc/overleaf/env.sh
-cd /overleaf/services/project-history && /sbin/setuser www-data node scripts/flush_all.js
+source /etc/superpaper/env.sh
+cd /superpaper/services/project-history && /sbin/setuser www-data node scripts/flush_all.js
 
 echo "Done flushing all project-history changes"

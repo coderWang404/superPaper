@@ -1,10 +1,10 @@
 {
-  "name": "@overleaf/logger",
-  "homepage": "www.overleaf.com",
-  "description": "A centralised logging system for Overleaf",
+  "name": "@superpaper/logger",
+  "homepage": "www.superpaper.com",
+  "description": "A centralised logging system for superPaper",
   "repository": {
     "type": "git",
-    "url": "https://github.com/overleaf/overleaf"
+    "url": "https://github.com/superpaper/superpaper"
   },
   "main": "index.js",
   "license": "AGPL-3.0-only",
@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@google-cloud/logging-bunyan": "^5.1.0",
-    "@overleaf/fetch-utils": "workspace:*",
-    "@overleaf/o-error": "workspace:*",
+    "@superpaper/fetch-utils": "workspace:*",
+    "@superpaper/o-error": "workspace:*",
     "bunyan": "^1.8.14"
   },
   "devDependencies": {
@@ -34,6 +34,6 @@
     "typescript": "^5.0.4"
   },
   "peerDependencies": {
-    "@overleaf/metrics": "workspace:*"
+    "@superpaper/metrics": "workspace:*"
   }
 }

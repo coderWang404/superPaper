@@ -9,8 +9,8 @@
 // docker run --rm $(docker ps -lq) scripts/clear_deleted.js
 
 import async from 'async'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 import { db, ObjectId } from '../app/js/mongodb.js'
 import * as SyncManager from '../app/js/SyncManager.js'
 import * as UpdatesProcessor from '../app/js/UpdatesProcessor.js'
@@ -35,13 +35,13 @@ function checkAndClear(project, callback) {
   const projectId = project.project_id
   console.log('checking project', projectId)
 
-  // These can probably also be reset and their overleaf.history.id unset
+  // These can probably also be reset and their superpaper.history.id unset
   // (unless they are v1 projects).
 
   function checkNotV1Project(cb) {
     db.projects.findOne(
       { _id: new ObjectId(projectId) },
-      { projection: { overleaf: true } },
+      { projection: { superpaper: true } },
       (err, result) => {
         console.log(
           '1. looking in mongo projects collection: err',
@@ -55,8 +55,8 @@ function checkAndClear(project, callback) {
         if (!result) {
           return cb(new Error('project not found in mongo'))
         }
-        if (result && result.overleaf && !result.overleaf.id) {
-          if (result.overleaf.history.id) {
+        if (result && result.superpaper && !result.superpaper.id) {
+          if (result.superpaper.history.id) {
             console.log(
               ' - project is not imported from v1 and has a history id - ok to resync'
             )

@@ -1,7 +1,7 @@
 --- services/web/app/src/Features/Collaborators/CollaboratorsController.js
 +++ services/web/app/src/Features/Collaborators/CollaboratorsController.js
 @@ -11,6 +11,7 @@ const Errors = require('../Errors/Errors')
- const logger = require('@overleaf/logger')
+ const logger = require('@superpaper/logger')
  const { expressify } = require('../../util/promises')
  const { hasAdminAccess } = require('../Helpers/AdminAuthorizationHelper')
 +const TokenAccessHandler = require('../TokenAccess/TokenAccessHandler')

@@ -1,5 +1,5 @@
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 const rclient = RedisWrapper.client('cooldown')
 
 const COOLDOWN_IN_SECONDS = 60 * 10

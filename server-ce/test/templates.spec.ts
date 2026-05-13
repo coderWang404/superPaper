@@ -18,19 +18,19 @@ describe('Templates', function () {
   ensureUserExists({ email: TEMPLATES_USER })
   ensureUserExists({ email: WITHOUT_PROJECTS_USER })
 
-  let OVERLEAF_TEMPLATES_USER_ID: string
+  let SUPERPAPER_TEMPLATES_USER_ID: string
   before(function () {
     login(TEMPLATES_USER)
     cy.visit('/')
     cy.get('meta[name="ol-user_id"]').then(el => {
-      OVERLEAF_TEMPLATES_USER_ID = el.attr('content')!
+      SUPERPAPER_TEMPLATES_USER_ID = el.attr('content')!
     })
   })
 
   function varsFn() {
     return {
-      OVERLEAF_TEMPLATES_USER_ID,
-      OVERLEAF_NEW_PROJECT_TEMPLATE_LINKS:
+      SUPERPAPER_TEMPLATES_USER_ID,
+      SUPERPAPER_NEW_PROJECT_TEMPLATE_LINKS:
         '[{"name":"All Templates","url":"/templates/all"}]',
     }
   }

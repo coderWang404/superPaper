@@ -1,5 +1,5 @@
-import ObjectPersistor from '@overleaf/object-persistor'
-import Settings from '@overleaf/settings'
+import ObjectPersistor from '@superpaper/object-persistor'
+import Settings from '@superpaper/settings'
 import { promisify } from 'node:util'
 import App from '../../../app.js'
 import FileHandler from '../../../app/js/FileHandler.js'

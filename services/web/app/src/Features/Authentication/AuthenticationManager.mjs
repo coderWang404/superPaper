@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { User } from '../../models/User.mjs'
 import { db, ObjectId } from '../../infrastructure/mongodb.mjs'
 import bcrypt from 'bcrypt'
@@ -13,12 +13,12 @@ import {
   PasswordReusedError,
 } from './AuthenticationErrors.mjs'
 
-import { callbackify, callbackifyMultiResult } from '@overleaf/promise-utils'
+import { callbackify, callbackifyMultiResult } from '@superpaper/promise-utils'
 import HaveIBeenPwned from './HaveIBeenPwned.mjs'
 import UserAuditLogHandler from '../User/UserAuditLogHandler.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import DiffHelper from '../Helpers/DiffHelper.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const BCRYPT_ROUNDS = Settings.security.bcryptRounds || 12
 const BCRYPT_MINOR_VERSION = Settings.security.bcryptMinorVersion || 'a'

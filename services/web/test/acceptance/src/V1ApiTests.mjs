@@ -1,10 +1,9 @@
 import { expect } from 'chai'
 import V1Api from '../../../app/src/Features/V1/V1Api.mjs'
 import MockV1ApiClass from './mocks/MockV1Api.mjs'
-import Features from '../../../app/src/infrastructure/Features.mjs'
 
 describe('V1Api', function () {
-  const testPath = '/api/v1/overleaf/fake_route_api_handler_tests'
+  const testPath = '/api/v1/superpaper/fake_route_api_handler_tests'
 
   function testPathWithResponse(statusCode, body = '') {
     const encodedBody = encodeURIComponent(JSON.stringify(body))
@@ -12,10 +11,6 @@ describe('V1Api', function () {
   }
 
   beforeEach(function () {
-    if (!Features.hasFeature('saas')) {
-      this.skip()
-    }
-
     MockV1ApiClass.instance()
   })
 
@@ -66,7 +61,7 @@ describe('V1Api', function () {
       error = e
     }
     expect(error).to.exist
-    expect(error.message).to.equal('overleaf v1 returned forbidden')
+    expect(error.message).to.equal('superpaper v1 returned forbidden')
     expect(error.statusCode).to.equal(403)
   })
 
@@ -81,7 +76,7 @@ describe('V1Api', function () {
     }
     expect(error).to.exist
     expect(error.message).to.equal(
-      `overleaf v1 returned non-success code: 404 GET ${url}`
+      `superpaper v1 returned non-success code: 404 GET ${url}`
     )
     expect(error.statusCode).to.equal(404)
   })
@@ -96,7 +91,7 @@ describe('V1Api', function () {
       error = e
     }
     expect(error).to.exist
-    expect(error.message).to.equal('overleaf v1 returned non-success code')
+    expect(error.message).to.equal('superpaper v1 returned non-success code')
     expect(error.statusCode).to.equal(402)
   })
 

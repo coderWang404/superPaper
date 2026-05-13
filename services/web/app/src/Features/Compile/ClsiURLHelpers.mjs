@@ -1,5 +1,5 @@
-import { zz } from '@overleaf/validation-tools'
-import Settings from '@overleaf/settings'
+import { zz } from '@superpaper/validation-tools'
+import Settings from '@superpaper/settings'
 
 // Build zod schema once and use it below.
 const schema = {

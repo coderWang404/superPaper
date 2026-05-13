@@ -6,7 +6,7 @@ import _ from 'lodash'
 import LinkedFilesErrors from './LinkedFilesErrors.mjs'
 import { OutputFileFetchFailedError } from '../Errors/Errors.js'
 import LinkedFilesHandler from './LinkedFilesHandler.mjs'
-import { promisify } from '@overleaf/promise-utils'
+import { promisify } from '@superpaper/promise-utils'
 
 const { CompileFailedError, BadDataError, AccessDeniedError } =
   LinkedFilesErrors

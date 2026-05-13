@@ -9,18 +9,15 @@ import partnerLogoUrl from './cobranding-logo.png'
 describe('<Toolbar />', function () {
   describe('cobranding', function () {
     beforeEach(function () {
-      const cobranding: Cobranding = {
+      const cobranding = {
         logoImgUrl: partnerLogoUrl,
-        brandVariationName: 'brand variation name',
-        brandVariationId: 1000,
         brandId: 2000,
-        brandVariationHomeUrl: 'https://brand.example.com',
         publishGuideHtml: 'string',
         partner: 'partner name',
         brandedMenu: true,
         submitBtnHtml: 'submit to\n partner',
         submitBtnHtmlNoBreaks: 'submit to partner',
-      }
+      } as Cobranding
 
       cy.mount(
         <EditorProviders
@@ -70,7 +67,7 @@ describe('<Toolbar />', function () {
         <Toolbar />
       </EditorProviders>
     )
-    cy.findByLabelText('Overleaf logo')
+    cy.findByLabelText('superPaper logo')
       // We can't click the link in component tests, so just look at the
       // parent directly
       .parent()

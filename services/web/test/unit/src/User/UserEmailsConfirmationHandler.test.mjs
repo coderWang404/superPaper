@@ -30,7 +30,7 @@ describe('UserEmailsConfirmationHandler', function () {
     ctx.email = ctx.mockUser.email
     ctx.req = {}
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         siteUrl: 'https://emails.example.com',
       }),

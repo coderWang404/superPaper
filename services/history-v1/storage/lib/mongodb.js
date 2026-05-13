@@ -1,7 +1,7 @@
 // @ts-check
 
-const Metrics = require('@overleaf/metrics')
-const MongoUtils = require('@overleaf/mongo-utils')
+const Metrics = require('@superpaper/metrics')
+const MongoUtils = require('@superpaper/mongo-utils')
 
 const config = require('config')
 const { MongoClient } = require('mongodb')

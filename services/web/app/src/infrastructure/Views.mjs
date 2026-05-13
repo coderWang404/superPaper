@@ -1,7 +1,7 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import pug from 'pug'
 import globby from 'globby'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import fs from 'node:fs'
 import Path from 'node:path'
 
@@ -77,13 +77,6 @@ function _expectMetaFor(filePath, firstLine) {
   if (firstLine === 'doctype xml') return false
   // view includes should not add meta tags as we cannot trace these easily.
   if (Object.values(Settings.viewIncludes).flat().includes(filePath)) {
-    if (
-      filePath === Path.resolve('modules/writefull/app/views/_editor_meta.pug')
-    ) {
-      // Special case: The Writefull module adds meta tags to editor, see inline comment there
-      return true
-    }
-    // default case: no meta tags
     return false
   }
   // default to expect meta tags in top-level templates

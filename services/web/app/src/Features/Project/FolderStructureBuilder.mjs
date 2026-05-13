@@ -1,5 +1,5 @@
 import Path from 'node:path'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import mongodb from 'mongodb-legacy'
 
 const { ObjectId } = mongodb

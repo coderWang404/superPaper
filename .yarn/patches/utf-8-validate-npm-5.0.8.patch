@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,7 @@
+     "node": ">=6.14.2"
+   },
+   "scripts": {
+-    "install": "node-gyp-build",
++    "install": "node -e \"process.exit(0)\"",
+     "prebuild": "prebuildify --napi --strip",
+     "prebuild-darwin-x64+arm64": "prebuildify --arch x64+arm64 --napi --strip",
+     "test": "mocha"

@@ -1,4 +1,4 @@
-# @overleaf/project-history
+# @superpaper/project-history
 
 An API for converting raw editor updates into a compressed and browseable history.
 
@@ -63,4 +63,4 @@ The commands used to compile the app and tests, to run the mocha tests, and to r
 
 The makefile contains a collection of shortcuts for running the yarn scripts inside the appropriate docker containers, using the `docker-compose` files in the project.
 
-Copyright (c) Overleaf, 2017-2021.
+Copyright (c) superPaper, 2017-2021.

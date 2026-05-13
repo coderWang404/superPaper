@@ -56,7 +56,7 @@ describe('ProjectUploadController', function () {
       default: sinon.stub(),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: { path: {} },
     }))
 
@@ -74,7 +74,7 @@ describe('ProjectUploadController', function () {
       })
     )
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: ctx.metrics,
     }))
 

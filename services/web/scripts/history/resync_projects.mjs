@@ -2,7 +2,7 @@
 
 import minimist from 'minimist'
 import { scriptRunner } from '../lib/ScriptRunner.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import ProjectGetter from '../../app/src/Features/Project/ProjectGetter.mjs'
 import {
   db,
@@ -104,7 +104,7 @@ async function main() {
 
   // skip projects that don't have full project history
   /** @type {any[]} */
-  const clauses = [{ 'overleaf.history.id': { $exists: true } }]
+  const clauses = [{ 'superpaper.history.id': { $exists: true } }]
 
   if (projectIds != null) {
     clauses.push({ _id: { $in: projectIds.map(id => new ObjectId(id)) } })
@@ -123,7 +123,7 @@ async function main() {
   }
   if (skipResyncedAfter) {
     clauses.push({
-      'overleaf.history.lastResyncedAt': {
+      'superpaper.history.lastResyncedAt': {
         $not: { $gt: new Date(skipResyncedAfter) },
       },
     })
@@ -133,7 +133,7 @@ async function main() {
   const projects = db.projects
     .find(filter, {
       readPreference: READ_PREFERENCE_SECONDARY,
-      projection: { _id: 1, overleaf: 1 },
+      projection: { _id: 1, superpaper: 1 },
     })
     .sort({ _id: -1 })
 

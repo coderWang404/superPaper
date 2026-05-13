@@ -1,6 +1,6 @@
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
-import settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
+import settings from '@superpaper/settings'
 let EventLogger
 
 // keep track of message counters to detect duplicate and out of order events

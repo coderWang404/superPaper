@@ -6,7 +6,7 @@ function generateToken() {
 }
 
 function hashInviteToken(token) {
-  return Crypto.createHmac('sha256', 'overleaf-token-invite')
+  return Crypto.createHmac('sha256', 'superpaper-token-invite')
     .update(token)
     .digest('hex')
 }

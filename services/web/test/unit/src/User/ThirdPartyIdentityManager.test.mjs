@@ -1,6 +1,6 @@
 import { vi, expect } from 'vitest'
 import sinon from 'sinon'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { ThirdPartyUserNotFoundError } from '../../../../app/src/Features/Errors/Errors.js'
 const modulePath =
   '../../../../app/src/Features/User/ThirdPartyIdentityManager.mjs'
@@ -14,7 +14,7 @@ describe('ThirdPartyIdentityManager', function () {
     ctx.userId = 'a1b2c3'
     ctx.user = {
       _id: ctx.userId,
-      email: 'example@overleaf.com',
+      email: 'example@superpaper.com',
     }
     ctx.externalUserId = 'id789'
     ctx.externalData = {}
@@ -47,7 +47,7 @@ describe('ThirdPartyIdentityManager', function () {
       }),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         oauthProviders: {
           google: {
@@ -66,7 +66,10 @@ describe('ThirdPartyIdentityManager', function () {
     it('should throw an error when missing providerId or externalUserId', async function (ctx) {
       await expect(
         ctx.ThirdPartyIdentityManager.promises.getUser(undefined, undefined)
-      ).to.be.rejectedWith(OError, `invalid SSO arguments`)
+      ).to.be.rejectedWith(
+        OError,
+        `invalid third-party identity arguments`
+      )
     })
 
     describe('when user linked', function () {
@@ -124,7 +127,7 @@ describe('ThirdPartyIdentityManager', function () {
         ctx.UserAuditLogHandler.promises.addEntry
       ).to.have.been.calledOnceWith(
         ctx.userId,
-        'link-sso',
+        'link-third-party-identity',
         ctx.auditLog.initiatorId,
         ctx.auditLog.ipAddress,
         {
@@ -198,7 +201,7 @@ describe('ThirdPartyIdentityManager', function () {
         ctx.UserAuditLogHandler.promises.addEntry
       ).to.have.been.calledOnceWith(
         ctx.userId,
-        'unlink-sso',
+        'unlink-third-party-identity',
         ctx.auditLog.initiatorId,
         ctx.auditLog.ipAddress,
         {

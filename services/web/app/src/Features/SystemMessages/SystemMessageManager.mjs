@@ -1,10 +1,10 @@
 import { SystemMessage } from '../../models/SystemMessage.mjs'
 import { addRequiredCleanupHandlerBeforeDrainingConnections } from '../../infrastructure/GracefulShutdown.mjs'
-import { callbackifyAll } from '@overleaf/promise-utils'
-import logger from '@overleaf/logger'
+import { callbackifyAll } from '@superpaper/promise-utils'
+import logger from '@superpaper/logger'
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 
 const PUB_SUB_CHANNEL_TRIGGER_REFRESH = 'refresh-system-messages'
 

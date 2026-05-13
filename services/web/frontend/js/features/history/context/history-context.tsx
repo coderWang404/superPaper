@@ -70,7 +70,6 @@ const updatesInfoInitialState: HistoryContextValue['updatesInfo'] = {
   updates: [],
   visibleUpdateCount: null,
   atEnd: false,
-  freeHistoryLimitHit: false,
   nextBeforeTimestamp: undefined,
   loadingState: 'loadingInitial',
 }
@@ -78,10 +77,9 @@ const updatesInfoInitialState: HistoryContextValue['updatesInfo'] = {
 function useHistory() {
   const { view } = useLayoutContext()
   const user = useUserContext()
-  const { projectId, project, features } = useProjectContext()
+  const { projectId, project } = useProjectContext()
   const userId = user.id
   const projectOwnerId = project?.owner?._id
-  const userHasFullFeature = Boolean(features.versioning || user.isAdmin)
   const currentUserIsOwner = projectOwnerId === userId
 
   const [selection, setSelection] = useState<Selection>(selectionInitialState)
@@ -108,9 +106,7 @@ function useHistory() {
     const updatesLoadingState = updatesInfo.loadingState
 
     const loadUpdates = (updatesData: Update[]) => {
-      const dateTimeNow = new Date()
-      const timestamp24hoursAgo = dateTimeNow.setDate(dateTimeNow.getDate() - 1)
-      let { updates, freeHistoryLimitHit, visibleUpdateCount } = updatesInfo
+      const { updates } = updatesInfo
       let previousUpdate = updates[updates.length - 1]
 
       const loadedUpdates: LoadedUpdate[] = cloneDeep(updatesData)
@@ -128,26 +124,11 @@ function useHistory() {
         }
 
         previousUpdate = update
-
-        // the free tier cutoff is 24 hours, so show one extra update
-        //  after which will become the fade teaser above the paywall
-        if (
-          !userHasFullFeature &&
-          visibleUpdateCount === null &&
-          update.meta.end_ts < timestamp24hoursAgo
-        ) {
-          // Make sure that we show at least one entry fully (to allow labelling), and one extra for fading
-          //  Since the index for the first free tier cutoff will be at 0 if all versions were updated the day before (all version in the past),
-          //  we need to +2 instead of +1. this gives us one which is selected and one which is faded
-          visibleUpdateCount = index > 0 ? index + 1 : 2
-          freeHistoryLimitHit = true
-        }
       }
 
       return {
         updates: updates.concat(loadedUpdates),
-        visibleUpdateCount,
-        freeHistoryLimitHit,
+        visibleUpdateCount: null,
       }
     }
 
@@ -181,16 +162,13 @@ function useHistory() {
           setLabels(loadLabels(labels, updatesData))
         }
 
-        const { updates, visibleUpdateCount, freeHistoryLimitHit } =
-          loadUpdates(updatesData)
+        const { updates, visibleUpdateCount } = loadUpdates(updatesData)
 
-        const atEnd =
-          nextBeforeTimestamp == null || freeHistoryLimitHit || !updates.length
+        const atEnd = nextBeforeTimestamp == null || !updates.length
 
         setUpdatesInfo({
           updates,
           visibleUpdateCount,
-          freeHistoryLimitHit,
           atEnd,
           nextBeforeTimestamp,
           loadingState: 'ready',
@@ -200,7 +178,7 @@ function useHistory() {
       .finally(() => {
         updatesAbortControllerRef.current = null
       })
-  }, [updatesInfo, projectId, labels, showBoundary, userHasFullFeature])
+  }, [updatesInfo, projectId, labels, showBoundary])
 
   // Abort in-flight updates request on unmount
   useEffect(() => {
@@ -320,7 +298,6 @@ function useHistory() {
       setLabels,
       labelsOnly,
       setLabelsOnly,
-      userHasFullFeature,
       currentUserIsOwner,
       projectId,
       selection,
@@ -336,7 +313,6 @@ function useHistory() {
       setLabels,
       labelsOnly,
       setLabelsOnly,
-      userHasFullFeature,
       currentUserIsOwner,
       projectId,
       selection,

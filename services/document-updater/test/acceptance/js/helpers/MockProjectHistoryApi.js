@@ -1,5 +1,5 @@
 let MockProjectHistoryApi
-const { expressify } = require('@overleaf/promise-utils')
+const { expressify } = require('@superpaper/promise-utils')
 const express = require('express')
 const app = express()
 

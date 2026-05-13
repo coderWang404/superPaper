@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import * as UpdatesProcessor from './UpdatesProcessor.js'
 import * as SummarizedUpdatesManager from './SummarizedUpdatesManager.js'
 import * as DiffManager from './DiffManager.js'
@@ -15,9 +15,9 @@ import * as HistoryApiManager from './HistoryApiManager.js'
 import * as RetryManager from './RetryManager.js'
 import * as FlushManager from './FlushManager.js'
 import Stream, { pipeline } from 'node:stream'
-import { fetchNothing, RequestFailedError } from '@overleaf/fetch-utils'
-import { z, zz, parseReq } from '@overleaf/validation-tools'
-import { IncrementalResponse } from '@overleaf/stream-utils'
+import { fetchNothing, RequestFailedError } from '@superpaper/fetch-utils'
+import { z, zz, parseReq } from '@superpaper/validation-tools'
+import { IncrementalResponse } from '@superpaper/stream-utils'
 
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60
 
@@ -806,7 +806,7 @@ export function createLabel(req, res, next) {
   } = body
 
   // Temporarily looking up both params and body while rolling out changes
-  // in the router path - https://github.com/overleaf/internal/pull/20200
+  // in the router path - https://github.com/superpaper/internal/pull/20200
   const userId = userIdParam || userIdBody
 
   HistoryApiManager.shouldUseProjectHistory(

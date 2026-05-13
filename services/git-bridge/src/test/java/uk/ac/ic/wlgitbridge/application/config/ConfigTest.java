@@ -22,16 +22,16 @@ public class ConfigTest {
                 + "    \"rootGitDirectory\": \"/var/wlgb/git\",\n"
                 + "    \"apiBaseUrl\": \"http://127.0.0.1:60000/api/v0\",\n"
                 + "    \"postbackBaseUrl\": \"http://127.0.0.1\",\n"
-                + "    \"serviceName\": \"Overleaf\",\n"
-                + "    \"oauth2Server\": \"https://www.overleaf.com\"\n"
+                + "    \"serviceName\": \"superPaper\",\n"
+                + "    \"oauth2Server\": \"https://www.superpaper.com\"\n"
                 + "}\n");
     Config config = new Config(reader);
     assertEquals(80, config.getPort());
     assertEquals("/var/wlgb/git", config.getRootGitDirectory());
     assertEquals("http://127.0.0.1:60000/api/v0/", config.getAPIBaseURL());
     assertEquals("http://127.0.0.1/", config.getPostbackURL());
-    assertEquals("Overleaf", config.getServiceName());
-    assertEquals("https://www.overleaf.com", config.getOauth2Server());
+    assertEquals("superPaper", config.getServiceName());
+    assertEquals("https://www.superpaper.com", config.getOauth2Server());
   }
 
   @Test(expected = AssertionError.class)
@@ -45,7 +45,7 @@ public class ConfigTest {
                 + "    \"rootGitDirectory\": \"/var/wlgb/git\",\n"
                 + "    \"apiBaseUrl\": \"http://127.0.0.1:60000/api/v0\",\n"
                 + "    \"postbackBaseUrl\": \"http://127.0.0.1\",\n"
-                + "    \"serviceName\": \"Overleaf\",\n"
+                + "    \"serviceName\": \"superPaper\",\n"
                 + "    \"oauth2Server\": null\n"
                 + "}\n");
     Config config = new Config(reader);
@@ -53,7 +53,7 @@ public class ConfigTest {
     assertEquals("/var/wlgb/git", config.getRootGitDirectory());
     assertEquals("http://127.0.0.1:60000/api/v0/", config.getAPIBaseURL());
     assertEquals("http://127.0.0.1/", config.getPostbackURL());
-    assertEquals("Overleaf", config.getServiceName());
+    assertEquals("superPaper", config.getServiceName());
     assertNull(config.getOauth2Server());
   }
 
@@ -68,8 +68,8 @@ public class ConfigTest {
                 + "    \"rootGitDirectory\": \"/var/wlgb/git\",\n"
                 + "    \"apiBaseUrl\": \"http://127.0.0.1:60000/api/v0\",\n"
                 + "    \"postbackBaseUrl\": \"http://127.0.0.1\",\n"
-                + "    \"serviceName\": \"Overleaf\",\n"
-                + "    \"oauth2Server\": \"https://www.overleaf.com\"\n"
+                + "    \"serviceName\": \"superPaper\",\n"
+                + "    \"oauth2Server\": \"https://www.superpaper.com\"\n"
                 + "}\n");
     Config config = new Config(reader);
     String expected =
@@ -81,8 +81,8 @@ public class ConfigTest {
             + "  \"allowedCorsOrigins\": [],\n"
             + "  \"apiBaseURL\": \"http://127.0.0.1:60000/api/v0/\",\n"
             + "  \"postbackURL\": \"http://127.0.0.1/\",\n"
-            + "  \"serviceName\": \"Overleaf\",\n"
-            + "  \"oauth2Server\": \"https://www.overleaf.com\",\n"
+            + "  \"serviceName\": \"superPaper\",\n"
+            + "  \"oauth2Server\": \"https://www.superpaper.com\",\n"
             + "  \"userPasswordEnabled\": false,\n"
             + "  \"repoStore\": null,\n"
             + "  \"swapStore\": null,\n"

@@ -15,7 +15,6 @@ import customLocalStorage from '@/infrastructure/local-storage'
 export type ProjectAccessType =
   | 'linkSharing'
   | 'onlyInvitedPeople'
-  | 'anyoneInXyzWithTheLink'
   | 'anyoneWithTheLink'
 
 export type ShareProjectContextValue = {
@@ -97,28 +96,17 @@ const ShareProjectModal = React.memo(function ShareProjectModal({
 
   const { splitTestVariants } = useSplitTestContext()
 
-  // show the new share modal if project owner
-  // is over collaborator limit or has pending editors (once every 24 hours)
+  // show the share modal if the project owner has pending editors (once every 24 hours)
   useEffect(() => {
-    const hasExceededCollaboratorLimit = () => {
-      if (!isProjectOwner || !project || !project.features) {
-        return false
-      }
-
-      if (project.features.collaborators === -1) {
-        return false
-      }
-      return (
-        project.members.filter(member =>
-          ['readAndWrite', 'review'].includes(member.privileges)
-        ).length > (project.features.collaborators ?? 1) ||
-        project.members.some(
+    const hasPendingEditors =
+      isProjectOwner &&
+      Boolean(
+        project?.members.some(
           member => member.pendingEditor || member.pendingReviewer
         )
       )
-    }
 
-    if (hasExceededCollaboratorLimit()) {
+    if (hasPendingEditors) {
       const localStorageKey = `last-shown-share-modal.${projectId}`
       const lastShownShareModalTime =
         customLocalStorage.getItem(localStorageKey)

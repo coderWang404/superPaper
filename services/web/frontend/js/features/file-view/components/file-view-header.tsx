@@ -6,7 +6,7 @@ import { useFileTreeData } from '@/shared/context/file-tree-data-context'
 import { useProjectContext } from '@/shared/context/project-context'
 
 import { Nullable } from '../../../../../types/utils'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { LinkedFileIcon } from './file-view-icons'
 import { BinaryFile, hasProvider, LinkedFile } from '../types/binary-file'
 import FileViewRefreshButton from './file-view-refresh-button'
@@ -14,12 +14,12 @@ import FileViewRefreshError from './file-view-refresh-error'
 import MaterialIcon from '@/shared/components/material-icon'
 import OLButton from '@/shared/components/ol/ol-button'
 
-const tprFileViewInfo = importOverleafModules('tprFileViewInfo') as {
+const tprFileViewInfo = importSuperPaperModules('tprFileViewInfo') as {
   import: { TPRFileViewInfo: ElementType }
   path: string
 }[]
 
-const tprFileViewNotOriginalImporter = importOverleafModules(
+const tprFileViewNotOriginalImporter = importSuperPaperModules(
   'tprFileViewNotOriginalImporter'
 ) as {
   import: { TPRFileViewNotOriginalImporter: ElementType }
@@ -98,7 +98,7 @@ export default function FileViewHeader({ file }: FileViewHeaderProps) {
         <FileViewRefreshError file={file} refreshError={refreshError} />
       )}
 
-      {/* Workaround for Safari issue: https://github.com/overleaf/internal/issues/21363
+      {/* Workaround for Safari issue: https://github.com/superpaper/internal/issues/21363
        * The editor behind a file view receives key events and updates the file even if Codemirror view is not focused.
        * Changing the focus to a hidden textarea prevents this
        */}

@@ -2,15 +2,13 @@ import App from '../../../../app.mjs'
 import QueueWorkers from '../../../../app/src/infrastructure/QueueWorkers.mjs'
 import MongoHelper from './MongoHelper.mjs'
 import RedisHelper from './RedisHelper.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import MockReCAPTCHAApi from '../mocks/MockReCaptchaApi.mjs'
 import { gracefulShutdown } from '../../../../app/src/infrastructure/GracefulShutdown.mjs'
 import Server from '../../../../app/src/infrastructure/Server.mjs'
 import { injectRouteAfter } from './injectRoute.mjs'
-import SplitTestHandler from '../../../../app/src/Features/SplitTests/SplitTestHandler.mjs'
-import SplitTestSessionHandler from '../../../../app/src/Features/SplitTests/SplitTestSessionHandler.mjs'
 import Modules from '../../../../app/src/infrastructure/Modules.mjs'
-import testLogRecorder from '@overleaf/logger/test-log-recorder.js'
+import testLogRecorder from '@superpaper/logger/test-log-recorder.js'
 
 const app = Server.app
 
@@ -52,31 +50,6 @@ before('start main app', function (done) {
     app,
     route => route.path && route.path === '/dev/csrf',
     router => {
-      router.get('/dev/split_test/get_assignment', (req, res) => {
-        const { splitTestName } = req.query
-        SplitTestHandler.promises
-          .getAssignment(req, res, splitTestName, {
-            sync: true,
-          })
-          .then(assignment => res.json(assignment))
-          .catch(error => {
-            res.status(500).json({ error: JSON.stringify(error) })
-          })
-      })
-    }
-  )
-  injectRouteAfter(
-    app,
-    route => route.path && route.path === '/dev/csrf',
-    router => {
-      router.post('/dev/split_test/session_maintenance', (req, res) => {
-        SplitTestSessionHandler.promises
-          .sessionMaintenance(req)
-          .then(res.sendStatus(200))
-          .catch(error => {
-            res.status(500).json({ error: JSON.stringify(error) })
-          })
-      })
     }
   )
   injectRouteAfter(

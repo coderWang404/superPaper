@@ -2,7 +2,7 @@ import mongodb from '../../../app/js/mongodb.js'
 import { expect } from 'chai'
 import DocstoreApp from './helpers/DocstoreApp.js'
 import Errors from '../../../app/js/Errors.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { Storage } from '@google-cloud/storage'
 import { setTimeout as sleep } from 'node:timers/promises'
 

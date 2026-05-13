@@ -3,9 +3,9 @@ import Events from 'node:events'
 import fs from 'node:fs'
 import Stream from 'node:stream'
 import { ObjectId } from 'mongodb'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
-import { Blob } from 'overleaf-editor-core'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
+import { Blob } from 'superpaper-editor-core'
 import {
   BlobStore,
   getStringLengthOfFile,
@@ -14,7 +14,7 @@ import {
 import { db } from '../lib/mongodb.js'
 import commandLineArgs from 'command-line-args'
 import readline from 'node:readline'
-import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
+import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
 import { setTimeout } from 'node:timers/promises'
 
 // Silence warning.
@@ -45,7 +45,7 @@ ObjectId.cacheHexString = true
  * @typedef {Object} Project
  * @property {ObjectId} _id
  * @property {Array<Folder>} rootFolder
- * @property {{history: {id: (number|string)}}} overleaf
+ * @property {{history: {id: (number|string)}}} superpaper
  */
 
 /**
@@ -262,7 +262,7 @@ async function fixNotFound(line) {
   const { projectSoftDeleted, query, fullPath, fileRef, folder } =
     await findFile(projectId, fileId)
   logger.info({ projectId, fileId, fileRef }, 'removing fileRef')
-  // Copied from _removeElementFromMongoArray (https://github.com/overleaf/internal/blob/11e09528c153de6b7766d18c3c90d94962190371/services/web/app/src/Features/Project/ProjectEntityMongoUpdateHandler.js)
+  // Copied from _removeElementFromMongoArray (https://github.com/superpaper/internal/blob/11e09528c153de6b7766d18c3c90d94962190371/services/web/app/src/Features/Project/ProjectEntityMongoUpdateHandler.js)
   const nonArrayPath = fullPath.slice(0, fullPath.lastIndexOf('.'))
   let result
   if (projectSoftDeleted) {
@@ -407,7 +407,7 @@ async function uploadFilestoreFile(projectId, fileId) {
       if (!(err instanceof Blob.NotFoundError)) throw err
 
       const { project } = await getProject(projectId)
-      const historyId = project.overleaf.history.id.toString()
+      const historyId = project.superpaper.history.id.toString()
       const blobStore = new BlobStore(historyId)
       await blobStore.putBlob(path, blob)
       await ensureBlobExistsForFile(projectId, fileId, hash)
@@ -461,7 +461,7 @@ async function hashAlreadyUpdatedInFileTree(projectId, fileId, hash) {
  */
 async function ensureBlobExistsForFile(projectId, fileId, hash) {
   const { project } = await getProject(projectId)
-  const historyId = project.overleaf.history.id.toString()
+  const historyId = project.superpaper.history.id.toString()
   const blobStore = new BlobStore(historyId)
   if (
     (await hashAlreadyUpdatedInFileTree(projectId, fileId, hash)) &&

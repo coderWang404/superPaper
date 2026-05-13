@@ -1,7 +1,7 @@
 const fsPromises = require('fs/promises')
 const { ObjectId } = require('mongodb')
 const BPromise = require('bluebird')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const mongodb = require('../lib/mongodb')
 const { chunkStore } = require('..')
 const Events = require('events')
@@ -130,13 +130,13 @@ async function touchResyncsNeededFile() {
 }
 
 function getProjects() {
-  return db.projects.find({}, { projection: { _id: 1, overleaf: 1 } })
+  return db.projects.find({}, { projection: { _id: 1, superpaper: 1 } })
 }
 
 function getDeletedProjects() {
   return db.deletedProjects.find(
     { project: { $ne: null } },
-    { projection: { 'project._id': 1, 'project.overleaf': 1 } }
+    { projection: { 'project._id': 1, 'project.superpaper': 1 } }
   )
 }
 
@@ -178,7 +178,7 @@ async function processProject(project, summary) {
 }
 
 async function getHistoryDocVersions(project) {
-  const historyId = project.overleaf.history.id
+  const historyId = project.superpaper.history.id
   const chunk = await chunkStore.loadLatest(historyId)
   if (chunk == null) {
     return []

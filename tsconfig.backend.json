@@ -8,23 +8,23 @@
     "noEmit": true,
     "noImplicitAny": false,
     "paths": {
-      "@overleaf/access-token-encryptor": [
+      "@superpaper/access-token-encryptor": [
         "./libraries/access-token-encryptor"
       ],
-      "@overleaf/fetch-utils": ["./libraries/fetch-utils"],
-      "@overleaf/logger": ["./libraries/logger"],
-      "@overleaf/metrics": ["./libraries/metrics"],
-      "@overleaf/mongo-utils": ["./libraries/mongo-utils"],
-      "@overleaf/object-persistor": ["./libraries/object-persistor"],
-      "@overleaf/o-error": ["./libraries/o-error"],
-      "overleaf-editor-core": ["./libraries/overleaf-editor-core"],
-      "@overleaf/piece-table": ["./libraries/piece-table"],
-      "@overleaf/promise-utils": ["./libraries/promise-utils"],
-      "@overleaf/ranges-tracker": ["./libraries/ranges-tracker"],
-      "@overleaf/redis-wrapper": ["./libraries/redis-wrapper"],
-      "@overleaf/settings": ["./libraries/settings"],
-      "@overleaf/stream-utils": ["./libraries/stream-utils"],
-      "@overleaf/validation-tools": ["./libraries/validation-tools"]
+      "@superpaper/fetch-utils": ["./libraries/fetch-utils"],
+      "@superpaper/logger": ["./libraries/logger"],
+      "@superpaper/metrics": ["./libraries/metrics"],
+      "@superpaper/mongo-utils": ["./libraries/mongo-utils"],
+      "@superpaper/object-persistor": ["./libraries/object-persistor"],
+      "@superpaper/o-error": ["./libraries/o-error"],
+      "superpaper-editor-core": ["./libraries/superpaper-editor-core"],
+      "@superpaper/piece-table": ["./libraries/piece-table"],
+      "@superpaper/promise-utils": ["./libraries/promise-utils"],
+      "@superpaper/ranges-tracker": ["./libraries/ranges-tracker"],
+      "@superpaper/redis-wrapper": ["./libraries/redis-wrapper"],
+      "@superpaper/settings": ["./libraries/settings"],
+      "@superpaper/stream-utils": ["./libraries/stream-utils"],
+      "@superpaper/validation-tools": ["./libraries/validation-tools"]
     },
     "skipLibCheck": true,
     "strict": true,

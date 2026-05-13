@@ -1,9 +1,9 @@
 import request from 'request'
 
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import Errors from '../Errors/Errors.js'
-import { promisifyMultiResult } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
+import { promisifyMultiResult } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
 import Modules from '../../infrastructure/Modules.mjs'
 
 // TODO: check what happens when these settings aren't defined
@@ -57,17 +57,17 @@ function _responseHandler(options, error, response, body, callback) {
   ) {
     return callback(null, response, body)
   } else if (response?.statusCode === 403) {
-    error = new Errors.ForbiddenError('overleaf v1 returned forbidden')
+    error = new Errors.ForbiddenError('superpaper v1 returned forbidden')
     error.statusCode = response.statusCode
     return callback(error)
   } else if (response?.statusCode === 404) {
     error = new Errors.NotFoundError(
-      `overleaf v1 returned non-success code: ${response.statusCode} ${options.method} ${options.uri}`
+      `superpaper v1 returned non-success code: ${response.statusCode} ${options.method} ${options.uri}`
     )
     error.statusCode = response.statusCode
     return callback(error)
   } else {
-    error = new OError('overleaf v1 returned non-success code', {
+    error = new OError('superpaper v1 returned non-success code', {
       status: response?.statusCode,
       method: options.method,
       url: options.uri,

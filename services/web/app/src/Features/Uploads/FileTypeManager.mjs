@@ -1,11 +1,11 @@
 // @ts-check
 
 import fs from 'node:fs/promises'
+import { isUtf8 } from 'node:buffer'
 
 import Path from 'node:path'
 import { callbackify } from 'node:util'
-import isUtf8 from 'utf-8-validate'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { Minimatch } from 'minimatch'
 
 const FILE_IGNORE_MATCHER = new Minimatch(Settings.fileIgnorePattern, {

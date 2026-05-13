@@ -1,6 +1,6 @@
 // @ts-check
 
-import { prom } from '@overleaf/metrics'
+import { prom } from '@superpaper/metrics'
 
 export const historyFlushDurationSeconds = new prom.Histogram({
   name: 'history_flush_duration_seconds',

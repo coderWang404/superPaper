@@ -29,7 +29,7 @@ describe('Summarized updates', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: olProject.id } },
+        superpaper: { history: { id: olProject.id } },
       })
 
     MockHistoryStore()

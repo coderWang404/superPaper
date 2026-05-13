@@ -8,7 +8,7 @@ import knex from '../lib/knex.js'
 import redis from '../lib/redis.js'
 import { loadGlobalBlobs, BlobStore } from '../lib/blob_store/index.js'
 import { getContentHash } from '../lib/content_hash.js'
-import core from 'overleaf-editor-core'
+import core from 'superpaper-editor-core'
 import Events from 'node:events'
 Events.setMaxListeners(20)
 

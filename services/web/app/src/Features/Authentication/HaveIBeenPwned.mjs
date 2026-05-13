@@ -7,11 +7,11 @@
 
 import { callbackify } from 'node:util'
 
-import { fetchString } from '@overleaf/fetch-utils'
+import { fetchString } from '@superpaper/fetch-utils'
 import crypto from 'node:crypto'
-import Settings from '@overleaf/settings'
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 
 const HEX_CHARS_UPPER = '1234567890ABCDEF'
 const API_ERROR = new Error('cannot contact HaveIBeenPwned api')
@@ -43,7 +43,7 @@ async function getScoresForPrefix(prefix) {
       `${Settings.apis.haveIBeenPwned.url}/range/${prefix}`,
       {
         headers: {
-          'User-Agent': 'www.overleaf.com',
+          'User-Agent': 'www.superpaper.com',
           // Docs: https://haveibeenpwned.com/API/v3#PwnedPasswordsPadding
           'Add-Padding': true,
         },

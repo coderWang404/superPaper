@@ -13,10 +13,10 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 let DispatchManager
-const Settings = require('@overleaf/settings')
-const logger = require('@overleaf/logger')
+const Settings = require('@superpaper/settings')
+const logger = require('@superpaper/logger')
 const Keys = require('./UpdateKeys')
-const redis = require('@overleaf/redis-wrapper')
+const redis = require('@superpaper/redis-wrapper')
 const Errors = require('./Errors')
 const _ = require('lodash')
 

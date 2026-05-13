@@ -1,6 +1,6 @@
-import Metrics from '@overleaf/metrics'
-import MongoUtils from '@overleaf/mongo-utils'
-import Settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import MongoUtils from '@superpaper/mongo-utils'
+import Settings from '@superpaper/settings'
 import mongodb from 'mongodb-legacy'
 const { MongoClient, ObjectId } = mongodb
 

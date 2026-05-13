@@ -2,9 +2,9 @@ import {
   db,
   READ_PREFERENCE_SECONDARY,
 } from '../app/src/infrastructure/mongodb.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import TokenGenerator from '../app/src/Features/TokenGenerator/TokenGenerator.mjs'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const VERBOSE_LOGGING = process.env.VERBOSE_LOGGING === 'true'
 const WRITE_CONCURRENCY = parseInt(process.env.WRITE_CONCURRENCY, 10) || 10

@@ -10,8 +10,8 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 let RateLimiter
-const Settings = require('@overleaf/settings')
-const logger = require('@overleaf/logger')
+const Settings = require('@superpaper/settings')
+const logger = require('@superpaper/logger')
 const Metrics = require('./Metrics')
 
 module.exports = RateLimiter = class RateLimiter {

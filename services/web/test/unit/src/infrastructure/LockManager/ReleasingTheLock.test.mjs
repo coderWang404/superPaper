@@ -23,7 +23,7 @@ describe('LockManager - releasing the lock', function () {
   let LockManager
   const deleteStub = sinon.stub().callsArgWith(4)
   beforeEach(async function () {
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         redis: {},
         lockManager: {

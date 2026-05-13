@@ -9,7 +9,7 @@ function clearSettingsCache() {
     .replace(/\/services\/web\/config\/settings\.defaults\.js$/, '')
   const settingsDeps = Object.keys(require.cache).filter(
     x =>
-      x.includes('/@overleaf/settings') ||
+      x.includes('/@superpaper/settings') ||
       x.includes(`${monorepoPath}/libraries/settings`) ||
       x.includes(`${monorepoPath}/services/web/config`)
   )
@@ -49,40 +49,10 @@ describe('settings.defaults', function () {
   it('additional text extensions can be added via config', function () {
     clearSettingsCache()
     process.env.ADDITIONAL_TEXT_EXTENSIONS = 'abc, xyz'
-    const settings = require('@overleaf/settings')
+    const settings = require('@superpaper/settings')
     expect(settings.textExtensions).to.include('tex') // from the default list
     expect(settings.textExtensions).to.include('abc')
     expect(settings.textExtensions).to.include('xyz')
   })
 
-  it('generates pricings with same structures', function () {
-    const settingsOverridesSaas = require('../../../../config/settings.overrides.saas.js')
-    const { localizedPlanPricing } = settingsOverridesSaas
-
-    const pricingCurrencies = Object.keys(localizedPlanPricing)
-    expect(pricingCurrencies.sort()).to.eql([
-      'AUD',
-      'BRL',
-      'CAD',
-      'CHF',
-      'CLP',
-      'COP',
-      'DKK',
-      'EUR',
-      'GBP',
-      'INR',
-      'MXN',
-      'NOK',
-      'NZD',
-      'PEN',
-      'SEK',
-      'SGD',
-      'USD',
-    ])
-
-    const pricings = pricingCurrencies.map(
-      currency => localizedPlanPricing[currency]
-    )
-    expect(haveSameStructure(pricings)).to.be.true
-  })
 })

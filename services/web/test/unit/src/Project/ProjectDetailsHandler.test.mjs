@@ -100,7 +100,7 @@ describe('ProjectDetailsHandler', function () {
       })
     )
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -117,10 +117,10 @@ describe('ProjectDetailsHandler', function () {
       expect(details.something).to.be.undefined
     })
 
-    it('should find overleaf metadata if it exists', async function (ctx) {
-      ctx.project.overleaf = { id: 'id' }
+    it('should find superpaper metadata if it exists', async function (ctx) {
+      ctx.project.superpaper = { id: 'id' }
       const details = await ctx.handler.promises.getDetails(ctx.project._id)
-      details.overleaf.should.equal(ctx.project.overleaf)
+      details.superpaper.should.equal(ctx.project.superpaper)
       expect(details.something).to.be.undefined
     })
 

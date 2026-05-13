@@ -4,10 +4,10 @@ import fs from 'node:fs'
 
 import Path from 'node:path'
 import { promisify, callbackify } from 'node:util'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Views from './Views.mjs'
 import _ from 'lodash'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 /** @import { WebModule } from "../../../types/web-module" */
 /** @import { RequestHandler } from "express" */

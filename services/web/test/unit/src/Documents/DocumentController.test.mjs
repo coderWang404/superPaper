@@ -41,7 +41,7 @@ describe('DocumentController', function () {
     ctx.rev = 5
     ctx.project = {
       _id: 'project-id-123',
-      overleaf: {
+      superpaper: {
         history: {
           id: 1234,
           display: true,
@@ -153,7 +153,7 @@ describe('DocumentController', function () {
           version: ctx.version,
           ranges: ctx.ranges,
           pathname: ctx.pathname,
-          projectHistoryId: ctx.project.overleaf.history.id,
+          projectHistoryId: ctx.project.superpaper.history.id,
           projectHistoryType: 'project-history',
           resolvedCommentIds: ['comment2'],
           historyRangesSupport: false,

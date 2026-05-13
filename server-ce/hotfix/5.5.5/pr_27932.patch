@@ -30,7 +30,7 @@ index 33962c5da7d4..8b25fb8bd603 100644
   */
  function parseArgs() {
 -  const PUBLIC_LAUNCH_DATE = new Date('2012-01-01T00:00:00Z')
-   const DEFAULT_OUTPUT_FILE = `/var/log/overleaf/file-migration-${new Date()
+   const DEFAULT_OUTPUT_FILE = `/var/log/superpaper/file-migration-${new Date()
      .toISOString()
      .replace(/[:.]/g, '_')}.log`
 @@ -1475,6 +1493,49 @@ try {
@@ -56,7 +56,7 @@ index 33962c5da7d4..8b25fb8bd603 100644
 +        )
 +      console.warn('The binary files migration succeeded.')
 +      console.warn(
-+        'You can now proceed to OVERLEAF_FILESTORE_MIGRATION_LEVEL=2.'
++        'You can now proceed to SUPERPAPER_FILESTORE_MIGRATION_LEVEL=2.'
 +      )
 +    } else {
 +      console.warn(
@@ -73,7 +73,7 @@ index 33962c5da7d4..8b25fb8bd603 100644
 +      'Please review the failures and check the docs on remediating the failures.'
 +    )
 +    console.warn(
-+      'Docs: https://docs.overleaf.com/on-premises/release-notes/release-notes-5.x.x/binary-files-migration#troubleshooting'
++      'Docs: https://docs.superpaper.com/on-premises/release-notes/release-notes-5.x.x/binary-files-migration#troubleshooting'
 +    )
 +    console.warn(
 +      'In case there is not solution available, please reach out to support as detailed in the docs.'

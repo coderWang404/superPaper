@@ -47,22 +47,22 @@
     }
   },
   "blobStore": {
-    "globalBucket": "OVERLEAF_EDITOR_BLOBS_BUCKET",
-    "projectBucket": "OVERLEAF_EDITOR_PROJECT_BLOBS_BUCKET"
+    "globalBucket": "SUPERPAPER_EDITOR_BLOBS_BUCKET",
+    "projectBucket": "SUPERPAPER_EDITOR_PROJECT_BLOBS_BUCKET"
   },
   "chunkStore": {
     "historyStoreConcurrency": "HISTORY_STORE_CONCURRENCY",
-    "bucket": "OVERLEAF_EDITOR_CHUNKS_BUCKET"
+    "bucket": "SUPERPAPER_EDITOR_CHUNKS_BUCKET"
   },
   "zipStore": {
-    "bucket": "OVERLEAF_EDITOR_ZIPS_BUCKET",
+    "bucket": "SUPERPAPER_EDITOR_ZIPS_BUCKET",
     "zipTimeoutMs": "ZIP_STORE_ZIP_TIMEOUT_MS"
   },
   "backupStore": {
-    "chunksBucket": "BACKUP_OVERLEAF_EDITOR_CHUNKS_BUCKET",
-    "deksBucket": "BACKUP_OVERLEAF_EDITOR_DEKS_BUCKET",
-    "globalBlobsBucket": "BACKUP_OVERLEAF_EDITOR_GLOBAL_BLOBS_BUCKET",
-    "projectBlobsBucket": "BACKUP_OVERLEAF_EDITOR_PROJECT_BLOBS_BUCKET"
+    "chunksBucket": "BACKUP_SUPERPAPER_EDITOR_CHUNKS_BUCKET",
+    "deksBucket": "BACKUP_SUPERPAPER_EDITOR_DEKS_BUCKET",
+    "globalBlobsBucket": "BACKUP_SUPERPAPER_EDITOR_GLOBAL_BLOBS_BUCKET",
+    "projectBlobsBucket": "BACKUP_SUPERPAPER_EDITOR_PROJECT_BLOBS_BUCKET"
   },
   "healthCheckBlobs": "HEALTH_CHECK_BLOBS",
   "healthCheckProjects": "HEALTH_CHECK_PROJECTS",

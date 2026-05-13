@@ -18,8 +18,8 @@ export const DeleterDataSchema = new Schema({
   deletedProjectReadWriteToken: { type: String },
   deletedProjectReadOnlyToken: { type: String },
   deletedProjectLastUpdatedAt: { type: Date },
-  deletedProjectOverleafId: { type: Number },
-  deletedProjectOverleafHistoryId: { type: Schema.Types.Mixed },
+  deletedProjectsuperPaperId: { type: Number },
+  deletedProjectsuperPaperHistoryId: { type: Schema.Types.Mixed },
   deletedReason: { type: String },
 })
 

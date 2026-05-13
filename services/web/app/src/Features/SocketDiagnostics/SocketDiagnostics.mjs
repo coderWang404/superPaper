@@ -1,4 +1,4 @@
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 
 const index = async (req, res) => {
   res.render('project/editor/socket_diagnostics')

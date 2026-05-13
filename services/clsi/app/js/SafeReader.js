@@ -12,8 +12,8 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 import fs from 'node:fs'
-import logger from '@overleaf/logger'
-import { promisifyMultiResult } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import { promisifyMultiResult } from '@superpaper/promise-utils'
 let SafeReader
 
 export default SafeReader = {

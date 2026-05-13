@@ -1,10 +1,10 @@
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
-import settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
+import settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import Errors from './Errors.js'
 import Path from 'node:path'
-import { fetchJson, RequestFailedError } from '@overleaf/fetch-utils'
+import { fetchJson, RequestFailedError } from '@superpaper/fetch-utils'
 
 const {
   CodedError,

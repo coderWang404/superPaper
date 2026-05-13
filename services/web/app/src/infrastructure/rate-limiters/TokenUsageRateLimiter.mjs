@@ -1,7 +1,6 @@
 // @ts-check
 import { UserFeatureUsage } from '../../models/UserFeatureUsage.mjs'
 import { TooManyRequestsError } from '../../Features/Errors/Errors.js'
-import AnalyticsManager from '../../Features/Analytics/AnalyticsManager.mjs'
 /** @typedef {{usage?: number | null, periodStart?: Date | null}} FeatureUsage */
 /** @typedef {{remainingTokens?: number | null, periodStart?: Date | null}} RemainingTokens */
 
@@ -167,11 +166,6 @@ export default class TokenUsageRateLimiter {
     }
     this.setRateLimitHeaders(res, currentUsage, allowance)
     if ((currentUsage.usage ?? 0) >= allowance) {
-      await AnalyticsManager.recordEventForUser(
-        userId,
-        'ai-token-usage-limit-exceeded'
-      )
-
       throw new TooManyRequestsError({
         message: `${this.featureName} rate limit exceeded`,
         info: {

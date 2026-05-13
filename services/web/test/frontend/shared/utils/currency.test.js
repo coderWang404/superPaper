@@ -6,12 +6,12 @@ import { formatCurrency } from '../../../../frontend/js/shared/utils/currency'
   Which mean that any combination of "supported language"-"supported currency" can be displayed
   on the user's screen.
 
-  Users located in the USA visiting https://fr.overleaf.com/user/subscription/plans
+  Users located in the USA visiting https://fr.superpaper.com
   should see amounts in USD (because of their IP address),
   but with French text, number formatting and currency formats (because of language choice).
   (e.g. 1 000,00 $)
 
-  Users located in the France visiting https://www.overleaf.com/user/subscription/plans
+  Users located in the France visiting https://www.superpaper.com
   should see amounts in EUR (because of their IP address),
   but with English text, number formatting and currency formats (because of language choice).
   (e.g. €1,000.00)

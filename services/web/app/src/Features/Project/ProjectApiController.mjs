@@ -12,7 +12,7 @@
  */
 import ProjectDetailsHandler from './ProjectDetailsHandler.mjs'
 
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 export default {
   getProjectDetails(req, res, next) {

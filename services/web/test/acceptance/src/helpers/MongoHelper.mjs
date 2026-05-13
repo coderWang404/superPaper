@@ -4,10 +4,10 @@ import {
   cleanupTestDatabase,
   dropTestDatabase,
 } from '../../../../app/src/infrastructure/mongodb.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { promisify } from 'node:util'
 
-const DEFAULT_ENV = 'saas'
+const DEFAULT_ENV = 'server-ce'
 
 export default {
   initialize() {

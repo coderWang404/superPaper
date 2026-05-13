@@ -5,7 +5,7 @@ export default {
     json(response, body) {
       expect(response.statusCode).to.equal(401)
       expect(body).to.equal('Unauthorized')
-      expect(response.headers['www-authenticate']).to.equal('OverleafLogin')
+      expect(response.headers['www-authenticate']).to.equal('superPaperLogin')
     },
   },
 

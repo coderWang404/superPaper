@@ -289,7 +289,6 @@ describe('CollaboratorsHandler', function () {
               _id: ctx.project._id,
             },
             {
-              track_changes: { [ctx.userId]: true },
               $addToSet: { reviewer_refs: ctx.userId },
             }
           )
@@ -301,14 +300,6 @@ describe('CollaboratorsHandler', function () {
           ctx.userId,
           'review'
         )
-      })
-
-      it('should update the client with new track changes settings', function (ctx) {
-        return ctx.EditorRealTimeController.emitToRoom
-          .calledWith(ctx.project._id, 'toggle-track-changes', {
-            [ctx.userId]: true,
-          })
-          .should.equal(true)
       })
 
       it('should flush the project to the TPDS', function (ctx) {
@@ -661,15 +652,7 @@ describe('CollaboratorsHandler', function () {
       )
     })
 
-    describe('sets a collaborator to reviewer when track changes is enabled for everyone', function () {
-      beforeEach(function (ctx) {
-        ctx.ProjectGetter.promises.getProject = sinon.stub().resolves({
-          _id: new ObjectId(),
-          owner_ref: ctx.addingUserId,
-          name: 'Foo',
-          track_changes: true,
-        })
-      })
+    describe('sets a collaborator to reviewer', function () {
       it('should correctly update the project', async function (ctx) {
         ctx.ProjectMock.expects('updateOne')
           .withArgs(
@@ -683,7 +666,6 @@ describe('CollaboratorsHandler', function () {
             },
             {
               $addToSet: { reviewer_refs: ctx.userId },
-              $set: { track_changes: { [ctx.userId]: true } },
               $pull: {
                 readOnly_refs: ctx.userId,
                 collaberator_refs: ctx.userId,
@@ -702,17 +684,7 @@ describe('CollaboratorsHandler', function () {
       })
     })
 
-    describe('sets a collaborator to reviewer when track changes is not enabled for everyone', function () {
-      beforeEach(function (ctx) {
-        ctx.ProjectGetter.promises.getProject = sinon.stub().resolves({
-          _id: new ObjectId(),
-          owner_ref: ctx.addingUserId,
-          name: 'Foo',
-          track_changes: {
-            [ctx.userId]: true,
-          },
-        })
-      })
+    describe('sets a collaborator to reviewer without extra review toggles', function () {
       it('should correctly update the project', async function (ctx) {
         ctx.ProjectMock.expects('updateOne')
           .withArgs(
@@ -726,7 +698,6 @@ describe('CollaboratorsHandler', function () {
             },
             {
               $addToSet: { reviewer_refs: ctx.userId },
-              $set: { [`track_changes.${ctx.userId}`]: true },
               $pull: {
                 readOnly_refs: ctx.userId,
                 collaberator_refs: ctx.userId,

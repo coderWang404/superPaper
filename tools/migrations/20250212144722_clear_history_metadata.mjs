@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const tags = ['saas']
 
@@ -9,13 +9,13 @@ const migrate = async client => {
 
   await batchedUpdate(
     db.projects,
-    { 'overleaf.history.currentEndVersion': { $exists: true } },
+    { 'superpaper.history.currentEndVersion': { $exists: true } },
     {
       $unset: {
-        'overleaf.history.currentEndVersion': true,
-        'overleaf.history.currentEndTimestamp': true,
-        'overleaf.history.updatedAt': true,
-        'overleaf.backup.pendingChangeAt': true,
+        'superpaper.history.currentEndVersion': true,
+        'superpaper.history.currentEndTimestamp': true,
+        'superpaper.history.updatedAt': true,
+        'superpaper.backup.pendingChangeAt': true,
       },
     }
   )

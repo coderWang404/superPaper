@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import nock from 'nock'
 import { expect } from 'chai'
-import { fetchStringWithResponse } from '@overleaf/fetch-utils'
+import { fetchStringWithResponse } from '@superpaper/fetch-utils'
 import assert from 'node:assert'
 import mongodb from 'mongodb-legacy'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
@@ -32,7 +32,7 @@ describe('Retrying failed projects', function () {
       .get(`/project/${this.project_id}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: {
+        superpaper: {
           history: {
             id: historyId,
           },
@@ -175,7 +175,7 @@ describe('Retrying failed projects', function () {
           .get(`/project/${this.project_id}/details`)
           .reply(200, {
             name: 'Test Project',
-            overleaf: {
+            superpaper: {
               history: {
                 id: historyId,
               },

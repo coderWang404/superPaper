@@ -5,7 +5,7 @@ import {
   PrefetchedChunk,
   ProcessedPDFFile,
 } from '@ol-types/compile'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { PdfCachingMetricsFull } from './types'
 
 const PDF_JS_CHUNK_SIZE = 128 * 1024

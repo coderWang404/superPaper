@@ -2,7 +2,7 @@
 
 'use strict'
 
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const { JobNotFoundError, JobNotReadyError } = require('./chunk_store/errors')
 const BATCH_SIZE = 1000 // Default batch size for SCAN
 
@@ -13,7 +13,7 @@ const BATCH_SIZE = 1000 // Default batch size for SCAN
  * For clusters, it iterates over all master nodes. It yields keys in batches
  * as they are found by the SCAN command.
  *
- * @param {object} redisClient - The Redis client instance (from @overleaf/redis-wrapper).
+ * @param {object} redisClient - The Redis client instance (from @superpaper/redis-wrapper).
  * @param {string} pattern - The pattern to match keys against (e.g., 'user:*').
  * @param {number} [count=BATCH_SIZE] - Optional hint for Redis SCAN count per iteration.
  * @yields {string[]} A batch of matching keys.
@@ -24,7 +24,7 @@ async function* scanRedisCluster(redisClient, pattern, count = BATCH_SIZE) {
   for (const node of nodes) {
     let cursor = '0'
     do {
-      // redisClient from @overleaf/redis-wrapper uses ioredis style commands
+      // redisClient from @superpaper/redis-wrapper uses ioredis style commands
       const [nextCursor, keys] = await node.scan(
         cursor,
         'MATCH',

@@ -1,12 +1,12 @@
 import io from 'socket.io-client'
 
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 
 import uidSafe from 'uid-safe'
 import signature from 'cookie-signature'
 import { callbackify } from 'node:util'
-import { fetchJson, fetchNothing } from '@overleaf/fetch-utils'
+import { fetchJson, fetchNothing } from '@superpaper/fetch-utils'
 import { XMLHttpRequest } from '../../libs/XMLHttpRequest.js'
 
 const rclient = redis.createClient(Settings.redis.websessions)

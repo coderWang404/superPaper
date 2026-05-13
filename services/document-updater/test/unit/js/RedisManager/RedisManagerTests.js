@@ -14,7 +14,7 @@ describe('RedisManager', function () {
     tk.freeze(new Date())
     this.RedisManager = SandboxedModule.require(MODULE_PATH, {
       requires: {
-        '@overleaf/settings': (this.settings = {
+        '@superpaper/settings': (this.settings = {
           documentupdater: { logHashErrors: { write: true, read: true } },
           redis: {
             documentupdater: {
@@ -77,7 +77,7 @@ describe('RedisManager', function () {
             },
           },
         }),
-        '@overleaf/redis-wrapper': {
+        '@superpaper/redis-wrapper': {
           createClient: () => this.rclient,
         },
         './Metrics': (this.metrics = {

@@ -1,14 +1,14 @@
 let DocUpdaterClient
-const Settings = require('@overleaf/settings')
+const Settings = require('@superpaper/settings')
 const _ = require('lodash')
-const rclient = require('@overleaf/redis-wrapper').createClient(
+const rclient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
 const keys = Settings.redis.documentupdater.key_schema
-const { fetchJson, fetchNothing } = require('@overleaf/fetch-utils')
+const { fetchJson, fetchNothing } = require('@superpaper/fetch-utils')
 const { setTimeout } = require('node:timers/promises')
 
-const rclientSub = require('@overleaf/redis-wrapper').createClient(
+const rclientSub = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.pubsub
 )
 rclientSub.subscribe('applied-ops')

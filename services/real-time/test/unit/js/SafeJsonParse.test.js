@@ -4,7 +4,7 @@ const modulePath = '../../../app/js/SafeJsonParse'
 
 describe('SafeJsonParse', function () {
   beforeEach(async function (ctx) {
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {
         maxUpdateSize: 16 * 1024,
       }),

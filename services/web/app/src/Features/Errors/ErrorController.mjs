@@ -1,11 +1,9 @@
 import { isZodErrorLike, fromZodError } from 'zod-validation-error'
 import Errors, { NotFoundError } from './Errors.js'
 import SessionManager from '../Authentication/SessionManager.mjs'
-import SamlLogHandler from '../SamlLog/SamlLogHandler.mjs'
-import HttpErrorHandler from './HttpErrorHandler.mjs'
 import { plainTextResponse } from '../../infrastructure/Response.mjs'
-import { expressifyErrorHandler } from '@overleaf/promise-utils'
-import { ParamsError } from '@overleaf/validation-tools'
+import { expressifyErrorHandler } from '@superpaper/promise-utils'
+import { ParamsError } from '@superpaper/validation-tools'
 
 function notFound(req, res) {
   res.status(404)
@@ -26,11 +24,6 @@ async function handleError(error, req, res, next) {
   const shouldSendErrorResponse = !res.headersSent
   const user = SessionManager.getSessionUser(req.session)
   req.logger.addFields({ err: error })
-  // log errors related to SAML flow
-  if (req.session && req.session.saml) {
-    req.logger.setLevel('error')
-    await SamlLogHandler.promises.log(req, { error })
-  }
   if (error.code === 'EBADCSRFTOKEN') {
     req.logger.addFields({ user })
     req.logger.setLevel('warn')
@@ -92,11 +85,6 @@ async function handleError(error, req, res, next) {
     if (shouldSendErrorResponse) {
       res.status(422)
       plainTextResponse(res, error.message)
-    }
-  } else if (error instanceof Errors.SAMLSessionDataMissing) {
-    req.logger.setLevel('warn')
-    if (shouldSendErrorResponse) {
-      HttpErrorHandler.badRequest(req, res, error.message)
     }
   } else if (error instanceof Errors.FileTooLargeError) {
     req.logger.setLevel('warn')

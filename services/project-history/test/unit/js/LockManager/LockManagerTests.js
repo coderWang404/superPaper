@@ -56,10 +56,10 @@ describe('LockManager', function () {
       debug: sinon.stub(),
     }
     this.LockManager = await esmock(MODULE_PATH, {
-      '@overleaf/redis-wrapper': this.RedisWrapper,
-      '@overleaf/settings': this.Settings,
-      '@overleaf/metrics': this.Metrics,
-      '@overleaf/logger': this.logger,
+      '@superpaper/redis-wrapper': this.RedisWrapper,
+      '@superpaper/settings': this.Settings,
+      '@superpaper/metrics': this.Metrics,
+      '@superpaper/logger': this.logger,
     })
 
     this.key = 'lock-key'

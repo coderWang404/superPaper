@@ -13,7 +13,7 @@ import {
   CommentOperation,
   EditOperation,
 } from '../../../../../types/change'
-import RangesTracker from '@overleaf/ranges-tracker'
+import RangesTracker from '@superpaper/ranges-tracker'
 import { rejectChanges } from '@/features/source-editor/extensions/changes/reject-changes'
 import { useCodeMirrorViewContext } from '@/features/source-editor/components/codemirror-context'
 import { postJSON } from '@/infrastructure/fetch-json'
@@ -22,9 +22,9 @@ import { useConnectionContext } from '@/features/ide-react/context/connection-co
 import useSocketListener from '@/features/ide-react/hooks/use-socket-listener'
 import { throttle } from 'lodash'
 import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
-import { TextOperation, Range } from 'overleaf-editor-core'
+import { TextOperation, Range } from 'superpaper-editor-core'
 import { rangesUpdatedEffect } from '@/features/source-editor/extensions/history-ot'
-import ClearTrackingProps from 'overleaf-editor-core/lib/file_data/clear_tracking_props'
+import ClearTrackingProps from 'superpaper-editor-core/lib/file_data/clear_tracking_props'
 import { isInsertOperation } from '@/utils/operations'
 import {
   EditorSelection,

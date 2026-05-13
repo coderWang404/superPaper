@@ -1,7 +1,6 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { User } from '../../models/User.mjs'
-import FeaturesUpdater from '../Subscription/FeaturesUpdater.mjs'
-import { callbackify } from '@overleaf/promise-utils'
+import { callbackify } from '@superpaper/promise-utils'
 
 async function allocate(referalId, newUserId, referalSource, referalMedium) {
   if (referalId == null) {
@@ -36,7 +35,7 @@ async function allocate(referalId, newUserId, referalSource, referalMedium) {
       throw err
     }
 
-    return await FeaturesUpdater.promises.refreshFeatures(user._id, 'referral')
+    return null
   }
 }
 

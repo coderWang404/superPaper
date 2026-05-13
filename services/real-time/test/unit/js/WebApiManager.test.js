@@ -1,6 +1,6 @@
 import { vi, describe, beforeEach, it } from 'vitest'
 import sinon from 'sinon'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 
 const modulePath = '../../../app/js/WebApiManager.js'
 
@@ -16,9 +16,9 @@ describe('WebApiManager', function () {
       RequestFailedError,
     }
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.fetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.fetchUtils)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         apis: {
           web: {

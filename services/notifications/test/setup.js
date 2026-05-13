@@ -9,7 +9,7 @@ chai.use(chaiAsPromised)
 // ensure every ObjectId has the id string as a property for correct comparisons
 mongodb.ObjectId.cacheHexString = true
 
-vi.mock('@overleaf/logger', () => ({
+vi.mock('@superpaper/logger', () => ({
   default: {
     debug: vi.fn(),
     log: vi.fn(),

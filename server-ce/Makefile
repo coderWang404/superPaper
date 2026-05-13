@@ -4,26 +4,26 @@ MONOREPO_ROOT := ../
 HERE=$(shell pwd)
 export MONOREPO_REVISION := $(shell git rev-parse HEAD)
 export BRANCH_NAME ?= $(shell git rev-parse --abbrev-ref HEAD)
-export OVERLEAF_BASE_BRANCH ?= sharelatex/sharelatex-base:$(BRANCH_NAME)
-export OVERLEAF_BASE_LATEST ?= sharelatex/sharelatex-base
-export OVERLEAF_BASE_TAG ?= sharelatex/sharelatex-base:$(BRANCH_NAME)-$(MONOREPO_REVISION)
-export OVERLEAF_BRANCH ?= sharelatex/sharelatex:$(BRANCH_NAME)
-export OVERLEAF_LATEST ?= sharelatex/sharelatex
-export OVERLEAF_TAG ?= sharelatex/sharelatex:$(BRANCH_NAME)-$(MONOREPO_REVISION)
+export SUPERPAPER_BASE_BRANCH ?= sharelatex/sharelatex-base:$(BRANCH_NAME)
+export SUPERPAPER_BASE_LATEST ?= sharelatex/sharelatex-base
+export SUPERPAPER_BASE_TAG ?= sharelatex/sharelatex-base:$(BRANCH_NAME)-$(MONOREPO_REVISION)
+export SUPERPAPER_BRANCH ?= sharelatex/sharelatex:$(BRANCH_NAME)
+export SUPERPAPER_LATEST ?= sharelatex/sharelatex
+export SUPERPAPER_TAG ?= sharelatex/sharelatex:$(BRANCH_NAME)-$(MONOREPO_REVISION)
 
 all: build-base build-community
 
 clean:
-	-docker rmi --force $(OVERLEAF_BASE_TAG) $(OVERLEAF_TAG)
+	-docker rmi --force $(SUPERPAPER_BASE_TAG) $(SUPERPAPER_TAG)
 
 refresh-cache: refresh-cache-branch
 refresh-cache-branch:
-	docker inspect $(OVERLEAF_BASE_BRANCH) > /dev/null && docker pull $(OVERLEAF_BASE_BRANCH) || true
-	docker inspect $(OVERLEAF_BRANCH) > /dev/null && docker pull $(OVERLEAF_BRANCH) || true
+	docker inspect $(SUPERPAPER_BASE_BRANCH) > /dev/null && docker pull $(SUPERPAPER_BASE_BRANCH) || true
+	docker inspect $(SUPERPAPER_BRANCH) > /dev/null && docker pull $(SUPERPAPER_BRANCH) || true
 refresh-cache: refresh-cache-latest
 refresh-cache-latest:
-	docker inspect $(OVERLEAF_BASE_LATEST) > /dev/null && docker pull $(OVERLEAF_BASE_LATEST) || true
-	docker inspect $(OVERLEAF_LATEST) > /dev/null && docker pull $(OVERLEAF_LATEST) || true
+	docker inspect $(SUPERPAPER_BASE_LATEST) > /dev/null && docker pull $(SUPERPAPER_BASE_LATEST) || true
+	docker inspect $(SUPERPAPER_LATEST) > /dev/null && docker pull $(SUPERPAPER_LATEST) || true
 
 build-base:
 	cp .dockerignore $(MONOREPO_ROOT)
@@ -32,10 +32,10 @@ build-base:
 	  --progress=plain \
 	  --file Dockerfile-base \
 	  --pull \
-	  --cache-from $(OVERLEAF_BASE_LATEST) \
-	  --cache-from $(OVERLEAF_BASE_BRANCH) \
-	  --tag $(OVERLEAF_BASE_TAG) \
-	  --tag $(OVERLEAF_BASE_BRANCH) \
+	  --cache-from $(SUPERPAPER_BASE_LATEST) \
+	  --cache-from $(SUPERPAPER_BASE_BRANCH) \
+	  --tag $(SUPERPAPER_BASE_TAG) \
+	  --tag $(SUPERPAPER_BASE_BRANCH) \
 	  $(MONOREPO_ROOT)
 
 
@@ -44,20 +44,20 @@ build-community:
 	docker build \
 	  --build-arg BUILDKIT_INLINE_CACHE=1 \
 	  --progress=plain \
-	  --build-arg OVERLEAF_BASE_TAG \
-	  --label "com.overleaf.ce.revision=$(MONOREPO_REVISION)" \
-	  --cache-from $(OVERLEAF_LATEST) \
-	  --cache-from $(OVERLEAF_BRANCH) \
+	  --build-arg SUPERPAPER_BASE_TAG \
+	  --label "com.superpaper.ce.revision=$(MONOREPO_REVISION)" \
+	  --cache-from $(SUPERPAPER_LATEST) \
+	  --cache-from $(SUPERPAPER_BRANCH) \
 	  --file Dockerfile \
-	  --tag $(OVERLEAF_TAG) \
-	  --tag $(OVERLEAF_BRANCH) \
+	  --tag $(SUPERPAPER_TAG) \
+	  --tag $(SUPERPAPER_BRANCH) \
 	  $(MONOREPO_ROOT)
 
 push:
-	docker push $(OVERLEAF_BASE_TAG)
-	docker push $(OVERLEAF_BASE_BRANCH)
-	docker push $(OVERLEAF_TAG)
-	docker push $(OVERLEAF_BRANCH)
+	docker push $(SUPERPAPER_BASE_TAG)
+	docker push $(SUPERPAPER_BASE_BRANCH)
+	docker push $(SUPERPAPER_TAG)
+	docker push $(SUPERPAPER_BRANCH)
 
 SHELLCHECK_OPTS = \
 	--shell=bash \

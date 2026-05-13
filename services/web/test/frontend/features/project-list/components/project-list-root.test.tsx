@@ -54,7 +54,7 @@ describe('<ProjectListRoot />', function () {
       templateLinks: [],
     })
     window.metaAttributesCache.set('ol-userEmails', [
-      { email: 'test@overleaf.com', default: true },
+      { email: 'test@superpaper.com', default: true },
     ])
     // we need a blank user here since its used in checking if we should display certain ads
     window.metaAttributesCache.set('ol-user', {})
@@ -62,7 +62,7 @@ describe('<ProjectListRoot />', function () {
     window.metaAttributesCache.set('ol-footer', {
       showThinFooter: false,
       translatedLanguages: { en: 'English' },
-      subdomainLang: { en: { lngCode: 'en', url: 'overleaf.com' } },
+      subdomainLang: { en: { lngCode: 'en', url: 'superpaper.com' } },
     })
     window.metaAttributesCache.set('ol-navbar', {
       items: [],
@@ -86,13 +86,13 @@ describe('<ProjectListRoot />', function () {
     })
 
     it('the welcome page is displayed', async function () {
-      await screen.findByRole('heading', { name: 'Welcome to Overleaf' })
+      await screen.findByRole('heading', { name: 'Welcome to superPaper' })
     })
 
     it('the email confirmation alert is not displayed', async function () {
       expect(
         screen.queryByText(
-          'Please confirm your primary email address test@overleaf.com by clicking on the link in the confirmation email.'
+          'Please confirm your primary email address test@superpaper.com by clicking on the link in the confirmation email.'
         )
       ).to.be.null
     })
@@ -393,7 +393,7 @@ describe('<ProjectListRoot />', function () {
 
           trashedList.forEach(project => {
             expect(calls).to.contain(
-              `https://www.test-overleaf.com/project/${project.id}/archive`
+              `https://www.test-superpaper.com/project/${project.id}/archive`
             )
           })
         })
@@ -456,7 +456,7 @@ describe('<ProjectListRoot />', function () {
           const calls = fetchMock.callHistory.calls().map(({ url }) => url)
           leavableList.forEach(project => {
             expect(calls).to.contain(
-              `https://www.test-overleaf.com/project/${project.id}/leave`
+              `https://www.test-superpaper.com/project/${project.id}/leave`
             )
           })
         })
@@ -518,7 +518,7 @@ describe('<ProjectListRoot />', function () {
           const calls = fetchMock.callHistory.calls().map(({ url }) => url)
           deletableList.forEach(project => {
             expect(calls).to.contain(
-              `https://www.test-overleaf.com/project/${project.id}`
+              `https://www.test-superpaper.com/project/${project.id}`
             )
           })
         })
@@ -588,8 +588,8 @@ describe('<ProjectListRoot />', function () {
           const calls = fetchMock.callHistory.calls().map(({ url }) => url)
           deletableAndLeavableList.forEach(project => {
             expect(calls).to.contain.oneOf([
-              `https://www.test-overleaf.com/project/${project.id}`,
-              `https://www.test-overleaf.com/project/${project.id}/leave`,
+              `https://www.test-superpaper.com/project/${project.id}`,
+              `https://www.test-superpaper.com/project/${project.id}/leave`,
             ])
           })
         })

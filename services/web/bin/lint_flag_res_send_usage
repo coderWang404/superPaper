@@ -41,7 +41,7 @@ If this is a false-positive, consider using a more specific name than 'send'
  for your newly introduced function.
 
 Links:
- - https://github.com/overleaf/internal/issues/6268
+ - https://github.com/superpaper/internal/issues/6268
 
 MSG
   exit 1

@@ -1,13 +1,13 @@
 import BasicReferenceIndex from './basic-reference-index'
 import { ReferenceIndex } from './reference-index'
 import { AdvancedReferenceSearchResult, Changes } from './types'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 
 interface IndexConstructor {
   new (): ReferenceIndex
 }
 
-const indices = importOverleafModules('referenceIndices') as {
+const indices = importSuperPaperModules('referenceIndices') as {
   import: { default: IndexConstructor }
   path: string
 }[]

@@ -1,12 +1,12 @@
-import logger from '@overleaf/logger'
-import { expressify } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import { expressify } from '@superpaper/promise-utils'
 import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
 import ConversionManager from './ConversionManager.js'
 import ResourceWriter from './ResourceWriter.js'
 import RequestParser from './RequestParser.js'
 import { pipeline } from 'node:stream/promises'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Path from 'node:path'
 
 const SUPPORTED_CONVERSION_TYPES = new Map([['docx', 'docx']])

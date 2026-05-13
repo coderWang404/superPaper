@@ -1,6 +1,6 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 volumes:
   minio-certs:
@@ -10,12 +10,12 @@ services:
     image: ci/$PROJECT_NAME:$BRANCH_NAME-$BUILD_NUMBER
     user: node
     volumes:
-      - ./reports:/overleaf/services/filestore/reports
-      - ../../tsconfig.backend.json:/overleaf/tsconfig.backend.json
+      - ./reports:/superpaper/services/filestore/reports
+      - ../../tsconfig.backend.json:/superpaper/tsconfig.backend.json
     command: yarn run test:unit:_run
     environment:
       CI:
-      MONGO_CONNECTION_STRING: mongodb://mongo/test-overleaf
+      MONGO_CONNECTION_STRING: mongodb://mongo/test-superpaper
       NODE_ENV: test
       NODE_OPTIONS: "--unhandled-rejections=strict"
       VITEST_NO_CACHE: true
@@ -31,8 +31,8 @@ services:
       AWS_S3_ENDPOINT: https://minio:9000
       AWS_S3_PATH_STYLE: "true"
       DELETE_OBJECTS_MD5_FALLBACK: true
-      AWS_ACCESS_KEY_ID: OVERLEAF_FILESTORE_S3_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY: OVERLEAF_FILESTORE_S3_SECRET_ACCESS_KEY
+      AWS_ACCESS_KEY_ID: SUPERPAPER_FILESTORE_S3_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: SUPERPAPER_FILESTORE_S3_SECRET_ACCESS_KEY
       MINIO_ROOT_USER: MINIO_ROOT_USER
       MINIO_ROOT_PASSWORD: MINIO_ROOT_PASSWORD
       GCS_API_ENDPOINT: http://gcs:9090
@@ -50,7 +50,7 @@ services:
       GCS_USER_FILES_BUCKET_NAME: fake-gcs-user-files
       GCS_TEMPLATE_FILES_BUCKET_NAME: fake-gcs-template-files
     volumes:
-      - ./reports:/overleaf/services/filestore/reports
+      - ./reports:/superpaper/services/filestore/reports
       - minio-certs:/certs
     depends_on:
       certs:
@@ -129,8 +129,8 @@ services:
         mc mb --ignore-existing s3/fake-user-files-dek
         mc mb --ignore-existing s3/fake-template-files
         mc admin user add s3 \
-          OVERLEAF_FILESTORE_S3_ACCESS_KEY_ID \
-          OVERLEAF_FILESTORE_S3_SECRET_ACCESS_KEY
+          SUPERPAPER_FILESTORE_S3_ACCESS_KEY_ID \
+          SUPERPAPER_FILESTORE_S3_SECRET_ACCESS_KEY
 
         echo '
           {
@@ -215,9 +215,9 @@ services:
             ]
           }' > policy-filestore.json
 
-        mc admin policy create s3 overleaf-filestore policy-filestore.json
-        mc admin policy attach s3 overleaf-filestore \
-          --user=OVERLEAF_FILESTORE_S3_ACCESS_KEY_ID
+        mc admin policy create s3 superpaper-filestore policy-filestore.json
+        mc admin policy attach s3 superpaper-filestore \
+          --user=SUPERPAPER_FILESTORE_S3_ACCESS_KEY_ID
 
   gcs:
     image: fsouza/fake-gcs-server:1.52.3

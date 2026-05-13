@@ -1,8 +1,8 @@
 import { callbackify } from 'node:util'
 import Path from 'node:path'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import { Doc } from '../../models/Doc.mjs'
 import { File } from '../../models/File.mjs'
 import DocstoreManager from '../Docstore/DocstoreManager.mjs'
@@ -55,7 +55,7 @@ async function duplicate(
       rootDoc_id: true,
       fromV1TemplateId: true,
       fromV1TemplateVersionId: true,
-      overleaf: true,
+      superpaper: true,
     }
   )
   const { path: rootDocPath } = await ProjectLocator.promises.findRootDoc({
@@ -108,14 +108,14 @@ async function duplicate(
 
   if (
     opts.cloneHistory &&
-    typeof originalProject.overleaf?.history?.id === 'number'
+    typeof originalProject.superpaper?.history?.id === 'number'
   ) {
     // Obtain an old history id. We want to store the data in the same DB.
     const newHistoryId = parseInt(
       await HistoryManager.promises.initializeProject(),
       10
     )
-    attributes.overleaf = { history: { id: newHistoryId } }
+    attributes.superpaper = { history: { id: newHistoryId } }
   }
 
   // Now create the new project, cleaning it up on failure if necessary
@@ -301,8 +301,8 @@ async function _copyFiles(
   targetProject,
   cloneHistory
 ) {
-  const sourceHistoryId = sourceProject.overleaf?.history?.id
-  const targetHistoryId = targetProject.overleaf?.history?.id
+  const sourceHistoryId = sourceProject.superpaper?.history?.id
+  const targetHistoryId = targetProject.superpaper?.history?.id
   if (!sourceHistoryId) {
     throw new OError('missing history id', { sourceProject })
   }
@@ -359,7 +359,7 @@ async function _setRootDoc(projectId, path) {
 
 async function _notifyDocumentUpdater(project, userId, changes) {
   const projectHistoryId =
-    project.overleaf && project.overleaf.history && project.overleaf.history.id
+    project.superpaper && project.superpaper.history && project.superpaper.history.id
   await DocumentUpdaterHandler.promises.updateProjectStructure(
     project._id,
     projectHistoryId,

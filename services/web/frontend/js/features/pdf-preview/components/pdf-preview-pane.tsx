@@ -4,12 +4,10 @@ import PdfViewer from './pdf-viewer'
 import { FullSizeLoadingSpinner } from '../../../shared/components/loading-spinner'
 import { useDetachCompileContext as useCompileContext } from '../../../shared/context/detach-compile-context'
 import { PdfPreviewMessages } from './pdf-preview-messages'
-import CompileTimeWarningUpgradePrompt from './compile-time-warning-upgrade-prompt'
 import { PdfPreviewProvider } from './pdf-preview-provider'
 import PdfPreviewHybridToolbar from '@/features/pdf-preview/components/pdf-preview-hybrid-toolbar'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import PdfCodeCheckFailedBanner from '@/features/pdf-preview/components/pdf-code-check-failed-banner'
-import getMeta from '@/utils/meta'
 import PdfLogsViewer from '@/features/pdf-preview/components/pdf-logs-viewer'
 
 function PdfPreviewPane() {
@@ -19,7 +17,6 @@ function PdfPreviewPane() {
     darkModePdf: darkModeSetting,
     activeOverallTheme,
   } = useCompileContext()
-  const { compileTimeout } = getMeta('ol-compileSettings')
   const darkModePdf =
     pdfViewer === 'pdfjs' && activeOverallTheme === 'dark' && darkModeSetting
 
@@ -28,7 +25,7 @@ function PdfPreviewPane() {
     'pdf-dark-mode': darkModePdf,
   })
 
-  const pdfPromotions = importOverleafModules('pdfPreviewPromotions') as {
+  const pdfPromotions = importSuperPaperModules('pdfPreviewPromotions') as {
     import: { default: ElementType }
     path: string
   }[]
@@ -38,9 +35,7 @@ function PdfPreviewPane() {
       <PdfPreviewProvider>
         <PdfPreviewHybridToolbar />
         <PdfCodeCheckFailedBanner />
-        <PdfPreviewMessages>
-          {compileTimeout < 60 && <CompileTimeWarningUpgradePrompt />}
-        </PdfPreviewMessages>
+        <PdfPreviewMessages />
         <Suspense fallback={<FullSizeLoadingSpinner delay={500} />}>
           <div className="pdf-viewer" data-testid="pdf-viewer">
             <PdfViewer />

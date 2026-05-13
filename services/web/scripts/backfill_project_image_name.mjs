@@ -1,6 +1,6 @@
 // @ts-check
 import minimist from 'minimist'
-import { batchedUpdateWithResultHandling } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdateWithResultHandling } from '@superpaper/mongo-utils/batchedUpdate.js'
 import { db } from '../app/src/infrastructure/mongodb.mjs'
 
 const argv = minimist(process.argv.slice(2))

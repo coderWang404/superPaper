@@ -1,6 +1,6 @@
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 import { db } from './lib/mongodb.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 
 const tags = ['server-ce', 'server-pro', 'saas']
 

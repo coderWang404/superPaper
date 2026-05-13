@@ -10,7 +10,7 @@ export function defaultSetupMocks(fetchMock) {
       body: {
         message: {
           type: 'success',
-          email: 'tim.alby@overleaf.com',
+          email: 'tim.alby@superpaper.com',
           text: 'Password changed',
         },
       },
@@ -23,7 +23,7 @@ export function defaultSetupMocks(fetchMock) {
 
 export function setDefaultMeta() {
   Object.assign(getMeta('ol-ExposedSettings'), {
-    isOverleaf: true,
+    isSuperPaper: true,
   })
   window.metaAttributesCache.set('ol-isExternalAuthenticationSystemUsed', false)
   window.metaAttributesCache.set('ol-hasPassword', true)

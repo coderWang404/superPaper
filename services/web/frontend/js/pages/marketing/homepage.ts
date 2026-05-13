@@ -1,5 +1,4 @@
 import '../../marketing'
-import '@/infrastructure/hotjar'
 
 interface FrameOptions {
   buildTime: number

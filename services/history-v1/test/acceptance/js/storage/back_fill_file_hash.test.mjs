@@ -10,7 +10,7 @@ import testProjects from '../api/support/test_projects.js'
 import { execFile } from 'node:child_process'
 import chai, { expect } from 'chai'
 import chaiExclude from 'chai-exclude'
-import { WritableBuffer } from '@overleaf/stream-utils'
+import { WritableBuffer } from '@superpaper/stream-utils'
 import {
   backupPersistor,
   projectBlobsBucket,
@@ -73,8 +73,8 @@ describe('back_fill_file_hash script', function () {
   const projectIdNoHistory = objectIdFromTime('2017-01-01T00:06:00Z')
   const projectIdNoHistoryDeleted = objectIdFromTime('2017-01-01T00:07:00Z')
   const projectIdHardDeleted = objectIdFromTime('2017-01-01T00:08:00Z')
-  const projectIdNoOverleaf = objectIdFromTime('2017-01-01T00:09:00Z')
-  const projectIdNoOverleafDeleted = objectIdFromTime('2017-01-01T00:10:00Z')
+  const projectIdNosuperPaper = objectIdFromTime('2017-01-01T00:09:00Z')
+  const projectIdNosuperPaperDeleted = objectIdFromTime('2017-01-01T00:10:00Z')
   const projectIdBadFileTree0 = objectIdFromTime('2024-01-01T00:11:00Z')
   const projectIdBadFileTree1 = objectIdFromTime('2024-01-01T00:12:00Z')
   const projectIdBadFileTree2 = objectIdFromTime('2024-01-01T00:13:00Z')
@@ -246,7 +246,7 @@ describe('back_fill_file_hash script', function () {
             folders: [{ fileRefs: [], folders: [] }],
           },
         ],
-        overleaf: { history: { id: historyId0 } },
+        superpaper: { history: { id: historyId0 } },
       },
       {
         _id: projectId1,
@@ -261,7 +261,7 @@ describe('back_fill_file_hash script', function () {
             ],
           },
         ],
-        overleaf: { history: { id: historyId1 } },
+        superpaper: { history: { id: historyId1 } },
       },
       {
         _id: projectId2,
@@ -281,7 +281,7 @@ describe('back_fill_file_hash script', function () {
             ],
           },
         ],
-        overleaf: { history: { id: historyId2 } },
+        superpaper: { history: { id: historyId2 } },
       },
       {
         _id: projectId3,
@@ -305,30 +305,30 @@ describe('back_fill_file_hash script', function () {
             ],
           },
         ],
-        overleaf: { history: { id: historyId3 } },
+        superpaper: { history: { id: historyId3 } },
       },
       {
         _id: projectIdNoHistory,
         rootFolder: [{ fileRefs: [], folders: [] }],
-        overleaf: { history: { conversionFailed: true } },
+        superpaper: { history: { conversionFailed: true } },
       },
       {
-        _id: projectIdNoOverleaf,
+        _id: projectIdNosuperPaper,
         rootFolder: [{ fileRefs: [], folders: [] }],
       },
       {
         _id: projectIdBadFileTree0,
-        overleaf: { history: { id: historyIdBadFileTree0 } },
+        superpaper: { history: { id: historyIdBadFileTree0 } },
       },
       {
         _id: projectIdBadFileTree1,
         rootFolder: [],
-        overleaf: { history: { id: historyIdBadFileTree1 } },
+        superpaper: { history: { id: historyIdBadFileTree1 } },
       },
       {
         _id: projectIdBadFileTree2,
         rootFolder: [{ fileRefs: [{ _id: null }] }],
-        overleaf: { history: { id: historyIdBadFileTree2 } },
+        superpaper: { history: { id: historyIdBadFileTree2 } },
       },
       {
         _id: projectIdBadFileTree3,
@@ -338,7 +338,7 @@ describe('back_fill_file_hash script', function () {
             fileRefs: [{ _id: fileId9 }],
           },
         ],
-        overleaf: { history: { id: historyIdBadFileTree3 } },
+        superpaper: { history: { id: historyIdBadFileTree3 } },
       },
     ])
     await deletedProjectsCollection.insertMany([
@@ -357,7 +357,7 @@ describe('back_fill_file_hash script', function () {
               ],
             },
           ],
-          overleaf: { history: { id: historyIdDeleted0 } },
+          superpaper: { history: { id: historyIdDeleted0 } },
         },
         deleterData: {
           deletedProjectId: projectIdDeleted0,
@@ -383,7 +383,7 @@ describe('back_fill_file_hash script', function () {
               ],
             },
           ],
-          overleaf: { history: { id: historyIdDeleted1 } },
+          superpaper: { history: { id: historyIdDeleted1 } },
         },
         deleterData: {
           deletedProjectId: projectIdDeleted1,
@@ -394,7 +394,7 @@ describe('back_fill_file_hash script', function () {
         project: {
           _id: projectIdNoHistoryDeleted,
           rootFolder: [{ fileRefs: [], folders: [] }],
-          overleaf: { history: { conversionFailed: true } },
+          superpaper: { history: { conversionFailed: true } },
         },
         deleterData: {
           deletedProjectId: projectIdNoHistoryDeleted,
@@ -407,11 +407,11 @@ describe('back_fill_file_hash script', function () {
       {
         _id: deleteProjectsRecordId4,
         project: {
-          _id: projectIdNoOverleafDeleted,
+          _id: projectIdNosuperPaperDeleted,
           rootFolder: [{ fileRefs: [], folders: [] }],
         },
         deleterData: {
-          deletedProjectId: projectIdNoOverleafDeleted,
+          deletedProjectId: projectIdNosuperPaperDeleted,
         },
       },
     ])
@@ -610,7 +610,7 @@ describe('back_fill_file_hash script', function () {
                 folders: [{ fileRefs: [], folders: [] }],
               },
             ],
-            overleaf: { history: { id: historyId0 } },
+            superpaper: { history: { id: historyId0 } },
           },
           {
             _id: projectId1,
@@ -632,7 +632,7 @@ describe('back_fill_file_hash script', function () {
                 ],
               },
             ],
-            overleaf: { history: { id: historyId1 } },
+            superpaper: { history: { id: historyId1 } },
           },
           {
             _id: projectId2,
@@ -654,7 +654,7 @@ describe('back_fill_file_hash script', function () {
                 ],
               },
             ],
-            overleaf: { history: { id: historyId2 } },
+            superpaper: { history: { id: historyId2 } },
           },
           {
             _id: projectId3,
@@ -678,30 +678,30 @@ describe('back_fill_file_hash script', function () {
                 ],
               },
             ],
-            overleaf: { history: { id: historyId3 } },
+            superpaper: { history: { id: historyId3 } },
           },
           {
             _id: projectIdNoHistory,
             rootFolder: [{ fileRefs: [], folders: [] }],
-            overleaf: { history: { conversionFailed: true } },
+            superpaper: { history: { conversionFailed: true } },
           },
           {
-            _id: projectIdNoOverleaf,
+            _id: projectIdNosuperPaper,
             rootFolder: [{ fileRefs: [], folders: [] }],
           },
           {
             _id: projectIdBadFileTree0,
-            overleaf: { history: { id: historyIdBadFileTree0 } },
+            superpaper: { history: { id: historyIdBadFileTree0 } },
           },
           {
             _id: projectIdBadFileTree1,
             rootFolder: [],
-            overleaf: { history: { id: historyIdBadFileTree1 } },
+            superpaper: { history: { id: historyIdBadFileTree1 } },
           },
           {
             _id: projectIdBadFileTree2,
             rootFolder: [{ fileRefs: [{ _id: null }] }],
-            overleaf: { history: { id: historyIdBadFileTree2 } },
+            superpaper: { history: { id: historyIdBadFileTree2 } },
           },
           {
             _id: projectIdBadFileTree3,
@@ -711,7 +711,7 @@ describe('back_fill_file_hash script', function () {
                 fileRefs: [{ _id: fileId9, hash: gitBlobHash(fileId9) }],
               },
             ],
-            overleaf: { history: { id: historyIdBadFileTree3 } },
+            superpaper: { history: { id: historyIdBadFileTree3 } },
           },
         ])
       expect(await deletedProjectsCollection.find({}).toArray()).to.deep.equal([
@@ -737,7 +737,7 @@ describe('back_fill_file_hash script', function () {
                 ],
               },
             ],
-            overleaf: { history: { id: historyIdDeleted0 } },
+            superpaper: { history: { id: historyIdDeleted0 } },
           },
           deleterData: {
             deletedProjectId: projectIdDeleted0,
@@ -765,7 +765,7 @@ describe('back_fill_file_hash script', function () {
                 ],
               },
             ],
-            overleaf: { history: { id: historyIdDeleted1 } },
+            superpaper: { history: { id: historyIdDeleted1 } },
           },
           deleterData: {
             deletedProjectId: projectIdDeleted1,
@@ -776,7 +776,7 @@ describe('back_fill_file_hash script', function () {
           project: {
             _id: projectIdNoHistoryDeleted,
             rootFolder: [{ fileRefs: [], folders: [] }],
-            overleaf: { history: { conversionFailed: true } },
+            superpaper: { history: { conversionFailed: true } },
           },
           deleterData: {
             deletedProjectId: projectIdNoHistoryDeleted,
@@ -789,11 +789,11 @@ describe('back_fill_file_hash script', function () {
         {
           _id: deleteProjectsRecordId4,
           project: {
-            _id: projectIdNoOverleafDeleted,
+            _id: projectIdNosuperPaperDeleted,
             rootFolder: [{ fileRefs: [], folders: [] }],
           },
           deleterData: {
-            deletedProjectId: projectIdNoOverleafDeleted,
+            deletedProjectId: projectIdNosuperPaperDeleted,
           },
         },
       ])
@@ -1338,8 +1338,8 @@ Sampled stats for deleted projects:
           projectIdNoHistory,
           projectIdNoHistoryDeleted,
           projectIdHardDeleted,
-          projectIdNoOverleaf,
-          projectIdNoOverleafDeleted,
+          projectIdNosuperPaper,
+          projectIdNosuperPaperDeleted,
           projectIdBadFileTree0,
           projectIdBadFileTree1,
           projectIdBadFileTree2,
@@ -1384,8 +1384,8 @@ Sampled stats for deleted projects:
       expectLogEntry('project hard-deleted', projectIdHardDeleted)
     })
     it('should flag the projects without history id', function () {
-      expectLogEntry('project has no history id', projectIdNoOverleaf)
-      expectLogEntry('project has no history id', projectIdNoOverleafDeleted)
+      expectLogEntry('project has no history id', projectIdNosuperPaper)
+      expectLogEntry('project has no history id', projectIdNosuperPaperDeleted)
       expectLogEntry('project has no history id', projectIdNoHistory)
       expectLogEntry('project has no history id', projectIdNoHistoryDeleted)
     })

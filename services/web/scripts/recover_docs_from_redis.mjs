@@ -5,9 +5,9 @@ import minimist from 'minimist'
 import { db, ObjectId } from '../app/src/infrastructure/mongodb.mjs'
 import ProjectEntityUpdateHandler from '../app/src/Features/Project/ProjectEntityUpdateHandler.mjs'
 import ProjectEntityRestoreHandler from '../app/src/Features/Project/ProjectEntityRestoreHandler.mjs'
-import RedisWrapper from '@overleaf/redis-wrapper'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import RedisWrapper from '@superpaper/redis-wrapper'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 const opts = parseArgs()
 const redis = RedisWrapper.createClient(Settings.redis.web)

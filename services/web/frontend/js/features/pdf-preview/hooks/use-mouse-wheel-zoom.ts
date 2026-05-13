@@ -19,7 +19,7 @@ export default function useMouseWheelZoom(
   // To avoid accidental pdf when pressing CMD/CTRL when the pdf scroll still has
   // momentum, we only zoom if CMD/CTRL is pressed before the scroll starts. These refs
   // keep track of if the pdf is currently scrolling.
-  // https://github.com/overleaf/internal/issues/20772
+  // https://github.com/superpaper/internal/issues/20772
   const isScrollingRef = useRef(false)
   const isScrollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null

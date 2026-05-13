@@ -32,13 +32,6 @@ describe('UserRegistrationHandler', function () {
         setUserPassword: sinon.stub().resolves(ctx.user),
       },
     }
-    ctx.Modules = {
-      promises: {
-        hooks: {
-          fire: sinon.stub().resolves([]),
-        },
-      },
-    }
     ctx.EmailHandler = {
       promises: { sendEmail: sinon.stub().resolves() },
     }
@@ -63,10 +56,6 @@ describe('UserRegistrationHandler', function () {
       })
     )
 
-    vi.doMock('../../../../app/src/infrastructure/Modules', () => ({
-      default: ctx.Modules,
-    }))
-
     vi.doMock('crypto', () => ({
       default: (ctx.crypto = {}),
     }))
@@ -82,18 +71,7 @@ describe('UserRegistrationHandler', function () {
       })
     )
 
-    vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
-      () => ({
-        default: (ctx.AnalyticsManager = {
-          recordEventForUser: sinon.stub(),
-          setUserPropertyForUser: sinon.stub(),
-          identifyUser: sinon.stub(),
-        }),
-      })
-    )
-
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         siteUrl: 'http://sl.example.com',
       }),
@@ -236,26 +214,6 @@ describe('UserRegistrationHandler', function () {
           .should.equal(true)
       })
 
-      it('should add the user to the newsletter if accepted terms', async function (ctx) {
-        ctx.passingRequest.subscribeToNewsletter = 'true'
-        await ctx.handler.promises.registerNewUser(ctx.passingRequest)
-        expect(ctx.Modules.promises.hooks.fire).to.have.been.calledWith(
-          'updateTopicSubscription',
-          ctx.user._id,
-          'newsletter',
-          true
-        )
-      })
-
-      it('should not add the user to the newsletter if not accepted terms', async function (ctx) {
-        await ctx.handler.promises.registerNewUser(ctx.passingRequest)
-        expect(ctx.Modules.promises.hooks.fire).to.not.have.been.calledWith(
-          'updateTopicSubscription',
-          sinon.match.any,
-          sinon.match.any,
-          true
-        )
-      })
     })
   })
 

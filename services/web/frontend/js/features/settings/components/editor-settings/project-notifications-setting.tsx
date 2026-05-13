@@ -62,7 +62,7 @@ export default function ProjectNotificationsSetting() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              {t('manage_overleaf_email_preferences')}
+              {t('manage_superpaper_email_preferences')}
             </a>
           </div>
           <div className="project-notifications-beta-note">

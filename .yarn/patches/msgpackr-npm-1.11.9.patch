@@ -1,0 +1,14 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -82,10 +82,7 @@
+     "/*.js",
+     "/*.ts",
+     "/*.cts"
+   ],
+-  "optionalDependencies": {
+-    "msgpackr-extract": "^3.0.2"
+-  },
+   "devDependencies": {
+     "@rollup/plugin-json": "^5.0.1",
+     "@rollup/plugin-replace": "^5.0.1",

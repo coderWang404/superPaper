@@ -1,4 +1,4 @@
-import { prom } from '@overleaf/metrics'
+import { prom } from '@superpaper/metrics'
 
 const COMPILE_TIME_BUCKETS = [
   0.5, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 45, 60, 75, 90, 120, 150,

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import settings from '@overleaf/settings'
-import { fetchNothing } from '@overleaf/fetch-utils'
+import settings from '@superpaper/settings'
+import { fetchNothing } from '@superpaper/fetch-utils'
 import mongodb from 'mongodb-legacy'
 import nock from 'nock'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
@@ -36,7 +36,7 @@ describe('Health Check', function () {
       .get(`/project/${projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: {
+        superpaper: {
           history: {
             id: historyId,
           },

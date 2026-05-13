@@ -194,7 +194,7 @@ describe('filestore migration', function () {
           '--fix-invalid-characters',
           '--convert-large-docs-to-file',
         ],
-        hasOverleafEnv: false,
+        hassuperPaperEnv: false,
         user: 'root',
       })
     })
@@ -202,7 +202,7 @@ describe('filestore migration', function () {
       await runScript({
         cwd: 'services/web',
         script: 'scripts/history/clean_sl_history_data.js',
-        hasOverleafEnv: false,
+        hassuperPaperEnv: false,
       })
     })
     addNewBinaryFileAndCheckPrevious() // after history migration
@@ -338,35 +338,35 @@ describe('filestore migration', function () {
     })
   }
 
-  describe('OVERLEAF_FILESTORE_MIGRATION_LEVEL not set', function () {
+  describe('SUPERPAPER_FILESTORE_MIGRATION_LEVEL not set', function () {
     startWith({ version: '5.5.5', pro: true, withDataDir: true, vars: {} })
     checkFilesAreAccessible()
   })
 
-  describe('OVERLEAF_FILESTORE_MIGRATION_LEVEL=0', function () {
+  describe('SUPERPAPER_FILESTORE_MIGRATION_LEVEL=0', function () {
     startWith({
       version: '5.5.5',
       pro: true,
       withDataDir: true,
-      vars: { OVERLEAF_FILESTORE_MIGRATION_LEVEL: '0' },
+      vars: { SUPERPAPER_FILESTORE_MIGRATION_LEVEL: '0' },
     })
     checkFilesAreAccessible()
 
-    describe('OVERLEAF_FILESTORE_MIGRATION_LEVEL=1', function () {
+    describe('SUPERPAPER_FILESTORE_MIGRATION_LEVEL=1', function () {
       startWith({
         version: '5.5.5',
         pro: true,
         withDataDir: true,
-        vars: { OVERLEAF_FILESTORE_MIGRATION_LEVEL: '1' },
+        vars: { SUPERPAPER_FILESTORE_MIGRATION_LEVEL: '1' },
       })
       checkFilesAreAccessible()
 
-      describe('OVERLEAF_FILESTORE_MIGRATION_LEVEL=2', function () {
+      describe('SUPERPAPER_FILESTORE_MIGRATION_LEVEL=2', function () {
         startWith({
           version: '5.5.5',
           pro: true,
           withDataDir: true,
-          vars: { OVERLEAF_FILESTORE_MIGRATION_LEVEL: '1' },
+          vars: { SUPERPAPER_FILESTORE_MIGRATION_LEVEL: '1' },
         })
         before(async function () {
           await runScript({
@@ -379,7 +379,7 @@ describe('filestore migration', function () {
           version: '5.5.5',
           pro: true,
           withDataDir: true,
-          vars: { OVERLEAF_FILESTORE_MIGRATION_LEVEL: '2' },
+          vars: { SUPERPAPER_FILESTORE_MIGRATION_LEVEL: '2' },
         })
         checkFilesAreAccessible()
 
@@ -390,7 +390,7 @@ describe('filestore migration', function () {
               previousBinaryFiles.length
             )
             expect(deleted).to.include(
-              "removed directory '/var/lib/overleaf/data/user_files'"
+              "removed directory '/var/lib/superpaper/data/user_files'"
             )
           })
           checkFilesAreAccessible()
@@ -401,8 +401,8 @@ describe('filestore migration', function () {
               pro: true,
               withDataDir: true,
               vars: {
-                OVERLEAF_APP_NAME: 'change-config',
-                OVERLEAF_FILESTORE_MIGRATION_LEVEL: '2',
+                SUPERPAPER_APP_NAME: 'change-config',
+                SUPERPAPER_FILESTORE_MIGRATION_LEVEL: '2',
               },
             })
             it('should not recreate the user_files folder', async function () {
@@ -414,7 +414,7 @@ describe('filestore migration', function () {
             startWith({
               pro: true,
               withDataDir: true,
-              vars: { OVERLEAF_FILESTORE_MIGRATION_LEVEL: '2' },
+              vars: { SUPERPAPER_FILESTORE_MIGRATION_LEVEL: '2' },
             })
             it('should not recreate the user_files folder', async function () {
               expect(await purgeFilestoreData()).to.deep.equal([])

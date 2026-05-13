@@ -1,12 +1,12 @@
 import Crypto from 'node:crypto'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import request from './request.js'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import { db, ObjectId } from '../../../../app/src/infrastructure/mongodb.mjs'
 import { User as UserModel } from '../../../../app/src/models/User.mjs'
 import UserUpdater from '../../../../app/src/Features/User/UserUpdater.mjs'
 import AuthenticationManager from '../../../../app/src/Features/Authentication/AuthenticationManager.mjs'
-import { promisifyClass } from '@overleaf/promise-utils'
+import { promisifyClass } from '@superpaper/promise-utils'
 import fs from 'node:fs'
 import Path from 'node:path'
 import { Cookie } from 'tough-cookie'
@@ -98,106 +98,6 @@ class User {
         }
       )
     })
-  }
-
-  getSplitTestAssignment(splitTestName, query, callback) {
-    if (!callback) {
-      callback = query
-    }
-    const params = new URLSearchParams({
-      splitTestName,
-      ...query,
-    }).toString()
-    this.request.get(
-      {
-        url: `/dev/split_test/get_assignment?${params}`,
-      },
-      (err, response, body) => {
-        if (err != null) {
-          return callback(err)
-        }
-        if (response.statusCode !== 200) {
-          return callback(
-            new Error(
-              `get split test assignment failed: status=${
-                response.statusCode
-              } body=${JSON.stringify(body)}`
-            )
-          )
-        }
-        const assignment = JSON.parse(response.body)
-        callback(null, assignment)
-      }
-    )
-  }
-
-  doSessionMaintenance(callback) {
-    this.request.post(
-      {
-        url: `/dev/split_test/session_maintenance`,
-      },
-      (err, response, body) => {
-        if (err != null) {
-          return callback(err)
-        }
-        if (response.statusCode !== 200) {
-          return callback(
-            new Error(
-              `post session maintenance failed: status=${
-                response.statusCode
-              } body=${JSON.stringify(body)}`
-            )
-          )
-        }
-        callback(null)
-      }
-    )
-  }
-
-  optIntoBeta(callback) {
-    this.request.post(
-      {
-        url: '/beta/opt-in',
-      },
-      (err, response, body) => {
-        if (err != null) {
-          return callback(err)
-        }
-        if (response.statusCode !== 302) {
-          return callback(
-            new Error(
-              `post beta opt-in failed: status=${
-                response.statusCode
-              } body=${JSON.stringify(body)}`
-            )
-          )
-        }
-        callback(null)
-      }
-    )
-  }
-
-  optOutOfBeta(callback) {
-    this.request.post(
-      {
-        url: '/beta/opt-out',
-      },
-      (err, response, body) => {
-        if (err != null) {
-          return callback(err)
-        }
-        if (response.statusCode !== 302) {
-          return callback(
-            new Error(
-              `post beta opt-out failed: status=${
-                response.statusCode
-              } body=${JSON.stringify(body)}`
-            )
-          )
-        }
-        callback(null)
-      }
-    )
   }
 
   /* Return the session cookie, url decoded. Use the option {raw:true} to get the original undecoded value */
@@ -491,7 +391,7 @@ class User {
       .catch(callback)
   }
 
-  // Low-level. Permanent feature change. Feature overrides are not applied right away. A feature refresh might populate them "some time" after login/changing subscriptions.
+  // Low-level. Permanent feature change. Feature overrides are not applied right away. A feature refresh might populate them "some time" after login or changing feature flags.
   setFeaturesOverride(featuresOverride, callback) {
     if (!featuresOverride?.features) {
       throw new Error('bad featuresOverride schema')
@@ -502,8 +402,8 @@ class User {
       .catch(callback)
   }
 
-  setOverleafId(overleafId, callback) {
-    UserModel.updateOne({ _id: this.id }, { 'overleaf.id': overleafId })
+  setsuperPaperId(superpaperId, callback) {
+    UserModel.updateOne({ _id: this.id }, { 'superpaper.id': superpaperId })
       .then((...args) => callback(null, ...args))
       .catch(callback)
   }
@@ -585,34 +485,6 @@ class User {
 
   ensureAdminRole(role, callback) {
     this.mongoUpdate({ $addToSet: { adminRoles: role } }, callback)
-  }
-
-  upgradeSomeFeatures(callback) {
-    const features = {
-      collaborators: -1, // Infinite
-      versioning: true,
-      dropbox: true,
-      compileTimeout: 60,
-      compileGroup: 'priority',
-      references: true,
-      trackChanges: true,
-      trackChangesVisible: true,
-    }
-    this.mongoUpdate({ $set: { features } }, callback)
-  }
-
-  downgradeFeatures(callback) {
-    const features = {
-      collaborators: 1,
-      versioning: false,
-      dropbox: false,
-      compileTimeout: 60,
-      compileGroup: 'standard',
-      references: false,
-      trackChanges: false,
-      trackChangesVisible: false,
-    }
-    this.mongoUpdate({ $set: { features } }, callback)
   }
 
   defaultFeatures(callback) {
@@ -1295,7 +1167,7 @@ class User {
         _id: this._id,
       },
       {
-        overleaf: {
+        superpaper: {
           id: v1Id,
         },
       }

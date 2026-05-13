@@ -10,7 +10,7 @@ export COMMIT_SHA ?= $(shell git rev-parse HEAD)
 PROJECT_NAME = git-bridge
 
 IMAGE_CI ?= ci/$(PROJECT_NAME):$(BRANCH_NAME_TAG_SAFE)-$(BUILD_NUMBER)
-IMAGE_REPO ?= us-east1-docker.pkg.dev/overleaf-ops/ol-docker/$(PROJECT_NAME)
+IMAGE_REPO ?= us-east1-docker.pkg.dev/superpaper-ops/ol-docker/$(PROJECT_NAME)
 IMAGE_REPO_BRANCH ?= $(IMAGE_REPO):$(BRANCH_NAME_TAG_SAFE)
 IMAGE_REPO_MAIN ?= $(IMAGE_REPO):main
 IMAGE_REPO_FINAL ?= $(IMAGE_REPO_BRANCH)-$(BUILD_NUMBER)

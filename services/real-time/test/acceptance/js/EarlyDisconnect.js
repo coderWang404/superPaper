@@ -16,8 +16,8 @@ import RealTimeClient from './helpers/RealTimeClient.js'
 import MockDocUpdaterServer from './helpers/MockDocUpdaterServer.js'
 import MockWebServer from './helpers/MockWebServer.js'
 import FixturesManager from './helpers/FixturesManager.js'
-import settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 const rclient = redis.createClient(settings.redis.pubsub)
 const rclientRT = redis.createClient(settings.redis.realtime)
 const KeysRT = settings.redis.realtime.key_schema

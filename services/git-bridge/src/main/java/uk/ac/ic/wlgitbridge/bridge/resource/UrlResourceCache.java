@@ -133,7 +133,7 @@ public class UrlResourceCache implements ResourceCache {
     //
     // The URL looks like:
     //
-    // https://history.overleaf.com/api/projects/:project_id/blobs/:hash?token=:token&_path=:path
+    // https://history.superpaper.com/api/projects/:project_id/blobs/:hash?token=:token&_path=:path
     return url.replaceAll("token=[^&]*", "token=REMOVED");
   }
 }

@@ -6,9 +6,9 @@ const commandLineArgs = require('command-line-args')
 const config = require('config')
 const fs = require('node:fs')
 const readline = require('node:readline')
-const { History } = require('overleaf-editor-core')
+const { History } = require('superpaper-editor-core')
 const { knex, historyStore, persistor } = require('..')
-const projectKey = require('@overleaf/object-persistor/src/ProjectKey.js')
+const projectKey = require('@superpaper/object-persistor/src/ProjectKey.js')
 
 const MAX_POSTGRES_INTEGER = 2147483647
 const DEFAULT_BATCH_SIZE = 1000

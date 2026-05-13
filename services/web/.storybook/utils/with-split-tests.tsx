@@ -4,7 +4,7 @@ import { SplitTestContext } from '@/shared/context/split-test-context'
 
 export const defaultSplitTestsArgTypes = {
   // to be able to use this utility, you need to add the argTypes for each split test in this object
-  // Check the original implementation for an example: https://github.com/overleaf/internal/pull/17809
+  // Check the original implementation for an example: https://github.com/superpaper/internal/pull/17809
 }
 
 export const withSplitTests = <ArgTypes = typeof defaultSplitTestsArgTypes,>(

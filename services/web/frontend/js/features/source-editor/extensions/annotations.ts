@@ -13,7 +13,7 @@ import {
 import { Annotation } from '../../../../../types/annotation'
 import { debugConsole } from '@/utils/debugging'
 import { sendMB } from '@/infrastructure/event-tracking'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { syntaxTree } from '@codemirror/language'
 
 interface CompileLogDiagnostic extends Diagnostic {
@@ -39,7 +39,7 @@ export type DiagnosticAction = (
   diagnostic: RenderedDiagnostic
 ) => HTMLButtonElement | null
 
-const diagnosticActions = importOverleafModules('diagnosticActions') as {
+const diagnosticActions = importSuperPaperModules('diagnosticActions') as {
   import: { default: DiagnosticAction }
 }[]
 

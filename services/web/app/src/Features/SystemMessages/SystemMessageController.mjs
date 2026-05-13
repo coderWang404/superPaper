@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import SystemMessageManager from './SystemMessageManager.mjs'
 

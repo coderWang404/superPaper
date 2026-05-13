@@ -1,6 +1,6 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
-import { Errors } from '@overleaf/object-persistor'
+import { Errors } from '@superpaper/object-persistor'
 
 class HealthCheckError extends OError {}
 class ConversionsDisabledError extends OError {}

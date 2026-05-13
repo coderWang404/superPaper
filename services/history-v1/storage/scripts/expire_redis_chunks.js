@@ -1,10 +1,10 @@
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const commandLineArgs = require('command-line-args')
 const redis = require('../lib/redis')
 const { scanAndProcessDueItems } = require('../lib/scan')
 const { expireProject, claimExpireJob } = require('../lib/chunk_store/redis')
 const config = require('config')
-const { fetchNothing } = require('@overleaf/fetch-utils')
+const { fetchNothing } = require('@superpaper/fetch-utils')
 
 const rclient = redis.rclientHistory
 

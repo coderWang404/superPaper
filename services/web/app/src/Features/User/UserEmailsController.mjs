@@ -1,6 +1,6 @@
 import AuthenticationController from '../Authentication/AuthenticationController.mjs'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import UserGetter from './UserGetter.mjs'
 import UserUpdater from './UserUpdater.mjs'
@@ -8,18 +8,15 @@ import UserSessionsManager from './UserSessionsManager.mjs'
 import EmailHandler from '../Email/EmailHandler.mjs'
 import EmailHelper from '../Helpers/EmailHelper.mjs'
 import UserEmailsConfirmationHandler from './UserEmailsConfirmationHandler.mjs'
-import InstitutionsAPI from '../Institutions/InstitutionsAPI.mjs'
 import Errors from '../Errors/Errors.js'
 import HttpErrorHandler from '../Errors/HttpErrorHandler.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import AsyncFormHelper from '../Helpers/AsyncFormHelper.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
 import UserPrimaryEmailCheckHandler from '../User/UserPrimaryEmailCheckHandler.mjs'
 import UserAuditLogHandler from './UserAuditLogHandler.mjs'
 import { RateLimiter } from '../../infrastructure/RateLimiter.mjs'
-import Features from '../../infrastructure/Features.mjs'
 import tsscmp from 'tsscmp'
-import Modules from '../../infrastructure/Modules.mjs'
 
 const AUDIT_LOG_TOKEN_PREFIX_LENGTH = 10
 
@@ -79,11 +76,6 @@ async function addWithConfirmationCode(req, res) {
 
   const userId = SessionManager.getLoggedInUserId(req.session)
   const email = EmailHelper.parseEmail(req.body.email)
-  const affiliationOptions = {
-    university: req.body.university,
-    role: req.body.role,
-    department: req.body.department,
-  }
 
   if (!email) {
     return res.sendStatus(422)
@@ -115,12 +107,7 @@ async function addWithConfirmationCode(req, res) {
       }
     )
 
-    await sendCodeAndStoreInSession(
-      req,
-      'pendingSecondaryEmail',
-      email,
-      affiliationOptions
-    )
+    await sendCodeAndStoreInSession(req, 'pendingSecondaryEmail', email)
 
     return res.sendStatus(200)
   } catch (err) {
@@ -153,15 +140,9 @@ async function addWithConfirmationCode(req, res) {
  * @param {import('express').Request} req
  * @param {string} sessionKey
  * @param {string} email
- * @param affiliationOptions
  * @returns {Promise<void>}
  */
-async function sendCodeAndStoreInSession(
-  req,
-  sessionKey,
-  email,
-  affiliationOptions
-) {
+async function sendCodeAndStoreInSession(req, sessionKey, email) {
   const { confirmCode, confirmCodeExpiresTimestamp } =
     await UserEmailsConfirmationHandler.promises.sendConfirmationCode(
       email,
@@ -171,13 +152,12 @@ async function sendCodeAndStoreInSession(
     email,
     confirmCode,
     confirmCodeExpiresTimestamp,
-    affiliationOptions,
   }
 }
 
 /**
  * @param {string} sessionKey
- * @param {(req: import('express').Request, user: any, email: string, affiliationOptions: any) => Promise<void>} beforeConfirmEmail
+ * @param {(req: import('express').Request, user: any, email: string) => Promise<void>} beforeConfirmEmail
  * @returns {Promise<*>}
  */
 const _checkConfirmationCode =
@@ -232,18 +212,9 @@ const _checkConfirmationCode =
     }
 
     try {
-      await beforeConfirmEmail(
-        req,
-        user,
-        emailToCheck,
-        sessionData.affiliationOptions
-      )
+      await beforeConfirmEmail(req, user, emailToCheck)
 
-      await UserUpdater.promises.confirmEmail(
-        userId,
-        emailToCheck,
-        sessionData.affiliationOptions
-      )
+      await UserUpdater.promises.confirmEmail(userId, emailToCheck)
 
       delete req.session[sessionKey]
 
@@ -273,14 +244,6 @@ const _checkConfirmationCode =
         })
       }
 
-      if (error.name === 'InvalidInstitutionalEmailError') {
-        return res.status(422).json({
-          message: {
-            key: 'email_does_not_belong_to_university',
-          },
-        })
-      }
-
       logger.err({ error }, 'failed to check confirmation code')
 
       return res.status(500).json({
@@ -293,7 +256,7 @@ const _checkConfirmationCode =
 
 const checkNewSecondaryEmailConfirmationCode = _checkConfirmationCode(
   'pendingSecondaryEmail',
-  async (req, user, email, affiliationOptions) => {
+  async (req, user, email) => {
     await UserAuditLogHandler.promises.addEntry(
       user._id,
       'add-email-via-code',
@@ -304,7 +267,6 @@ const checkNewSecondaryEmailConfirmationCode = _checkConfirmationCode(
     await UserUpdater.promises.addEmailAddress(
       user._id,
       email,
-      affiliationOptions,
       {
         initiatorId: user._id,
         ipAddress: req.ip,
@@ -461,29 +423,6 @@ async function primaryEmailCheck(req, res) {
     'primary-email-check-done'
   )
 
-  // We want to redirect to prompt a user to add a secondary email if their primary
-  // is an institutional email and they dont' already have a secondary.
-  if (Features.hasFeature('saas') && req.capabilitySet.has('add-affiliation')) {
-    const confirmedEmails =
-      await UserGetter.promises.getUserConfirmedEmails(userId)
-
-    if (confirmedEmails.length < 2) {
-      const { email: primaryEmail } = SessionManager.getSessionUser(req.session)
-      const primaryEmailDomain = EmailHelper.getDomain(primaryEmail)
-
-      const institution = (
-        await Modules.promises.hooks.fire(
-          'getInstitutionViaDomain',
-          primaryEmailDomain
-        )
-      )?.[0]
-
-      if (institution) {
-        return AsyncFormHelper.redirect(req, res, '/user/emails/add-secondary')
-      }
-    }
-  }
-
   AsyncFormHelper.redirect(req, res, '/project')
 }
 
@@ -608,27 +547,6 @@ const UserEmailsController = {
 
   setDefault: expressify(setDefault),
 
-  endorse(req, res, next) {
-    const userId = SessionManager.getLoggedInUserId(req.session)
-    const email = EmailHelper.parseEmail(req.body.email)
-    if (!email) {
-      return res.sendStatus(422)
-    }
-
-    InstitutionsAPI.endorseAffiliation(
-      userId,
-      email,
-      req.body.role,
-      req.body.department,
-      function (error) {
-        if (error) {
-          return next(error)
-        }
-        res.sendStatus(204)
-      }
-    )
-  },
-
   sendExistingEmailConfirmationCode: expressify(
     sendExistingEmailConfirmationCode
   ),
@@ -659,7 +577,7 @@ const UserEmailsController = {
             res.status(403).json({
               message: {
                 key: 'confirm-email-wrong-user',
-                text: `We can’t confirm this email. You must be logged in with the Overleaf account that requested the new secondary email.`,
+                text: `We can’t confirm this email. You must be logged in with the superPaper account that requested the new secondary email.`,
               },
             })
           } else if (error instanceof Errors.NotFoundError) {
@@ -720,9 +638,6 @@ const UserEmailsController = {
       return HttpErrorHandler.conflict(req, res, 'email must be confirmed')
     } else if (error instanceof Errors.EmailExistsError) {
       const message = req.i18n.translate('email_already_registered')
-      return HttpErrorHandler.conflict(req, res, message)
-    } else if (error.message === '422: Email does not belong to university') {
-      const message = req.i18n.translate('email_does_not_belong_to_university')
       return HttpErrorHandler.conflict(req, res, message)
     }
     next(error)

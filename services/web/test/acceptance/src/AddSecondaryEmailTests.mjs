@@ -1,9 +1,8 @@
 import { expect } from 'chai'
 import UserHelper from './helpers/User.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import sinon from 'sinon'
 import { db } from '../../../app/src/infrastructure/mongodb.mjs'
-import Features from '../../../app/src/infrastructure/Features.mjs'
 
 const User = UserHelper.promises
 
@@ -20,10 +19,6 @@ describe('Add secondary email address confirmation code email', function () {
   }
 
   beforeEach(async function () {
-    if (!Features.hasFeature('saas')) {
-      this.skip()
-    }
-
     spy = sinon.spy(logger, 'info')
     user = new User()
     await user.register()
@@ -32,7 +27,7 @@ describe('Add secondary email address confirmation code email', function () {
 
     res = await user.doRequest('POST', {
       json: {
-        email: 'secondary@overleaf.com',
+        email: 'secondary@superpaper.com',
       },
       uri: `/user/emails/secondary`,
     })
@@ -41,10 +36,6 @@ describe('Add secondary email address confirmation code email', function () {
   })
 
   afterEach(function () {
-    if (!Features.hasFeature('saas')) {
-      this.skip()
-    }
-
     spy.restore()
   })
 
@@ -75,7 +66,7 @@ describe('Add secondary email address confirmation code email', function () {
       )
       expect(userInDb).to.exist
       const newSecondaryEmail = userInDb.emails.find(
-        email => email.email === 'secondary@overleaf.com'
+        email => email.email === 'secondary@superpaper.com'
       )
       expect(newSecondaryEmail).to.exist
       expect(newSecondaryEmail.confirmedAt).to.exist
@@ -119,14 +110,14 @@ describe('Add secondary email address confirmation code email', function () {
     it('should respond with a email already registered error', async function () {
       res = await user2.doRequest('POST', {
         json: {
-          email: 'secondary@overleaf.com',
+          email: 'secondary@superpaper.com',
         },
         uri: `/user/emails/secondary`,
       })
 
       expect(res.response.statusCode).to.equal(409)
       expect(res.body.message.text).to.equal(
-        'This email address is already associated with a different Overleaf account.'
+        'This email address is already associated with a different superPaper account.'
       )
     })
   })

@@ -82,7 +82,7 @@ describe('ProjectDuplicateNames', function () {
 
     it('should create one file in the history-v1', function () {
       const files =
-        MockV1HistoryApi.blobs[this.project.overleaf.history.id.toString()]
+        MockV1HistoryApi.blobs[this.project.superpaper.history.id.toString()]
       expect(Object.keys(files).length).to.equal(1)
     })
 

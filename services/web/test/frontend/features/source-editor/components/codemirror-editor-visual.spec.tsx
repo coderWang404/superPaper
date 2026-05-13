@@ -253,15 +253,15 @@ describe('<CodeMirrorEditor/> in Visual mode', function () {
   )
 
   it('handles \\href command', function () {
-    cy.get('@first-line').type('\\href{{}https://overleaf.com} ')
-    cy.get('@first-line').should('have.text', '\\href{https://overleaf.com} ')
-    cy.get('@first-line').type('{Backspace}{{}{Del}Overleaf ')
+    cy.get('@first-line').type('\\href{{}https://superpaper.com} ')
+    cy.get('@first-line').should('have.text', '\\href{https://superpaper.com} ')
+    cy.get('@first-line').type('{Backspace}{{}{Del}superPaper ')
     cy.get('@first-line').should(
       'have.text',
-      '\\href{https://overleaf.com}{Overleaf '
+      '\\href{https://superpaper.com}{superPaper '
     )
     cy.get('@first-line').type('{Backspace}} ')
-    cy.get('@first-line').should('have.text', 'Overleaf ')
+    cy.get('@first-line').should('have.text', 'superPaper ')
     cy.get('@first-line').find('.ol-cm-link-text')
   })
 

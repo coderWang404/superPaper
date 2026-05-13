@@ -1,7 +1,7 @@
 import { callbackify } from 'node:util'
 import { Project } from '../../models/Project.mjs'
 import EmailHandler from '../Email/EmailHandler.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 const CollaboratorsEmailHandler = {
   _buildInviteUrl(project, invite) {

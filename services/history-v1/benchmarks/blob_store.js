@@ -1,6 +1,6 @@
 const crypto = require('node:crypto')
 const benny = require('benny')
-const { Blob } = require('overleaf-editor-core')
+const { Blob } = require('superpaper-editor-core')
 const mongoBackend = require('../storage/lib/blob_store/mongo')
 const postgresBackend = require('../storage/lib/blob_store/postgres')
 const cleanup = require('../test/acceptance/js/storage/support/cleanup')

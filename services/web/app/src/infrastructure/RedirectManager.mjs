@@ -12,7 +12,7 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import { URL } from 'node:url'
 
 let RedirectManager

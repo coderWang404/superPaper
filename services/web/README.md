@@ -1,12 +1,12 @@
-# overleaf/web
+# superpaper/web
 
-overleaf/web is the front-end web service of the open-source web-based collaborative LaTeX editor,
-[Overleaf](https://www.overleaf.com).
-It serves all the HTML pages, CSS and javascript to the client. overleaf/web also contains
+superpaper/web is the front-end web service of the open-source web-based collaborative LaTeX editor,
+[superPaper](https://www.superpaper.com).
+It serves all the HTML pages, CSS and javascript to the client. superpaper/web also contains
 a lot of logic around creating and editing projects, and account management.
 
-The rest of the Overleaf stack, along with information about contributing can be found in the
-[overleaf/overleaf](https://github.com/overleaf/overleaf) repository.
+The rest of the superPaper stack, along with information about contributing can be found in the
+[superpaper/superpaper](https://github.com/superpaper/superpaper) repository.
 
 ### Running the app
 
@@ -109,7 +109,7 @@ This project is licensed under the [AGPLv3 license](http://www.gnu.org/licenses/
 
 ### Stylesheets
 
-Overleaf is based on [Bootstrap](http://getbootstrap.com/), which is licensed under the
+superPaper is based on [Bootstrap](http://getbootstrap.com/), which is licensed under the
 [MIT license](http://opensource.org/licenses/MIT).
 All modifications (`*.less` files in `public/stylesheets`) are also licensed
 under the MIT license.
@@ -120,7 +120,7 @@ under the MIT license.
 
 We gratefully acknowledge [Mark James](http://www.famfamfam.com/lab/icons/silk/) for
 releasing his Silk icon set under the Creative Commons Attribution 2.5 license. Some
-of these icons are used within Overleaf inside the `public/img/silk` and
+of these icons are used within superPaper inside the `public/img/silk` and
 `public/brand/icons` directories.
 
 #### IconShock icons

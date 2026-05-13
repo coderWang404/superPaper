@@ -7,7 +7,7 @@ const {
   EditFileOperation,
   TextOperation,
   File,
-} = require('overleaf-editor-core')
+} = require('superpaper-editor-core')
 const cleanup = require('./support/cleanup')
 const fixtures = require('./support/fixtures')
 const chunkStore = require('../../../../storage/lib/chunk_store')

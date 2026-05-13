@@ -10,7 +10,7 @@
  * DS102: Remove unnecessary code created because of implicit returns
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 import request from './helpers/request.js'
 

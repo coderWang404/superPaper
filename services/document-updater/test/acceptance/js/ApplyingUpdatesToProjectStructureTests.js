@@ -1,7 +1,7 @@
 const sinon = require('sinon')
 const { setTimeout } = require('node:timers/promises')
-const Settings = require('@overleaf/settings')
-const rclientProjectHistory = require('@overleaf/redis-wrapper').createClient(
+const Settings = require('@superpaper/settings')
+const rclientProjectHistory = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.project_history
 )
 const ProjectHistoryKeys = Settings.redis.project_history.key_schema

@@ -4,7 +4,7 @@ import {
   fetchString,
   fetchJson,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
@@ -67,7 +67,7 @@ async function scrapeAndCachePage(baseUrl, page) {
 }
 
 async function getAllPagesFrom(baseUrl, continueFrom) {
-  // https://learnwiki.overleaf.com/learn/Special:ApiSandbox#action=query&format=json&generator=allpages&gapfilterredir=nonredirects
+  // https://learnwiki.superpaper.com/learn/Special:ApiSandbox#action=query&format=json&generator=allpages&gapfilterredir=nonredirects
   const uri = new URL(baseUrl + '/learn-scripts/api.php')
   uri.search = new URLSearchParams({
     action: 'query',

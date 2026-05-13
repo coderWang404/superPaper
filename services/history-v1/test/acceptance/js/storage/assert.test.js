@@ -1,6 +1,6 @@
 'use strict'
 
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 const { expect } = require('chai')
 const assert = require('../../../../storage/lib/assert')
 

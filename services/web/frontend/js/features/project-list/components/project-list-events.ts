@@ -10,17 +10,10 @@ export type ExtraSegmentations = {
     item:
       | 'login'
       | 'register'
-      | 'premium-features'
-      | 'enterprises'
-      | 'universities'
-      | 'publishers'
-      | 'edu'
-      | 'government'
       | 'why-latex'
       | 'learn'
       | 'contact'
       | 'templates'
-      | 'plans'
     location: 'top-menu' | 'sidebar'
     destinationURL?: string
   }

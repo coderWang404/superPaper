@@ -24,24 +24,24 @@ N=$(echo "$OLD_ITEMS" | wc -l)
 cat <<EOF
 ------------------------------------------------------------------------
 
-                   ShareLaTeX to Overleaf rebranding
+                   ShareLaTeX to superPaper rebranding
                    ---------------------------------
 
   Starting with version 5.0, ShareLaTeX branded file system paths are no
-   longer supported as we are migrating to the Overleaf brand.
+   longer supported as we are migrating to the superPaper brand.
 
   Your configuration still uses $N ShareLaTeX branded paths:
 $OLD_ITEMS
 
   Please update the in-container bind-mount target to refer to the
-   Overleaf equivalent:
-    - /etc/sharelatex     -> /etc/overleaf
-    - /var/lib/sharelatex -> /var/lib/overleaf
-    - /var/log/sharelatex -> /var/log/overleaf
+   superPaper equivalent:
+    - /etc/sharelatex     -> /etc/superpaper
+    - /var/lib/sharelatex -> /var/lib/superpaper
+    - /var/log/sharelatex -> /var/log/superpaper
 
-  Overleaf toolkit setups:
+  superPaper toolkit setups:
 
-    github.com/overleaf/toolkit$ bin/upgrade
+    github.com/superpaper/toolkit$ bin/upgrade
 
 
   Legacy docker compose setups/Horizontal scaling setups:
@@ -58,7 +58,7 @@ $OLD_ITEMS
       services:
         sharelatex:
           volumes:
-           - /my/docker-host/path:/var/lib/overleaf
+           - /my/docker-host/path:/var/lib/superpaper
 
 
   Other deployment methods:

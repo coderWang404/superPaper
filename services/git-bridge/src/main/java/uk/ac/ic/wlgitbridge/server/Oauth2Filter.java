@@ -167,8 +167,8 @@ public class Oauth2Filter implements Filter {
             "You can find the project's git remote url by opening it in your browser",
             "and selecting Git from the left sidebar in the project view.",
             "",
-            "If this is unexpected, please contact us at support@overleaf.com, or",
-            "see https://www.overleaf.com/learn/how-to/Git_integration for more information."));
+            "If this is unexpected, please contact us at support@superpaper.com, or",
+            "see https://www.superpaper.com/learn/how-to/Git_integration for more information."));
   }
 
   private void handleBadProjectId(
@@ -179,10 +179,10 @@ public class Oauth2Filter implements Filter {
         response,
         404,
         Arrays.asList(
-            "This Overleaf project does not exist.",
+            "This superPaper project does not exist.",
             "",
-            "If this is unexpected, please contact us at support@overleaf.com, or",
-            "see https://www.overleaf.com/learn/how-to/Git_integration for more information."));
+            "If this is unexpected, please contact us at support@superpaper.com, or",
+            "see https://www.superpaper.com/learn/how-to/Git_integration for more information."));
   }
 
   private void handleRateLimit(
@@ -203,13 +203,13 @@ public class Oauth2Filter implements Filter {
           response,
           401,
           Arrays.asList(
-              "Log in using the email address and password you use for Overleaf.",
+              "Log in using the email address and password you use for superPaper.",
               "",
               "*Note*: if you use a provider such as Google or Twitter to sign into",
-              "your Overleaf account, you will need to set a password.",
+              "your superPaper account, you will need to set a password.",
               "",
               "See our help page for more support:",
-              "https://www.overleaf.com/learn/how-to/Troubleshooting_git_bridge_problems"));
+              "https://www.superpaper.com/learn/how-to/Troubleshooting_git_bridge_problems"));
     } else {
       sendResponse(
           response,
@@ -219,7 +219,7 @@ public class Oauth2Filter implements Filter {
               "when prompted for a password.",
               "",
               "You can generate and manage your Git authentication tokens in",
-              "your Overleaf Account Settings."));
+              "your superPaper Account Settings."));
     }
   }
 
@@ -234,7 +234,7 @@ public class Oauth2Filter implements Filter {
             "Enter your Git authentication token when prompted for a password.",
             "",
             "You can generate and manage your Git authentication tokens in",
-            "your Overleaf Account Settings."));
+            "your superPaper Account Settings."));
   }
 
   private int checkAccessToken(String oauth2Server, String accessToken, String clientIp)
@@ -271,15 +271,15 @@ public class Oauth2Filter implements Filter {
           response,
           403,
           Arrays.asList(
-              "Overleaf now only supports Git authentication tokens to access git. See: https://www.overleaf.com/learn/how-to/Git_integration_authentication_tokens"));
+              "superPaper now only supports Git authentication tokens to access git. See: https://www.superpaper.com/learn/how-to/Git_integration_authentication_tokens"));
     } else {
       Log.debug("[{}] Wrong git URL format, ip={}", projectId, getClientIp(request));
       sendResponse(
           response,
           403,
           Arrays.asList(
-              "Overleaf now only supports Git authentication tokens to access git. See: https://www.overleaf.com/learn/how-to/Git_integration_authentication_tokens",
-              "Please make sure your Git URL is correctly formatted. For example: https://git@git.overleaf.com/<YOUR_PROJECT_ID> or https://git:<AUTHENTICATION_TOKEN>@git.overleaf.com/<YOUR_PROJECT_ID>"));
+              "superPaper now only supports Git authentication tokens to access git. See: https://www.superpaper.com/learn/how-to/Git_integration_authentication_tokens",
+              "Please make sure your Git URL is correctly formatted. For example: https://git@git.superpaper.com/<YOUR_PROJECT_ID> or https://git:<AUTHENTICATION_TOKEN>@git.superpaper.com/<YOUR_PROJECT_ID>"));
     }
   }
 

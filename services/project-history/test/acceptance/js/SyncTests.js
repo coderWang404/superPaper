@@ -1,20 +1,20 @@
 import nock from 'nock'
 import { expect } from 'chai'
 import assert from 'node:assert'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import {
   Snapshot,
   File,
   FileMap,
   StringFileData,
   Change,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import * as ProjectHistoryClient from './helpers/ProjectHistoryClient.js'
 import * as ProjectHistoryApp from './helpers/ProjectHistoryApp.js'
 import sinon from 'sinon'
 import { getFailure } from './helpers/ProjectHistoryClient.js'
-import { fetchNothing, RequestFailedError } from '@overleaf/fetch-utils'
+import { fetchNothing, RequestFailedError } from '@superpaper/fetch-utils'
 import { _getBlobHashFromString } from '../../../app/js/HashManager.js'
 import { db, ObjectId } from '../../../app/js/mongodb.js'
 
@@ -53,7 +53,7 @@ describe('Syncing with web and doc-updater', function () {
       .get(`/project/${this.project_id}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: {
+        superpaper: {
           history: {
             id: historyId,
           },
@@ -1015,7 +1015,7 @@ describe('Syncing with web and doc-updater', function () {
             _id: new ObjectId(this.project_id),
           })
           assert(
-            project.overleaf.history.lastResyncedAt > beforeResync,
+            project.superpaper.history.lastResyncedAt > beforeResync,
             'lastResyncedAt should have been updated when resync finished'
           )
         })

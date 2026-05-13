@@ -54,7 +54,7 @@ describe('DocumentConversionManager', function () {
       default: ctx.fsPromises,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ({
+    vi.doMock('@superpaper/fetch-utils', () => ({
       fetchStreamWithResponse: ctx.fetchUtils.fetchStreamWithResponse,
     }))
 
@@ -62,7 +62,7 @@ describe('DocumentConversionManager', function () {
       pipeline: ctx.nodeStream.pipeline,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 

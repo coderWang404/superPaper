@@ -1,5 +1,5 @@
-import settings from '@overleaf/settings'
-import ObjectPersistor from '@overleaf/object-persistor'
+import settings from '@superpaper/settings'
+import ObjectPersistor from '@superpaper/object-persistor'
 
 const persistorSettings = settings.filestore
 persistorSettings.paths = settings.path

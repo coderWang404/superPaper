@@ -1,7 +1,7 @@
 import Queue from 'bull'
 import config from 'config'
 import commandLineArgs from 'command-line-args'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import {
   listPendingBackups,
   listUninitializedBackups,
@@ -235,7 +235,7 @@ async function processPendingProjects(
   for await (const project of pendingCursor(timeIntervalMs, limit)) {
     const projectId = project._id.toHexString()
     const pendingAt =
-      project.overleaf?.backup?.pendingChangeAt || project._id.getTimestamp()
+      project.superpaper?.backup?.pendingChangeAt || project._id.getTimestamp()
     if (pendingAt) {
       changeTimes.push(pendingAt)
       const pendingAge = Math.floor((Date.now() - pendingAt.getTime()) / 1000)

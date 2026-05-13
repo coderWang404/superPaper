@@ -7,7 +7,6 @@ module.exports = {
     'frontend/js/**/*.{js,jsx,ts,tsx}',
     'modules/*/frontend/js/**/*.{js,jsx,ts,tsx}',
     '!frontend/js/vendor/**',
-    '!modules/writefull/frontend/js/integration/**',
   ],
   output: './',
   options: {

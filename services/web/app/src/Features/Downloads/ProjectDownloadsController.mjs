@@ -1,4 +1,4 @@
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectZipStreamManager from './ProjectZipStreamManager.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
@@ -6,7 +6,7 @@ import { prepareZipAttachment } from '../../infrastructure/Response.mjs'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
 import DocumentConversionManager from '../Uploads/DocumentConversionManager.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import { pipeline } from 'node:stream/promises'
 
 const SUPPORTED_CONVERSION_TYPES = new Map([['docx', 'docx']])
@@ -117,7 +117,7 @@ export default {
             }
             prepareZipAttachment(
               res,
-              `Overleaf Projects (${projectIds.length} items).zip`
+              `superPaper Projects (${projectIds.length} items).zip`
             )
             stream.pipe(res)
           }

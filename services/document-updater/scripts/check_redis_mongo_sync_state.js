@@ -1,16 +1,16 @@
 const fs = require('node:fs')
 const Path = require('node:path')
 const _ = require('lodash')
-const logger = require('@overleaf/logger')
-const OError = require('@overleaf/o-error')
+const logger = require('@superpaper/logger')
+const OError = require('@superpaper/o-error')
 const Errors = require('../app/js/Errors')
 const LockManager = require('../app/js/LockManager')
 const PersistenceManager = require('../app/js/PersistenceManager')
 const ProjectFlusher = require('../app/js/ProjectFlusher')
 const ProjectManager = require('../app/js/ProjectManager')
 const RedisManager = require('../app/js/RedisManager')
-const Settings = require('@overleaf/settings')
-const { fetchNothing, fetchJson } = require('@overleaf/fetch-utils')
+const Settings = require('@superpaper/settings')
+const { fetchNothing, fetchJson } = require('@superpaper/fetch-utils')
 
 const ONLY_PROJECT_ID = process.env.ONLY_PROJECT_ID
 const AUTO_FIX_VERSION_MISMATCH =
@@ -20,7 +20,7 @@ const AUTO_FIX_PARTIALLY_DELETED_DOC_METADATA =
 const SCRIPT_LOG_LEVEL = process.env.SCRIPT_LOG_LEVEL || 'warn'
 const FLUSH_IN_SYNC_PROJECTS = process.env.FLUSH_IN_SYNC_PROJECTS === 'true'
 const FOLDER =
-  process.env.FOLDER || '/tmp/overleaf-check-redis-mongo-sync-state'
+  process.env.FOLDER || '/tmp/superpaper-check-redis-mongo-sync-state'
 const LIMIT = parseInt(process.env.LIMIT || '1000', 10)
 const RETRIES = parseInt(process.env.RETRIES || '5', 10)
 const WRITE_CONTENT = process.env.WRITE_CONTENT === 'true'

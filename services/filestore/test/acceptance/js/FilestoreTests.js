@@ -1,7 +1,7 @@
 import chai from 'chai'
 import fs from 'node:fs'
 import Stream from 'node:stream'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Path from 'node:path'
 import FilestoreApp from './FilestoreApp.js'
 import TestHelper from './TestHelper.js'
@@ -23,14 +23,14 @@ import {
   NotFoundError,
   NotImplementedError,
   NoKEKMatchedError,
-} from '@overleaf/object-persistor/src/Errors.js'
+} from '@superpaper/object-persistor/src/Errors.js'
 import {
   PerProjectEncryptedS3Persistor,
   RootKeyEncryptionKey,
-} from '@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor.js'
-import { S3Persistor } from '@overleaf/object-persistor/src/S3Persistor.js'
+} from '@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor.js'
+import { S3Persistor } from '@superpaper/object-persistor/src/S3Persistor.js'
 import crypto from 'node:crypto'
-import { WritableBuffer } from '@overleaf/stream-utils'
+import { WritableBuffer } from '@superpaper/stream-utils'
 import { gzipSync } from 'node:zlib'
 
 const { expect } = chai

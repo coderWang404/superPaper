@@ -17,7 +17,7 @@ describe('Settings', function () {
       process.env.S3_BUCKET_CREDENTIALS = JSON.stringify(s3Settings)
     })
     it('should use JSONified env var if present', async function () {
-      const settings = (await import('@overleaf/settings')).default
+      const settings = (await import('@superpaper/settings')).default
       expect(settings.filestore.s3.bucketCreds).to.deep.equal(s3Settings)
     })
   })

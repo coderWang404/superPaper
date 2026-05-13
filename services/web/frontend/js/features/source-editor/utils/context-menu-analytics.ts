@@ -28,10 +28,6 @@ export type ContextMenuAnalyticsEvents = {
   'add-comment': {
     location: 'editor-context-menu'
   }
-  'paywall-prompt': {
-    'paywall-type': 'track-changes'
-    location: 'editor-context-menu'
-  }
 }
 
 export const sendContextMenuEvent = <

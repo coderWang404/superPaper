@@ -51,8 +51,8 @@ import async from 'async'
 import RealTimeClient from './helpers/RealTimeClient.js'
 import FixturesManager from './helpers/FixturesManager.js'
 import MockWebServer from './helpers/MockWebServer.js'
-import settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 
 const Keys = settings.redis.documentupdater.key_schema
 const rclient = redis.createClient(settings.redis.pubsub)

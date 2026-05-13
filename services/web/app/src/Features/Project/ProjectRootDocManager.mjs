@@ -14,8 +14,8 @@ import Path from 'node:path'
 import fs from 'node:fs'
 import pLimit from 'p-limit'
 import globby from 'globby'
-import { callbackify, callbackifyMultiResult } from '@overleaf/promise-utils'
-import logger from '@overleaf/logger'
+import { callbackify, callbackifyMultiResult } from '@superpaper/promise-utils'
+import logger from '@superpaper/logger'
 import { BackgroundTaskTracker } from '../../infrastructure/GracefulShutdown.mjs'
 
 const rootDocResets = new BackgroundTaskTracker('root doc resets')

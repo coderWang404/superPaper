@@ -1,6 +1,5 @@
 import '../utils/webpack-public-path' // configure dynamically loaded assets (via webpack) to be downloaded from CDN
 import '../infrastructure/error-reporter' // set up error reporting, including Sentry
-import '../infrastructure/hotjar' // set up Hotjar
 import { createRoot } from 'react-dom/client'
 import IdeRoot from '@/features/ide-react/components/ide-root'
 
@@ -11,7 +10,7 @@ if (container) {
 }
 
 // work around Safari 15's incomplete support for dvh units
-// https://github.com/overleaf/internal/issues/18109
+// https://github.com/superpaper/internal/issues/18109
 try {
   if (
     document.body.parentElement &&

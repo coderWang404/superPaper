@@ -22,7 +22,7 @@
        requestTimeout: parseInt(
 @@ -409,7 +409,7 @@ if (
 
- if (parse(process.env.OVERLEAF_IS_SERVER_PRO) === true) {
+ if (parse(process.env.SUPERPAPER_IS_SERVER_PRO) === true) {
    settings.bypassPercentageRollouts = true
 -  settings.apis.references = { url: 'http://localhost:3040' }
 +  settings.apis.references = { url: 'http://127.0.0.1:3040' }

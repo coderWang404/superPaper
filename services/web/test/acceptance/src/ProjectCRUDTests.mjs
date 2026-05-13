@@ -2,9 +2,6 @@ import { expect } from 'chai'
 import UserHelper from './helpers/User.mjs'
 import { Project } from '../../../app/src/models/Project.mjs'
 import mongodb from 'mongodb-legacy'
-import cheerio from 'cheerio'
-import { Subscription } from '../../../app/src/models/Subscription.mjs'
-import Features from '../../../app/src/infrastructure/Features.mjs'
 import Metrics from './helpers/metrics.mjs'
 
 const ObjectId = mongodb.ObjectId
@@ -38,59 +35,13 @@ describe('Project CRUD', function () {
       return body
     }
 
-    it('should cast refProviders to booleans', async function () {
-      await this.user.mongoUpdate({
-        $set: {
-          refProviders: {
-            mendeley: { encrypted: 'aaa' },
-            zotero: { encrypted: 'bbb' },
-          },
-        },
-      })
-      const body = await loadProject(this.user, this.projectId)
-      const dom = cheerio.load(body)
-      const metaOlUser = dom('meta[name="ol-user"]')[0]
-      const userData = JSON.parse(metaOlUser.attribs.content)
-      expect(userData.refProviders.mendeley).to.equal(true)
-      expect(userData.refProviders.zotero).to.equal(true)
-    })
-
-    it('should show UpgradePrompt for user without a subscription', async function () {
-      const body = await loadProject(this.user, this.projectId)
-      expect(body).to.include(
-        Features.hasFeature('saas')
-          ? // `content` means true in this context
-            '<meta name="ol-showUpgradePrompt" data-type="boolean" content>'
-          : '<meta name="ol-showUpgradePrompt" data-type="boolean">'
-      )
-    })
-
-    it('should not show UpgradePrompt for user with a subscription', async function () {
-      await Subscription.create({
-        admin_id: this.user._id,
-        manager_ids: [this.user._id],
-      })
-      const body = await loadProject(this.user, this.projectId)
-      // having no `content` means false in this context
-      expect(body).to.include(
-        '<meta name="ol-showUpgradePrompt" data-type="boolean">'
-      )
-    })
-
     it('should cache the project access', async function () {
       const prev = await getProjectAccessStats()
       await loadProject(this.user, this.projectId)
-      if (Features.hasFeature('saas')) {
-        expect(await getProjectAccessStats()).to.deep.equal({
-          hit: prev.hit + 7,
-          miss: prev.miss + 1,
-        })
-      } else {
-        expect(await getProjectAccessStats()).to.deep.equal({
-          hit: prev.hit + 4,
-          miss: prev.miss + 1,
-        })
-      }
+      expect(await getProjectAccessStats()).to.deep.equal({
+        hit: prev.hit + 4,
+        miss: prev.miss + 1,
+      })
     })
   })
 

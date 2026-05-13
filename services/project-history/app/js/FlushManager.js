@@ -8,10 +8,10 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 import async from 'async'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
-import metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
+import metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 import _ from 'lodash'
 import * as RedisManager from './RedisManager.js'
 import * as UpdatesProcessor from './UpdatesProcessor.js'

@@ -11,13 +11,13 @@ describe('ContactManager', function () {
       fetchJson: sinon.stub(),
     }
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         apis: {
           contacts: {
-            url: 'http://contacts.overleaf.com',
+            url: 'http://contacts.superpaper.com',
           },
         },
       }),

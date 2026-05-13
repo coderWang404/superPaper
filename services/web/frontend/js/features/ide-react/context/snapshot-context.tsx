@@ -6,10 +6,10 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { Snapshot } from 'overleaf-editor-core'
+import { Snapshot } from 'superpaper-editor-core'
 import { useProjectContext } from '@/shared/context/project-context'
 import { debugConsole } from '@/utils/debugging'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { Folder } from '../../../../../types/folder'
 
 export const StubSnapshotUtils = {
@@ -37,7 +37,7 @@ export const StubSnapshotUtils = {
 }
 
 const { SnapshotUpdater } =
-  (importOverleafModules('snapshotUtils')[0]
+  (importSuperPaperModules('snapshotUtils')[0]
     ?.import as typeof StubSnapshotUtils) || StubSnapshotUtils
 
 export type SnapshotLoadingState = '' | 'loading' | 'error'

@@ -3,7 +3,7 @@
 // - set the JSON content-type in the request headers
 // - throw errors on non-ok response
 // - parse JSON response body, unless response is empty
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import getMeta from '@/utils/meta'
 
 type FetchPath = string

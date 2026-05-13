@@ -1,8 +1,8 @@
 {
-  "name": "@overleaf/settings",
-  "description": "A centralised settings system for Overleaf",
+  "name": "@superpaper/settings",
+  "description": "A centralised settings system for superPaper",
   "version": "3.0.0",
-  "repository": "overleaf/settings-module",
+  "repository": "superpaper/settings-module",
   "main": "index.js",
   "scripts": {
     "lint": "eslint --cache --cache-location ../../node_modules/.cache/eslint/ --ext .cjs,.js,.jsx,.mjs,.ts --max-warnings 0 --format unix .",

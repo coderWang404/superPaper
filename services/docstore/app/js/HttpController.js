@@ -1,10 +1,10 @@
 import DocManager from './DocManager.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import DocArchive from './DocArchiveManager.js'
 import HealthChecker from './HealthChecker.js'
 import Errors from './Errors.js'
-import Settings from '@overleaf/settings'
-import { expressify } from '@overleaf/promise-utils'
+import Settings from '@superpaper/settings'
+import { expressify } from '@superpaper/promise-utils'
 
 async function getDoc(req, res) {
   const { doc_id: docId, project_id: projectId } = req.params

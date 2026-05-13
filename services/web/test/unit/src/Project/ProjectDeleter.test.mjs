@@ -44,7 +44,7 @@ describe('ProjectDeleter', function () {
         },
         project: {
           _id: '5cf9270b4eff6e186cf8b05e',
-          overleaf: {
+          superpaper: {
             history: {
               id: new ObjectId(),
             },
@@ -329,8 +329,8 @@ describe('ProjectDeleter', function () {
           ctx.project.tokenAccessReadOnly_refs,
         deletedProjectReadWriteToken: ctx.project.tokens.readAndWrite,
         deletedProjectReadOnlyToken: ctx.project.tokens.readOnly,
-        deletedProjectOverleafId: ctx.project.overleaf.id,
-        deletedProjectOverleafHistoryId: ctx.project.overleaf.history.id,
+        deletedProjectsuperPaperId: ctx.project.superpaper.id,
+        deletedProjectsuperPaperHistoryId: ctx.project.superpaper.history.id,
         deletedProjectLastUpdatedAt: ctx.project.lastUpdated,
       }
 
@@ -529,7 +529,7 @@ describe('ProjectDeleter', function () {
           ctx.HistoryManager.promises.deleteProject
         ).to.have.been.calledWith(
           ctx.deletedProjects[0].project._id,
-          ctx.deletedProjects[0].project.overleaf.history.id
+          ctx.deletedProjects[0].project.superpaper.history.id
         )
       })
 
@@ -819,7 +819,7 @@ function dummyProject() {
       readOnly: 'wombat',
       readAndWrite: 'potato',
     },
-    overleaf: {
+    superpaper: {
       id: 1234,
       history: {
         id: 5678,

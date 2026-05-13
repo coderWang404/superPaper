@@ -21,7 +21,7 @@ describe('OutputFileOptimiser', function () {
       default: { spawn: (ctx.spawn = sinon.stub()) },
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {},
     }))
 

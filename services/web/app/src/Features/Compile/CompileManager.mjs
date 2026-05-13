@@ -1,14 +1,14 @@
 import Crypto from 'node:crypto'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectRootDocManager from '../Project/ProjectRootDocManager.mjs'
 import UserGetter from '../User/UserGetter.mjs'
 import ClsiManager from './ClsiManager.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import { RateLimiter } from '../../infrastructure/RateLimiter.mjs'
-import UserAnalyticsIdCache from '../Analytics/UserAnalyticsIdCache.mjs'
-import { callbackify, callbackifyMultiResult } from '@overleaf/promise-utils'
+import UserAnalyticsIdCache from '../Telemetry/UserActivityCache.mjs'
+import { callbackify, callbackifyMultiResult } from '@superpaper/promise-utils'
 let CompileManager
 const rclient = RedisWrapper.client('clsi_recently_compiled')
 
@@ -124,13 +124,12 @@ async function _getProjectCompileLimits(project) {
 }
 
 async function _getUserCompileLimits(userId) {
-  const owner = await UserGetter.promises.getUser(userId, {
-    _id: 1,
-    alphaProgram: 1,
-    analyticsId: 1,
-    betaProgram: 1,
-    features: 1,
-  })
+    const owner = await UserGetter.promises.getUser(userId, {
+      _id: 1,
+      alphaProgram: 1,
+      analyticsId: 1,
+      features: 1,
+    })
 
   const ownerFeatures = (owner && owner.features) || {}
   // put alpha users into their own compile group

@@ -15,7 +15,7 @@
  * organized in buckets, but the bucket key is made of hex digits 2, 3 and 4.
  */
 
-const { Blob } = require('overleaf-editor-core')
+const { Blob } = require('superpaper-editor-core')
 const { ObjectId, Binary, MongoError, ReadPreference } = require('mongodb')
 const assert = require('../assert')
 const mongodb = require('../mongodb')

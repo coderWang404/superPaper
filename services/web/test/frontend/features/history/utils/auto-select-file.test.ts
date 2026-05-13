@@ -11,7 +11,7 @@ describe('autoSelectFile', function () {
     {
       first_name: 'first_name',
       last_name: 'last_name',
-      email: 'email@overleaf.com',
+      email: 'email@superpaper.com',
       id: '6266xb6b7a366460a66186xx',
     },
   ]

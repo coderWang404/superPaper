@@ -1,13 +1,13 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 FROM node:24.14.1 AS base
 
-WORKDIR /overleaf/services/history-v1
-ENV PATH="/overleaf/node_modules/.bin:$PATH"
+WORKDIR /superpaper/services/history-v1
+ENV PATH="/superpaper/node_modules/.bin:$PATH"
 RUN corepack enable
-COPY services/history-v1/install_deps.sh /overleaf/services/history-v1/
+COPY services/history-v1/install_deps.sh /superpaper/services/history-v1/
 RUN chmod 0755 ./install_deps.sh && ./install_deps.sh
 
 # Google Cloud Storage needs a writable $HOME/.config for resumable uploads
@@ -19,39 +19,41 @@ RUN mkdir /buckets && chown node:node /buckets
 
 FROM base AS app
 
-COPY package.json yarn.lock .yarnrc.yml /overleaf/
-COPY libraries/fetch-utils/package.json /overleaf/libraries/fetch-utils/package.json
-COPY libraries/logger/package.json /overleaf/libraries/logger/package.json
-COPY libraries/metrics/package.json /overleaf/libraries/metrics/package.json
-COPY libraries/mongo-utils/package.json /overleaf/libraries/mongo-utils/package.json
-COPY libraries/o-error/package.json /overleaf/libraries/o-error/package.json
-COPY libraries/object-persistor/package.json /overleaf/libraries/object-persistor/package.json
-COPY libraries/overleaf-editor-core/package.json /overleaf/libraries/overleaf-editor-core/package.json
-COPY libraries/promise-utils/package.json /overleaf/libraries/promise-utils/package.json
-COPY libraries/redis-wrapper/package.json /overleaf/libraries/redis-wrapper/package.json
-COPY libraries/settings/package.json /overleaf/libraries/settings/package.json
-COPY libraries/stream-utils/package.json /overleaf/libraries/stream-utils/package.json
-COPY libraries/validation-tools/package.json /overleaf/libraries/validation-tools/package.json
-COPY services/history-v1/package.json /overleaf/services/history-v1/package.json
-COPY tools/migrations/package.json /overleaf/tools/migrations/package.json
-COPY .yarn/patches/ /overleaf/.yarn/patches/
-COPY tools/migrations/ /overleaf/tools/migrations/
+COPY package.json yarn.lock .yarnrc.yml /superpaper/
+COPY libraries/fetch-utils/package.json /superpaper/libraries/fetch-utils/package.json
+COPY libraries/logger/package.json /superpaper/libraries/logger/package.json
+COPY libraries/metrics/package.json /superpaper/libraries/metrics/package.json
+COPY libraries/mongo-utils/package.json /superpaper/libraries/mongo-utils/package.json
+COPY libraries/o-error/package.json /superpaper/libraries/o-error/package.json
+COPY libraries/object-persistor/package.json /superpaper/libraries/object-persistor/package.json
+COPY libraries/superpaper-editor-core/package.json /superpaper/libraries/superpaper-editor-core/package.json
+COPY libraries/promise-utils/package.json /superpaper/libraries/promise-utils/package.json
+COPY libraries/redis-wrapper/package.json /superpaper/libraries/redis-wrapper/package.json
+COPY libraries/settings/package.json /superpaper/libraries/settings/package.json
+COPY libraries/stream-utils/package.json /superpaper/libraries/stream-utils/package.json
+COPY libraries/validation-tools/package.json /superpaper/libraries/validation-tools/package.json
+COPY services/history-v1/package.json /superpaper/services/history-v1/package.json
+COPY tools/migrations/package.json /superpaper/tools/migrations/package.json
+COPY .yarn/patches/ /superpaper/.yarn/patches/
+COPY .yarn/releases/ /superpaper/.yarn/releases/
+RUN chmod 0755 /superpaper/.yarn/releases/yarn-4.14.1.cjs && ln -sf /superpaper/.yarn/releases/yarn-4.14.1.cjs /usr/local/bin/yarn && ln -sf /superpaper/.yarn/releases/yarn-4.14.1.cjs /usr/local/bin/yarnpkg
+COPY tools/migrations/ /superpaper/tools/migrations/
 
-RUN cd /overleaf && yarn workspaces focus overleaf-editor overleaf
-COPY libraries/fetch-utils/ /overleaf/libraries/fetch-utils/
-COPY libraries/logger/ /overleaf/libraries/logger/
-COPY libraries/metrics/ /overleaf/libraries/metrics/
-COPY libraries/mongo-utils/ /overleaf/libraries/mongo-utils/
-COPY libraries/o-error/ /overleaf/libraries/o-error/
-COPY libraries/object-persistor/ /overleaf/libraries/object-persistor/
-COPY libraries/overleaf-editor-core/ /overleaf/libraries/overleaf-editor-core/
-COPY libraries/promise-utils/ /overleaf/libraries/promise-utils/
-COPY libraries/redis-wrapper/ /overleaf/libraries/redis-wrapper/
-COPY libraries/settings/ /overleaf/libraries/settings/
-COPY libraries/stream-utils/ /overleaf/libraries/stream-utils/
-COPY libraries/validation-tools/ /overleaf/libraries/validation-tools/
-COPY services/history-v1/ /overleaf/services/history-v1/
-COPY tools/migrations/ /overleaf/tools/migrations/
+RUN cd /superpaper && yarn workspaces focus superpaper-editor superpaper
+COPY libraries/fetch-utils/ /superpaper/libraries/fetch-utils/
+COPY libraries/logger/ /superpaper/libraries/logger/
+COPY libraries/metrics/ /superpaper/libraries/metrics/
+COPY libraries/mongo-utils/ /superpaper/libraries/mongo-utils/
+COPY libraries/o-error/ /superpaper/libraries/o-error/
+COPY libraries/object-persistor/ /superpaper/libraries/object-persistor/
+COPY libraries/superpaper-editor-core/ /superpaper/libraries/superpaper-editor-core/
+COPY libraries/promise-utils/ /superpaper/libraries/promise-utils/
+COPY libraries/redis-wrapper/ /superpaper/libraries/redis-wrapper/
+COPY libraries/settings/ /superpaper/libraries/settings/
+COPY libraries/stream-utils/ /superpaper/libraries/stream-utils/
+COPY libraries/validation-tools/ /superpaper/libraries/validation-tools/
+COPY services/history-v1/ /superpaper/services/history-v1/
+COPY tools/migrations/ /superpaper/tools/migrations/
 
 FROM app
 USER node

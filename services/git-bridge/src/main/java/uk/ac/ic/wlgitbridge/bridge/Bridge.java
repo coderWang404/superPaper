@@ -43,10 +43,10 @@ import uk.ac.ic.wlgitbridge.util.Log;
 /*
  * This is the heart of the Git Bridge. You plug in all the parts (project
  * lock, repo store, db store, swap store, snapshot api, resource cache and
- * postback manager) is called by Git user requests and Overleaf postback
+ * postback manager) is called by Git user requests and superPaper postback
  * requests.
  *
- * Follow these links to go "outward" (to input from Git users and Overleaf):
+ * Follow these links to go "outward" (to input from Git users and superPaper):
  *
  * 1. JGit hooks, which handle user Git requests:
  *
@@ -58,7 +58,7 @@ import uk.ac.ic.wlgitbridge.util.Log;
  *    @see WLReceivePackFactory - used to handle pushes by setting a hook
  *    @see WriteLatexPutHook - the hook used to handle pushes
  *
- * 2. The Postback Servlet, which handles postbacks from the Overleaf app
+ * 2. The Postback Servlet, which handles postbacks from the superPaper app
  *    to confirm that a project is pushed. If a postback is lost, it's fine, we
  *    just update ourselves on the next access.
  *
@@ -104,7 +104,7 @@ import uk.ac.ic.wlgitbridge.util.Log;
  *    @see SwapJob - the interface for the Swap Job
  *    @see SwapJobImpl - the default concrete implementation
  *
- * 6. The Snapshot API, which provides data from the Overleaf app.
+ * 6. The Snapshot API, which provides data from the superPaper app.
  *
  *    @see SnapshotApiFacade - wraps a concrete instance of the Snapshot API.
  *    @see SnapshotApi - the interface for the Snapshot API.
@@ -287,7 +287,7 @@ public class Bridge {
   }
 
   /*
-   * Synchronises the given repository with Overleaf.
+   * Synchronises the given repository with superPaper.
    *
    * It acquires the project lock and calls
    * {@link #getUpdatedRepoCritical(Optional, String, GetDocResult)}.
@@ -310,7 +310,7 @@ public class Bridge {
   }
 
   /*
-   * Synchronises the given repository with Overleaf.
+   * Synchronises the given repository with superPaper.
    *
    * Pre: the project lock must be acquired for the given repo.
    *
@@ -389,12 +389,12 @@ public class Bridge {
           ForbiddenException,
           GitUserException,
           CannotAcquireLockException {
-    Log.debug("[{}] pushing to Overleaf", projectName);
+    Log.debug("[{}] pushing to superPaper", projectName);
     try (LockGuard __ = lock.lockGuard(projectName)) {
       Log.debug("[{}] got project lock", projectName);
       pushCritical(oauth2, projectName, directoryContents, oldDirectoryContents);
     } catch (SevereSnapshotPostException e) {
-      Log.warn("[" + projectName + "] Failed to put to Overleaf", e);
+      Log.warn("[" + projectName + "] Failed to put to superPaper", e);
       throw e;
     } catch (SnapshotPostException e) {
       /* Stack trace should be printed further up */
@@ -417,7 +417,7 @@ public class Bridge {
    * without throwing, the commit is committed.
    *
    * We start off by creating a postback key, which is given in the url when
-   * the Overleaf app tries to access the atts.
+   * the superPaper app tries to access the atts.
    *
    * Then creates a {@link CandidateSnapshot} from the old and new project
    * contents. The
@@ -491,7 +491,7 @@ public class Bridge {
       Log.debug("[{}] Candidate snapshot created: {}", projectName, candidate);
       PushResult result = snapshotAPI.push(oauth2, candidate, postbackKey);
       if (result.wasSuccessful()) {
-        Log.debug("[{}] Push to Overleaf successful", projectName);
+        Log.debug("[{}] Push to superPaper successful", projectName);
         Log.debug("[{}] Waiting for postback...", projectName);
         int versionID = postbackManager.waitForVersionIdOrThrow(projectName);
         Log.debug("[{}] Got version ID for push: {}", projectName, versionID);
@@ -508,8 +508,8 @@ public class Bridge {
   /*
    * A public call that should originate from the {@link FileHandler}.
    *
-   * The {@link FileHandler} serves atts to the Overleaf app during a push.
-   * The Overleaf app includes the postback key in the request, which was
+   * The {@link FileHandler} serves atts to the superPaper app during a push.
+   * The superPaper app includes the postback key in the request, which was
    * originally given on a push request.
    *
    * This method checks that the postback key matches, and throws if not.
@@ -526,13 +526,13 @@ public class Bridge {
 
   /*
    * A public call that originates from the postback thread
-   * {@link PostbackContents#processPostback()}, i.e. once the Overleaf app
+   * {@link PostbackContents#processPostback()}, i.e. once the superPaper app
    * has fetched all the atts and has committed the push and is happy, it
    * calls back here, fulfilling the promise that the push
    * {@link #push(Optional, String, RawDirectory, RawDirectory, String)}
    * is waiting on.
    *
-   * The Overleaf app will have invented a new version for the push, which is
+   * The superPaper app will have invented a new version for the push, which is
    * passed to the promise for the original push request to update the app.
    * @param projectName The name of the project being pushed to
    * @param postbackKey The postback key being used
@@ -550,7 +550,7 @@ public class Bridge {
    * As with {@link #postbackReceivedSuccessfully(String, String, int)},
    * but with an exception instead.
    *
-   * This is based on the JSON body of the postback from the Overleaf app.
+   * This is based on the JSON body of the postback from the superPaper app.
    *
    * The most likely problem is an {@link OutOfDateException}.
    * @param projectName The name of the project

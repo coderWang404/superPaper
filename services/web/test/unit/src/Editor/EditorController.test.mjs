@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import sinon from 'sinon'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import mongodb from 'mongodb-legacy'
 
 const modulePath = '../../../../app/src/Features/Editor/EditorController'

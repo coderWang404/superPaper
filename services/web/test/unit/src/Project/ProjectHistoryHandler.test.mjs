@@ -29,7 +29,7 @@ describe('ProjectHistoryHandler', function () {
 
     ctx.callback = sinon.stub()
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {}),
     }))
 
@@ -105,8 +105,8 @@ describe('ProjectHistoryHandler', function () {
       it('should set the new history id on the project', async function (ctx) {
         return ctx.ProjectModel.updateOne
           .calledWith(
-            { _id: projectId, 'overleaf.history.id': { $exists: false } },
-            { 'overleaf.history.id': ctx.historyId }
+            { _id: projectId, 'superpaper.history.id': { $exists: false } },
+            { 'superpaper.history.id': ctx.historyId }
           )
           .should.equal(true)
       })
@@ -126,7 +126,7 @@ describe('ProjectHistoryHandler', function () {
 
     describe('when the history already exists', function () {
       beforeEach(function (ctx) {
-        ctx.project.overleaf = { history: { id: 1234 } }
+        ctx.project.superpaper = { history: { id: 1234 } }
         ctx.ProjectDetailsHandler.promises.getDetails = sinon
           .stub()
           .withArgs(projectId)

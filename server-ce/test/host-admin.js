@@ -6,8 +6,8 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import YAML from 'js-yaml'
 import { isZodErrorLike } from 'zod-validation-error'
-import { ParamsError, parseReq, z } from '@overleaf/validation-tools'
-import { expressify } from '@overleaf/promise-utils'
+import { ParamsError, parseReq, z } from '@superpaper/validation-tools'
+import { expressify } from '@superpaper/promise-utils'
 
 const execFile = promisify(execFileCb)
 
@@ -114,7 +114,7 @@ app.post(
   '/run/script',
   expressify(async (req, res) => {
     const {
-      body: { cwd, script, args, user, hasOverleafEnv },
+      body: { cwd, script, args, user, hassuperPaperEnv },
     } = parseReq(
       req,
       z.object({
@@ -123,18 +123,18 @@ app.post(
           script: z.string(),
           args: z.array(z.string()),
           user: z.string(),
-          hasOverleafEnv: z.boolean(),
+          hassuperPaperEnv: z.boolean(),
         }),
       })
     )
 
-    const env = hasOverleafEnv
-      ? 'source /etc/overleaf/env.sh || source /etc/sharelatex/env.sh'
+    const env = hassuperPaperEnv
+      ? 'source /etc/superpaper/env.sh || source /etc/sharelatex/env.sh'
       : 'true'
     try {
       const { stdout, stderr } = await runDockerCompose('exec', [
         '--workdir',
-        `/overleaf/${cwd}`,
+        `/superpaper/${cwd}`,
         'sharelatex',
         'bash',
         '-c',
@@ -184,41 +184,22 @@ app.post(
 const allowedVars = z.object(
   Object.fromEntries(
     [
-      'OVERLEAF_APP_NAME',
-      'OVERLEAF_LEFT_FOOTER',
-      'OVERLEAF_RIGHT_FOOTER',
-      'OVERLEAF_PROXY_LEARN',
+      'SUPERPAPER_APP_NAME',
+      'SUPERPAPER_LEFT_FOOTER',
+      'SUPERPAPER_RIGHT_FOOTER',
+      'SUPERPAPER_PROXY_LEARN',
       'GIT_BRIDGE_ENABLED',
       'GIT_BRIDGE_HOST',
       'GIT_BRIDGE_PORT',
       'V1_HISTORY_URL',
       'SANDBOXED_COMPILES',
       'ALL_TEX_LIVE_DOCKER_IMAGE_NAMES',
-      'OVERLEAF_FILESTORE_MIGRATION_LEVEL',
-      'OVERLEAF_TEMPLATES_USER_ID',
-      'OVERLEAF_NEW_PROJECT_TEMPLATE_LINKS',
-      'OVERLEAF_ALLOW_PUBLIC_ACCESS',
-      'OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING',
-      'OVERLEAF_DISABLE_LINK_SHARING',
-      'EXTERNAL_AUTH',
-      'OVERLEAF_SAML_ENTRYPOINT',
-      'OVERLEAF_SAML_CALLBACK_URL',
-      'OVERLEAF_SAML_ISSUER',
-      'OVERLEAF_SAML_IDENTITY_SERVICE_NAME',
-      'OVERLEAF_SAML_EMAIL_FIELD',
-      'OVERLEAF_SAML_FIRST_NAME_FIELD',
-      'OVERLEAF_SAML_LAST_NAME_FIELD',
-      'OVERLEAF_SAML_UPDATE_USER_DETAILS_ON_LOGIN',
-      'OVERLEAF_SAML_CERT',
-      'OVERLEAF_LDAP_URL',
-      'OVERLEAF_LDAP_SEARCH_BASE',
-      'OVERLEAF_LDAP_SEARCH_FILTER',
-      'OVERLEAF_LDAP_BIND_DN',
-      'OVERLEAF_LDAP_BIND_CREDENTIALS',
-      'OVERLEAF_LDAP_EMAIL_ATT',
-      'OVERLEAF_LDAP_NAME_ATT',
-      'OVERLEAF_LDAP_LAST_NAME_ATT',
-      'OVERLEAF_LDAP_UPDATE_USER_DETAILS_ON_LOGIN',
+      'SUPERPAPER_FILESTORE_MIGRATION_LEVEL',
+      'SUPERPAPER_TEMPLATES_USER_ID',
+      'SUPERPAPER_NEW_PROJECT_TEMPLATE_LINKS',
+      'SUPERPAPER_ALLOW_PUBLIC_ACCESS',
+      'SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING',
+      'SUPERPAPER_DISABLE_LINK_SHARING',
       // Old branding, used for upgrade tests
       'SHARELATEX_SITE_URL',
       'SHARELATEX_MONGO_URL',
@@ -248,13 +229,9 @@ function setVarsDockerCompose({
     cfg.services.sharelatex.depends_on = []
   }
 
-  if (['ldap', 'saml'].includes(vars.EXTERNAL_AUTH)) {
-    cfg.services.sharelatex.depends_on.push(vars.EXTERNAL_AUTH)
-  }
-
   const dataDirInContainer =
     version === 'latest' || version >= '5.0'
-      ? '/var/lib/overleaf'
+      ? '/var/lib/superpaper'
       : '/var/lib/sharelatex'
 
   cfg.services.sharelatex.volumes = []
@@ -288,7 +265,7 @@ function setVarsDockerCompose({
   }
 
   if (version === 'latest') {
-    cfg.services.mongo.command = '--replSet overleaf --notablescan'
+    cfg.services.mongo.command = '--replSet superpaper --notablescan'
   } else {
     delete cfg.services.mongo.command
   }
@@ -464,7 +441,7 @@ app.delete(
         'sharelatex',
         'rm',
         '-vrf',
-        '/var/lib/overleaf/data/user_files',
+        '/var/lib/superpaper/data/user_files',
       ])
       res.json({ stdout, stderr })
     } catch (error) {

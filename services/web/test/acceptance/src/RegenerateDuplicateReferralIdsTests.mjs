@@ -1,10 +1,10 @@
 import { exec } from 'node:child_process'
 import { promisify } from 'node:util'
 import { expect } from 'chai'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { filterOutput } from './helpers/settings.mjs'
 import { db } from '../../../app/src/infrastructure/mongodb.mjs'
-import { renderObjectId } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { renderObjectId } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const BATCH_SIZE = 100
 let n = 0

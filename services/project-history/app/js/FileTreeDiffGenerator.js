@@ -10,8 +10,8 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import Core from 'overleaf-editor-core'
-import logger from '@overleaf/logger'
+import Core from 'superpaper-editor-core'
+import logger from '@superpaper/logger'
 import * as Errors from './Errors.js'
 
 const { MoveFileOperation, AddFileOperation, EditFileOperation } = Core

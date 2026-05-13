@@ -12,10 +12,7 @@ block append meta
 	- const canDisplayAdminRedirect = canRedirectToAdminDomain()
 	- const sessionUser = getSessionUser()
 	- const canDisplayProjectUrlLookup = settings.adminPrivilegeAvailable && canDisplayAdminMenu && hasAdminCapability('view-project-setting', false)
-	- const canDisplaySplitTestMenu = hasFeature('saas') && hasNonAdminDomainCapability('view-split-test')
-	- const canDisplaySurveyMenu = hasFeature('saas') && canDisplayAdminMenu && hasAdminCapability('manage-survey', false)
-	- const canDisplayScriptLogMenu = hasFeature('saas') && hasAdminCapability('view-script-log', false) && canDisplayAdminMenu
-	- const enableUpgradeButton = projectDashboardReact && usersBestSubscription && (usersBestSubscription.type === 'free' || usersBestSubscription.type === 'standalone-ai-add-on')
+	- const canDisplayScriptLogMenu = hasAdminCapability('view-script-log', false) && canDisplayAdminMenu
 	- const showSignUpLink = hasFeature('registration-page')
 
 	meta(
@@ -27,13 +24,9 @@ block append meta
 			canDisplayAdminMenu,
 			canDisplayAdminRedirect,
 			canDisplayProjectUrlLookup,
-			canDisplaySplitTestMenu,
-			canDisplaySurveyMenu,
 			canDisplayScriptLogMenu,
-			enableUpgradeButton,
 			suppressNavbarRight: !!suppressNavbarRight,
 			suppressNavContentLinks: !!suppressNavContentLinks,
-			showSubscriptionLink: nav.showSubscriptionLink,
 			showSignUpLink: showSignUpLink,
 			currentUrl: currentUrl,
 			sessionUser: sessionUser ? {email: sessionUser.email} : undefined,
@@ -46,7 +39,7 @@ block append meta
 		data-type='json'
 		content={
 			showThinFooter: showThinFooter,
-			showPoweredBy: !hasFeature('saas') && !settings.nav.hide_powered_by,
+			showPoweredBy: !settings.nav.hide_powered_by,
 			subdomainLang: settings.i18n.subdomainLang,
 			translatedLanguages: settings.translatedLanguages,
 			leftItems: cloneAndTranslateText(settings.nav.left_footer),

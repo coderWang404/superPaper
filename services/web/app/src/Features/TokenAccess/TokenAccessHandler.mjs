@@ -2,13 +2,13 @@ import { Project } from '../../models/Project.mjs'
 import PublicAccessLevels from '../Authorization/PublicAccessLevels.mjs'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
 import mongodb from 'mongodb-legacy'
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import V1Api from '../V1/V1Api.mjs'
 import crypto from 'node:crypto'
-import { callbackifyAll } from '@overleaf/promise-utils'
-import Analytics from '../Analytics/AnalyticsManager.mjs'
+import { callbackifyAll } from '@superpaper/promise-utils'
+import Analytics from '../Telemetry/TelemetryManager.mjs'
 import Features from '../../infrastructure/Features.mjs'
 
 const { ObjectId } = mongodb
@@ -265,7 +265,7 @@ const TokenAccessHandler = {
     }
 
     const { body } = await V1Api.promises.request({
-      url: `/api/v1/overleaf/docs/${token}/is_published`,
+      url: `/api/v1/superpaper/docs/${token}/is_published`,
     })
     return body
   },
@@ -278,7 +278,7 @@ const TokenAccessHandler = {
       }
     }
 
-    const v1Url = `/api/v1/overleaf/docs/${token}/info`
+    const v1Url = `/api/v1/superpaper/docs/${token}/info`
     const { body } = await V1Api.promises.request({ url: v1Url })
     return body
   },

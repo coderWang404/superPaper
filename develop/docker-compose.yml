@@ -29,10 +29,10 @@ services:
       - SANDBOXED_COMPILES=false
     user: root
     volumes:
-      - ${PWD}/compiles:/overleaf/services/clsi/compiles
-      - ${PWD}/output:/overleaf/services/clsi/output
+      - ${PWD}/compiles:/superpaper/services/clsi/compiles
+      - ${PWD}/output:/superpaper/services/clsi/output
       - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
-      - clsi-cache:/overleaf/services/clsi/cache
+      - clsi-cache:/superpaper/services/clsi/cache
 
   clsi-nginx:
     image: nginx:1.28
@@ -75,9 +75,9 @@ services:
     #    environment:
     #      - ENABLE_CONVERSIONS=true
     volumes:
-      - filestore-public-files:/overleaf/services/filestore/public_files
-      - filestore-template-files:/overleaf/services/filestore/template_files
-      - filestore-uploads:/overleaf/services/filestore/uploads
+      - filestore-public-files:/superpaper/services/filestore/public_files
+      - filestore-template-files:/superpaper/services/filestore/template_files
+      - filestore-uploads:/superpaper/services/filestore/uploads
 
   history-v1:
     build:
@@ -86,20 +86,18 @@ services:
     env_file:
       - dev.env
     environment:
-      OVERLEAF_EDITOR_ANALYTICS_BUCKET: "/buckets/analytics"
-      OVERLEAF_EDITOR_BLOBS_BUCKET: "/buckets/blobs"
-      OVERLEAF_EDITOR_CHUNKS_BUCKET: "/buckets/chunks"
-      OVERLEAF_EDITOR_PROJECT_BLOBS_BUCKET: "/buckets/project_blobs"
-      OVERLEAF_EDITOR_ZIPS_BUCKET: "/buckets/zips"
+      SUPERPAPER_EDITOR_ANALYTICS_BUCKET: "/buckets/analytics"
+      SUPERPAPER_EDITOR_BLOBS_BUCKET: "/buckets/blobs"
+      SUPERPAPER_EDITOR_CHUNKS_BUCKET: "/buckets/chunks"
+      SUPERPAPER_EDITOR_PROJECT_BLOBS_BUCKET: "/buckets/project_blobs"
+      SUPERPAPER_EDITOR_ZIPS_BUCKET: "/buckets/zips"
       PERSISTOR_BACKEND: fs
     volumes:
       - history-v1-buckets:/buckets
 
   mongo:
     image: mongo:8
-    command: --replSet overleaf
-    ports:
-      - "127.0.0.1:27017:27017" # for debugging
+    command: --replSet superpaper
     volumes:
       - mongo-data:/data/db
       - ../bin/shared/mongodb-init-replica-set.js:/docker-entrypoint-initdb.d/mongodb-init-replica-set.js
@@ -134,8 +132,6 @@ services:
 
   redis:
     image: redis:7
-    ports:
-      - "127.0.0.1:6379:6379" # for debugging
     volumes:
       - redis-data:/data
 
@@ -147,15 +143,15 @@ services:
     env_file:
       - dev.env
     environment:
-      - APP_NAME=Overleaf Community Edition
+      - APP_NAME=superPaper Community Edition
       - ENABLED_LINKED_FILE_TYPES=project_file,project_output_file
       - EMAIL_CONFIRMATION_DISABLED=true
       - NODE_ENV=development
-      - OVERLEAF_ALLOW_PUBLIC_ACCESS=true
+      - SUPERPAPER_ALLOW_PUBLIC_ACCESS=true
     command: ["node", "app.mjs"]
     volumes:
-      - sharelatex-data:/var/lib/overleaf
-      - web-data:/overleaf/services/web/data
+      - sharelatex-data:/var/lib/superpaper
+      - web-data:/superpaper/services/web/data
     depends_on:
       - mongo
       - redis
@@ -178,6 +174,6 @@ services:
     command:
       ["npx", "webpack", "serve", "--config", "webpack.config.dev-env.js"]
     ports:
-      - "127.0.0.1:80:3808"
+      - "127.0.0.1:23000:3808"
     volumes:
-      - ./webpack.config.dev-env.js:/overleaf/services/web/webpack.config.dev-env.js
+      - ./webpack.config.dev-env.js:/superpaper/services/web/webpack.config.dev-env.js

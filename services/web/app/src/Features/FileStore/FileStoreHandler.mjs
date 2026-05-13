@@ -1,12 +1,12 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import fs from 'node:fs'
 import Async from 'async'
 import FileHashManager from './FileHashManager.mjs'
 import HistoryManager from '../History/HistoryManager.mjs'
 import ProjectDetailsHandler from '../Project/ProjectDetailsHandler.mjs'
 import { File } from '../../models/File.mjs'
-import OError from '@overleaf/o-error'
-import { promisifyMultiResult } from '@overleaf/promise-utils'
+import OError from '@superpaper/o-error'
+import { promisifyMultiResult } from '@superpaper/promise-utils'
 import Modules from '../../infrastructure/Modules.mjs'
 
 const FileStoreHandler = {
@@ -18,7 +18,7 @@ const FileStoreHandler = {
       if (err) {
         return callback(err)
       }
-      const historyId = project.overleaf?.history?.id
+      const historyId = project.superpaper?.history?.id
       if (!historyId) {
         return callback(new OError('missing history id'))
       }

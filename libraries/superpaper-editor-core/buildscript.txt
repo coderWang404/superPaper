@@ -1,0 +1,10 @@
+superpaper-editor-core
+--dependencies=None
+--env-add=
+--env-pass-through=
+--esmock-loader=False
+--is-library=True
+--node-version=24.14.1
+--package-name=superpaper-editor-core
+--pipeline-owner=44
+--public-repo=False

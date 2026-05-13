@@ -7,22 +7,22 @@ const ONE_MIB = 1024 * 1024
 const userId = new ObjectId(process.argv.pop())
 
 const ownedProjects = await mongodb.projects
-  .find({ owner_ref: userId }, { projection: { _id: 1, overleaf: 1 } })
+  .find({ owner_ref: userId }, { projection: { _id: 1, superpaper: 1 } })
   .toArray()
 const { blobs } = await getProjectBlobsBatch(
-  ownedProjects.map(p => p.overleaf.history.id)
+  ownedProjects.map(p => p.superpaper.history.id)
 )
 
 console.log(
   'link,id,historyId,size,avgSize,sizeBytes,nBlobs,nTextBlobs,nBinaryBlobs'
 )
 for (const project of ownedProjects) {
-  const historyId = project.overleaf.history.id.toString()
+  const historyId = project.superpaper.history.id.toString()
   const projectBlobs = blobs.get(historyId) || []
   const sum = projectBlobs.reduce((sum, blob) => sum + blob.getByteLength(), 0)
   console.log(
     [
-      `https://admin.overleaf.com/admin/project/${project._id}`,
+      `https://admin.superpaper.com/admin/project/${project._id}`,
       project._id,
       historyId,
       (sum / ONE_MIB).toFixed(1) + 'MiB',

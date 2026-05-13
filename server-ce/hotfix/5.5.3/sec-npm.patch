@@ -6,8 +6,8 @@ diff -u -x node_modules -r a/libraries/logger/package.json b/libraries/logger/pa
    },
    "dependencies": {
 -    "@google-cloud/logging-bunyan": "^5.1.0",
-     "@overleaf/fetch-utils": "*",
-     "@overleaf/o-error": "*",
+     "@superpaper/fetch-utils": "*",
+     "@superpaper/o-error": "*",
      "bunyan": "^1.8.14"
 diff -u -x node_modules -r a/libraries/metrics/package.json b/libraries/metrics/package.json
 --- a/libraries/metrics/package.json	2025-05-23 09:07:47.000000000 +0100
@@ -54,11 +54,11 @@ diff -u -x node_modules -r a/package-lock.json b/package-lock.json
        "license": "AGPL-3.0-only",
        "dependencies": {
 -        "@google-cloud/logging-bunyan": "^5.1.0",
-         "@overleaf/fetch-utils": "*",
-         "@overleaf/o-error": "*",
+         "@superpaper/fetch-utils": "*",
+         "@superpaper/o-error": "*",
          "bunyan": "^1.8.14"
 @@ -148,8 +147,6 @@
-       "name": "@overleaf/metrics",
+       "name": "@superpaper/metrics",
        "version": "4.2.0",
        "dependencies": {
 -        "@google-cloud/opentelemetry-cloud-trace-exporter": "^2.1.0",
@@ -1527,7 +1527,7 @@ diff -u -x node_modules -r a/package-lock.json b/package-lock.json
 -    },
      "node_modules/fast-crc32c": {
        "version": "2.0.0",
-       "resolved": "git+ssh://git@github.com/overleaf/node-fast-crc32c.git#aae6b2a4c7a7a159395df9cc6c38dfde702d6f51",
+       "resolved": "git+ssh://git@github.com/superpaper/node-fast-crc32c.git#aae6b2a4c7a7a159395df9cc6c38dfde702d6f51",
 @@ -20779,12 +19749,6 @@
          "node": "^10.12.0 || >=12.0.0"
        }
@@ -2386,12 +2386,12 @@ diff -u -x node_modules -r a/package-lock.json b/package-lock.json
        "license": "Proprietary",
        "dependencies": {
 -        "@google-cloud/secret-manager": "^5.6.0",
-         "@overleaf/logger": "*",
-         "@overleaf/metrics": "*",
-         "@overleaf/mongo-utils": "*",
+         "@superpaper/logger": "*",
+         "@superpaper/metrics": "*",
+         "@superpaper/mongo-utils": "*",
 @@ -39089,11 +37531,9 @@
      "services/web": {
-       "name": "@overleaf/web",
+       "name": "@superpaper/web",
        "dependencies": {
 -        "@contentful/rich-text-html-renderer": "^16.0.2",
 -        "@contentful/rich-text-types": "^16.0.2",
@@ -2399,12 +2399,12 @@ diff -u -x node_modules -r a/package-lock.json b/package-lock.json
          "@node-oauth/oauth2-server": "^5.1.0",
 -        "@node-saml/passport-saml": "^4.0.4",
 +        "@node-saml/passport-saml": "^5.1.0",
-         "@overleaf/access-token-encryptor": "*",
-         "@overleaf/fetch-utils": "*",
-         "@overleaf/logger": "*",
+         "@superpaper/access-token-encryptor": "*",
+         "@superpaper/fetch-utils": "*",
+         "@superpaper/logger": "*",
 @@ -39105,7 +37545,6 @@
-         "@overleaf/redis-wrapper": "*",
-         "@overleaf/settings": "*",
+         "@superpaper/redis-wrapper": "*",
+         "@superpaper/settings": "*",
          "@phosphor-icons/react": "^2.1.7",
 -        "@slack/webhook": "^7.0.2",
          "@stripe/react-stripe-js": "^3.1.1",
@@ -2422,7 +2422,7 @@ diff -u -x node_modules -r a/package-lock.json b/package-lock.json
          "moment": "^2.29.4",
          "mongodb-legacy": "6.1.3",
          "mongoose": "8.9.5",
--        "multer": "overleaf/multer#4dbceda355efc3fc8ac3cf5c66c3778c8a6fdb23",
+-        "multer": "superpaper/multer#4dbceda355efc3fc8ac3cf5c66c3778c8a6fdb23",
 +        "multer": "^2.0.2",
          "nocache": "^2.1.0",
          "node-fetch": "^2.7.0",
@@ -2433,7 +2433,7 @@ diff -u -x node_modules -r a/package-lock.json b/package-lock.json
      },
 -    "services/web/node_modules/multer": {
 -      "version": "2.0.1",
--      "resolved": "git+ssh://git@github.com/overleaf/multer.git#4dbceda355efc3fc8ac3cf5c66c3778c8a6fdb23",
+-      "resolved": "git+ssh://git@github.com/superpaper/multer.git#4dbceda355efc3fc8ac3cf5c66c3778c8a6fdb23",
 -      "integrity": "sha512-kkvPK48OQibR5vIoTQBbZp1uWVCvT9MrW3Y0mqdhFYJP/HVJujb4eSCEU0yj+hyf0Y+H/BKCmPdM4fJnzqAO4w==",
 -      "license": "MIT",
 -      "dependencies": {
@@ -2460,9 +2460,9 @@ diff -u -x node_modules -r a/services/history-v1/package.json b/services/history
    "private": true,
    "dependencies": {
 -    "@google-cloud/secret-manager": "^5.6.0",
-     "@overleaf/logger": "*",
-     "@overleaf/metrics": "*",
-     "@overleaf/mongo-utils": "*",
+     "@superpaper/logger": "*",
+     "@superpaper/metrics": "*",
+     "@superpaper/mongo-utils": "*",
 diff -u -x node_modules -r a/services/web/package.json b/services/web/package.json
 --- a/services/web/package.json	2025-06-06 09:16:39.000000000 +0100
 +++ b/services/web/package.json	2025-07-28 12:35:57.000000000 +0100
@@ -2476,12 +2476,12 @@ diff -u -x node_modules -r a/services/web/package.json b/services/web/package.js
      "@node-oauth/oauth2-server": "^5.1.0",
 -    "@node-saml/passport-saml": "^4.0.4",
 +    "@node-saml/passport-saml": "^5.1.0",
-     "@overleaf/access-token-encryptor": "*",
-     "@overleaf/fetch-utils": "*",
-     "@overleaf/logger": "*",
+     "@superpaper/access-token-encryptor": "*",
+     "@superpaper/fetch-utils": "*",
+     "@superpaper/logger": "*",
 @@ -86,9 +84,8 @@
-     "@overleaf/redis-wrapper": "*",
-     "@overleaf/settings": "*",
+     "@superpaper/redis-wrapper": "*",
+     "@superpaper/settings": "*",
      "@phosphor-icons/react": "^2.1.7",
 -    "@slack/webhook": "^7.0.2",
 -    "@stripe/stripe-js": "^5.6.0",
@@ -2502,7 +2502,7 @@ diff -u -x node_modules -r a/services/web/package.json b/services/web/package.js
      "moment": "^2.29.4",
      "mongodb-legacy": "6.1.3",
      "mongoose": "8.9.5",
--    "multer": "overleaf/multer#4dbceda355efc3fc8ac3cf5c66c3778c8a6fdb23",
+-    "multer": "superpaper/multer#4dbceda355efc3fc8ac3cf5c66c3778c8a6fdb23",
 +    "multer": "^2.0.2",
      "nocache": "^2.1.0",
      "node-fetch": "^2.7.0",

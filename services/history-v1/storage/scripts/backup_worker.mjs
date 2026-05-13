@@ -1,7 +1,7 @@
 import Queue from 'bull'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import config from 'config'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 import {
   backupProject,
   initializeProjects,

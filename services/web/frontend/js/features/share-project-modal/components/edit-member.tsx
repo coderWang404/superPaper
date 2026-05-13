@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { useShareProjectContext } from './share-project-modal'
 import TransferOwnershipModal from './transfer-ownership-modal'
 import { removeMemberFromProject, updateMember } from '../utils/api'
@@ -8,13 +8,11 @@ import { sendMB } from '@/infrastructure/event-tracking'
 import { Select } from '@/shared/components/select'
 import type { ProjectMember } from '@/shared/context/types/project-metadata'
 import { PermissionsLevel } from '@/features/ide-react/types/permissions'
-import { linkSharingEnforcementDate } from '../utils/link-sharing'
 import OLButton from '@/shared/components/ol/ol-button'
 import OLFormGroup from '@/shared/components/ol/ol-form-group'
 import OLCol from '@/shared/components/ol/ol-col'
 import MaterialIcon from '@/shared/components/material-icon'
 import { useUserContext } from '@/shared/context/user-context'
-import { upgradePlan } from '@/main/account-upgrade'
 import ShareProjectModalRow from '@/features/share-project-modal/components/share-project-modal-row'
 import {
   Dropdown,
@@ -29,10 +27,7 @@ type PermissionsOption = PermissionsLevel | 'removeAccess' | 'downgraded'
 
 type EditMemberProps = {
   member: ProjectMember
-  hasExceededCollaboratorLimit: boolean
   hasBeenDowngraded: boolean
-  canAddCollaborators: boolean
-  isReviewerOnFreeProject?: boolean
 }
 
 type Privilege = {
@@ -42,10 +37,7 @@ type Privilege = {
 
 export default function EditMember({
   member,
-  hasExceededCollaboratorLimit,
   hasBeenDowngraded,
-  canAddCollaborators,
-  isReviewerOnFreeProject,
 }: EditMemberProps) {
   const isSharingUpdatesEnabled = useFeatureFlag('sharing-updates')
   const [privileges, setPrivileges] = useState<PermissionsOption>(
@@ -62,7 +54,7 @@ export default function EditMember({
   }, [member.privileges])
 
   const { monitorRequest, setSuccessActionMessage } = useShareProjectContext()
-  const { projectId, project, updateProject, features } = useProjectContext()
+  const { projectId, project, updateProject } = useProjectContext()
   const { members, invites } = project || {}
   const user = useUserContext()
 
@@ -84,10 +76,7 @@ export default function EditMember({
   }
 
   function shouldWarnMember() {
-    return (
-      hasExceededCollaboratorLimit &&
-      ['readAndWrite', 'review'].includes(privileges)
-    )
+    return false
   }
 
   function commitPrivilegeChange(newPrivileges: PermissionsOption) {
@@ -172,28 +161,12 @@ export default function EditMember({
     }
   }
 
-  const getPrivilegeSubtitle = (privilege: PermissionsOption) => {
-    if (!['readAndWrite', 'review'].includes(privilege)) {
-      return
-    }
-
-    if (
-      (hasBeenDowngraded && !confirmRemoval) ||
-      (!canAddCollaborators && !['readAndWrite', 'review'].includes(privileges))
-    ) {
-      return t('limited_to_n_collaborators_per_project', {
-        count: features.collaborators,
-      })
-    }
+  const getPrivilegeSubtitle = (_privilege: PermissionsOption) => {
+    return ''
   }
 
-  const isPrivilegeDisabled = (privilege: PermissionsOption) => {
-    return (
-      !canAddCollaborators &&
-      ['readAndWrite', 'review'].includes(privilege) &&
-      ((hasBeenDowngraded && !confirmRemoval) ||
-        !['readAndWrite', 'review'].includes(privileges))
-    )
+  const isPrivilegeDisabled = (_privilege: PermissionsOption) => {
+    return false
   }
 
   return isSharingUpdatesEnabled ? (
@@ -220,28 +193,6 @@ export default function EditMember({
           {member.pendingReviewer && (
             <div className="small fw-normal">
               {t('view_only_reviewer_downgraded')}
-            </div>
-          )}
-          {shouldWarnMember() && (
-            <div className="small fw-normal">
-              {t('will_lose_edit_access_on_date', {
-                date: linkSharingEnforcementDate,
-              })}
-            </div>
-          )}
-          {isReviewerOnFreeProject && (
-            <div className="small fw-normal">
-              <Trans
-                i18nKey="comment_only_upgrade_to_enable_track_changes"
-                components={[
-                  // eslint-disable-next-line react/jsx-key
-                  <OLButton
-                    variant="link"
-                    className="btn-inline-link"
-                    onClick={() => upgradePlan('track-changes')}
-                  />,
-                ]}
-              />
             </div>
           )}
         </div>
@@ -288,19 +239,17 @@ export default function EditMember({
             >
               {t('editor')}
             </OLDropdownMenuItem>
-            {features.trackChangesVisible && (
-              <OLDropdownMenuItem
-                as="button"
-                eventKey="review"
-                leadingIcon={<MaterialIcon type="mode_comment" unfilled />}
-                active={privileges === 'review'}
-                trailingIcon={privileges === 'review' ? 'check' : undefined}
-                disabled={isPrivilegeDisabled('review')}
-                description={getPrivilegeSubtitle('review')}
-              >
-                {t('reviewer')}
-              </OLDropdownMenuItem>
-            )}
+            <OLDropdownMenuItem
+              as="button"
+              eventKey="review"
+              leadingIcon={<MaterialIcon type="mode_comment" unfilled />}
+              active={privileges === 'review'}
+              trailingIcon={privileges === 'review' ? 'check' : undefined}
+              disabled={isPrivilegeDisabled('review')}
+              description={getPrivilegeSubtitle('review')}
+            >
+              {t('reviewer')}
+            </OLDropdownMenuItem>
             <OLDropdownMenuItem
               as="button"
               eventKey="readOnly"
@@ -377,28 +326,6 @@ export default function EditMember({
                   {t('view_only_reviewer_downgraded')}
                 </div>
               )}
-              {shouldWarnMember() && (
-                <div className="subtitle">
-                  {t('will_lose_edit_access_on_date', {
-                    date: linkSharingEnforcementDate,
-                  })}
-                </div>
-              )}
-              {isReviewerOnFreeProject && (
-                <div className="small">
-                  <Trans
-                    i18nKey="comment_only_upgrade_to_enable_track_changes"
-                    components={[
-                      // eslint-disable-next-line react/jsx-key
-                      <OLButton
-                        variant="link"
-                        className="btn-inline-link"
-                        onClick={() => upgradePlan('track-changes')}
-                      />,
-                    ]}
-                  />
-                </div>
-              )}
             </div>
           </div>
         </OLCol>
@@ -417,7 +344,6 @@ export default function EditMember({
                 }
               }}
               hasBeenDowngraded={hasBeenDowngraded && !confirmRemoval}
-              canAddCollaborators={canAddCollaborators}
             />
           </div>
 
@@ -436,35 +362,24 @@ type SelectPrivilegeProps = {
   value: string
   handleChange: (item: Privilege | null | undefined) => void
   hasBeenDowngraded: boolean
-  canAddCollaborators: boolean
 }
 
 function SelectPrivilege({
   value,
   handleChange,
   hasBeenDowngraded,
-  canAddCollaborators,
 }: SelectPrivilegeProps) {
   const { t } = useTranslation()
-  const { features } = useProjectContext()
 
   const privileges = useMemo(
-    (): Privilege[] =>
-      features.trackChangesVisible
-        ? [
-            { key: 'owner', label: t('make_owner') },
-            { key: 'readAndWrite', label: t('editor') },
-            { key: 'review', label: t('reviewer') },
-            { key: 'readOnly', label: t('viewer') },
-            { key: 'removeAccess', label: t('remove_access') },
-          ]
-        : [
-            { key: 'owner', label: t('make_owner') },
-            { key: 'readAndWrite', label: t('editor') },
-            { key: 'readOnly', label: t('viewer') },
-            { key: 'removeAccess', label: t('remove_access') },
-          ],
-    [features.trackChangesVisible, t]
+    (): Privilege[] => [
+      { key: 'owner', label: t('make_owner') },
+      { key: 'readAndWrite', label: t('editor') },
+      { key: 'review', label: t('reviewer') },
+      { key: 'readOnly', label: t('viewer') },
+      { key: 'removeAccess', label: t('remove_access') },
+    ],
+    [t]
   )
 
   const downgradedPseudoPrivilege: Privilege = {
@@ -472,29 +387,12 @@ function SelectPrivilege({
     label: t('select_access_level'),
   }
 
-  function getPrivilegeSubtitle(privilege: PermissionsOption) {
-    if (!['readAndWrite', 'review'].includes(privilege)) {
-      return ''
-    }
-
-    if (
-      hasBeenDowngraded ||
-      (!canAddCollaborators && !['readAndWrite', 'review'].includes(value))
-    ) {
-      return t('limited_to_n_collaborators_per_project', {
-        count: features.collaborators,
-      })
-    } else {
-      return ''
-    }
+  function getPrivilegeSubtitle(_privilege: PermissionsOption) {
+    return ''
   }
 
-  function isPrivilegeDisabled(privilege: PermissionsOption) {
-    return (
-      !canAddCollaborators &&
-      ['readAndWrite', 'review'].includes(privilege) &&
-      (hasBeenDowngraded || !['readAndWrite', 'review'].includes(value))
-    )
+  function isPrivilegeDisabled(_privilege: PermissionsOption) {
+    return false
   }
 
   return (

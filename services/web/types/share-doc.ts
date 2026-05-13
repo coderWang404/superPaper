@@ -1,5 +1,5 @@
 import EventEmitter from 'events'
-import { StringFileData } from 'overleaf-editor-core'
+import { StringFileData } from 'superpaper-editor-core'
 
 // type for the Doc class in vendor/libs/sharejs.js
 export interface ShareLatexOTShareDoc extends EventEmitter {

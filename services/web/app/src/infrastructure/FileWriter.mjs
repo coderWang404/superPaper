@@ -7,14 +7,14 @@
  */
 import fs from 'node:fs'
 
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
 import crypto from 'node:crypto'
-import Settings from '@overleaf/settings'
-import { fetchStream } from '@overleaf/fetch-utils'
+import Settings from '@superpaper/settings'
+import { fetchStream } from '@superpaper/fetch-utils'
 import { Transform, pipeline } from 'node:stream'
 import { FileTooLargeError } from '../Features/Errors/Errors.js'
-import { callbackify, promisify } from '@overleaf/promise-utils'
+import { callbackify, promisify } from '@superpaper/promise-utils'
 
 export class SizeLimitedStream extends Transform {
   constructor(options) {

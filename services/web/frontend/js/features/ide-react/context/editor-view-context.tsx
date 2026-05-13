@@ -15,7 +15,7 @@ export type EditorContextValue = {
 }
 
 // This provides access to the CodeMirror EditorView instance outside the editor
-// component itself, including external extensions (in particular, Writefull)
+// component itself, including external extensions.
 export const EditorViewContext = createContext<EditorContextValue | undefined>(
   undefined
 )

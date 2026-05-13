@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { fallbackRequest, fetchRange, preprocessFileOnce } from './pdf-caching'
 import { captureException } from '@/infrastructure/error-reporter'
 import { EDITOR_SESSION_ID, getPdfCachingMetrics } from './metrics'

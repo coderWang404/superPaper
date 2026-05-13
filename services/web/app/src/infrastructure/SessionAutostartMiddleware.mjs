@@ -1,5 +1,5 @@
-import Settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+import Settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 
 const botUserAgents = [
   'kube-probe',

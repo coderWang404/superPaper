@@ -1,10 +1,10 @@
 import mongodb from './mongodb.js'
 import _ from 'lodash'
 import crypto from 'node:crypto'
-import settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import { fetchNothing, fetchJson } from '@overleaf/fetch-utils'
-import OError from '@overleaf/o-error'
+import settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import { fetchNothing, fetchJson } from '@superpaper/fetch-utils'
+import OError from '@superpaper/o-error'
 
 const { db, ObjectId } = mongodb
 

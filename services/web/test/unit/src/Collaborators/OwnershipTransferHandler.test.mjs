@@ -132,7 +132,7 @@ describe('OwnershipTransferHandler', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: {
           recordEventForUserInBackground: (ctx.recordEventForUserInBackground =
@@ -142,7 +142,7 @@ describe('OwnershipTransferHandler', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Subscription/LimitationsManager.mjs',
+      '../../../../app/src/Features/Authorization/CollaborationLimitManager.mjs',
       () => ({
         default: ctx.LimitationsManager,
       })

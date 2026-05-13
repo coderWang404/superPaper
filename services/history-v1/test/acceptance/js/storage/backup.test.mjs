@@ -12,12 +12,12 @@ import {
   BlobStore,
   makeProjectKey,
 } from '../../../../storage/lib/blob_store/index.js'
-import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import { getBackupStatus } from '../../../../storage/lib/backup_store/index.js'
 import { text, buffer } from 'node:stream/consumers'
 import { createGunzip } from 'node:zlib'
-import { Change, Operation, File, TextOperation } from 'overleaf-editor-core'
+import { Change, Operation, File, TextOperation } from 'superpaper-editor-core'
 import ChunkStore from '../../../../storage/lib/chunk_store/index.js'
 import persistChanges from '../../../../storage/lib/persist_changes.js'
 import { historyStore } from '../../../../storage/lib/history_store.js'
@@ -71,7 +71,7 @@ describe('backup script', function () {
     historyId = projectId.toString()
     project = {
       _id: projectId,
-      overleaf: {
+      superpaper: {
         history: {
           id: historyId,
           currentEndVersion: 0, // Will be updated as changes are made

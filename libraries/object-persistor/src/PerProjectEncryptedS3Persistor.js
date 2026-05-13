@@ -3,7 +3,7 @@ const Crypto = require('node:crypto')
 const Stream = require('node:stream')
 const fs = require('node:fs')
 const { promisify } = require('node:util')
-const { WritableBuffer } = require('@overleaf/stream-utils')
+const { WritableBuffer } = require('@superpaper/stream-utils')
 const { S3Persistor, SSECOptions } = require('./S3Persistor.js')
 const {
   AlreadyWrittenError,
@@ -12,7 +12,7 @@ const {
   NotImplementedError,
   ReadError,
 } = require('./Errors')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const Path = require('node:path')
 
 const generateKey = promisify(Crypto.generateKey)

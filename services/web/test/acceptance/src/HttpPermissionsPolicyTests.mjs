@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import fetch from 'node-fetch'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 const BASE_URL = `http://${process.env.HTTP_TEST_HOST || '127.0.0.1'}:23000`
 

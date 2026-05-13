@@ -6,10 +6,10 @@ const tags = ['saas']
 
 const indexes = [
   {
-    key: { 'overleaf.backup.lastBackedUpVersion': 1, _id: 1 },
-    name: 'overleaf.backup.id_1_lastBackedUpVersion_id_1',
+    key: { 'superpaper.backup.lastBackedUpVersion': 1, _id: 1 },
+    name: 'superpaper.backup.id_1_lastBackedUpVersion_id_1',
     partialFilterExpression: {
-      'overleaf.backup.lastBackedUpVersion': { $in: [null] },
+      'superpaper.backup.lastBackedUpVersion': { $in: [null] },
     },
   },
 ]

@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import mongodb from 'mongodb-legacy'
 import { ObjectId as MongooseObjectId } from 'mongoose'
 

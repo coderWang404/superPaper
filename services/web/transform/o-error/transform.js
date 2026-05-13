@@ -104,13 +104,13 @@ export default function transformer(file, api) {
     .forEach(path => functionBodyProcessor(j, path))
     .toSource()
   // do a plain text search to see if OError is used but not imported
-  if (source.includes('OError') && !source.includes('@overleaf/o-error')) {
+  if (source.includes('OError') && !source.includes('@superpaper/o-error')) {
     const root = j(source)
     // assume the first variable declaration is an import
     // TODO: this should check that there is actually a require/import here
     //       but in most cases it will be
     const imports = root.find(j.VariableDeclaration)
-    const importOError = "const OError = require('@overleaf/o-error')\n"
+    const importOError = "const OError = require('@superpaper/o-error')\n"
     // if there were imports insert into list, format can re-order
     if (imports.length) {
       j(imports.at(0).get()).insertAfter(importOError)

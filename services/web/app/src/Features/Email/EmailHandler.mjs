@@ -1,6 +1,6 @@
 import { callbackify } from 'node:util'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import EmailBuilder from './EmailBuilder.mjs'
 import EmailSender from './EmailSender.mjs'
 import Queues from '../../infrastructure/Queues.mjs'

@@ -3,7 +3,7 @@
 // Clear timestamps which don't have any corresponding history ops
 // usage: scripts/flush_all.js <limit>
 
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import * as RedisManager from '../app/js/RedisManager.js'
 
 const argv = process.argv.slice(2)

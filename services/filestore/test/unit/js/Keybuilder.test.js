@@ -7,7 +7,7 @@ describe('KeybuilderTests', function () {
   const key = 'wombat/potato'
 
   beforeEach(async function () {
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {},
     }))
 

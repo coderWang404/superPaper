@@ -9,7 +9,7 @@ index c0fdda35d8f..09212d426e3 100644
  function parseArgs() {
    const PUBLIC_LAUNCH_DATE = new Date('2012-01-01T00:00:00Z')
 -  const DEFAULT_OUTPUT_FILE = `file-migration-${new Date()
-+  const DEFAULT_OUTPUT_FILE = `/var/log/overleaf/file-migration-${new Date()
++  const DEFAULT_OUTPUT_FILE = `/var/log/superpaper/file-migration-${new Date()
      .toISOString()
      .replace(/[:.]/g, '_')}.log`
 
@@ -411,7 +411,7 @@ index e9a7721944c..9c2a9818680 100644
  }
 
 -// Filestore endpoint location
-+// Filestore endpoint location (configured by /etc/overleaf/env.sh)
++// Filestore endpoint location (configured by /etc/superpaper/env.sh)
  const FILESTORE_HOST = process.env.FILESTORE_HOST || '127.0.0.1'
  const FILESTORE_PORT = process.env.FILESTORE_PORT || '3009'
 

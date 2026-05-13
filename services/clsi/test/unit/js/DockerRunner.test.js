@@ -29,7 +29,7 @@ describe('DockerRunner', () => {
       return Docker
     })()
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
@@ -51,7 +51,7 @@ describe('DockerRunner', () => {
       done() {}
     }
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         Timer,
       },
@@ -82,7 +82,7 @@ describe('DockerRunner', () => {
     ctx.directory = '/local/compile/directory'
     ctx.mainFile = 'main-file.tex'
     ctx.compiler = 'pdflatex'
-    ctx.image = 'example.com/overleaf/image:2016.2'
+    ctx.image = 'example.com/superpaper/image:2016.2'
     ctx.env = {}
     ctx.callback = sinon.stub()
     ctx.project_id = 'project-id-123'
@@ -165,7 +165,7 @@ describe('DockerRunner', () => {
 
     describe('standard compile', () => {
       beforeEach(ctx => {
-        ctx.directory = '/var/lib/overleaf/data/compiles/xyz'
+        ctx.directory = '/var/lib/superpaper/data/compiles/xyz'
         ctx.DockerRunner._runAndWaitForContainer = sinon
           .stub()
           .callsArgWith(3, null, (ctx.output = { stdout: 'mock-output' }))
@@ -196,7 +196,7 @@ describe('DockerRunner', () => {
 
     describe('synctex-output', () => {
       beforeEach(ctx => {
-        ctx.directory = '/var/lib/overleaf/data/output/xyz/generated-files/id'
+        ctx.directory = '/var/lib/superpaper/data/output/xyz/generated-files/id'
         ctx.DockerRunner._runAndWaitForContainer = sinon
           .stub()
           .callsArgWith(3, null, (ctx.output = { stdout: 'mock-output' }))
@@ -227,7 +227,7 @@ describe('DockerRunner', () => {
 
     describe('synctex', () => {
       beforeEach(ctx => {
-        ctx.directory = '/var/lib/overleaf/data/compile/xyz'
+        ctx.directory = '/var/lib/superpaper/data/compile/xyz'
         ctx.DockerRunner._runAndWaitForContainer = sinon
           .stub()
           .callsArgWith(3, null, (ctx.output = { stdout: 'mock-output' }))
@@ -258,7 +258,7 @@ describe('DockerRunner', () => {
 
     describe('wordcount', () => {
       beforeEach(ctx => {
-        ctx.directory = '/var/lib/overleaf/data/compile/xyz'
+        ctx.directory = '/var/lib/superpaper/data/compile/xyz'
         ctx.DockerRunner._runAndWaitForContainer = sinon
           .stub()
           .callsArgWith(3, null, (ctx.output = { stdout: 'mock-output' }))

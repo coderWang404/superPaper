@@ -126,7 +126,7 @@ db.oauthApplications.insert({
     "password"
   ],
   "id" : "264c723c925c13590880751f861f13084934030c13b4452901e73bdfab226edc",
-  "name" : "Overleaf Git Bridge",
+  "name" : "superPaper Git Bridge",
   "redirectUris" : [],
   "scopes" : [
     "git_bridge"

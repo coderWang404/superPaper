@@ -2,12 +2,12 @@
 
 import _ from 'lodash'
 import { callbackify, promisify } from 'node:util'
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
-import { File, Range } from 'overleaf-editor-core'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
+import { File, Range } from 'superpaper-editor-core'
 import {
   NeedFullProjectStructureResyncError,
   SYNC_ONGOING_ERROR_MESSAGE,
@@ -26,8 +26,8 @@ import * as HashManager from './HashManager.js'
 import { isInsert, isDelete } from './Utils.js'
 
 /**
- * @import { Comment as HistoryComment, TrackedChange as HistoryTrackedChange } from 'overleaf-editor-core'
- * @import { CommentRawData, TrackedChangeRawData } from 'overleaf-editor-core/lib/types'
+ * @import { Comment as HistoryComment, TrackedChange as HistoryTrackedChange } from 'superpaper-editor-core'
+ * @import { CommentRawData, TrackedChangeRawData } from 'superpaper-editor-core/lib/types'
  * @import { Comment, Entity, ResyncDocContentUpdate, RetainOp, TrackedChange } from './types'
  * @import { TrackedChangeTransition, TrackingDirective, TrackingType, Update } from './types'
  * @import { ProjectStructureUpdate } from './types'
@@ -228,7 +228,7 @@ async function setResyncState(projectId, syncState) {
       { _id: new ObjectId(projectId) },
       {
         $max: {
-          'overleaf.history.lastResyncedAt': new Date(),
+          'superpaper.history.lastResyncedAt': new Date(),
         },
       }
     )
@@ -301,7 +301,7 @@ async function skipUpdatesDuringSync(projectId, updates) {
 /**
  * @param {string} projectId
  * @param {string} projectHistoryId
- * @param {{chunk: import('overleaf-editor-core/lib/types.js').RawChunk}} mostRecentChunk
+ * @param {{chunk: import('superpaper-editor-core/lib/types.js').RawChunk}} mostRecentChunk
  * @param {Array<Update>} updates
  * @param {() => Promise<void>} extendLock
  * @return {Promise<Array<Update>>}
@@ -895,7 +895,7 @@ class SyncUpdateExpander {
     const persistedContent = file.getContent()
     if (persistedContent == null) {
       // This should not happen given that we loaded the file eagerly. We could
-      // probably refine the types in overleaf-editor-core so that this check
+      // probably refine the types in superpaper-editor-core so that this check
       // wouldn't be necessary.
       throw new Error('File was not properly loaded')
     }
@@ -1456,7 +1456,7 @@ const skipUpdatesDuringSyncCb = callbackifyMultiResult(skipUpdatesDuringSync, [
 /**
  * @param {string} projectId
  * @param {string} projectHistoryId
- * @param {{chunk: import('overleaf-editor-core/lib/types.js').RawChunk}} mostRecentChunk
+ * @param {{chunk: import('superpaper-editor-core/lib/types.js').RawChunk}} mostRecentChunk
  * @param {Array<Update>} updates
  * @param {() => void} extendLock
  * @param {(err: Error | null, updates?: Array<Update>) => void} callback

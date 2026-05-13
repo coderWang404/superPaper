@@ -1,23 +1,12 @@
 // @ts-check
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { waitForDb, db, ObjectId } from '../app/src/infrastructure/mongodb.mjs'
 import GracefulShutdown from '../app/src/infrastructure/GracefulShutdown.mjs'
 import UserRegistrationHandler from '../app/src/Features/User/UserRegistrationHandler.mjs'
-import { Subscription } from '../app/src/models/Subscription.mjs'
 import minimist from 'minimist'
-import {
-  createProjectWithOldHistoryId,
-  provisionSplitTests,
-} from './e2e_test_setup.mjs'
+import { createProjectWithOldHistoryId } from './e2e_test_setup.mjs'
 import { Project } from '../app/src/models/Project.mjs'
-import OError from '@overleaf/o-error'
-import fs from 'node:fs'
-import Path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const MONOREPO = Path.dirname(
-  Path.dirname(Path.dirname(Path.dirname(fileURLToPath(import.meta.url))))
-)
+import OError from '@superpaper/o-error'
 
 const { email: USER_EMAIL, password: PASSWORD } = minimist(
   process.argv.slice(2),
@@ -87,44 +76,12 @@ async function createUser(
 async function provisionUsers() {
   await Promise.all([
     createUser(USER_EMAIL, { isAdmin: true, forceProfessional: true }),
-    createUser('admin@overleaf.com', {
+    createUser('admin@superpaper.com', {
       isAdmin: true,
       forceProfessional: true,
     }),
-    createUser('free@overleaf.com'),
-    createUser('premium@overleaf.com').then(async userId => {
-      const subscription = new Subscription({
-        admin_id: userId,
-        member_ids: [userId],
-        manager_ids: [userId],
-        planCode: 'professional',
-        customAccount: true,
-      })
-      try {
-        await subscription.save()
-      } catch (err) {
-        if (!isAlreadyExistsErr(err)) throw err // ignore already exists error
-      }
-    }),
-    createUser('group-owner@overleaf.com').then(async userId => {
-      const memberId = await createUser('group-member@overleaf.com')
-      const subscription = new Subscription({
-        admin_id: userId,
-        member_ids: [memberId],
-        manager_ids: [userId],
-        groupPlan: true,
-        planCode: 'group_professional_10_enterprise',
-        membersLimit: 10,
-        teamName: 'Test Team',
-        customAccount: true,
-      })
-      try {
-        await subscription.save()
-      } catch (err) {
-        if (!isAlreadyExistsErr(err)) throw err // ignore already exists error
-      }
-    }),
-    createUser('with-old-history@overleaf.com', {
+    createUser('free@superpaper.com'),
+    createUser('with-old-history@superpaper.com', {
       isAdmin: true,
       forceProfessional: true,
     }).then(async userId => {
@@ -141,29 +98,12 @@ async function provisionUsers() {
   ])
 }
 
-/**
- * @param {unknown} err
- * @return {boolean}
- */
-function isAlreadyExistsErr(err) {
-  return err instanceof Error && 'code' in err && err.code === 11000
-}
-
 async function main() {
   if (process.env.NODE_ENV !== 'development') {
     throw new Error('only available in dev-env')
   }
-  const extraSplitTests = JSON.parse(
-    await fs.promises.readFile(
-      Path.join(MONOREPO, '.devcontainer/extra-split-tests.json'),
-      'utf-8'
-    )
-  )
   await waitForDb()
-  await Promise.all([
-    provisionUsers(),
-    provisionSplitTests(true, extraSplitTests),
-  ])
+  await provisionUsers()
 }
 
 if (import.meta.main) {

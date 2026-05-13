@@ -5,7 +5,7 @@ const { expect } = require('chai')
 const cleanup = require('./support/cleanup')
 const testFiles = require('./support/test_files')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const File = core.File
 
 const storage = require('../../../../storage')

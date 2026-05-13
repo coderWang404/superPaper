@@ -59,12 +59,12 @@ describe('ProjectHelper', function () {
       default: { ObjectId },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler.mjs',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler.mjs',
       () => ({
         default: ctx.SplitTestHandler,
       })

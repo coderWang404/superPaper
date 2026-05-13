@@ -50,7 +50,7 @@ const compileFromCacheResponse = () => {
     clsiServerId: 'foo',
     clsiCacheShard: 'clsi-cache-zone-b-shard-1',
     compileGroup: 'priority',
-    pdfDownloadDomain: 'https://clsi.test-overleaf.com',
+    pdfDownloadDomain: 'https://clsi.test-superpaper.com',
     outputFiles: outputFiles(),
     options: {
       rootResourcePath: 'main.tex',
@@ -70,7 +70,7 @@ export const interceptCompileFromCacheRequest = ({
   promise: Promise<void>
 }) => {
   return cy.intercept(
-    { path: '/project/*/output/cached/output.overleaf.json', times },
+    { path: '/project/*/output/cached/output.superpaper.json', times },
     async req => {
       await promise
       req.reply({ body: compileFromCacheResponse() })
@@ -86,7 +86,7 @@ export const interceptCompileRequest = ({ times = 1 } = {}) => {
         status: 'success',
         clsiServerId: 'foo',
         compileGroup: 'priority',
-        pdfDownloadDomain: 'https://clsi.test-overleaf.com',
+        pdfDownloadDomain: 'https://clsi.test-superpaper.com',
         outputFiles: outputFiles(),
       },
     }
@@ -102,12 +102,12 @@ export const interceptCompile = ({
 } = {}) => {
   if (cached) {
     cy.intercept(
-      { path: '/project/*/output/cached/output.overleaf.json', times },
+      { path: '/project/*/output/cached/output.superpaper.json', times },
       { body: compileFromCacheResponse() }
     ).as(`${prefix}-cached`)
   } else {
     cy.intercept(
-      { pathname: '/project/*/output/cached/output.overleaf.json', times },
+      { pathname: '/project/*/output/cached/output.superpaper.json', times },
       { statusCode: 404 }
     ).as(`${prefix}-cached`)
   }
@@ -122,7 +122,7 @@ export const interceptCompile = ({
           status: 'unavailable',
           clsiServerId: 'foo',
           compileGroup: 'priority',
-          pdfDownloadDomain: 'https://clsi.test-overleaf.com',
+          pdfDownloadDomain: 'https://clsi.test-superpaper.com',
           outputFiles: [],
         },
       }
@@ -196,7 +196,7 @@ export const interceptDeferredCompile = (beforeResponse?: () => void) => {
             status: 'success',
             clsiServerId: 'foo',
             compileGroup: 'priority',
-            pdfDownloadDomain: 'https://clsi.test-overleaf.com',
+            pdfDownloadDomain: 'https://clsi.test-superpaper.com',
             outputFiles: [
               {
                 path: 'output.pdf',

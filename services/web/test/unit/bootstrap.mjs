@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, chai, vi } from 'vitest'
 import 'sinon-mongoose'
 import sinon from 'sinon'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
 import sinonChai from 'sinon-chai'
 import chaiAsPromised from 'chai-as-promised'
 import mongoose from 'mongoose'
@@ -26,7 +26,7 @@ chai.use(chaiAsPromised)
 
 // Do not truncate assertion errors
 chai.config.truncateThreshold = 0
-vi.mock('@overleaf/logger', async () => {
+vi.mock('@superpaper/logger', async () => {
   return {
     default: {
       debug: vi.fn(),
@@ -41,7 +41,7 @@ vi.mock('@overleaf/logger', async () => {
 })
 
 // Mock metrics in unit tests, can be overridden
-vi.mock('@overleaf/metrics', () => {
+vi.mock('@superpaper/metrics', () => {
   return {
     default: {
       inc: sinon.stub(),

@@ -1,6 +1,6 @@
 import { callbackify } from 'node:util'
 import request from './request.js'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 
 /**
  * @param {(s: string) => bool} matcher

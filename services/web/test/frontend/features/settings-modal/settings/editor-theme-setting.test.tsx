@@ -6,8 +6,6 @@ import { EditorProviders } from '../../../helpers/editor-providers'
 import EditorThemeSetting from '@/features/settings/components/appearance-settings/editor-theme-setting'
 import userEvent from '@testing-library/user-event'
 
-const MOCK_IEEE_BRAND_ID = 123
-
 describe('<EditorThemeSetting />', function () {
   const editorThemes = [
     { name: 'editortheme-1', dark: false },
@@ -23,11 +21,6 @@ describe('<EditorThemeSetting />', function () {
   beforeEach(function () {
     window.metaAttributesCache.set('ol-editorThemes', editorThemes)
     window.metaAttributesCache.set('ol-legacyEditorThemes', legacyEditorThemes)
-    window.metaAttributesCache.set('ol-brandVariation', {
-      brand_id: undefined,
-    })
-    window.metaAttributesCache.get('ol-ExposedSettings').ieeeBrandId =
-      MOCK_IEEE_BRAND_ID
   })
 
   afterEach(function () {
@@ -105,27 +98,6 @@ describe('<EditorThemeSetting />', function () {
       const darkModeSelect = screen.getByLabelText('Dark editor theme')
       expect(darkModeSelect).to.exist
       await checkSelect(darkModeSelect, 'editorDarkTheme')
-    })
-  })
-
-  describe('with IEEE branding', function () {
-    beforeEach(function () {
-      window.metaAttributesCache.set('ol-brandVariation', {
-        brand_id: MOCK_IEEE_BRAND_ID,
-      })
-      render(
-        <EditorProviders userSettings={{ overallTheme: 'system' }}>
-          <SettingsModalProvider>
-            <EditorThemeSetting />
-          </SettingsModalProvider>
-        </EditorProviders>
-      )
-    })
-
-    it('ignores the system theme and shows single selection', async function () {
-      const select = screen.getByLabelText('Editor theme')
-      expect(select).to.exist
-      await checkSelect(select, 'editorTheme')
     })
   })
 })

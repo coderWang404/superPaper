@@ -3,9 +3,9 @@ import sinon from 'sinon'
 import MockRequest from '../helpers/MockRequest.mjs'
 import MockResponse from '../helpers/MockResponse.mjs'
 import { Headers } from 'node-fetch'
-import { ReadableString } from '@overleaf/stream-utils'
-import { RequestFailedError } from '@overleaf/fetch-utils'
-import { asZodError } from '@overleaf/validation-tools/testUtils.js'
+import { ReadableString } from '@superpaper/stream-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
+import { asZodError } from '@superpaper/validation-tools/testUtils.js'
 
 const modulePath = '../../../../app/src/Features/Compile/CompileController.mjs'
 
@@ -16,7 +16,7 @@ describe('CompileController', function () {
       _id: ctx.user_id,
       email: 'user@example.com',
       features: {
-        compileGroup: 'premium',
+        compileGroup: 'priority',
         compileTimeout: 100,
       },
     }
@@ -53,6 +53,14 @@ describe('CompileController', function () {
         clsi_priority: {
           url: 'http://clsi-priority.example.com',
         },
+        clsiCache: {
+          instances: [
+            {
+              url: 'http://clsi-cache.example.com',
+              shard: 'cache-shard',
+            },
+          ],
+        },
       },
       defaultFeatures: {
         compileGroup: 'standard',
@@ -62,7 +70,7 @@ describe('CompileController', function () {
         key: 'cookie-key',
       },
       moduleImportSequence: [],
-      overleaf: {},
+      superpaper: {},
     }
     ctx.ClsiCookieManager = {
       promises: {
@@ -100,13 +108,13 @@ describe('CompileController', function () {
       inc: sinon.stub(),
       Timer: sinon.stub().returns({ done: sinon.stub(), labels: {} }),
     }
-    vi.doMock('@overleaf/metrics', () => ({ default: ctx.Metrics }))
+    vi.doMock('@superpaper/metrics', () => ({ default: ctx.Metrics }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.fetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.fetchUtils)
 
     vi.doMock('../../../../app/src/Features/Project/ProjectGetter', () => ({
       default: (ctx.ProjectGetter = {
@@ -150,7 +158,7 @@ describe('CompileController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: {
           getAssignment: (ctx.getAssignment = sinon.stub().yields(null, {
@@ -166,7 +174,7 @@ describe('CompileController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: {
           recordEventForSession: sinon.stub(),
@@ -211,7 +219,7 @@ describe('CompileController', function () {
 
     describe('pdfDownloadDomain', function () {
       beforeEach(function (ctx) {
-        ctx.settings.pdfDownloadDomain = 'https://compiles.overleaf.test'
+        ctx.settings.pdfDownloadDomain = 'https://compiles.superpaper.test'
       })
 
       describe('when clsi does not emit zone prefix', function () {
@@ -236,7 +244,7 @@ describe('CompileController', function () {
                 url: `/project/${ctx.projectId}/user/${ctx.user_id}/build/${ctx.build_id}/output/output.zip`,
                 type: 'zip',
               },
-              pdfDownloadDomain: 'https://compiles.overleaf.test',
+              pdfDownloadDomain: 'https://compiles.superpaper.test',
             })
           )
         })
@@ -282,7 +290,7 @@ describe('CompileController', function () {
                 type: 'zip',
               },
               outputUrlPrefix: '/zone/b',
-              pdfDownloadDomain: 'https://compiles.overleaf.test/zone/b',
+              pdfDownloadDomain: 'https://compiles.superpaper.test/zone/b',
             })
           )
         })
@@ -653,7 +661,7 @@ describe('CompileController', function () {
       })
     })
 
-    describe('premium user', function () {
+    describe('priority user', function () {
       beforeEach(async function (ctx) {
         ctx.CompileManager.promises.getProjectCompileLimits = sinon
           .stub()

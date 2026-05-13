@@ -144,12 +144,12 @@
   mask-image: $gradient;
 }
 
-@mixin premium-background {
-  background-image: var(--premium-gradient);
+@mixin feature-gradient-background {
+  background-image: var(--feature-gradient);
 }
 
-@mixin premium-text {
-  @include premium-background;
+@mixin feature-gradient-text {
+  @include feature-gradient-background;
 
   background-clip: text;
   -webkit-text-fill-color: transparent;

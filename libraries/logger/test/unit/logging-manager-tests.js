@@ -49,7 +49,7 @@ describe('LoggingManager', function () {
     this.LoggingManager = SandboxedModule.require(MODULE_PATH, {
       requires: {
         bunyan: this.Bunyan,
-        '@overleaf/fetch-utils': this.fetchUtils,
+        '@superpaper/fetch-utils': this.fetchUtils,
         './log-level-checker': this.LogLevelChecker,
       },
     })

@@ -30,7 +30,7 @@ export function SidebarFilter({ filter, text }: SidebarFilterProps) {
 
 export default function SidebarFilters() {
   const { t } = useTranslation()
-  const isLibraryEnabled = isSplitTestEnabled('overleaf-library')
+  const isLibraryEnabled = isSplitTestEnabled('superpaper-library')
 
   return (
     <ul className="list-unstyled project-list-filters">

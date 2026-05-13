@@ -1,8 +1,8 @@
 // @ts-check
 
 const { ObjectId, ReadPreference, MongoError } = require('mongodb')
-const { Chunk } = require('overleaf-editor-core')
-const OError = require('@overleaf/o-error')
+const { Chunk } = require('superpaper-editor-core')
+const OError = require('@superpaper/o-error')
 const config = require('config')
 const assert = require('../assert')
 const mongodb = require('../mongodb')
@@ -241,19 +241,19 @@ async function updateProjectRecord(
   // record the end version against the project
   await mongodb.projects.updateOne(
     {
-      'overleaf.history.id': projectId, // string for Object ids, number for postgres ids
+      'superpaper.history.id': projectId, // string for Object ids, number for postgres ids
     },
     {
       // always store the latest end version and timestamp for the chunk
       $max: {
-        'overleaf.history.currentEndVersion': chunk.getEndVersion(),
-        'overleaf.history.currentEndTimestamp': chunk.getEndTimestamp(),
-        'overleaf.history.updatedAt': new Date(),
+        'superpaper.history.currentEndVersion': chunk.getEndVersion(),
+        'superpaper.history.currentEndTimestamp': chunk.getEndTimestamp(),
+        'superpaper.history.updatedAt': new Date(),
       },
       // store the first pending change timestamp for the chunk, this will
       // be cleared every time a backup is completed.
       $min: {
-        'overleaf.backup.pendingChangeAt':
+        'superpaper.backup.pendingChangeAt':
           earliestChangeTimestamp || chunk.getEndTimestamp() || new Date(),
       },
     },
@@ -268,7 +268,7 @@ async function updateProjectRecord(
 async function lookupMongoProjectIdFromHistoryId(historyId) {
   const project = await mongodb.projects.findOne(
     // string for Object ids, number for postgres ids
-    { 'overleaf.history.id': historyId },
+    { 'superpaper.history.id': historyId },
     { projection: { _id: 1 } }
   )
   if (!project) {

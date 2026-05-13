@@ -1,18 +1,18 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 services:
   test_unit:
     image: ci/$PROJECT_NAME:$BRANCH_NAME-$BUILD_NUMBER
     user: node
     volumes:
-      - ./reports:/overleaf/services/real-time/reports
-      - ../../tsconfig.backend.json:/overleaf/tsconfig.backend.json
+      - ./reports:/superpaper/services/real-time/reports
+      - ../../tsconfig.backend.json:/superpaper/tsconfig.backend.json
     command: yarn run test:unit:_run
     environment:
       CI:
-      MONGO_CONNECTION_STRING: mongodb://mongo/test-overleaf
+      MONGO_CONNECTION_STRING: mongodb://mongo/test-superpaper
       NODE_ENV: test
       NODE_OPTIONS: "--unhandled-rejections=strict"
       VITEST_NO_CACHE: true
@@ -42,7 +42,7 @@ services:
       NODE_ENV: test
       NODE_OPTIONS: "--unhandled-rejections=strict"
     volumes:
-      - ./reports:/overleaf/services/real-time/reports
+      - ./reports:/superpaper/services/real-time/reports
     depends_on:
       redis_test:
         condition: service_healthy

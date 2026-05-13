@@ -13,7 +13,7 @@ const fixtures = require('./support/fixtures')
 const testFiles = require('./support/test_files')
 const unzip = require('./support/unzip')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const File = core.File
 const Snapshot = core.Snapshot
 

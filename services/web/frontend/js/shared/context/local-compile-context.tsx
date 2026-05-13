@@ -13,12 +13,7 @@ import {
 import usePersistedState from '../hooks/use-persisted-state'
 import useAbortController from '../hooks/use-abort-controller'
 import DocumentCompiler from '../../features/pdf-preview/util/compiler'
-import {
-  send,
-  sendMB,
-  sendMBOnce,
-  sendMBSampled,
-} from '../../infrastructure/event-tracking'
+import { sendMB, sendMBOnce, sendMBSampled } from '../../infrastructure/event-tracking'
 import {
   buildLogEntryAnnotations,
   buildRuleCounts,
@@ -51,7 +46,7 @@ import {
   PdfFileDataList,
 } from '@/features/pdf-preview/util/types'
 import { captureException } from '@/infrastructure/error-reporter'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import getMeta from '@/utils/meta'
 import type { Annotation } from '../../../../types/annotation'
 import { useProjectSettingsContext } from '@/features/editor-left-menu/context/project-settings-context'
@@ -138,7 +133,7 @@ export const LocalCompileContext = createContext<CompileContext | undefined>(
 export const LocalCompileProvider: FC<React.PropsWithChildren> = ({
   children,
 }) => {
-  const { hasPremiumCompile, isProjectOwner } = useEditorContext()
+  const { isProjectOwner } = useEditorContext()
   const { openDocWithId, openDocs } = useEditorManagerContext()
   const { currentDocument } = useEditorOpenDocContext()
   const { role } = useDetachContext()
@@ -371,7 +366,7 @@ export const LocalCompileProvider: FC<React.PropsWithChildren> = ({
   useEffect(() => {
     if (initialCompileFromCache && !pendingInitialCompileFromCache) {
       setPendingInitialCompileFromCache(true)
-      getJSON(`/project/${projectId}/output/cached/output.overleaf.json`, {
+      getJSON(`/project/${projectId}/output/cached/output.superpaper.json`, {
         signal: AbortSignal.timeout(5_000),
       })
         .then((data: any) => {
@@ -491,7 +486,7 @@ export const LocalCompileProvider: FC<React.PropsWithChildren> = ({
   // note: this should _only_ run when `data` changes,
   // the other dependencies must all be static
   useEffect(() => {
-    if (!joinedOnce) return // wait for joinProject, it populates the premium flags.
+    if (!joinedOnce) return // wait for joinProject, it populates the compile flags.
     const abortController = new AbortController()
 
     const recordedActions = recordedActionsRef.current
@@ -603,14 +598,6 @@ export const LocalCompileProvider: FC<React.PropsWithChildren> = ({
 
         case 'timedout':
           setError('timedout')
-
-          if (!hasPremiumCompile && isProjectOwner) {
-            send(
-              'subscription-funnel',
-              'editor-click-feature',
-              'compile-timeout'
-            )
-          }
           break
 
         case 'autocompile-backoff':
@@ -646,7 +633,6 @@ export const LocalCompileProvider: FC<React.PropsWithChildren> = ({
     alphaProgram,
     features,
     hasCompileLogsEvents,
-    hasPremiumCompile,
     isProjectOwner,
     projectId,
     setAutoCompile,

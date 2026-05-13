@@ -1,6 +1,6 @@
 {
-  "name": "@overleaf/server-ce-test",
-  "description": "e2e tests for Overleaf Community Edition",
+  "name": "@superpaper/server-ce-test",
+  "description": "e2e tests for superPaper Community Edition",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,8 +11,8 @@
   },
   "devDependencies": {
     "@isomorphic-git/lightning-fs": "^4.6.0",
-    "@overleaf/promise-utils": "workspace:*",
-    "@overleaf/validation-tools": "workspace:*",
+    "@superpaper/promise-utils": "workspace:*",
+    "@superpaper/validation-tools": "workspace:*",
     "@testing-library/cypress": "10.1.0",
     "@types/adm-zip": "^0.5.7",
     "@types/uuid": "^9.0.8",

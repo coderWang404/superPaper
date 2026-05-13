@@ -7,8 +7,8 @@ import { callbackify } from 'node:util'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 import Path from 'node:path'
-import Settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+import Settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 import pLimit from 'p-limit'
 import XrefParser from './XrefParser.js'
 import {
@@ -17,7 +17,7 @@ import {
   NoXrefTableError,
 } from './Errors.js'
 import workerpool from 'workerpool'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const { parseXrefTable } = XrefParser
 

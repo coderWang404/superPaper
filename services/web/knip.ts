@@ -14,7 +14,7 @@ import type { KnipConfig } from 'knip'
 import Path from 'path'
 import settings from './config/settings.webpack'
 
-const moduleEntryPoints = Object.values(settings.overleafModuleImports).flatMap(
+const moduleEntryPoints = Object.values(settings.superpaperModuleImports).flatMap(
   paths =>
     paths.map(path => {
       const cleanedPath = path.replace(Path.join(__dirname, '/'), '')
@@ -35,8 +35,6 @@ const knipConfig: KnipConfig = {
     'modules/**/test/**/*.{js,jsx,ts,tsx}',
     'modules/**/*.test.{js,jsx,ts,tsx}',
     'modules/**/stories/**/*.{js,jsx,ts,tsx}',
-    // TODO: update this when I work out how writefull entry points work
-    'modules/writefull/**/*.{js,jsx,ts,tsx}',
     'types/window.ts',
     // Workers are loaded dynamically so we explicitly include all workers
     // here until we work out a way to follow the dynamic imports

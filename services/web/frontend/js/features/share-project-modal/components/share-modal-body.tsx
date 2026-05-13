@@ -27,32 +27,12 @@ export default function ShareModalBody({
   setIsInvitedPeopleScreen,
   error,
 }: ShareModalBodyProps) {
-  const { project, features } = useProjectContext()
+  const { project } = useProjectContext()
   const { members, invites } = project || {}
   const { isProjectOwner } = useEditorContext()
   const isSharingUpdatesEnabled = useFeatureFlag('sharing-updates')
 
-  // whether the project has not reached the collaborator limit
-  const canAddCollaborators = useMemo(() => {
-    if (!isProjectOwner || !features) {
-      return false
-    }
-
-    if (features.collaborators === -1) {
-      // infinite collaborators
-      return true
-    }
-
-    const editorInvites =
-      invites?.filter(invite => invite.privileges !== 'readOnly').length || 0
-
-    return (
-      (members?.filter(member => member.privileges !== 'readOnly').length ||
-        0) +
-        editorInvites <
-      (features.collaborators ?? 1)
-    )
-  }, [members, invites, features, isProjectOwner])
+  const canAddCollaborators = Boolean(isProjectOwner)
 
   // determine if some but not all pending editors' permissions have been resolved,
   // for moving between warning and info notification states etc.
@@ -66,33 +46,11 @@ export default function ShareModalBody({
   }, [members])
 
   const haveAnyEditorsBeenDowngraded = useMemo(() => {
-    if (!isProjectOwner || !features) {
-      return false
-    }
-
-    if (features.collaborators === -1) {
-      return false
-    }
     return (
       members?.some(member => member.pendingEditor || member.pendingReviewer) ||
       false
     )
-  }, [features, isProjectOwner, members])
-
-  const hasExceededCollaboratorLimit = useMemo(() => {
-    if (!isProjectOwner || !features || !members) {
-      return false
-    }
-
-    if (features.collaborators === -1) {
-      return false
-    }
-
-    return (
-      members.filter(member => member.privileges !== 'readOnly').length >
-      (features.collaborators ?? 1)
-    )
-  }, [features, isProjectOwner, members])
+  }, [members])
 
   const sortedMembers = useMemo(() => {
     if (!members) {
@@ -117,7 +75,6 @@ export default function ShareModalBody({
       {isProjectOwner ? (
         <SendInvites
           canAddCollaborators={canAddCollaborators}
-          hasExceededCollaboratorLimit={hasExceededCollaboratorLimit}
           haveAnyEditorsBeenDowngraded={haveAnyEditorsBeenDowngraded}
           somePendingEditorsResolved={somePendingEditorsResolved}
         />
@@ -137,9 +94,6 @@ export default function ShareModalBody({
             <InvitedPeople
               sortedMembers={sortedMembers}
               invites={invites}
-              hasExceededCollaboratorLimit={hasExceededCollaboratorLimit}
-              hasTrackChangesFeature={Boolean(features.trackChanges)}
-              canAddCollaborators={canAddCollaborators}
             />
           ) : (
             <ProjectAccess
@@ -162,14 +116,9 @@ export default function ShareModalBody({
               <EditMember
                 key={member._id}
                 member={member}
-                hasExceededCollaboratorLimit={hasExceededCollaboratorLimit}
                 hasBeenDowngraded={Boolean(
                   member.pendingEditor || member.pendingReviewer
                 )}
-                canAddCollaborators={canAddCollaborators}
-                isReviewerOnFreeProject={
-                  member.privileges === 'review' && !features.trackChanges
-                }
               />
             ) : (
               <ViewMember key={member._id} member={member} />

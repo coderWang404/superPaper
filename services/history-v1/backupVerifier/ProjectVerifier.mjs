@@ -1,14 +1,14 @@
 // @ts-check
 import { verifyProjectWithErrorContext } from '../storage/lib/backupVerifier.mjs'
-import { promiseMapSettledWithLimit } from '@overleaf/promise-utils'
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import { promiseMapSettledWithLimit } from '@superpaper/promise-utils'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 import {
   getSampleProjectsCursor,
   getProjectsCreatedInDateRangeCursor,
   getProjectsUpdatedInDateRangeCursor,
 } from './ProjectSampler.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { setTimeout } from 'node:timers/promises'
 
 const MS_PER_30_DAYS = 30 * 24 * 60 * 60 * 1000

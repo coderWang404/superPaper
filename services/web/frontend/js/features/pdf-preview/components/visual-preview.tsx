@@ -110,7 +110,7 @@ export const VisualPreview: FC<{ view: EditorView }> = ({ view }) => {
       }),
     })
 
-    setEditorTheme('overleaf').then(spec => {
+    setEditorTheme('superpaper').then(spec => {
       preview.dispatch(spec)
     })
 

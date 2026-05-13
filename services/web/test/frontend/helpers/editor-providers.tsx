@@ -176,7 +176,7 @@ export function EditorProviders({
 }: EditorProvidersProps) {
   window.metaAttributesCache.set(
     'ol-gitBridgePublicBaseUrl',
-    'https://git.overleaf.test'
+    'https://git.superpaper.test'
   )
   window.metaAttributesCache.set(
     'ol-isRestrictedTokenMember',
@@ -283,22 +283,8 @@ export function makeEditorProvider({
       isProjectOwner,
       renameProject,
       isPendingEditor: false,
-      hasSuggestionsLeft: false,
-      premiumSuggestionResetDate: new Date(),
-      hasTokensLeft: false,
-      tokensLeft: 0,
-      setTokensLeft: () => {},
-      tokenResetDate: new Date(),
-      setTokenResetDate: () => {},
-      suggestionsLeft: 0,
-      setSuggestionsLeft: () => {},
-      setPremiumSuggestionResetDate: () => {},
-      writefullInstance: null,
-      setWritefullInstance: () => {},
       cobranding,
       isRestrictedTokenMember,
-      upgradeTrackChangesModal: { show: false },
-      setUpgradeTrackChangesModal: () => {},
     }
 
     return (
@@ -366,13 +352,9 @@ const makeIdeReactProvider = (
   socket: Socket
 ) => {
   const IdeReactProvider: FC<PropsWithChildren> = ({ children }) => {
-    const [startedFreeTrial, setStartedFreeTrial] = useState(false)
-
     const [ideReactContextValue] = useState(() => ({
       projectId: PROJECT_ID,
       eventEmitter: new IdeEventEmitter(),
-      startedFreeTrial,
-      setStartedFreeTrial,
       reportError: () => {},
       projectJoined: true,
       permissionsLevel: scope.permissionsLevel as PermissionsLevel,
@@ -394,10 +376,10 @@ const makeIdeReactProvider = (
     })
 
     useEffect(() => {
-      window.overleaf = {
-        ...window.overleaf,
+      window.superPaper = {
+        ...window.superPaper,
         unstable: {
-          ...window.overleaf?.unstable,
+          ...window.superPaper?.unstable,
           store: ideContextValue.unstableStore,
         },
       }

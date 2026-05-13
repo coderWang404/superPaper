@@ -6,7 +6,7 @@
  * Released under the BSD License.
  *
  * Modifications 2016 Sharelatex
- * Modifications 2017-2020 Overleaf
+ * Modifications 2017-2020 superPaper
  *
  * A forgiving Bibtex parser that can:
  *

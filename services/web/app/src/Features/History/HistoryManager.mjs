@@ -5,15 +5,15 @@ import {
   fetchStream,
   fetchStreamWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import fs from 'node:fs'
-import settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
+import settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
 import UserGetter from '../User/UserGetter.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import HistoryBackupDeletionHandler from './HistoryBackupDeletionHandler.mjs'
 import { db, waitForDb } from '../../infrastructure/mongodb.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import { NotFoundError } from '../Errors/Errors.js'
 
 const HISTORY_V1_URL = settings.apis.v1_history.url
@@ -191,9 +191,9 @@ async function requestBlobWithProjectId(
   range = ''
 ) {
   const project = await ProjectGetter.promises.getProject(projectId, {
-    'overleaf.history.id': true,
+    'superpaper.history.id': true,
   })
-  return requestBlob(project.overleaf.history.id, hash, method, range)
+  return requestBlob(project.superpaper.history.id, hash, method, range)
 }
 
 async function requestBlob(historyId, hash, method = 'GET', range = '') {
@@ -354,9 +354,9 @@ async function getChangesWithHistoryId(historyId, opts = {}) {
 
 async function getHistoryId(projectId) {
   const project = await ProjectGetter.promises.getProject(projectId, {
-    overleaf: true,
+    superpaper: true,
   })
-  const historyId = project?.overleaf?.history?.id
+  const historyId = project?.superpaper?.history?.id
   if (!historyId) {
     throw new OError('project does not have a history id', { projectId })
   }
@@ -430,13 +430,13 @@ async function injectUserDetails(data) {
   for (const user of usersArray) {
     users[user._id.toString()] = _userView(user)
   }
-  projection.overleaf = 1
+  projection.superpaper = 1
   const v1IdentifiedUsersArray = await UserGetter.promises.getUsersByV1Ids(
     v1UserIds,
     projection
   )
   for (const user of v1IdentifiedUsersArray) {
-    users[user.overleaf.id] = _userView(user)
+    users[user.superpaper.id] = _userView(user)
   }
   for (const entry of entries) {
     if (entry.meta != null) {

@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event'
 
 const OPTIONS = [
   {
-    label: 'Overleaf',
+    label: 'superPaper',
     value: 'pdfjs',
   },
   {

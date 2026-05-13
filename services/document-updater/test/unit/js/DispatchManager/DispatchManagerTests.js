@@ -22,12 +22,12 @@ describe('DispatchManager', function () {
     this.DispatchManager = SandboxedModule.require(modulePath, {
       requires: {
         './UpdateManager': (this.UpdateManager = {}),
-        '@overleaf/settings': (this.settings = {
+        '@superpaper/settings': (this.settings = {
           redis: {
             documentupdater: {},
           },
         }),
-        '@overleaf/redis-wrapper': (this.redis = {}),
+        '@superpaper/redis-wrapper': (this.redis = {}),
         './RateLimitManager': {},
         './Errors': Errors,
         './Metrics': (this.Metrics = {

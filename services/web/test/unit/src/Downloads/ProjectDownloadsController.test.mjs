@@ -209,7 +209,7 @@ describe('ProjectDownloadsController', function () {
     it('should name the downloaded file after the project', function (ctx) {
       ctx.res.headers.should.deep.equal({
         'Content-Disposition':
-          'attachment; filename="Overleaf Projects (2 items).zip"',
+          'attachment; filename="superPaper Projects (2 items).zip"',
         'Content-Type': 'application/zip',
         'X-Accel-Buffering': 'no',
         'X-Content-Type-Options': 'nosniff',

@@ -10,11 +10,11 @@ describe('RoomManager', function () {
     ctx.other_doc_id = 'doc-id-789'
     ctx.client = { namespace: { name: '' }, id: 'first-client' }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {}),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.metrics = { gauge: sinon.stub() }),
     }))
 

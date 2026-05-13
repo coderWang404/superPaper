@@ -52,15 +52,15 @@ describe('ConnectedUsersManager', function () {
       histogram: sinon.stub(),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: ctx.Metrics,
     }))
 
-    vi.doMock('@overleaf/redis-wrapper', () => ({
+    vi.doMock('@superpaper/redis-wrapper', () => ({
       default: {
         createClient: () => {
           return ctx.rClient

@@ -45,7 +45,7 @@ describe('DocumentUpdaterHandler', function () {
       .withArgs(ctx.project_id)
       .resolves(ctx.project)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -68,7 +68,7 @@ describe('DocumentUpdaterHandler', function () {
       default: {},
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         Timer: class {
           done() {}
@@ -1219,7 +1219,7 @@ describe('DocumentUpdaterHandler', function () {
             .withArgs(ctx.project_id)
             .resolves({
               _id: ctx.project_id,
-              overleaf: { history: { rangesSupportEnabled: true } },
+              superpaper: { history: { rangesSupportEnabled: true } },
             })
 
           const updates = [

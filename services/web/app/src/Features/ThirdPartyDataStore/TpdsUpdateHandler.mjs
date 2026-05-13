@@ -1,6 +1,6 @@
 import { callbackify } from 'node:util'
 import UpdateMerger from './UpdateMerger.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import NotificationsBuilder from '../Notifications/NotificationsBuilder.mjs'
 import ProjectCreationHandler from '../Project/ProjectCreationHandler.mjs'
 import ProjectDeleter from '../Project/ProjectDeleter.mjs'

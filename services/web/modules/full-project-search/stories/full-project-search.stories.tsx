@@ -82,7 +82,7 @@ const meta = {
           'express:/project/:projectId/blob/5199b66d9d1226551be436c66bad9d962cc05537',
           {
             status: 200,
-            body: `Simply use the section and subsection commands, as in this example document! With Overleaf, all the formatting and numbering is handled automatically according to the template you've chosen. If you're using the Visual Editor, you can also create new section and subsections via the buttons in the editor toolbar.`,
+            body: `Simply use the section and subsection commands, as in this example document! With superPaper, all the formatting and numbering is handled automatically according to the template you've chosen. If you're using the Visual Editor, you can also create new section and subsections via the buttons in the editor toolbar.`,
           }
         )
 

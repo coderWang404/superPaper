@@ -7,10 +7,8 @@ import { useSendProjectListMB } from '@/features/project-list/components/project
 
 export default function LoggedInItems({
   sessionUser,
-  showSubscriptionLink,
 }: {
   sessionUser: NavbarSessionUser
-  showSubscriptionLink: boolean
 }) {
   const { t } = useTranslation()
   const sendProjectListMB = useSendProjectListMB()
@@ -31,10 +29,7 @@ export default function LoggedInItems({
           }
         }}
       >
-        <AccountMenuItems
-          sessionUser={sessionUser}
-          showSubscriptionLink={showSubscriptionLink}
-        />
+        <AccountMenuItems sessionUser={sessionUser} />
       </NavDropdownMenu>
     </>
   )

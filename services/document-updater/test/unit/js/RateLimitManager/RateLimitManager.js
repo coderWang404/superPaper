@@ -20,7 +20,7 @@ describe('RateLimitManager', function () {
     let Timer
     this.RateLimitManager = SandboxedModule.require(modulePath, {
       requires: {
-        '@overleaf/settings': (this.settings = {}),
+        '@superpaper/settings': (this.settings = {}),
         './Metrics': (this.Metrics = {
           Timer: (Timer = (function () {
             Timer = class Timer {

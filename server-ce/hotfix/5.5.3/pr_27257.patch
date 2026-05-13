@@ -712,7 +712,7 @@ index b20e365c4ff..2bfc4051622 100644
 @@ -1306,7 +1318,9 @@ async function processDeletedProjects() {
          'project.rootFolder': 1,
          'project._id': 1,
-         'project.overleaf.history.id': 1,
+         'project.superpaper.history.id': 1,
 -      }
 +      },
 +      {},
@@ -1368,7 +1368,7 @@ index 092b8f04e43..755443adf52 100644
      )
    } catch (err) {
 @@ -1335,7 +1335,7 @@ async function processDeletedProjects() {
-         'project.overleaf.history.id': 1,
+         'project.superpaper.history.id': 1,
        },
        {},
 -      { trackProgress }

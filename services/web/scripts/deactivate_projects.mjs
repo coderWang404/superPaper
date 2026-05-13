@@ -3,7 +3,7 @@ import minimist from 'minimist'
 import PQueue from 'p-queue'
 import InactiveProjectManager from '../app/src/Features/InactiveData/InactiveProjectManager.mjs'
 import { gracefulShutdown } from '../app/src/infrastructure/GracefulShutdown.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { setTimeout } from 'node:timers/promises'
 
 // Global variables for tracking job and error counts

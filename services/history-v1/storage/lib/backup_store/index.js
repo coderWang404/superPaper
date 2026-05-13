@@ -1,13 +1,13 @@
 const { Binary, ObjectId } = require('mongodb')
 const { projects, deletedProjects, backedUpBlobs } = require('../mongodb')
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 // List projects with pending backups older than the specified interval
 function listPendingBackups(timeIntervalMs = 0, limit = null) {
   const cutoffTime = new Date(Date.now() - timeIntervalMs)
   const options = {
-    projection: { 'overleaf.backup.pendingChangeAt': 1 },
-    sort: { 'overleaf.backup.pendingChangeAt': 1 },
+    projection: { 'superpaper.backup.pendingChangeAt': 1 },
+    sort: { 'superpaper.backup.pendingChangeAt': 1 },
   }
 
   // Apply limit if provided
@@ -17,7 +17,7 @@ function listPendingBackups(timeIntervalMs = 0, limit = null) {
 
   const cursor = projects.find(
     {
-      'overleaf.backup.pendingChangeAt': {
+      'superpaper.backup.pendingChangeAt': {
         $exists: true,
         $lt: cutoffTime,
       },
@@ -40,7 +40,7 @@ function listUninitializedBackups(timeIntervalMs = 0, limit = null) {
   }
   const cursor = projects.find(
     {
-      'overleaf.backup.lastBackedUpVersion': null,
+      'superpaper.backup.lastBackedUpVersion': null,
       _id: {
         $lt: ObjectId.createFromTime(cutoffTimeInSeconds),
       },
@@ -58,20 +58,20 @@ async function getHistoryId(projectId) {
     { _id: new ObjectId(projectId) },
     {
       projection: {
-        'overleaf.history.id': 1,
+        'superpaper.history.id': 1,
       },
     }
   )
   if (!project) {
     throw new Error('Project not found')
   }
-  return project.overleaf.history.id
+  return project.superpaper.history.id
 }
 
 async function getBackupStatus(projectId, options = {}) {
   const projection = {
-    'overleaf.history': 1,
-    'overleaf.backup': 1,
+    'superpaper.history': 1,
+    'superpaper.backup': 1,
   }
   if (options.includeRootFolder) {
     projection.rootFolder = 1
@@ -93,10 +93,10 @@ async function getBackupStatus(projectId, options = {}) {
     throw new Error('Project not found')
   }
   return {
-    backupStatus: project.overleaf.backup,
-    historyId: `${project.overleaf.history.id}`,
-    currentEndVersion: project.overleaf.history.currentEndVersion,
-    currentEndTimestamp: project.overleaf.history.currentEndTimestamp,
+    backupStatus: project.superpaper.backup,
+    historyId: `${project.superpaper.history.id}`,
+    currentEndVersion: project.superpaper.history.currentEndVersion,
+    currentEndTimestamp: project.superpaper.history.currentEndTimestamp,
     ...(options.includeRootFolder && { rootFolder: project.rootFolder?.[0] }),
   }
 }
@@ -140,12 +140,12 @@ async function setBackupVersion(
   const result = await projects.updateOne(
     {
       _id: new ObjectId(projectId),
-      'overleaf.backup.lastBackedUpVersion': previousBackedUpVersion,
+      'superpaper.backup.lastBackedUpVersion': previousBackedUpVersion,
     },
     {
       $set: {
-        'overleaf.backup.lastBackedUpVersion': currentBackedUpVersion,
-        'overleaf.backup.lastBackedUpAt': currentBackedUpAt,
+        'superpaper.backup.lastBackedUpVersion': currentBackedUpVersion,
+        'superpaper.backup.lastBackedUpAt': currentBackedUpAt,
       },
     }
   )
@@ -163,13 +163,13 @@ async function updateCurrentMetadataIfNotSet(projectId, latestChunkMetadata) {
   await projects.updateOne(
     {
       _id: new ObjectId(projectId),
-      'overleaf.history.currentEndVersion': { $exists: false },
-      'overleaf.history.currentEndTimestamp': { $exists: false },
+      'superpaper.history.currentEndVersion': { $exists: false },
+      'superpaper.history.currentEndTimestamp': { $exists: false },
     },
     {
       $set: {
-        'overleaf.history.currentEndVersion': latestChunkMetadata.endVersion,
-        'overleaf.history.currentEndTimestamp':
+        'superpaper.history.currentEndVersion': latestChunkMetadata.endVersion,
+        'superpaper.history.currentEndTimestamp':
           latestChunkMetadata.endTimestamp,
       },
     }
@@ -190,12 +190,12 @@ async function updatePendingChangeTimestamp(projectId, backupStartTime) {
   await projects.updateOne({ _id: new ObjectId(projectId) }, [
     {
       $set: {
-        'overleaf.backup.pendingChangeAt': {
+        'superpaper.backup.pendingChangeAt': {
           $cond: {
             if: {
               $eq: [
-                '$overleaf.backup.lastBackedUpVersion',
-                '$overleaf.history.currentEndVersion',
+                '$superpaper.backup.lastBackedUpVersion',
+                '$superpaper.history.currentEndVersion',
               ],
             },
             then: '$$REMOVE',

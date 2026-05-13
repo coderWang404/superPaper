@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import Core from 'overleaf-editor-core'
+import Core from 'superpaper-editor-core'
 import * as OperationsCompressor from '../../../../app/js/OperationsCompressor.js'
 
 describe('OperationsCompressor', function () {

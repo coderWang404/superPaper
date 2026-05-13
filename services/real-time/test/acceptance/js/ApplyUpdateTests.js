@@ -15,8 +15,8 @@ import async from 'async'
 import { expect } from 'chai'
 import RealTimeClient from './helpers/RealTimeClient.js'
 import FixturesManager from './helpers/FixturesManager.js'
-import settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 const rclient = redis.createClient(settings.redis.documentupdater)
 
 const redisSettings = settings.redis

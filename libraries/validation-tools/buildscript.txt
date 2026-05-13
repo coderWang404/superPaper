@@ -5,7 +5,7 @@ validation-tools
 --esmock-loader=False
 --is-library=True
 --node-version=24.14.1
---package-name=@overleaf/validation-tools
+--package-name=@superpaper/validation-tools
 --public-repo=False
 --test-acceptance-vitest=True
 --test-unit-vitest=True

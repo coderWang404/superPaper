@@ -8,7 +8,7 @@
 +import { ExposedSettings } from '../../../../../types/exposed-settings'
 
  export default function GrammarlyAdvert() {
-+  const { isOverleaf } = getMeta('ol-ExposedSettings') as ExposedSettings
++  const { issuperPaper } = getMeta('ol-ExposedSettings') as ExposedSettings
 +
    const [show, setShow] = useState(false)
    const { t } = useTranslation()
@@ -18,6 +18,6 @@
    }, [remindThemLater])
 
 -  if (!show) {
-+  if (!isOverleaf || !show) {
++  if (!issuperPaper || !show) {
      return null
    }

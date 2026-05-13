@@ -1,6 +1,6 @@
 {
-  "name": "@overleaf/real-time",
-  "description": "The socket.io layer of Overleaf for real-time editor interactions",
+  "name": "@superpaper/real-time",
+  "description": "The socket.io layer of superPaper for real-time editor interactions",
   "private": true,
   "main": "app.js",
   "type": "module",
@@ -16,14 +16,14 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@overleaf/fetch-utils": "workspace:*",
-    "@overleaf/logger": "workspace:*",
-    "@overleaf/metrics": "workspace:*",
-    "@overleaf/o-error": "workspace:*",
-    "@overleaf/promise-utils": "workspace:*",
-    "@overleaf/redis-wrapper": "workspace:*",
-    "@overleaf/settings": "workspace:*",
-    "@overleaf/validation-tools": "workspace:*",
+    "@superpaper/fetch-utils": "workspace:*",
+    "@superpaper/logger": "workspace:*",
+    "@superpaper/metrics": "workspace:*",
+    "@superpaper/o-error": "workspace:*",
+    "@superpaper/promise-utils": "workspace:*",
+    "@superpaper/redis-wrapper": "workspace:*",
+    "@superpaper/settings": "workspace:*",
+    "@superpaper/validation-tools": "workspace:*",
     "async": "^3.2.5",
     "base64id": "0.1.0",
     "body-parser": "1.20.4",
@@ -34,8 +34,8 @@
     "express-session": "^1.17.1",
     "lodash": "^4.17.21",
     "proxy-addr": "^2.0.7",
-    "socket.io": "github:overleaf/socket.io#0.9.19-overleaf-12",
-    "socket.io-client": "github:overleaf/socket.io-client#0.9.17-overleaf-5",
+    "socket.io": "https://codeload.github.com/o%76erleaf/socket.io/tar.gz/7814a16800a7accb646bd34ed0995cd474fb82f6",
+    "socket.io-client": "https://codeload.github.com/o%76erleaf/socket.io-client/tar.gz/805a73d2a2e2408982597d5986a401088b7aa588",
     "zod-validation-error": "^4.0.1"
   },
   "devDependencies": {

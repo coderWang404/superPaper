@@ -114,8 +114,6 @@ describe('<ShareProjectModal/>', function () {
     this.locationWrapperSandbox = sinon.createSandbox()
     this.locationWrapperStub = this.locationWrapperSandbox.stub(location)
     fetchMock.get('/user/contacts', { contacts })
-    window.metaAttributesCache.set('ol-user', { allowedFreeTrial: true })
-    window.metaAttributesCache.set('ol-showUpgradePrompt', true)
     window.metaAttributesCache.set('ol-preventCompileOnLoad', true)
   })
 
@@ -185,10 +183,10 @@ describe('<ShareProjectModal/>', function () {
       .not.to.be.null
 
     screen.getByText(
-      `https://www.test-overleaf.com/${tokens.readAndWrite}#${tokens.readAndWriteHashPrefix}`
+      `https://www.test-superpaper.com/${tokens.readAndWrite}#${tokens.readAndWriteHashPrefix}`
     )
     screen.getByText(
-      `https://www.test-overleaf.com/read/${tokens.readOnly}#${tokens.readOnlyHashPrefix}`
+      `https://www.test-superpaper.com/read/${tokens.readOnly}#${tokens.readOnlyHashPrefix}`
     )
   })
 
@@ -535,7 +533,7 @@ describe('<ShareProjectModal/>', function () {
 
     const url = fetchMock.callHistory.calls().at(-1)?.url
     expect(url).to.equal(
-      'https://www.test-overleaf.com/project/test-project/users/member-viewer'
+      'https://www.test-superpaper.com/project/test-project/users/member-viewer'
     )
 
     expect(fetchMock.callHistory.done()).to.be.true
@@ -680,13 +678,8 @@ describe('<ShareProjectModal/>', function () {
     screen.getByText('An email address is invalid')
   })
 
-  it('displays a message when the collaborator limit is reached', async function () {
+  it('allows inviting collaborators without showing a collaborator limit banner', async function () {
     fetchMock.get(`/project/${shareModalProjectDefaults._id}/tokens`, {})
-    fetchMock.post(
-      '/event/paywall-prompt',
-      {},
-      { body: { 'paywall-type': 'project-sharing' } }
-    )
 
     renderWithEditorContext(
       <ShareProjectModal {...modalProps} />,
@@ -695,12 +688,11 @@ describe('<ShareProjectModal/>', function () {
         features: {
           collaborators: 0,
           compileGroup: 'standard',
-          trackChangesVisible: true,
         },
       })
     )
 
-    await screen.findByText('Add more collaborators')
+    await screen.findByText('Link sharing is on')
 
     const user = userEvent.setup()
     await user.click(screen.getByTestId('add-collaborator-select'))
@@ -708,22 +700,18 @@ describe('<ShareProjectModal/>', function () {
     const reviewerOption = screen.getByText('Reviewer').closest('button')
     const viewerOption = screen.getByText('Viewer').closest('button')
 
-    expect(editorOption?.classList.contains('disabled')).to.be.true
-    expect(reviewerOption?.classList.contains('disabled')).to.be.true
+    expect(editorOption?.classList.contains('disabled')).to.be.false
+    expect(reviewerOption?.classList.contains('disabled')).to.be.false
     expect(viewerOption?.classList.contains('disabled')).to.be.false
-
-    screen.getByText(
-      /Upgrade to add more collaborators and access collaboration features like track changes and full project history/
-    )
   })
 
-  it('counts reviewers towards the collaborator limit', async function () {
+  it('keeps reviewer options enabled when reviewers already exist', async function () {
     renderWithEditorContext(
       <ShareProjectModal {...modalProps} />,
       createContextProps({
+        publicAccessLevel: 'private',
         features: {
           collaborators: 1,
-          trackChangesVisible: true,
         },
         members: [
           {
@@ -737,7 +725,7 @@ describe('<ShareProjectModal/>', function () {
       })
     )
 
-    await screen.findByText('Add more collaborators')
+    await screen.findByText('Link sharing is off')
 
     const user = userEvent.setup()
     await user.click(screen.getByTestId('add-collaborator-select'))
@@ -746,13 +734,11 @@ describe('<ShareProjectModal/>', function () {
     const reviewerOption = screen.getByText('Reviewer').closest('button')
     const viewerOption = screen.getByText('Viewer').closest('button')
 
-    expect(editorOption?.classList.contains('disabled')).to.be.true
-    expect(reviewerOption?.classList.contains('disabled')).to.be.true
+    expect(editorOption?.classList.contains('disabled')).to.be.false
+    expect(reviewerOption?.classList.contains('disabled')).to.be.false
     expect(viewerOption?.classList.contains('disabled')).to.be.false
 
-    screen.getByText(
-      /Upgrade to add more collaborators and access collaboration features like track changes and full project history/
-    )
+    expect(screen.queryByText('Add more collaborators')).to.be.null
   })
 
   it('handles server error responses', async function () {
@@ -796,7 +782,7 @@ describe('<ShareProjectModal/>', function () {
 
     await respondWithError('cannot_invite_non_user')
     await screen.findByText(
-      `Can’t send invite. Recipient must already have an Overleaf account`
+      `Can’t send invite. Recipient must already have an superPaper account`
     )
 
     await respondWithError('cannot_verify_user_not_robot')

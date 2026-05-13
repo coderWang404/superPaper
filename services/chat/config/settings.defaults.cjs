@@ -17,7 +17,7 @@ module.exports = {
       url: `http://${process.env.WEB_HOST || '127.0.0.1'}:${
         process.env.WEB_PORT || 3000
       }`,
-      user: process.env.WEB_API_USER || 'overleaf',
+      user: process.env.WEB_API_USER || 'superpaper',
       pass: process.env.WEB_API_PASSWORD || 'password',
     },
   },

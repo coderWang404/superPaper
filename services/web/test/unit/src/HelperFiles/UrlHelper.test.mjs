@@ -13,7 +13,7 @@ describe('UrlHelper', function () {
       siteUrl: 'http://127.0.0.1:3000',
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

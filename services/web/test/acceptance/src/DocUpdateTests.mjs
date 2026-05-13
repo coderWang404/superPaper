@@ -1,7 +1,7 @@
 import User from './helpers/User.mjs'
 import request from './helpers/request.js'
 import { expect } from 'chai'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import mongodb from 'mongodb-legacy'
 
 const ObjectId = mongodb.ObjectId

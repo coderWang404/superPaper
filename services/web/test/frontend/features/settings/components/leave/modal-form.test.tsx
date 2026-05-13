@@ -10,7 +10,7 @@ import getMeta from '@/utils/meta'
 describe('<LeaveModalForm />', function () {
   beforeEach(function () {
     window.metaAttributesCache.set('ol-usersEmail', 'foo@bar.com')
-    Object.assign(getMeta('ol-ExposedSettings'), { isOverleaf: true })
+    Object.assign(getMeta('ol-ExposedSettings'), { isSuperPaper: true })
   })
 
   afterEach(function () {
@@ -34,7 +34,7 @@ describe('<LeaveModalForm />', function () {
     fireEvent.change(passwordInput, { target: { value: 'foobar' } })
 
     const checkbox = screen.getByLabelText(
-      'I understand this will delete all projects in my Overleaf account with email address foo@bar.com'
+      'I understand this will delete all projects in my superPaper account with email address foo@bar.com'
     )
     fireEvent.click(checkbox)
 
@@ -58,7 +58,7 @@ describe('<LeaveModalForm />', function () {
       deleteMock = fetchMock.post('/user/delete', 200)
       this.locationWrapperSandbox = sinon.createSandbox()
       this.locationWrapperStub = this.locationWrapperSandbox.stub(location)
-      Object.assign(getMeta('ol-ExposedSettings'), { isOverleaf: true })
+      Object.assign(getMeta('ol-ExposedSettings'), { isSuperPaper: true })
     })
 
     afterEach(function () {
@@ -106,7 +106,7 @@ describe('<LeaveModalForm />', function () {
   })
 
   it('handles credentials error without Saas tip', async function () {
-    Object.assign(getMeta('ol-ExposedSettings'), { isOverleaf: false })
+    Object.assign(getMeta('ol-ExposedSettings'), { isSuperPaper: false })
     fetchMock.post('/user/delete', 403)
     render(
       <LeaveModalForm
@@ -143,31 +143,6 @@ describe('<LeaveModalForm />', function () {
     screen.getByText(/If you cannot remember your password/)
     const link = screen.getByRole('link', { name: 'reset your password' })
     expect(link.getAttribute('href')).to.equal('/user/password/reset')
-  })
-
-  it('handles subscription error', async function () {
-    fetchMock.post('/user/delete', {
-      status: 422,
-      body: {
-        error: 'SubscriptionAdminDeletionError',
-      },
-    })
-
-    render(
-      <LeaveModalForm
-        setInFlight={() => {}}
-        isFormValid
-        setIsFormValid={() => {}}
-      />
-    )
-
-    fireEvent.submit(screen.getByLabelText('Email'))
-
-    await waitFor(() => {
-      screen.getByText(
-        'You cannot delete your account while on a subscription. Please cancel your subscription and try again. If you keep seeing this message please contact us.'
-      )
-    })
   })
 
   it('handles generic error', async function () {

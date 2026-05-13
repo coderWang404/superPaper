@@ -1,6 +1,6 @@
 import Path from 'node:path'
 import send from 'send'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import OutputCacheManager from './OutputCacheManager.js'
 
 const ONE_DAY_S = 24 * 60 * 60

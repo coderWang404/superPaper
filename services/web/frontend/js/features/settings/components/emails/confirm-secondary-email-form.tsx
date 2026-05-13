@@ -17,7 +17,7 @@ export default function ConfirmSecondaryEmailForm() {
     <Interstitial className="confirm-email" showLogo>
       <ConfirmEmailForm
         successMessage={successMessage}
-        successButtonText={t('go_to_overleaf')}
+        successButtonText={t('go_to_superpaper')}
         confirmationEndpoint="/user/emails/confirm-secondary"
         resendEndpoint="/user/emails/resend-secondary-confirmation"
         flow="secondary"

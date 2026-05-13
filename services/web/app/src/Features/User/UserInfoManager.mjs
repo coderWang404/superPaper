@@ -1,5 +1,5 @@
 import UserGetter from './UserGetter.mjs'
-import { callbackify } from '@overleaf/promise-utils'
+import { callbackify } from '@superpaper/promise-utils'
 
 async function getPersonalInfo(userId) {
   return UserGetter.promises.getUser(userId, {

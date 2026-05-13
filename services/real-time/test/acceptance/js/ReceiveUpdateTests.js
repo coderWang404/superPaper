@@ -15,8 +15,8 @@ import RealTimeClient from './helpers/RealTimeClient.js'
 import MockWebServer from './helpers/MockWebServer.js'
 import FixturesManager from './helpers/FixturesManager.js'
 import async from 'async'
-import settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 const rclient = redis.createClient(settings.redis.pubsub)
 
 describe('receiveUpdate', function () {

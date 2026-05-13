@@ -7,14 +7,14 @@ import Stream from 'node:stream'
 import { setTimeout } from 'node:timers/promises'
 import { ObjectId } from 'mongodb'
 import pLimit from 'p-limit'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import {
   batchedUpdate,
   objectIdFromInput,
   renderObjectId,
-} from '@overleaf/mongo-utils/batchedUpdate.js'
-import OError from '@overleaf/o-error'
-import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
+} from '@superpaper/mongo-utils/batchedUpdate.js'
+import OError from '@superpaper/o-error'
+import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
 import {
   BlobStore,
   GLOBAL_BLOBS,
@@ -34,12 +34,12 @@ Events.setMaxListeners(20)
 ObjectId.cacheHexString = true
 
 /**
- * @typedef {import("overleaf-editor-core").Blob} Blob
+ * @typedef {import("superpaper-editor-core").Blob} Blob
  * @typedef {import("perf_hooks").EventLoopUtilization} EventLoopUtilization
  * @typedef {import("mongodb").Collection} Collection
  * @typedef {import("mongodb").Collection<Project>} ProjectsCollection
  * @typedef {import("mongodb").Collection<{project:Project}>} DeletedProjectsCollection
- * @typedef {import("@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
+ * @typedef {import("@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor").CachedPerProjectEncryptedS3Persistor} CachedPerProjectEncryptedS3Persistor
  */
 
 /**
@@ -65,7 +65,7 @@ ObjectId.cacheHexString = true
  * @typedef {Object} Project
  * @property {ObjectId} _id
  * @property {Array<Folder>} rootFolder
- * @property {{history: {id: (number|string)}}} overleaf
+ * @property {{history: {id: (number|string)}}} superpaper
  */
 
 /**
@@ -101,7 +101,7 @@ function usesDefaultBatchRange() {
  * @return {{PROJECT_IDS_FROM: string, PROCESS_HASHED_FILES: boolean, LOGGING_IDENTIFIER: string, BATCH_RANGE_START: string, BATCH_RANGE_END: string, PROCESS_NON_DELETED_PROJECTS: boolean, PROCESS_DELETED_PROJECTS: boolean, PROCESS_BLOBS: boolean, DRY_RUN: boolean, OUTPUT_FILE: string, DISPLAY_REPORT: boolean, CONCURRENCY: number, CONCURRENT_BATCHES: number, RETRIES: number, RETRY_DELAY_MS: number, RETRY_FILESTORE_404: boolean, BUFFER_DIR_PREFIX: string, STREAM_HIGH_WATER_MARK: number, LOGGING_INTERVAL: number, SLEEP_BEFORE_EXIT: number }}
  */
 function parseArgs() {
-  const DEFAULT_OUTPUT_FILE = `/var/log/overleaf/file-migration-${new Date()
+  const DEFAULT_OUTPUT_FILE = `/var/log/superpaper/file-migration-${new Date()
     .toISOString()
     .replace(/[:.]/g, '_')}.log`
 
@@ -471,7 +471,7 @@ async function displayReport() {
   )
 }
 
-// Filestore endpoint location (configured by /etc/overleaf/env.sh)
+// Filestore endpoint location (configured by /etc/superpaper/env.sh)
 const FILESTORE_HOST = process.env.FILESTORE_HOST || '127.0.0.1'
 const FILESTORE_PORT = process.env.FILESTORE_PORT || '3009'
 
@@ -1097,7 +1097,7 @@ function* findFiles(ctx, folder, path, isInputLoop = false) {
 function* findFileInBatch(projects, prefix, blobs) {
   for (const project of projects) {
     const projectIdS = project._id.toString()
-    const historyIdS = project.overleaf.history.id.toString()
+    const historyIdS = project.superpaper.history.id.toString()
     const projectBlobs = blobs.get(historyIdS) || []
     const ctx = new ProjectContext(project._id, historyIdS, projectBlobs)
     try {
@@ -1119,7 +1119,7 @@ function* findFileInBatch(projects, prefix, blobs) {
  */
 async function collectProjectBlobs(batch) {
   if (!PROCESS_BLOBS) return { nBlobs: 0, blobs: new Map() }
-  return await getProjectBlobsBatch(batch.map(p => p.overleaf.history.id))
+  return await getProjectBlobsBatch(batch.map(p => p.superpaper.history.id))
 }
 
 const BATCH_FILE_UPDATES = 100
@@ -1338,7 +1338,7 @@ async function processProjectsFromFile() {
     if (!projectId) continue // skip over trailing new line
     let project = await typedProjectsCollection.findOne(
       { _id: new ObjectId(projectId) },
-      { projection: { rootFolder: 1, _id: 1, 'overleaf.history.id': 1 } }
+      { projection: { rootFolder: 1, _id: 1, 'superpaper.history.id': 1 } }
     )
     let prefix = 'rootFolder.0'
     if (!project) {
@@ -1348,7 +1348,7 @@ async function processProjectsFromFile() {
           projection: {
             'project.rootFolder': 1,
             'project._id': 1,
-            'project.overleaf.history.id': 1,
+            'project.superpaper.history.id': 1,
           },
         }
       )
@@ -1359,7 +1359,7 @@ async function processProjectsFromFile() {
       project = deletedProject.project
       prefix = 'project.rootFolder.0'
     }
-    if (!project?.overleaf?.history?.id) {
+    if (!project?.superpaper?.history?.id) {
       logger.warn({ projectId }, 'project has no history id')
       continue
     }
@@ -1379,9 +1379,9 @@ async function processNonDeletedProjects() {
   try {
     await batchedUpdate(
       projectsCollection,
-      { 'overleaf.history.id': { $exists: true } },
+      { 'superpaper.history.id': { $exists: true } },
       queueNextBatch,
-      { rootFolder: 1, _id: 1, 'overleaf.history.id': 1 },
+      { rootFolder: 1, _id: 1, 'superpaper.history.id': 1 },
       {},
       {
         BATCH_RANGE_START,
@@ -1407,13 +1407,13 @@ async function processDeletedProjects() {
           $gt: new ObjectId(BATCH_RANGE_START),
           $lte: new ObjectId(BATCH_RANGE_END),
         },
-        'project.overleaf.history.id': { $exists: true },
+        'project.superpaper.history.id': { $exists: true },
       },
       handleDeletedFileTreeBatch,
       {
         'project.rootFolder': 1,
         'project._id': 1,
-        'project.overleaf.history.id': 1,
+        'project.superpaper.history.id': 1,
       },
       {},
       { trackProgress: async message => {} }
@@ -1512,7 +1512,7 @@ try {
         )
       console.warn('The binary files migration succeeded.')
       console.warn(
-        'You can now proceed to OVERLEAF_FILESTORE_MIGRATION_LEVEL=2.'
+        'You can now proceed to SUPERPAPER_FILESTORE_MIGRATION_LEVEL=2.'
       )
     } else {
       console.warn(
@@ -1529,7 +1529,7 @@ try {
       'Please review the failures and check the docs on remediating the failures.'
     )
     console.warn(
-      'Docs: https://docs.overleaf.com/on-premises/release-notes/release-notes-5.x.x/binary-files-migration#troubleshooting'
+      'Docs: https://docs.superpaper.com/on-premises/release-notes/release-notes-5.x.x/binary-files-migration#troubleshooting'
     )
     console.warn(
       'In case there is not solution available, please reach out to support as detailed in the docs.'

@@ -107,9 +107,9 @@ public class UrlResourceCacheTest {
   @Test
   public void tokenIsRemovedFromCacheKey() throws Exception {
     String url =
-        "http://history.overleaf.com/projects/1234/blobs/abdef?token=secretencryptedstuff&_path=test.tex";
+        "http://history.superpaper.com/projects/1234/blobs/abdef?token=secretencryptedstuff&_path=test.tex";
     String cacheKey =
-        "http://history.overleaf.com/projects/1234/blobs/abdef?token=REMOVED&_path=test.tex";
+        "http://history.superpaper.com/projects/1234/blobs/abdef?token=REMOVED&_path=test.tex";
     respondWithContentLength(123);
     getUrl(url);
     verify(dbStore).getPathForURLInProject(PROJ, cacheKey);

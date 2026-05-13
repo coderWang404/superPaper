@@ -10,7 +10,7 @@ const fetch = require('./support/fetch')
 const fixtures = require('./support/fixtures')
 const { getZipEntries } = require('./support/unzip')
 
-const { Snapshot, File } = require('overleaf-editor-core')
+const { Snapshot, File } = require('superpaper-editor-core')
 
 const { zipStore } = require('../../../../storage')
 

@@ -8,13 +8,13 @@ import { ProjectListRootInner } from '@/features/project-list/components/project
 const users = {
   picard: {
     id: '62d6d0b4c5c5030a4d696c7a',
-    email: 'picard@overleaf.com',
+    email: 'picard@superpaper.com',
     firstName: 'Jean-Luc',
     lastName: 'Picard',
   },
   riker: {
     id: '624333f147cfd8002622a1d3',
-    email: 'riker@overleaf.com',
+    email: 'riker@superpaper.com',
     firstName: 'William',
     lastName: 'Riker',
   },
@@ -55,7 +55,7 @@ describe('<ProjectTools />', function () {
     window.metaAttributesCache.set('ol-footer', {
       showThinFooter: false,
       translatedLanguages: { en: 'English' },
-      subdomainLang: { en: { lngCode: 'en', url: 'overleaf.com' } },
+      subdomainLang: { en: { lngCode: 'en', url: 'superpaper.com' } },
     })
     window.metaAttributesCache.set('ol-navbar', {
       items: [],

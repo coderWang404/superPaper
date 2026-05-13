@@ -42,7 +42,7 @@ describe('EmailSender', function () {
       SESClient: ctx.SESClient,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 

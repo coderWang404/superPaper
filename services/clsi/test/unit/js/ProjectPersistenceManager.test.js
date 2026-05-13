@@ -13,7 +13,7 @@ describe('ProjectPersistenceManager', () => {
       statfs: sinon.stub(),
     }
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.Metrics = { gauge: sinon.stub() }),
     }))
 
@@ -37,7 +37,7 @@ describe('ProjectPersistenceManager', () => {
       default: { promises: ctx.fsPromises },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         project_cache_length_ms: 1000,
         path: {

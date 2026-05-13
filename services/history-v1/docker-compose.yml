@@ -1,6 +1,6 @@
 # This file was auto-generated, do not edit it directly.
 # Instead run bin/update_build_scripts from
-# https://github.com/overleaf/internal/
+# https://github.com/superpaper/internal/
 
 volumes:
   minio-certs:
@@ -12,20 +12,20 @@ services:
       dockerfile: services/history-v1/Dockerfile
       target: base
     volumes:
-      - .:/overleaf/services/history-v1
-      - ../../node_modules:/overleaf/node_modules
-      - ../../libraries:/overleaf/libraries
-      - ../../package.json:/overleaf/package.json
-      - ../../.yarnrc.yml:/overleaf/.yarnrc.yml
-      - ../../yarn.lock:/overleaf/yarn.lock
-      - ../../.yarn:/overleaf/.yarn
-      - ../../bin/shared/wait_for_it:/overleaf/bin/shared/wait_for_it
-      - ../../tools/migrations:/overleaf/tools/migrations
-    working_dir: /overleaf/services/history-v1
+      - .:/superpaper/services/history-v1
+      - ../../node_modules:/superpaper/node_modules
+      - ../../libraries:/superpaper/libraries
+      - ../../package.json:/superpaper/package.json
+      - ../../.yarnrc.yml:/superpaper/.yarnrc.yml
+      - ../../yarn.lock:/superpaper/yarn.lock
+      - ../../.yarn:/superpaper/.yarn
+      - ../../bin/shared/wait_for_it:/superpaper/bin/shared/wait_for_it
+      - ../../tools/migrations:/superpaper/tools/migrations
+    working_dir: /superpaper/services/history-v1
     environment:
       MOCHA_GREP: ${MOCHA_GREP}
       LOG_LEVEL: ${LOG_LEVEL:-}
-      MONGO_CONNECTION_STRING: mongodb://mongo/test-overleaf
+      MONGO_CONNECTION_STRING: mongodb://mongo/test-superpaper
       NODE_ENV: test
       NODE_OPTIONS: "--unhandled-rejections=strict"
       REDIS_HOST: redis_test
@@ -33,7 +33,7 @@ services:
       QUEUES_REDIS_HOST: redis_test
       ANALYTICS_QUEUES_REDIS_HOST: redis_test
       ANALYTICS_QUEUES_BQ_SINK_REDIS_HOST: redis_test
-    entrypoint: /overleaf/bin/shared/wait_for_it mongo:27017 --timeout=60 --
+    entrypoint: /superpaper/bin/shared/wait_for_it mongo:27017 --timeout=60 --
     command: corepack yarn run --silent test:unit
     user: node
     depends_on:
@@ -48,17 +48,17 @@ services:
       dockerfile: services/history-v1/Dockerfile
       target: base
     volumes:
-      - .:/overleaf/services/history-v1
-      - ../../node_modules:/overleaf/node_modules
-      - ../../libraries:/overleaf/libraries
-      - ../../package.json:/overleaf/package.json
-      - ../../.yarnrc.yml:/overleaf/.yarnrc.yml
-      - ../../yarn.lock:/overleaf/yarn.lock
-      - ../../.yarn:/overleaf/.yarn
+      - .:/superpaper/services/history-v1
+      - ../../node_modules:/superpaper/node_modules
+      - ../../libraries:/superpaper/libraries
+      - ../../package.json:/superpaper/package.json
+      - ../../.yarnrc.yml:/superpaper/.yarnrc.yml
+      - ../../yarn.lock:/superpaper/yarn.lock
+      - ../../.yarn:/superpaper/.yarn
       - minio-certs:/certs
-      - ../../bin/shared/wait_for_it:/overleaf/bin/shared/wait_for_it
-      - ../../tools/migrations:/overleaf/tools/migrations
-    working_dir: /overleaf/services/history-v1
+      - ../../bin/shared/wait_for_it:/superpaper/bin/shared/wait_for_it
+      - ../../tools/migrations:/superpaper/tools/migrations
+    working_dir: /superpaper/services/history-v1
     environment:
       RETRIES:
       REDIS_HOST: redis_test
@@ -66,13 +66,13 @@ services:
       QUEUES_REDIS_HOST: redis_test
       ANALYTICS_QUEUES_REDIS_HOST: redis_test
       ANALYTICS_QUEUES_BQ_SINK_REDIS_HOST: redis_test
-      MONGO_CONNECTION_STRING: mongodb://mongo/test-overleaf
+      MONGO_CONNECTION_STRING: mongodb://mongo/test-superpaper
       POSTGRES_HOST: postgres
       AWS_S3_ENDPOINT: https://minio:9000
       AWS_S3_PATH_STYLE: "true"
       DELETE_OBJECTS_MD5_FALLBACK: true
-      AWS_ACCESS_KEY_ID: OVERLEAF_HISTORY_S3_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY: OVERLEAF_HISTORY_S3_SECRET_ACCESS_KEY
+      AWS_ACCESS_KEY_ID: SUPERPAPER_HISTORY_S3_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: SUPERPAPER_HISTORY_S3_SECRET_ACCESS_KEY
       MINIO_ROOT_USER: MINIO_ROOT_USER
       MINIO_ROOT_PASSWORD: MINIO_ROOT_PASSWORD
       GCS_API_ENDPOINT: http://gcs:9090
@@ -98,7 +98,7 @@ services:
         condition: service_completed_successfully
       gcs:
         condition: service_healthy
-    entrypoint: /overleaf/bin/shared/wait_for_it mongo:27017 --timeout=60 --
+    entrypoint: /superpaper/bin/shared/wait_for_it mongo:27017 --timeout=60 --
     command: corepack yarn run --silent test:acceptance
 
   redis_test:
@@ -110,7 +110,7 @@ services:
 
   mongo:
     image: mongo:8.0.11
-    command: --replSet overleaf --notablescan
+    command: --replSet superpaper --notablescan
     volumes:
       - ../../bin/shared/mongodb-init-replica-set.js:/docker-entrypoint-initdb.d/mongodb-init-replica-set.js
       - ../../bin/shared/mongodb-docker-entrypoint-wait.sh:/mongodb-docker-entrypoint-wait.sh
@@ -126,9 +126,9 @@ services:
   postgres:
     image: postgres:10
     environment:
-      POSTGRES_USER: overleaf
-      POSTGRES_PASSWORD: overleaf
-      POSTGRES_DB: overleaf-history-v1-test
+      POSTGRES_USER: superpaper
+      POSTGRES_PASSWORD: superpaper
+      POSTGRES_DB: superpaper-history-v1-test
     volumes:
       - ./test/acceptance/pg-init/:/docker-entrypoint-initdb.d/
     healthcheck:
@@ -189,13 +189,13 @@ services:
         mc alias set s3 https://minio:9000 MINIO_ROOT_USER MINIO_ROOT_PASSWORD \
         || sleep 3 && \
         mc alias set s3 https://minio:9000 MINIO_ROOT_USER MINIO_ROOT_PASSWORD
-        mc mb --ignore-existing s3/overleaf-test-history-chunks
-        mc mb --ignore-existing s3/overleaf-test-history-deks
-        mc mb --ignore-existing s3/overleaf-test-history-global-blobs
-        mc mb --ignore-existing s3/overleaf-test-history-project-blobs
+        mc mb --ignore-existing s3/superpaper-test-history-chunks
+        mc mb --ignore-existing s3/superpaper-test-history-deks
+        mc mb --ignore-existing s3/superpaper-test-history-global-blobs
+        mc mb --ignore-existing s3/superpaper-test-history-project-blobs
         mc admin user add s3 \
-          OVERLEAF_HISTORY_S3_ACCESS_KEY_ID \
-          OVERLEAF_HISTORY_S3_SECRET_ACCESS_KEY
+          SUPERPAPER_HISTORY_S3_ACCESS_KEY_ID \
+          SUPERPAPER_HISTORY_S3_SECRET_ACCESS_KEY
         echo '
           {
             "Version": "2012-10-17",
@@ -205,7 +205,7 @@ services:
                 "Action": [
                   "s3:ListBucket"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-chunks"
+                "Resource": "arn:aws:s3:::superpaper-test-history-chunks"
               },
               {
                 "Effect": "Allow",
@@ -217,14 +217,14 @@ services:
                   "s3:ListMultipartUploadParts",
                   "s3:ListBucketMultipartUploads"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-chunks/*"
+                "Resource": "arn:aws:s3:::superpaper-test-history-chunks/*"
               },
               {
                 "Effect": "Allow",
                 "Action": [
                   "s3:ListBucket"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-deks"
+                "Resource": "arn:aws:s3:::superpaper-test-history-deks"
               },
               {
                 "Effect": "Allow",
@@ -236,14 +236,14 @@ services:
                   "s3:ListMultipartUploadParts",
                   "s3:ListBucketMultipartUploads"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-deks/*"
+                "Resource": "arn:aws:s3:::superpaper-test-history-deks/*"
               },
               {
                 "Effect": "Allow",
                 "Action": [
                   "s3:ListBucket"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-global-blobs"
+                "Resource": "arn:aws:s3:::superpaper-test-history-global-blobs"
               },
               {
                 "Effect": "Allow",
@@ -255,14 +255,14 @@ services:
                   "s3:ListMultipartUploadParts",
                   "s3:ListBucketMultipartUploads"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-global-blobs/*"
+                "Resource": "arn:aws:s3:::superpaper-test-history-global-blobs/*"
               },
               {
                 "Effect": "Allow",
                 "Action": [
                   "s3:ListBucket"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-project-blobs"
+                "Resource": "arn:aws:s3:::superpaper-test-history-project-blobs"
               },
               {
                 "Effect": "Allow",
@@ -274,14 +274,14 @@ services:
                   "s3:ListMultipartUploadParts",
                   "s3:ListBucketMultipartUploads"
                 ],
-                "Resource": "arn:aws:s3:::overleaf-test-history-project-blobs/*"
+                "Resource": "arn:aws:s3:::superpaper-test-history-project-blobs/*"
               }
             ]
           }' > policy-history.json
 
-        mc admin policy create s3 overleaf-history policy-history.json
-        mc admin policy attach s3 overleaf-history \
-          --user=OVERLEAF_HISTORY_S3_ACCESS_KEY_ID
+        mc admin policy create s3 superpaper-history policy-history.json
+        mc admin policy attach s3 superpaper-history \
+          --user=SUPERPAPER_HISTORY_S3_ACCESS_KEY_ID
 
   gcs:
     image: fsouza/fake-gcs-server:1.52.3

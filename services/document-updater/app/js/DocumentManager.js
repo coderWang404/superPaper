@@ -1,17 +1,17 @@
-const { callbackifyAll } = require('@overleaf/promise-utils')
+const { callbackifyAll } = require('@superpaper/promise-utils')
 const RedisManager = require('./RedisManager')
 const ProjectHistoryRedisManager = require('./ProjectHistoryRedisManager')
 const PersistenceManager = require('./PersistenceManager')
 const DiffCodec = require('./DiffCodec')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const Metrics = require('./Metrics')
 const HistoryManager = require('./HistoryManager')
 const Errors = require('./Errors')
 const RangesManager = require('./RangesManager')
 const { extractOriginOrSource } = require('./Utils')
 const { getTotalSizeOfLines } = require('./Limits')
-const Settings = require('@overleaf/settings')
-const { StringFileData } = require('overleaf-editor-core')
+const Settings = require('@superpaper/settings')
+const { StringFileData } = require('superpaper-editor-core')
 
 const MAX_UNFLUSHED_AGE = Settings.maxUnflushedAgeMs // document should be flushed to mongo this time after a change
 

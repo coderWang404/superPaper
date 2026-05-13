@@ -3,22 +3,22 @@
 /* eslint-disable no-console */
 
 // Metrics must be initialized before importing anything else
-require('@overleaf/metrics/initialize')
+require('@superpaper/metrics/initialize')
 
 const config = require('config')
 const Events = require('node:events')
 const express = require('express')
 const helmet = require('helmet')
 const HTTPStatus = require('http-status')
-const logger = require('@overleaf/logger')
-const Metrics = require('@overleaf/metrics')
+const logger = require('@superpaper/logger')
+const Metrics = require('@superpaper/metrics')
 const bodyParser = require('body-parser')
 const security = require('./api/middleware/security')
 const healthChecks = require('./api/controllers/health_checks')
 const { mongodb, loadGlobalBlobs } = require('./storage')
 const projectsRoutes = require('./api/routes/projects')
 const projectImportRoutes = require('./api/routes/project_import')
-const { createHandleValidationError } = require('@overleaf/validation-tools')
+const { createHandleValidationError } = require('@superpaper/validation-tools')
 
 Events.setMaxListeners(20)
 const app = express()

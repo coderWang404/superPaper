@@ -2,18 +2,18 @@
 +++ b/services/history-v1/config/custom-environment-variables.json
 @@ -50,12 +50,14 @@
      "history": {
-       "host": "OVERLEAF_REDIS_HOST",
-       "password": "OVERLEAF_REDIS_PASS",
--      "port": "OVERLEAF_REDIS_PORT"
-+      "port": "OVERLEAF_REDIS_PORT",
-+      "tls": "OVERLEAF_REDIS_TLS"
+       "host": "SUPERPAPER_REDIS_HOST",
+       "password": "SUPERPAPER_REDIS_PASS",
+-      "port": "SUPERPAPER_REDIS_PORT"
++      "port": "SUPERPAPER_REDIS_PORT",
++      "tls": "SUPERPAPER_REDIS_TLS"
      },
      "lock": {
-       "host": "OVERLEAF_REDIS_HOST",
-       "password": "OVERLEAF_REDIS_PASS",
--      "port": "OVERLEAF_REDIS_PORT"
-+      "port": "OVERLEAF_REDIS_PORT",
-+      "tls": "OVERLEAF_REDIS_TLS"
+       "host": "SUPERPAPER_REDIS_HOST",
+       "password": "SUPERPAPER_REDIS_PASS",
+-      "port": "SUPERPAPER_REDIS_PORT"
++      "port": "SUPERPAPER_REDIS_PORT",
++      "tls": "SUPERPAPER_REDIS_TLS"
      }
    }
  }

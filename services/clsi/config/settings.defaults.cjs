@@ -121,7 +121,7 @@ if ((process.env.DOCKER_RUNNER || process.env.SANDBOXED_COMPILES) === 'true') {
     !fs.existsSync(Path.join(__dirname, '..', 'app', 'js', 'DockerRunner.js'))
   ) {
     console.error(
-      'Sandboxed compiles are only available with Overleaf Server Pro. Compare Server Pro with Community Edition here: https://docs.overleaf.com/on-premises/welcome/server-pro-vs.-community-edition'
+      'Sandboxed compiles are only available with superPaper Server Pro. Compare Server Pro with Community Edition here: https://docs.superpaper.com/on-premises/welcome/server-pro-vs.-community-edition'
     )
     process.exit(1)
   }

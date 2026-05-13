@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import async from 'async'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 import path from 'node:path'
 import { db, ObjectId } from '../app/js/mongodb.js'
 

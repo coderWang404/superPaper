@@ -10,7 +10,7 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 import * as WebApiManager from './WebApiManager.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 export function shouldUseProjectHistory(projectId, callback) {
   if (callback == null) {

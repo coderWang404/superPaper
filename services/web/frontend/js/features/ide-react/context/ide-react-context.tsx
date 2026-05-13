@@ -27,10 +27,6 @@ const LOADED_AT = new Date()
 type IdeReactContextValue = {
   projectId: string
   eventEmitter: IdeEventEmitter
-  startedFreeTrial: boolean
-  setStartedFreeTrial: React.Dispatch<
-    React.SetStateAction<IdeReactContextValue['startedFreeTrial']>
-  >
   reportError: (error: any, meta?: Record<string, any>) => void
   projectJoined: boolean
   permissionsLevel: PermissionsLevel
@@ -53,12 +49,10 @@ export const IdeReactProvider: FC<React.PropsWithChildren> = ({ children }) => {
   )
   const [unstableStore] = useState(() => {
     const store = new ReactScopeValueStore()
-    // Add dummy editor.ready key for Writefull, that relies on this calling
-    // back once after watching it
+    // Add a stable readiness key for external extensions that watch editor state.
     store.set('editor.ready', undefined)
     return store
   })
-  const [startedFreeTrial, setStartedFreeTrial] = useState(false)
   const release = getMeta('ol-ExposedSettings')?.sentryRelease ?? null
 
   // Set to true only after project:joined has fired and all its listeners have
@@ -143,8 +137,6 @@ export const IdeReactProvider: FC<React.PropsWithChildren> = ({ children }) => {
   const value = useMemo(
     () => ({
       eventEmitter,
-      startedFreeTrial,
-      setStartedFreeTrial,
       permissionsLevel: outOfSync ? 'readOnly' : permissionsLevel,
       setPermissionsLevel,
       setOutOfSync,
@@ -159,7 +151,6 @@ export const IdeReactProvider: FC<React.PropsWithChildren> = ({ children }) => {
       projectId,
       projectJoined,
       reportError,
-      startedFreeTrial,
     ]
   )
 

@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import { plainTextResponse } from '../../infrastructure/Response.mjs'
 
 function renderJSONError(res, message, info = {}) {

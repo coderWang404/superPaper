@@ -166,14 +166,6 @@ export const LayoutProvider: FC<React.PropsWithChildren> = ({ children }) => {
 
   // TODO ide-redesign-cleanup: remove this listener as we have an equivalent in rail-context
   useEventListener(
-    'ui.toggle-review-panel',
-    useCallback(() => {
-      setReviewPanelOpen(open => !open)
-    }, [setReviewPanelOpen])
-  )
-
-  // TODO ide-redesign-cleanup: remove this listener as we have an equivalent in rail-context
-  useEventListener(
     'keydown',
     useCallback((event: KeyboardEvent) => {
       if (
@@ -213,7 +205,7 @@ export const LayoutProvider: FC<React.PropsWithChildren> = ({ children }) => {
 
   // Force codemirror to reposition all tooltips to prevent an issue
   // where tooltips would sometimes show on top of the pdf preview
-  // https://github.com/overleaf/internal/issues/23840
+  // https://github.com/superpaper/internal/issues/23840
   useEffect(() => {
     if (view === 'pdf' && pdfLayout === 'flat') {
       repositionAllTooltips()

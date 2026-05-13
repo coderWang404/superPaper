@@ -1,6 +1,6 @@
 import { expect, vi } from 'vitest'
 import sinon from 'sinon'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 const modulePath = new URL(
   '../../../../app/src/Features/Exports/ExportsController.mjs',
   import.meta.url
@@ -9,7 +9,6 @@ const modulePath = new URL(
 describe('ExportsController', function () {
   const projectId = '123njdskj9jlk'
   const userId = '123nd3ijdks'
-  const brandVariationId = 22
   const firstName = 'first'
   const lastName = 'last'
   const title = 'title'
@@ -23,7 +22,6 @@ describe('ExportsController', function () {
     ctx.req = {
       params: {
         project_id: projectId,
-        brand_variation_id: brandVariationId,
       },
       body: {
         firstName,
@@ -73,7 +71,6 @@ describe('ExportsController', function () {
       const expected = {
         project_id: projectId,
         user_id: userId,
-        brand_variation_id: brandVariationId,
         first_name: firstName,
         last_name: lastName,
       }
@@ -100,7 +97,6 @@ describe('ExportsController', function () {
       const expected = {
         project_id: projectId,
         user_id: userId,
-        brand_variation_id: brandVariationId,
         first_name: firstName,
         last_name: lastName,
       }
@@ -135,7 +131,6 @@ describe('ExportsController', function () {
       const expected = {
         project_id: projectId,
         user_id: userId,
-        brand_variation_id: brandVariationId,
         first_name: firstName,
         last_name: lastName,
         title,

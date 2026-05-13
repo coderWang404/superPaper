@@ -10,7 +10,7 @@ describe('ChunkTranslator', function () {
     this.historyId = 12345
     this.author1 = {
       id: 1,
-      email: 'james.allen@overleaf.com',
+      email: 'james.allen@superpaper.com',
       name: 'James Allen',
     }
     this.date = new Date()

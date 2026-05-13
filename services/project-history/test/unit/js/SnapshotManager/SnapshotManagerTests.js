@@ -1,7 +1,7 @@
 import sinon from 'sinon'
 import { expect } from 'chai'
 import { strict as esmock } from 'esmock'
-import Core from 'overleaf-editor-core'
+import Core from 'superpaper-editor-core'
 import * as Errors from '../../../../app/js/Errors.js'
 
 const MODULE_PATH = '../../../../app/js/SnapshotManager.js'
@@ -22,7 +22,7 @@ describe('SnapshotManager', function () {
       },
     }
     this.SnapshotManager = await esmock(MODULE_PATH, {
-      'overleaf-editor-core': Core,
+      'superpaper-editor-core': Core,
       '../../../../app/js/HistoryStoreManager.js': this.HistoryStoreManager,
       '../../../../app/js/WebApiManager.js': this.WebApiManager,
       '../../../../app/js/Errors.js': Errors,
@@ -103,7 +103,7 @@ describe('SnapshotManager', function () {
           authors: [
             {
               id: 31,
-              email: 'james.allen@overleaf.com',
+              email: 'james.allen@superpaper.com',
               name: 'James',
             },
           ],
@@ -132,7 +132,7 @@ Four five six\
         )
       })
 
-      it('should get the overleaf id', function () {
+      it('should get the superpaper id', function () {
         this.WebApiManager.promises.getHistoryId
           .calledWith(this.projectId)
           .should.equal(true)
@@ -202,7 +202,7 @@ Seven eight nine\
         )
       })
 
-      it('should get the overleaf id', function () {
+      it('should get the superpaper id', function () {
         this.WebApiManager.promises.getHistoryId
           .calledWith(this.projectId)
           .should.equal(true)
@@ -246,7 +246,7 @@ Seven eight nine\
           )
       })
 
-      it('should get the overleaf id', function () {
+      it('should get the superpaper id', function () {
         this.WebApiManager.promises.getHistoryId
           .calledWith(this.projectId)
           .should.equal(true)
@@ -375,7 +375,7 @@ Seven eight nine\
           authors: [
             {
               id: 31,
-              email: 'james.allen@overleaf.com',
+              email: 'james.allen@superpaper.com',
               name: 'James',
             },
           ],
@@ -403,7 +403,7 @@ Four five six\
         )
       })
 
-      it('should get the overleaf id', function () {
+      it('should get the superpaper id', function () {
         this.WebApiManager.promises.getHistoryId
           .calledWith(this.projectId)
           .should.equal(true)
@@ -524,7 +524,7 @@ Four five six\
             authors: [
               {
                 id: 31,
-                email: 'james.allen@overleaf.com',
+                email: 'james.allen@superpaper.com',
                 name: 'James',
               },
             ],

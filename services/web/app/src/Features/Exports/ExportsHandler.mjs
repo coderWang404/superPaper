@@ -1,16 +1,16 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectHistoryHandler from '../Project/ProjectHistoryHandler.mjs'
 import ProjectLocator from '../Project/ProjectLocator.mjs'
 import ProjectRootDocManager from '../Project/ProjectRootDocManager.mjs'
 import UserGetter from '../User/UserGetter.mjs'
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import {
   fetchString,
   fetchJson,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 let ExportsHandler
 
 export default ExportsHandler = {
@@ -28,7 +28,6 @@ export default ExportsHandler = {
     const {
       project_id: projectId,
       user_id: userId,
-      brand_variation_id: brandVariationId,
       title,
       description,
       author,
@@ -52,7 +51,7 @@ export default ExportsHandler = {
         first_name: 1,
         last_name: 1,
         email: 1,
-        overleaf: 1,
+        superpaper: 1,
       })
       await ProjectHistoryHandler.promises.ensureHistoryExistsForProject(
         projectId
@@ -62,7 +61,6 @@ export default ExportsHandler = {
       throw OError.tag(err, 'error building project export', {
         project_id: projectId,
         user_id: userId,
-        brand_variation_id: brandVariationId,
       })
     }
 
@@ -81,9 +79,9 @@ export default ExportsHandler = {
       project: {
         id: projectId,
         rootDocPath: rootDoc.path ? rootDoc.path.fileSystem : undefined,
-        historyId: project.overleaf?.history?.id,
+        historyId: project.superpaper?.history?.id,
         historyVersion,
-        v1ProjectId: project.overleaf != null ? project.overleaf.id : undefined,
+        v1ProjectId: project.superpaper != null ? project.superpaper.id : undefined,
         metadata: {
           compiler: project.compiler,
           imageName: project.imageName,
@@ -100,11 +98,9 @@ export default ExportsHandler = {
         lastName: user.last_name,
         email: user.email,
         orcidId: null, // until v2 gets ORCID
-        v1UserId: user.overleaf != null ? user.overleaf.id : undefined,
+        v1UserId: user.superpaper != null ? user.superpaper.id : undefined,
       },
-      destination: {
-        brandVariationId,
-      },
+      destination: {},
       options: {
         callbackUrl: null,
       }, // for now, until we want v1 to call us back
@@ -114,7 +110,7 @@ export default ExportsHandler = {
   async _requestExport(exportData) {
     try {
       return await fetchJson(
-        new URL('/api/v1/overleaf/exports', settings.apis.v1.url),
+        new URL('/api/v1/superpaper/exports', settings.apis.v1.url),
         {
           basicAuth: {
             user: settings.apis.v1.user,
@@ -163,7 +159,7 @@ export default ExportsHandler = {
 
   async fetchExport(exportId) {
     const url = new URL(settings.apis.v1.url)
-    url.pathname = `/api/v1/overleaf/exports/${exportId}`
+    url.pathname = `/api/v1/superpaper/exports/${exportId}`
 
     try {
       return await fetchString(url, {
@@ -188,7 +184,7 @@ export default ExportsHandler = {
 
   async fetchDownload(exportId, type) {
     const url = new URL(settings.apis.v1.url)
-    url.pathname = `/api/v1/overleaf/exports/${exportId}/${type}_url`
+    url.pathname = `/api/v1/superpaper/exports/${exportId}/${type}_url`
 
     try {
       return await fetchString(url, {

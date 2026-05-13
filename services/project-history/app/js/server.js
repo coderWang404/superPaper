@@ -1,10 +1,10 @@
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 import express from 'express'
 import bodyParser from 'body-parser'
 import * as Errors from './Errors.js'
 import * as Router from './Router.js'
-import { handleValidationError } from '@overleaf/validation-tools'
+import { handleValidationError } from '@superpaper/validation-tools'
 
 const HistoryLogger = logger.initialize('project-history').logger
 

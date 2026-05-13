@@ -1,9 +1,9 @@
 // @ts-check
 
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
-import Settings from '@overleaf/settings'
-import MongoUtils from '@overleaf/mongo-utils'
+import Settings from '@superpaper/settings'
+import MongoUtils from '@superpaper/mongo-utils'
 import mongodb from 'mongodb-legacy'
 
 const { MongoClient, ObjectId, BSON } = mongodb

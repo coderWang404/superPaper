@@ -6,7 +6,7 @@ import ProjectGetter from '../app/src/Features/Project/ProjectGetter.mjs'
 import ProjectEntityMongoUpdateHandler from '../app/src/Features/Project/ProjectEntityMongoUpdateHandler.mjs'
 import { waitForDb, db, ObjectId } from '../app/src/infrastructure/mongodb.mjs'
 import HistoryManager from '../app/src/Features/History/HistoryManager.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import minimist from 'minimist'
 
 const args = minimist(process.argv.slice(2), {

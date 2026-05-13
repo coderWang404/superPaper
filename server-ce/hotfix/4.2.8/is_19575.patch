@@ -15,5 +15,5 @@
 +  }
 +
    # Load any extra configuration for this vhost
-   include /etc/nginx/vhost-extras/overleaf/*.conf;
+   include /etc/nginx/vhost-extras/superpaper/*.conf;
  }

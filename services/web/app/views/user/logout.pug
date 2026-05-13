@@ -4,7 +4,7 @@ block vars
 	- var suppressNavbar = true
 	- var suppressFooter = true
 	- var suppressPugCookieBanner = true
-	- metadata = {title: translate('log_out_of_overleaf')}
+	- metadata = {title: 'Log out of superPaper'}
 
 block content
 	main#main-content.content.content-alt.full-height
@@ -14,10 +14,10 @@ block content
 				.card
 					.card-body
 						.page-header
-							h1 #{translate("log_out_of_overleaf")} 
+							h1 Log out of superPaper
 						form(name='logoutForm' data-ol-async-form action='/logout' method='POST')
 							input(name='_csrf' type='hidden' value=csrfToken)
-							p #{translate("log_out_of_overleaf_confirmation")}
+							p Are you sure you want to log out of superPaper?
 							.d-flex.justify-content-between.flex-row
 								button.btn-primary.btn(type='submit' data-ol-disabled-inflight)
 									span #{translate("log_out")}

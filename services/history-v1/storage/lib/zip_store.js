@@ -5,14 +5,14 @@ const config = require('config')
 const fs = require('node:fs')
 const path = require('node:path')
 
-const OError = require('@overleaf/o-error')
-const objectPersistor = require('@overleaf/object-persistor')
+const OError = require('@superpaper/o-error')
+const objectPersistor = require('@superpaper/object-persistor')
 
 const assert = require('./assert')
 const { BlobStore } = require('./blob_store')
 const persistor = require('./persistor')
 const ProjectArchive = require('./project_archive')
-const projectKey = require('@overleaf/object-persistor/src/ProjectKey.js')
+const projectKey = require('@superpaper/object-persistor/src/ProjectKey.js')
 const temp = require('./temp')
 
 const BUCKET = config.get('zipStore.bucket')

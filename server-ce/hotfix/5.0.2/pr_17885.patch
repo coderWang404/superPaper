@@ -4,7 +4,7 @@
  #!/bin/sh
 
 +. /etc/container_environment.sh
-+. /etc/overleaf/env.sh
++. /etc/superpaper/env.sh
 +
  SITE_MAINTENANCE_FILE_BAK="$SITE_MAINTENANCE_FILE.bak.shutdown"
 
@@ -15,9 +15,9 @@
  #!/bin/sh
 
 +. /etc/container_environment.sh
-+. /etc/overleaf/env.sh
++. /etc/superpaper/env.sh
 +
- cd /overleaf/services/document-updater && node scripts/flush_all.js >> /var/log/overleaf/document-updater.log 2>&1
+ cd /superpaper/services/document-updater && node scripts/flush_all.js >> /var/log/superpaper/document-updater.log 2>&1
 
  EXIT_CODE="$?"
 --- 02_flush_project_history
@@ -26,8 +26,8 @@
  #!/bin/sh
 
 +. /etc/container_environment.sh
-+. /etc/overleaf/env.sh
++. /etc/superpaper/env.sh
 +
- cd /overleaf/services/project-history && node scripts/flush_all.js >> /var/log/overleaf/project-history.log 2>&1
+ cd /superpaper/services/project-history && node scripts/flush_all.js >> /var/log/superpaper/project-history.log 2>&1
 
  EXIT_CODE="$?"

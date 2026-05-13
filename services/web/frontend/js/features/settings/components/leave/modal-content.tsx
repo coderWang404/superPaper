@@ -22,10 +22,10 @@ function LeaveModalContentBlock({
   setIsFormValid,
 }: LeaveModalFormProps) {
   const { t } = useTranslation()
-  const { isOverleaf } = getMeta('ol-ExposedSettings')
+  const { isSuperPaper } = getMeta('ol-ExposedSettings')
   const hasPassword = getMeta('ol-hasPassword')
 
-  if (isOverleaf && !hasPassword) {
+  if (isSuperPaper && !hasPassword) {
     return (
       <p>
         <b>
@@ -42,21 +42,6 @@ function LeaveModalContentBlock({
         isFormValid={isFormValid}
         setIsFormValid={setIsFormValid}
       />
-      <p>
-        <Trans
-          i18nKey="if_you_need_to_delete_your_writefull_account"
-          components={{
-            a: (
-              // eslint-disable-next-line jsx-a11y/anchor-has-content
-              <a
-                href="https://my.writefull.com/account"
-                target="_blank"
-                rel="noopener noreferrer"
-              />
-            ),
-          }}
-        />
-      </p>
     </>
   )
 }

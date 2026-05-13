@@ -115,7 +115,7 @@ describe('AuthorizationManager', function () {
       default: ctx.Modules,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

@@ -45,20 +45,6 @@ export const ModalServerError = args => {
   return <LeaveModal {...args} />
 }
 
-export const ModalSubscriptionError = args => {
-  setDefaultMeta()
-  useFetchMock(fetchMock => {
-    fetchMock.post(/\/user\/delete/, {
-      status: 422,
-      body: {
-        error: 'SubscriptionAdminDeletionError',
-      },
-    })
-  })
-
-  return <LeaveModal {...args} />
-}
-
 export default {
   title: 'Account Settings / Leave',
   component: LeaveModal,

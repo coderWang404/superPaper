@@ -61,7 +61,7 @@ describe('index', function () {
 
     this.RedisLocker = SandboxedModule.require(redisLockerModulePath, {
       requires: {
-        '@overleaf/metrics': {
+        '@superpaper/metrics': {
           inc() {},
         },
       },
@@ -117,7 +117,7 @@ describe('index', function () {
         this.redis.createClient(redisSentinelOptions)
       }
       expect(createNewClient).to.throw(
-        '@overleaf/redis-wrapper: redis-sentinel is no longer supported'
+        '@superpaper/redis-wrapper: redis-sentinel is no longer supported'
       )
     })
   })

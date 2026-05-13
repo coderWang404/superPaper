@@ -1,9 +1,9 @@
 import mongodb from 'mongodb-legacy'
 
 import _ from 'lodash'
-import Settings from '@overleaf/settings'
-import OError from '@overleaf/o-error'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
+import Settings from '@superpaper/settings'
+import OError from '@superpaper/o-error'
+import SplitTestHandler from '../FeatureRollouts/FeatureRolloutHandler.mjs'
 
 const { ObjectId } = mongodb
 

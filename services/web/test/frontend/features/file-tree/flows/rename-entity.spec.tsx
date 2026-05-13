@@ -42,9 +42,6 @@ describe('FileTree Rename Entity Flow', function () {
           socket={socket}
         >
           <FileTreeRoot
-            refProviders={{}}
-            setRefProviderEnabled={cy.stub()}
-            setStartedFreeTrial={cy.stub()}
             onSelect={cy.stub().as('onSelect')}
             onInit={cy.stub()}
             isConnected

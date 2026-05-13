@@ -18,14 +18,14 @@ Here is how a missing tag gets flagged:
 
 ```
 ---
-page           : MediaWiki markup for the Overleaf support team
-title          : MediaWiki markup for the Overleaf support team
+page           : MediaWiki markup for the superPaper support team
+title          : MediaWiki markup for the superPaper support team
 match          : false
 toText         : false
-text           : "Overleaf</strong></td>\n            </tr>\n           <tr><td>Kb/<strong>TITLE_SLUG</strong></td><td><nowiki>https://www.overleaf.com/learn/how-to/</nowiki><strong>TITLE_SLUG</strong></td>\n           </"
-sanitized      : "Overleaf</strong></td>\n            </tr>\n           <tr><td>Kb/<strong>TITLE_SLUG</strong></td><td>&lt;nowiki&gt;https://www.overleaf.com/learn/how-to/&lt;/nowiki&gt;<strong>TITLE_SLUG</strong></td>\n "
-textToText     : "    \n        \n        \n            \n                MediaWiki page\n                Maps to on Overleaf\n            \n           Kb/TITLE_SLUGhttps://www.overleaf.com/learn/how-to/TITLE_SLUG\n           "
-sanitizedToText: "    \n        \n        \n            \n                MediaWiki page\n                Maps to on Overleaf\n            \n           Kb/TITLE_SLUG<nowiki>https://www.overleaf.com/learn/how-to/</nowiki>TITLE"
+text           : "superPaper</strong></td>\n            </tr>\n           <tr><td>Kb/<strong>TITLE_SLUG</strong></td><td><nowiki>https://www.superpaper.com/learn/how-to/</nowiki><strong>TITLE_SLUG</strong></td>\n           </"
+sanitized      : "superPaper</strong></td>\n            </tr>\n           <tr><td>Kb/<strong>TITLE_SLUG</strong></td><td>&lt;nowiki&gt;https://www.superpaper.com/learn/how-to/&lt;/nowiki&gt;<strong>TITLE_SLUG</strong></td>\n "
+textToText     : "    \n        \n        \n            \n                MediaWiki page\n                Maps to on superPaper\n            \n           Kb/TITLE_SLUGhttps://www.superpaper.com/learn/how-to/TITLE_SLUG\n           "
+sanitizedToText: "    \n        \n        \n            \n                MediaWiki page\n                Maps to on superPaper\n            \n           Kb/TITLE_SLUG<nowiki>https://www.superpaper.com/learn/how-to/</nowiki>TITLE"
 ```
 
 Note the hidden/escaped `<nowiki>` element.

@@ -53,7 +53,7 @@ describe('LinkedFilesController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: ctx.AnalyticsManager,
       })
@@ -99,11 +99,11 @@ describe('LinkedFilesController', function () {
       default: ctx.ProjectLocator,
     }))
 
-    vi.doMock('@overleaf/logger', () => ({
+    vi.doMock('@superpaper/logger', () => ({
       default: ctx.logger,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

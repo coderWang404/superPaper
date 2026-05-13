@@ -1,8 +1,8 @@
 // @ts-check
 
 import { callbackify } from 'node:util'
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
 import HistoryManager from '../History/HistoryManager.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import DocstoreManager from '../Docstore/DocstoreManager.mjs'
@@ -43,7 +43,7 @@ async function migrateProjects(opts = {}) {
   const clauses = []
 
   // skip projects that don't have full project history
-  clauses.push({ 'overleaf.history.id': { $exists: true } })
+  clauses.push({ 'superpaper.history.id': { $exists: true } })
 
   if (projectIds != null) {
     clauses.push({ _id: { $in: projectIds.map(id => new ObjectId(id)) } })
@@ -66,7 +66,7 @@ async function migrateProjects(opts = {}) {
   const projects = db.projects
     .find(filter, {
       readPreference: READ_PREFERENCE_SECONDARY,
-      projection: { _id: 1, overleaf: 1 },
+      projection: { _id: 1, superpaper: 1 },
     })
     .sort({ _id: -1 })
 
@@ -110,9 +110,9 @@ async function migrateProjects(opts = {}) {
       // Skip projects that are already migrated
       if (
         (direction === 'forwards' &&
-          project.overleaf.history.rangesSupportEnabled) ||
+          project.superpaper.history.rangesSupportEnabled) ||
         (direction === 'backwards' &&
-          !project.overleaf.history.rangesSupportEnabled)
+          !project.superpaper.history.rangesSupportEnabled)
       ) {
         continue
       }

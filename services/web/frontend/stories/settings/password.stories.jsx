@@ -13,7 +13,7 @@ export const Success = args => {
 export const ManagedExternally = args => {
   setDefaultMeta()
   Object.assign(getMeta('ol-ExposedSettings'), {
-    isOverleaf: false,
+    isSuperPaper: false,
   })
   window.metaAttributesCache.set('ol-isExternalAuthenticationSystemUsed', true)
   useFetchMock(defaultSetupMocks)

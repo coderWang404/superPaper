@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { Folder } from '../../../../../types/folder'
 import { FileTreeFindResult } from '@/features/ide-react/types/file-tree'
 

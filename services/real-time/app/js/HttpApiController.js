@@ -1,7 +1,7 @@
 import WebsocketLoadBalancer from './WebsocketLoadBalancer.js'
 import DrainManager from './DrainManager.js'
 import ConnectedUsersManager from './ConnectedUsersManager.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 export default {
   countConnectedClients(req, res) {

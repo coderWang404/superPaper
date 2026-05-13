@@ -6,10 +6,10 @@ services:
         - USER_UID
         - USER_GID
     volumes:
-      - ../../:/overleaf
+      - ../../:/superpaper
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ${XAUTHORITY:-/dev/null}:/home/node/.Xauthority
-    working_dir: /overleaf/services/web
+    working_dir: /superpaper/services/web
     entrypoint: yarn
     command: run cypress:open-ct
     environment:

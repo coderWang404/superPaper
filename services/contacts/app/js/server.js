@@ -1,5 +1,5 @@
-import * as Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import * as Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 import express from 'express'
 import bodyParser from 'body-parser'
 import * as HttpController from './HttpController.js'

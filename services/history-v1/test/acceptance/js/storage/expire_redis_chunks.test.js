@@ -1,7 +1,7 @@
 'use strict'
 
 const { expect } = require('chai')
-const { Author, Change } = require('overleaf-editor-core')
+const { Author, Change } = require('superpaper-editor-core')
 const cleanup = require('./support/cleanup')
 const { setupProjectState, rclient, keySchema } = require('./support/redis')
 const { runScript } = require('./support/runscript')

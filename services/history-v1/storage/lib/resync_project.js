@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = require('config')
-const { fetchNothing } = require('@overleaf/fetch-utils')
+const { fetchNothing } = require('@superpaper/fetch-utils')
 
 const PROJECT_HISTORY_URL = `http://${config.projectHistory.host}:${config.projectHistory.port}`
 

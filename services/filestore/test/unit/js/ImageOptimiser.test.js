@@ -19,7 +19,7 @@ describe('ImageOptimiser', function () {
       default: SafeExec,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         Timer: sinon.stub().returns({ done: sinon.stub() }),
       },

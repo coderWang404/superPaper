@@ -6,10 +6,10 @@ const tags = ['saas']
 
 const indexes = [
   {
-    key: { 'overleaf.isDebugCopyOf': 1, owner_ref: 1, lastUpdated: 1 },
+    key: { 'superpaper.isDebugCopyOf': 1, owner_ref: 1, lastUpdated: 1 },
     name: 'owner_ref_1_lastUpdated_1_debugCopies',
     partialFilterExpression: {
-      'overleaf.isDebugCopyOf': { $type: 'objectId' },
+      'superpaper.isDebugCopyOf': { $type: 'objectId' },
     },
   },
 ]

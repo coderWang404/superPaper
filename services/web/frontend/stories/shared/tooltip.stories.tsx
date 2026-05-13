@@ -35,7 +35,7 @@ const meta: Meta<typeof OLTooltip> = {
   title: 'Shared / Components / Tooltip',
   component: OLTooltip,
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-237285&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-237285&m=dev'
   ),
 }
 

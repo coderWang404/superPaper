@@ -18,7 +18,7 @@ describe('UserEmailsController', function () {
     ctx.next = vi.fn()
     ctx.user = {
       _id: 'mock-user-id',
-      email: 'example@overleaf.com',
+      email: 'example@superpaper.com',
       emails: [],
     }
 
@@ -57,12 +57,6 @@ describe('UserEmailsController', function () {
       },
     }
     ctx.EmailHelper = { parseEmail: vi.fn() }
-    ctx.endorseAffiliation = vi.fn((userId, email, role, dept, callback) =>
-      callback()
-    )
-    ctx.InstitutionsAPI = {
-      endorseAffiliation: ctx.endorseAffiliation,
-    }
     ctx.HttpErrorHandler = { conflict: vi.fn() }
     ctx.AnalyticsManager = {
       recordEventForUserInBackground: vi.fn(),
@@ -140,19 +134,12 @@ describe('UserEmailsController', function () {
       })
     )
 
-    vi.doMock(
-      '../../../../app/src/Features/Institutions/InstitutionsAPI',
-      () => ({
-        default: ctx.InstitutionsAPI,
-      })
-    )
-
     vi.doMock('../../../../app/src/Features/Errors/HttpErrorHandler', () => ({
       default: ctx.HttpErrorHandler,
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: ctx.AnalyticsManager,
       })
@@ -249,7 +236,7 @@ describe('UserEmailsController', function () {
       expect.assertions(2)
       ctx.user.emails = []
       for (let i = 0; i < 10; i++) {
-        ctx.user.emails.push({ email: `example${i}@overleaf.com` })
+        ctx.user.emails.push({ email: `example${i}@superpaper.com` })
       }
       await ctx.UserEmailsController.addWithConfirmationCode(ctx.req, {
         status: code => {
@@ -289,13 +276,13 @@ describe('UserEmailsController', function () {
             json: () => {
               expect(
                 ctx.UserUpdater.promises.addEmailAddress
-              ).toHaveBeenCalledWith(ctx.user._id, ctx.newEmail, undefined, {
+              ).toHaveBeenCalledWith(ctx.user._id, ctx.newEmail, {
                 initiatorId: 'mock-user-id',
                 ipAddress: '42.42.42.42',
               })
               expect(
                 ctx.UserUpdater.promises.confirmEmail
-              ).toHaveBeenCalledWith(ctx.user._id, ctx.newEmail, undefined)
+              ).toHaveBeenCalledWith(ctx.user._id, ctx.newEmail)
             },
           }
         )
@@ -319,7 +306,6 @@ describe('UserEmailsController', function () {
           confirmCode: '123456',
           email: ctx.newEmail,
           confirmCodeExpiresTimestamp: new Date(Math.max),
-          affiliationOptions: {},
         }
         ctx.req.body.code = '123456'
 
@@ -490,14 +476,14 @@ describe('UserEmailsController', function () {
 
     it('deletes unconfirmed primary if delete-unconfirmed-primary is set', async function (ctx) {
       expect.assertions(1)
-      ctx.user.emails = [{ email: 'example@overleaf.com' }]
+      ctx.user.emails = [{ email: 'example@superpaper.com' }]
       ctx.req.query['delete-unconfirmed-primary'] = ''
 
       await ctx.UserEmailsController.setDefault(ctx.req, {
         sendStatus: () => {
           expect(
             ctx.UserUpdater.promises.removeEmailAddress
-          ).toHaveBeenCalledWith(ctx.user._id, 'example@overleaf.com', {
+          ).toHaveBeenCalledWith(ctx.user._id, 'example@superpaper.com', {
             initiatorId: ctx.user._id,
             ipAddress: ctx.req.ip,
             extraInfo: {
@@ -511,7 +497,7 @@ describe('UserEmailsController', function () {
     it('doesnt delete a confirmed primary', async function (ctx) {
       expect.assertions(1)
       ctx.user.emails = [
-        { email: 'example@overleaf.com', confirmedAt: '2000-01-01' },
+        { email: 'example@superpaper.com', confirmedAt: '2000-01-01' },
       ]
       ctx.req.query['delete-unconfirmed-primary'] = ''
 
@@ -570,33 +556,6 @@ describe('UserEmailsController', function () {
         expect.objectContaining({ err: redisError }),
         'failed revoking secondary sessions after changing default email'
       )
-    })
-  })
-
-  describe('endorse', function () {
-    beforeEach(function (ctx) {
-      ctx.email = 'email_to_endorse@bar.com'
-      ctx.req.body.email = ctx.email
-      ctx.EmailHelper.parseEmail.mockReturnValue(ctx.email)
-    })
-
-    it('endorses affiliation', async function (ctx) {
-      expect.assertions(2)
-      ctx.req.body.role = 'Role'
-      ctx.req.body.department = 'Department'
-
-      await ctx.UserEmailsController.endorse(ctx.req, {
-        sendStatus: code => {
-          expect(code).to.equal(204)
-          expect(ctx.endorseAffiliation).toHaveBeenCalledWith(
-            ctx.user._id,
-            ctx.email,
-            'Role',
-            'Department',
-            expect.any(Function)
-          )
-        },
-      })
     })
   })
 
@@ -722,7 +681,6 @@ describe('UserEmailsController', function () {
         email: ctx.email,
         confirmCode,
         confirmCodeExpiresTimestamp,
-        affiliationOptions: undefined,
       })
     })
 
@@ -788,8 +746,7 @@ describe('UserEmailsController', function () {
 
         expect(ctx.UserUpdater.promises.confirmEmail).toHaveBeenCalledWith(
           ctx.user._id,
-          ctx.email,
-          undefined
+          ctx.email
         )
       })
 

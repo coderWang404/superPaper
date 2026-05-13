@@ -1,12 +1,12 @@
 // @ts-check
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 import http from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import express from 'express'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
 import { hasValidBasicAuthCredentials } from './api/middleware/security.js'
 import {
   deleteProjectBackupCb,

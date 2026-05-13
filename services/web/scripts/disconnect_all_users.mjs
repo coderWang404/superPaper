@@ -1,5 +1,5 @@
 import { promisify } from 'node:util'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import AdminController from '../app/src/Features/ServerAdmin/AdminController.mjs'
 import minimist from 'minimist'
 import { fileURLToPath } from 'node:url'
@@ -23,11 +23,11 @@ async function main() {
     )
     process.exit(1)
   }
-  const isSaaS = Boolean(Settings.overleaf)
+  const isSaaS = Boolean(Settings.superpaper)
   if (isSaaS && args['confirm-site-url'] !== Settings.siteUrl) {
     console.error()
     console.error(
-      'Please confirm the environment you want to disconnect ALL USERS from by specifying the site URL aka PUBLIC_URL, e.g. --confirm-site-url=https://www.dev-overleaf.com for the dev-env'
+      'Please confirm the environment you want to disconnect ALL USERS from by specifying the site URL aka PUBLIC_URL, e.g. --confirm-site-url=https://www.dev-superpaper.com for the dev-env'
     )
     console.error()
     console.error(

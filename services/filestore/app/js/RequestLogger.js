@@ -1,5 +1,5 @@
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 
 class RequestLogger {
   constructor() {

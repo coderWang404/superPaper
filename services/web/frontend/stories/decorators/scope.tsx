@@ -24,18 +24,17 @@ const scopeWatchers: [string, (value: any) => void][] = []
 export const user: User = {
   id: 'story-user' as UserId,
   email: 'story-user@example.com',
-  allowedFreeTrial: true,
   features: { dropbox: true, symbolPalette: true },
 }
 
 const project: Project = {
   _id: '63e21c07946dd8c76505f85a',
   name: 'A Project',
-  features: { mendeley: true, zotero: true, referencesSearch: true },
+  features: { referencesSearch: true },
   tokens: {},
   owner: {
     _id: 'a-user',
-    email: 'stories@overleaf.com',
+    email: 'stories@superpaper.com',
   },
   members: [],
   invites: [],
@@ -156,13 +155,10 @@ const ConnectionProvider: FC<React.PropsWithChildren> = ({ children }) => {
 
 const IdeReactProvider: FC<React.PropsWithChildren> = ({ children }) => {
   const projectId = 'project-123'
-  const [startedFreeTrial, setStartedFreeTrial] = useState(false)
 
   const [ideReactContextValue] = useState(() => ({
     projectId,
     eventEmitter: new IdeEventEmitter(),
-    startedFreeTrial,
-    setStartedFreeTrial,
     reportError: () => {},
     projectJoined: true,
     permissionsLevel: 'owner' as const,
@@ -174,10 +170,10 @@ const IdeReactProvider: FC<React.PropsWithChildren> = ({ children }) => {
     const scopeEventEmitter = new ReactScopeEventEmitter(new IdeEventEmitter())
     const unstableStore = new ReactScopeValueStore()
 
-    window.overleaf = {
-      ...window.overleaf,
+    window.superPaper = {
+      ...window.superPaper,
       unstable: {
-        ...window.overleaf?.unstable,
+        ...window.superPaper?.unstable,
         store: unstableStore,
       },
     }

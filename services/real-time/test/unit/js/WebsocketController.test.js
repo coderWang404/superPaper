@@ -62,7 +62,7 @@ describe('WebsocketController', function () {
       default: (ctx.WebsocketLoadBalancer = {}),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.metrics = {
         inc: sinon.stub(),
         set: sinon.stub(),

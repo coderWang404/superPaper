@@ -6,7 +6,7 @@
   "allowedCorsOrigins": "https://localhost",
   "apiBaseUrl": "https://localhost/api/v0",
   "postbackBaseUrl": "https://localhost",
-  "serviceName": "Overleaf",
+  "serviceName": "superPaper",
   "oauth2Server": "https://localhost",
   "repoStore": {
     "maxFileNum": 2000,
@@ -16,7 +16,7 @@
     "type": "s3",
     "awsAccessKey": "asdf",
     "awsSecret": "asdf",
-    "s3BucketName": "com.overleaf.testbucket",
+    "s3BucketName": "com.superpaper.testbucket",
     "awsRegion": "us-east-1"
   },
   "swapJob": {

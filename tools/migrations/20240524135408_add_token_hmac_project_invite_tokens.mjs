@@ -2,13 +2,13 @@
 
 import Helpers from './lib/helpers.mjs'
 import Crypto from 'node:crypto'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const tags = ['server-ce', 'server-pro', 'saas']
 
 // Copied from services/web/app/src/Features/Collaborators/CollaboratorsInviteHelper.js
 function hashInviteToken(token) {
-  return Crypto.createHmac('sha256', 'overleaf-token-invite')
+  return Crypto.createHmac('sha256', 'superpaper-token-invite')
     .update(token)
     .digest('hex')
 }

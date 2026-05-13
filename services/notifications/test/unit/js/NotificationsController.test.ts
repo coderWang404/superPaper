@@ -47,7 +47,7 @@ describe('Notifications Controller', () => {
   let controller: typeof NotificationsController,
     stubbedNotification: Array<InputNotification>
   beforeEach(async () => {
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         inc: vi.fn(),
         mongodb: {

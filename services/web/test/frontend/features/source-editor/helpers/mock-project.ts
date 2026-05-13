@@ -57,9 +57,8 @@ export const mockProject = ({
           ],
           fileRefs: [],
         },
-      ] as Folder[]),
+    ] as Folder[]),
     features: {
-      trackChanges: true,
       ...projectFeatures,
     },
     compiler: 'pdflatex' as ProjectCompiler,

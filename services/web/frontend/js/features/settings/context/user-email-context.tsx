@@ -8,8 +8,6 @@ import {
 import useSafeDispatch from '../../../shared/hooks/use-safe-dispatch'
 import * as ActionCreators from '../utils/action-creators'
 import { UserEmailData } from '../../../../../types/user-email'
-import { Nullable } from '../../../../../types/utils'
-import { Affiliation } from '../../../../../types/affiliation'
 import { normalize, NormalizedObject } from '../../../utils/normalize'
 import { getJSON } from '../../../infrastructure/fetch-json'
 import useAsync from '../../../shared/hooks/use-async'
@@ -20,8 +18,6 @@ export enum Actions {
   SET_LOADING_STATE = 'SET_LOADING_STATE', // eslint-disable-line no-unused-vars
   MAKE_PRIMARY = 'MAKE_PRIMARY', // eslint-disable-line no-unused-vars
   DELETE_EMAIL = 'DELETE_EMAIL', // eslint-disable-line no-unused-vars
-  SET_EMAIL_AFFILIATION_BEING_EDITED = 'SET_EMAIL_AFFILIATION_BEING_EDITED', // eslint-disable-line no-unused-vars
-  UPDATE_AFFILIATION = 'UPDATE_AFFILIATION', // eslint-disable-line no-unused-vars
 }
 
 export type ActionSetData = {
@@ -44,27 +40,11 @@ export type ActionDeleteEmail = {
   payload: UserEmailData['email']
 }
 
-export type ActionSetEmailAffiliationBeingEdited = {
-  type: Actions.SET_EMAIL_AFFILIATION_BEING_EDITED
-  payload: Nullable<UserEmailData['email']>
-}
-
-export type ActionUpdateAffiliation = {
-  type: Actions.UPDATE_AFFILIATION
-  payload: {
-    email: UserEmailData['email']
-    role: Affiliation['role']
-    department: Affiliation['department']
-  }
-}
-
 export type State = {
   isLoading: boolean
   data: {
     byId: NormalizedObject<UserEmailData>
     emailCount: number
-    linkedInstitutionIds: NonNullable<UserEmailData['samlProviderId']>[]
-    emailAffiliationBeingEdited: Nullable<UserEmailData['email']>
   }
 }
 
@@ -73,8 +53,6 @@ type Action =
   | ActionSetLoading
   | ActionMakePrimary
   | ActionDeleteEmail
-  | ActionSetEmailAffiliationBeingEdited
-  | ActionUpdateAffiliation
 
 const setData = (state: State, action: ActionSetData) => {
   const normalized = normalize<UserEmailData>(action.payload, {
@@ -82,11 +60,6 @@ const setData = (state: State, action: ActionSetData) => {
   })
   const emailCount = action.payload.length
   const byId = normalized || {}
-  const linkedInstitutionIds = action.payload
-    .filter(email => Boolean(email.samlProviderId))
-    .map(email => email.samlProviderId) as NonNullable<
-    UserEmailData['samlProviderId']
-  >[]
 
   return {
     ...state,
@@ -94,7 +67,6 @@ const setData = (state: State, action: ActionSetData) => {
       ...initialState.data,
       byId,
       emailCount,
-      linkedInstitutionIds,
     },
   }
 }
@@ -138,63 +110,11 @@ const deleteEmailAction = (state: State, action: ActionDeleteEmail) => {
   }
 }
 
-const setEmailAffiliationBeingEditedAction = (
-  state: State,
-  action: ActionSetEmailAffiliationBeingEdited
-) => {
-  if (action.payload && !state.data.byId[action.payload]) {
-    return state
-  }
-  return {
-    ...state,
-    data: {
-      ...state.data,
-      emailAffiliationBeingEdited: action.payload,
-    },
-  }
-}
-
-const updateAffiliationAction = (
-  state: State,
-  action: ActionUpdateAffiliation
-) => {
-  const { email, role, department } = action.payload
-
-  if (action.payload && !state.data.byId[email]) {
-    return state
-  }
-
-  const affiliation = state.data.byId[email].affiliation
-
-  return {
-    ...state,
-    data: {
-      ...state.data,
-      byId: {
-        ...state.data.byId,
-        [email]: {
-          ...state.data.byId[email],
-          ...(affiliation && {
-            affiliation: {
-              ...affiliation,
-              role,
-              department,
-            },
-          }),
-        },
-      },
-      emailAffiliationBeingEdited: null,
-    },
-  }
-}
-
 const initialState: State = {
   isLoading: false,
   data: {
     byId: {},
     emailCount: 0,
-    linkedInstitutionIds: [],
-    emailAffiliationBeingEdited: null,
   },
 }
 
@@ -208,10 +128,6 @@ const reducer = (state: State, action: Action) => {
       return makePrimaryAction(state, action)
     case Actions.DELETE_EMAIL:
       return deleteEmailAction(state, action)
-    case Actions.SET_EMAIL_AFFILIATION_BEING_EDITED:
-      return setEmailAffiliationBeingEditedAction(state, action)
-    case Actions.UPDATE_AFFILIATION:
-      return updateAffiliationAction(state, action)
     default:
       return state
   }
@@ -225,7 +141,7 @@ function useUserEmails() {
 
   const getEmails = useCallback(() => {
     dispatch(ActionCreators.setLoading(true))
-    runAsync(getJSON('/user/emails?ensureAffiliation=true'))
+    runAsync(getJSON('/user/emails'))
       .then(data => {
         dispatch(ActionCreators.setData(data))
       })
@@ -256,19 +172,6 @@ function useUserEmails() {
     deleteEmail: useCallback(
       (email: UserEmailData['email']) =>
         dispatch(ActionCreators.deleteEmail(email)),
-      [dispatch]
-    ),
-    setEmailAffiliationBeingEdited: useCallback(
-      (email: Nullable<UserEmailData['email']>) =>
-        dispatch(ActionCreators.setEmailAffiliationBeingEdited(email)),
-      [dispatch]
-    ),
-    updateAffiliation: useCallback(
-      (
-        email: UserEmailData['email'],
-        role: Affiliation['role'],
-        department: Affiliation['department']
-      ) => dispatch(ActionCreators.updateAffiliation(email, role, department)),
       [dispatch]
     ),
   }

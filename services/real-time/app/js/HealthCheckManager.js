@@ -1,5 +1,5 @@
-import metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 import os from 'node:os'
 const HOST = os.hostname()
 const PID = process.pid

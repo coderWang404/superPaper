@@ -3,7 +3,7 @@ let HttpController
 export default HttpController = {
   // The code in this controller is hard to unit test because of a lot of
   // dependencies on internal socket.io methods. It is not critical to the running
-  // of Overleaf, and is only used for getting stats about connected clients,
+  // of superPaper, and is only used for getting stats about connected clients,
   // and for checking internal state in acceptance tests. The acceptances tests
   // should provide appropriate coverage.
   _getConnectedClientView(ioClient) {

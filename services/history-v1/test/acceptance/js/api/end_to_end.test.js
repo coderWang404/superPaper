@@ -12,7 +12,7 @@ const testFiles = require('../storage/support/test_files')
 const testProjects = require('./support/test_projects')
 const testServer = require('./support/test_server')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const Change = core.Change
 const ChunkResponse = core.ChunkResponse
 const File = core.File
@@ -22,7 +22,7 @@ const TextOperation = core.TextOperation
 
 const blobHash = require('../../../../storage').blobHash
 
-describe('overleaf ot', function () {
+describe('superpaper ot', function () {
   beforeEach(cleanup.everything)
   beforeEach(fixtures.create)
 

@@ -6,9 +6,9 @@ services:
     ports:
       - "127.0.0.1:9230:9229"
     volumes:
-      - ../services/clsi/app:/overleaf/services/clsi/app
-      - ../services/clsi/app.js:/overleaf/services/clsi/app.js
-      - ../services/clsi/config:/overleaf/services/clsi/config
+      - ../services/clsi/app:/superpaper/services/clsi/app
+      - ../services/clsi/app.js:/superpaper/services/clsi/app.js
+      - ../services/clsi/config:/superpaper/services/clsi/config
 
   chat:
     command: ["node", "--watch", "app.js"]
@@ -17,9 +17,9 @@ services:
     ports:
       - "127.0.0.1:9231:9229"
     volumes:
-      - ../services/chat/app:/overleaf/services/chat/app
-      - ../services/chat/app.js:/overleaf/services/chat/app.js
-      - ../services/chat/config:/overleaf/services/chat/config
+      - ../services/chat/app:/superpaper/services/chat/app
+      - ../services/chat/app.js:/superpaper/services/chat/app.js
+      - ../services/chat/config:/superpaper/services/chat/config
 
   contacts:
     command: ["node", "--watch", "app.js"]
@@ -28,9 +28,9 @@ services:
     ports:
       - "127.0.0.1:9232:9229"
     volumes:
-      - ../services/contacts/app:/overleaf/services/contacts/app
-      - ../services/contacts/app.js:/overleaf/services/contacts/app.js
-      - ../services/contacts/config:/overleaf/services/contacts/config
+      - ../services/contacts/app:/superpaper/services/contacts/app
+      - ../services/contacts/app.js:/superpaper/services/contacts/app.js
+      - ../services/contacts/config:/superpaper/services/contacts/config
 
   docstore:
     command: ["node", "--watch", "app.js"]
@@ -39,9 +39,9 @@ services:
     ports:
       - "127.0.0.1:9233:9229"
     volumes:
-      - ../services/docstore/app:/overleaf/services/docstore/app
-      - ../services/docstore/app.js:/overleaf/services/docstore/app.js
-      - ../services/docstore/config:/overleaf/services/docstore/config
+      - ../services/docstore/app:/superpaper/services/docstore/app
+      - ../services/docstore/app.js:/superpaper/services/docstore/app.js
+      - ../services/docstore/config:/superpaper/services/docstore/config
 
   document-updater:
     command: ["node", "--watch", "app.js"]
@@ -50,9 +50,9 @@ services:
     ports:
       - "127.0.0.1:9234:9229"
     volumes:
-      - ../services/document-updater/app:/overleaf/services/document-updater/app
-      - ../services/document-updater/app.js:/overleaf/services/document-updater/app.js
-      - ../services/document-updater/config:/overleaf/services/document-updater/config
+      - ../services/document-updater/app:/superpaper/services/document-updater/app
+      - ../services/document-updater/app.js:/superpaper/services/document-updater/app.js
+      - ../services/document-updater/config:/superpaper/services/document-updater/config
 
   filestore:
     command: ["node", "--watch", "app.js"]
@@ -61,9 +61,9 @@ services:
     ports:
       - "127.0.0.1:9235:9229"
     volumes:
-      - ../services/filestore/app:/overleaf/services/filestore/app
-      - ../services/filestore/app.js:/overleaf/services/filestore/app.js
-      - ../services/filestore/config:/overleaf/services/filestore/config
+      - ../services/filestore/app:/superpaper/services/filestore/app
+      - ../services/filestore/app.js:/superpaper/services/filestore/app.js
+      - ../services/filestore/config:/superpaper/services/filestore/config
 
   history-v1:
     command: ["node", "--watch", "app.js"]
@@ -72,12 +72,12 @@ services:
     ports:
       - "127.0.0.1:9239:9229"
     volumes:
-      - ../services/history-v1/api:/overleaf/services/history-v1/api
-      - ../services/history-v1/app.js:/overleaf/services/history-v1/app.js
-      - ../services/history-v1/config:/overleaf/services/history-v1/config
-      - ../services/history-v1/storage:/overleaf/services/history-v1/storage
-      - ../services/history-v1/knexfile.js:/overleaf/services/history-v1/knexfile.js
-      - ../services/history-v1/migrations:/overleaf/services/history-v1/migrations
+      - ../services/history-v1/api:/superpaper/services/history-v1/api
+      - ../services/history-v1/app.js:/superpaper/services/history-v1/app.js
+      - ../services/history-v1/config:/superpaper/services/history-v1/config
+      - ../services/history-v1/storage:/superpaper/services/history-v1/storage
+      - ../services/history-v1/knexfile.js:/superpaper/services/history-v1/knexfile.js
+      - ../services/history-v1/migrations:/superpaper/services/history-v1/migrations
 
   notifications:
     command: ["node", "--watch", "app.ts"]
@@ -86,9 +86,9 @@ services:
     ports:
       - "127.0.0.1:9236:9229"
     volumes:
-      - ../services/notifications/app:/overleaf/services/notifications/app
-      - ../services/notifications/app.ts:/overleaf/services/notifications/app.ts
-      - ../services/notifications/config:/overleaf/services/notifications/config
+      - ../services/notifications/app:/superpaper/services/notifications/app
+      - ../services/notifications/app.ts:/superpaper/services/notifications/app.ts
+      - ../services/notifications/config:/superpaper/services/notifications/config
 
   project-history:
     command: ["node", "--watch", "app.js"]
@@ -97,9 +97,9 @@ services:
     ports:
       - "127.0.0.1:9240:9229"
     volumes:
-      - ../services/project-history/app:/overleaf/services/project-history/app
-      - ../services/project-history/app.js:/overleaf/services/project-history/app.js
-      - ../services/project-history/config:/overleaf/services/project-history/config
+      - ../services/project-history/app:/superpaper/services/project-history/app
+      - ../services/project-history/app.js:/superpaper/services/project-history/app.js
+      - ../services/project-history/config:/superpaper/services/project-history/config
 
   real-time:
     command: ["node", "--watch", "app.js"]
@@ -108,9 +108,9 @@ services:
     ports:
       - "127.0.0.1:9237:9229"
     volumes:
-      - ../services/real-time/app:/overleaf/services/real-time/app
-      - ../services/real-time/app.js:/overleaf/services/real-time/app.js
-      - ../services/real-time/config:/overleaf/services/real-time/config
+      - ../services/real-time/app:/superpaper/services/real-time/app
+      - ../services/real-time/app.js:/superpaper/services/real-time/app.js
+      - ../services/real-time/config:/superpaper/services/real-time/config
 
   web:
     command: ["node", "--watch", "app.mjs", "--watch-locales"]
@@ -119,21 +119,21 @@ services:
     ports:
       - "127.0.0.1:9229:9229"
     volumes:
-      - ../services/web/app:/overleaf/services/web/app
-      - ../services/web/app.mjs:/overleaf/services/web/app.mjs
-      - ../services/web/config:/overleaf/services/web/config
-      - ../services/web/locales:/overleaf/services/web/locales
-      - ../services/web/modules:/overleaf/services/web/modules
-      - ../services/web/public:/overleaf/services/web/public
+      - ../services/web/app:/superpaper/services/web/app
+      - ../services/web/app.mjs:/superpaper/services/web/app.mjs
+      - ../services/web/config:/superpaper/services/web/config
+      - ../services/web/locales:/superpaper/services/web/locales
+      - ../services/web/modules:/superpaper/services/web/modules
+      - ../services/web/public:/superpaper/services/web/public
 
   webpack:
     volumes:
-      - ../services/web/app:/overleaf/services/web/app
-      - ../services/web/config:/overleaf/services/web/config
-      - ../services/web/frontend:/overleaf/services/web/frontend
-      - ../services/web/locales:/overleaf/services/web/locales
-      - ../services/web/modules:/overleaf/services/web/modules
-      - ../services/web/public:/overleaf/services/web/public
-      - ../services/web/transform:/overleaf/services/web/transform
-      - ../services/web/types:/overleaf/services/web/types
-      - ../services/web/webpack-plugins:/overleaf/services/web/webpack-plugins
+      - ../services/web/app:/superpaper/services/web/app
+      - ../services/web/config:/superpaper/services/web/config
+      - ../services/web/frontend:/superpaper/services/web/frontend
+      - ../services/web/locales:/superpaper/services/web/locales
+      - ../services/web/modules:/superpaper/services/web/modules
+      - ../services/web/public:/superpaper/services/web/public
+      - ../services/web/transform:/superpaper/services/web/transform
+      - ../services/web/types:/superpaper/services/web/types
+      - ../services/web/webpack-plugins:/superpaper/services/web/webpack-plugins

@@ -48,7 +48,7 @@ describe('ConversionManager', function () {
       default: ctx.LockManager,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 

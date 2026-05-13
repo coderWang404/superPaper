@@ -2,18 +2,18 @@ import { NotFoundError, ResourceGoneError } from '../Errors/Errors.js'
 import {
   fetchStreamWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import Path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import ClsiCacheManager from './ClsiCacheManager.mjs'
 import CompileController from './CompileController.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import ClsiCacheHandler from './ClsiCacheHandler.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
-import { MeteredStream } from '@overleaf/stream-utils'
-import Metrics from '@overleaf/metrics'
-import { z, zz } from '@overleaf/validation-tools'
+import { MeteredStream } from '@superpaper/stream-utils'
+import Metrics from '@superpaper/metrics'
+import { z, zz } from '@superpaper/validation-tools'
 import { parseReq } from '../../infrastructure/Validation.mjs'
 
 const downloadFromCacheSchema = z.object({

@@ -1,7 +1,7 @@
 import mongodb from './mongodb.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Errors from './Errors.js'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const { db, ObjectId, BSON } = mongodb
 

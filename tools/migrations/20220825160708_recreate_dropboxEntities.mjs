@@ -4,18 +4,18 @@ const tags = ['saas']
 
 const indexes = [
   {
-    key: { 'overleaf.userId': 1, 'dropbox.id': 1 },
-    name: 'overleaf.userId_1_dropbox.id_1',
+    key: { 'superpaper.userId': 1, 'dropbox.id': 1 },
+    name: 'superpaper.userId_1_dropbox.id_1',
     unique: true,
     partialFilterExpression: { 'dropbox.id': { $exists: true } },
   },
   {
-    key: { 'overleaf.userId': 1, 'overleaf.id': 1 },
-    name: 'overleaf.userId_1_overleaf.id_1',
+    key: { 'superpaper.userId': 1, 'superpaper.id': 1 },
+    name: 'superpaper.userId_1_superpaper.id_1',
     unique: true,
-    partialFilterExpression: { 'overleaf.id': { $exists: true } },
+    partialFilterExpression: { 'superpaper.id': { $exists: true } },
   },
-  { key: { 'overleaf.userId': 1, 'dropbox.pathLower': 'hashed' } },
+  { key: { 'superpaper.userId': 1, 'dropbox.pathLower': 'hashed' } },
 ]
 
 const migrate = async client => {

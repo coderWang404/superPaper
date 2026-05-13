@@ -13,7 +13,7 @@ describe('WebsocketLoadBalancer', function () {
     ctx.rclient = {}
     ctx.RoomEvents = { on: sinon.stub() }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = { redis: {} }),
     }))
 

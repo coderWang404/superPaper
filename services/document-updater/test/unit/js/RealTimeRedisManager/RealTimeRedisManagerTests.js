@@ -24,11 +24,11 @@ describe('RealTimeRedisManager', function () {
     this.pubsubClient = { publish: sinon.stub() }
     this.RealTimeRedisManager = SandboxedModule.require(modulePath, {
       requires: {
-        '@overleaf/redis-wrapper': {
+        '@superpaper/redis-wrapper': {
           createClient: config =>
             config.name === 'pubsub' ? this.pubsubClient : this.rclient,
         },
-        '@overleaf/settings': {
+        '@superpaper/settings': {
           redis: {
             documentupdater: (this.settings = {
               key_schema: {

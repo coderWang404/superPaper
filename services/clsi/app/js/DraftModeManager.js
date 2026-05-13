@@ -1,6 +1,6 @@
 import fsPromises from 'node:fs/promises'
 import { callbackify } from 'node:util'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 const PREFIX =
   '\\PassOptionsToPackage{draft}{graphicx}\\PassOptionsToPackage{draft}{graphics}'

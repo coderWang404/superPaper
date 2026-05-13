@@ -9,11 +9,11 @@ describe('ChannelManager', function () {
     ctx.rclient = {}
     ctx.other_rclient = {}
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {}),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.metrics = {
         inc: sinon.stub(),
         summary: sinon.stub(),

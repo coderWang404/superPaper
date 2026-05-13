@@ -7,10 +7,10 @@ all: test-e2e
 export PWD = $(shell pwd)
 export MONOREPO = $(shell cd ../../ && pwd)
 
-export TEX_LIVE_DOCKER_IMAGE ?= us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2023.1
-export ALL_TEX_LIVE_DOCKER_IMAGES ?= us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2023.1,us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2022.1
+export TEX_LIVE_DOCKER_IMAGE ?= us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2023.1
+export ALL_TEX_LIVE_DOCKER_IMAGES ?= us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2023.1,us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2022.1
 export IMAGE_TAG_CE ?= sharelatex/sharelatex:main
-export IMAGE_TAG_PRO ?= us-east1-docker.pkg.dev/overleaf-ops/ol-docker/pro:main
+export IMAGE_TAG_PRO ?= us-east1-docker.pkg.dev/superpaper-ops/ol-docker/pro:main
 export CYPRESS_SHARD ?=
 export COMPOSE_PROJECT_NAME ?= test
 export USER_UID=$(shell id -u)
@@ -22,18 +22,15 @@ print-debug-logs:
 	-docker compose logs --timestamps --tail=100 mongo
 	-docker compose logs --timestamps --tail=100 redis
 	-docker compose logs --timestamps --tail=100 mailtrap
-	-docker compose logs --timestamps --tail=100 saml
-	-docker compose logs --timestamps --tail=100 ldap
 	-docker compose logs --timestamps --tail=100 git-bridge
 	-docker compose logs --timestamps --tail=100 host-admin
 	-docker compose logs --timestamps sharelatex
-	-docker compose exec sharelatex bash -c 'tail -n100 /var/log/overleaf/*.log'
+	-docker compose exec sharelatex bash -c 'tail -n100 /var/log/superpaper/*.log'
 
 test-e2e-native:
 	docker compose -f docker-compose.yml -f docker-compose.native.yml up --no-log-prefix sharelatex host-admin -d
 	CYPRESS_BASE_URL='http://127.0.0.1:3231' \
 	CYPRESS_HOST_ADMIN_URL='http://127.0.0.1:3232' \
-	CYPRESS_SAML_URL='http://127.0.0.1:3233' \
 	CYPRESS_MAILTRAP_URL='http://127.0.0.1:3234' \
 		yarn run cypress:open
 
@@ -42,7 +39,6 @@ test-e2e-native-linux:
 	docker compose -f docker-compose.yml -f docker-compose.native.yml up --no-log-prefix sharelatex host-admin -d
 	CYPRESS_BASE_URL='http://127.0.0.1:3231' \
 	CYPRESS_HOST_ADMIN_URL='http://127.0.0.1:3232' \
-	CYPRESS_SAML_URL='http://127.0.0.1:3233' \
 	CYPRESS_MAILTRAP_URL='http://127.0.0.1:3234' \
 		docker compose -f docker-compose.yml -f docker-compose.native.yml up --no-log-prefix cypress
 
@@ -86,17 +82,15 @@ prefetch_default_compose_build:
 prefetch: prefetch_custom
 prefetch_custom: prefetch_custom_compose_pull
 prefetch_custom_compose_pull:
-	docker compose pull saml ldap
-
 prefetch_custom: prefetch_custom_texlive_2023
 prefetch_custom_texlive_2023:
-	docker pull us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2023.1
-	docker tag us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2023.1 quay.io/sharelatex/texlive-full:2023.1
+	docker pull us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2023.1
+	docker tag us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2023.1 quay.io/sharelatex/texlive-full:2023.1
 
 prefetch_custom: prefetch_custom_texlive_2022
 prefetch_custom_texlive_2022:
-	docker pull us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2022.1
-	docker tag us-east1-docker.pkg.dev/overleaf-ops/ol-docker/texlive-full:2022.1 quay.io/sharelatex/texlive-full:2022.1
+	docker pull us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2022.1
+	docker tag us-east1-docker.pkg.dev/superpaper-ops/ol-docker/texlive-full:2022.1 quay.io/sharelatex/texlive-full:2022.1
 
 prefetch_custom: prefetch_old_4_2
 prefetch_old_4_2:

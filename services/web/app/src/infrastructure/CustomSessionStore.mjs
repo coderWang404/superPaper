@@ -1,9 +1,9 @@
 import session from 'express-session'
 import RedisStoreFactory from 'connect-redis'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import SessionManager from '../Features/Authentication/SessionManager.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const RedisStore = RedisStoreFactory(session)
 

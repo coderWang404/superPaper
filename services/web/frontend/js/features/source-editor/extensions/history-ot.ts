@@ -15,7 +15,7 @@ import {
   TextOperation,
   TrackingProps,
   TrackedChangeList,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import { DocumentContainer } from '@/features/ide-react/editor/document-container'
 import { HistoryOTShareDoc } from '../../../../../types/share-doc'
 import {

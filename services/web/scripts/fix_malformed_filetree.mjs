@@ -12,7 +12,7 @@ import ProjectLocator from '../app/src/Features/Project/ProjectLocator.mjs'
 import minimist from 'minimist'
 import readline from 'node:readline'
 import fs from 'node:fs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 
 const { ObjectId } = mongodb

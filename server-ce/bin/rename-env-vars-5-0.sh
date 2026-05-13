@@ -12,7 +12,7 @@ BACKUP_FILE="$FILE.$(date '+%Y.%m.%d-%H.%M.%S')"
 echo "Creating backup file $BACKUP_FILE"
 cp "$FILE" "$BACKUP_FILE"
 
-echo "Replacing 'SHARELATEX_' with 'OVERLEAF_' in $FILE"
-sed -i "s/SHARELATEX_/OVERLEAF_/g" "$FILE"
+echo "Replacing 'SHARELATEX_' with 'SUPERPAPER_' in $FILE"
+sed -i "s/SHARELATEX_/SUPERPAPER_/g" "$FILE"
 
 echo "Done."

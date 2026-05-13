@@ -1,5 +1,5 @@
 import OutputFileArchiveManager from './OutputFileArchiveManager.js'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import { pipeline } from 'node:stream/promises'
 
 async function createOutputZip(req, res) {

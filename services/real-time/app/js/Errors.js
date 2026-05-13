@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 class ClientRequestedMissingOpsError extends OError {
   constructor(statusCode, info = {}) {

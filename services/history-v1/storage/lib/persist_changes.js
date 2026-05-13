@@ -3,9 +3,9 @@
 'use strict'
 
 const _ = require('lodash')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const Chunk = core.Chunk
 const History = core.History
 

@@ -9,7 +9,7 @@ export default _.template(`\
 						<tr style="padding: 0; text-align: left; vertical-align: top;">
 							<th style="margin: 0; padding: 0; text-align: left;">
 								<% if (title) { %>
-									<h3 class="force-overleaf-style" style="margin: 0; color: #5D6879; font-family: Georgia, serif; font-size: 24px; font-weight: normal; line-height: 1.3; padding: 0; text-align: left; word-wrap: normal;">
+									<h3 class="force-superpaper-style" style="margin: 0; color: #5D6879; font-family: Georgia, serif; font-size: 24px; font-weight: normal; line-height: 1.3; padding: 0; text-align: left; word-wrap: normal;">
 										<%= title %>
 									</h3>
 								<% } %>
@@ -25,7 +25,7 @@ export default _.template(`\
 									<% } %>
 
 									<% (message).forEach(function(paragraph) { %>
-										<p class="force-overleaf-style" style="margin: 0 0 10px 0; padding: 0;">
+										<p class="force-superpaper-style" style="margin: 0 0 10px 0; padding: 0;">
 											<%= paragraph %>
 										</p>
 									<% }) %>

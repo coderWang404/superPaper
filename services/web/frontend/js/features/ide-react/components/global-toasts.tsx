@@ -3,13 +3,13 @@ import useEventListener from '@/shared/hooks/use-event-listener'
 import { Fragment, memo, ReactElement, useCallback, useState } from 'react'
 
 import { debugConsole } from '@/utils/debugging'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { OLToastContainer } from '@/shared/components/ol/ol-toast-container'
 import clipboardToastGenerators from '@/features/source-editor/components/clipboard-toasts'
 import importDocxFeedbackToastGenerators from '@/features/project-list/components/new-project-button/import-docx-feedback-toast'
 import exportDocumentToastGenerators from '@/features/ide-react/components/toolbar/export-document-toasts'
 
-const moduleGeneratorsImport = importOverleafModules('toastGenerators') as {
+const moduleGeneratorsImport = importSuperPaperModules('toastGenerators') as {
   import: { default: GlobalToastGeneratorEntry[] }
 }[]
 

@@ -1,6 +1,6 @@
 import BlankProjectModal from './blank-project-modal'
 import ExampleProjectModal from './example-project-modal'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 import { JSXElementConstructor, lazy, Suspense, useCallback } from 'react'
 import { Nullable } from '../../../../../../types/utils'
 import { FullSizeLoadingSpinner } from '@/shared/components/loading-spinner'
@@ -22,7 +22,7 @@ type NewProjectButtonModalProps = {
 }
 
 function NewProjectButtonModal({ modal, onHide }: NewProjectButtonModalProps) {
-  const [importProjectFromGithubModalWrapper] = importOverleafModules(
+  const [importProjectFromGithubModalWrapper] = importSuperPaperModules(
     'importProjectFromGithubModalWrapper'
   )
   const ImportProjectFromGithubModalWrapper: JSXElementConstructor<{

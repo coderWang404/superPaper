@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { db, ObjectId } from './mongodb.js'
 import * as HistoryStoreManager from './HistoryStoreManager.js'
 import * as UpdatesProcessor from './UpdatesProcessor.js'

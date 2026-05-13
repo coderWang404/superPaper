@@ -16,7 +16,7 @@ export default function ErrorMessage({
   error: string | Record<string, any>
 }) {
   const { t } = useTranslation()
-  const { isOverleaf, maxEntitiesPerProject } = getMeta('ol-ExposedSettings')
+  const { isSuperPaper, maxEntitiesPerProject } = getMeta('ol-ExposedSettings')
   const fileNameLimit = 150
 
   // the error is a string
@@ -55,7 +55,7 @@ export default function ErrorMessage({
         )
 
       case 'invalid_upload_request':
-        if (!isOverleaf) {
+        if (!isSuperPaper) {
           return (
             <DangerMessage>{t('generic_something_went_wrong')}</DangerMessage>
           )

@@ -1,5 +1,5 @@
 let sendPings
-const redis = require('@overleaf/redis-wrapper')
+const redis = require('@superpaper/redis-wrapper')
 const rclient1 = redis.createClient({
   cluster: [
     {

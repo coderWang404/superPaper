@@ -17,21 +17,21 @@ index 5a590e347a9..3be1c8a5407 100644
 -import { Binary, ObjectId } from 'mongodb'
 +import { ObjectId } from 'mongodb'
  import pLimit from 'p-limit'
- import logger from '@overleaf/logger'
+ import logger from '@superpaper/logger'
  import {
    batchedUpdate,
    objectIdFromInput,
    renderObjectId,
 -  READ_PREFERENCE_SECONDARY,
- } from '@overleaf/mongo-utils/batchedUpdate.js'
- import OError from '@overleaf/o-error'
+ } from '@superpaper/mongo-utils/batchedUpdate.js'
+ import OError from '@superpaper/o-error'
 -import {
 -  AlreadyWrittenError,
 -  NoKEKMatchedError,
 -  NotFoundError,
--} from '@overleaf/object-persistor/src/Errors.js'
+-} from '@superpaper/object-persistor/src/Errors.js'
 -import { backupPersistor, projectBlobsBucket } from '../lib/backupPersistor.mjs'
-+import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
++import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
  import {
    BlobStore,
    GLOBAL_BLOBS,
@@ -298,7 +298,7 @@ index 5a590e347a9..3be1c8a5407 100644
 +function* findFileInBatch(projects, prefix, blobs) {
    for (const project of projects) {
      const projectIdS = project._id.toString()
-     const historyIdS = project.overleaf.history.id.toString()
+     const historyIdS = project.superpaper.history.id.toString()
      const projectBlobs = blobs.get(historyIdS) || []
 -    const projectBackedUpBlobs = new Set(backedUpBlobs.get(projectIdS) || [])
 -    const ctx = new ProjectContext(
@@ -314,7 +314,7 @@ index 5a590e347a9..3be1c8a5407 100644
        yield {
          ctx,
 @@ -951,42 +816,11 @@ async function collectProjectBlobs(batch) {
-   return await getProjectBlobsBatch(batch.map(p => p.overleaf.history.id))
+   return await getProjectBlobsBatch(batch.map(p => p.superpaper.history.id))
  }
 
 -/**
@@ -512,7 +512,7 @@ index 8f861d39345..62b0b1de25f 100644
  import chai, { expect } from 'chai'
  import chaiExclude from 'chai-exclude'
 -import config from 'config'
- import { WritableBuffer } from '@overleaf/stream-utils'
+ import { WritableBuffer } from '@superpaper/stream-utils'
  import {
    backupPersistor,
    projectBlobsBucket,
@@ -902,7 +902,7 @@ index 3be1c8a5407..c9ed13c6cb4 100644
    // make a fetch request to filestore itself
    const src = await fetchFromFilestore(projectId, fileId)
 @@ -784,16 +778,6 @@ function* findFileInBatch(projects, prefix, blobs) {
-     const historyIdS = project.overleaf.history.id.toString()
+     const historyIdS = project.superpaper.history.id.toString()
      const projectBlobs = blobs.get(historyIdS) || []
      const ctx = new ProjectContext(project._id, historyIdS, projectBlobs)
 -    for (const blob of projectBlobs) {

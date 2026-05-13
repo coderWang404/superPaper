@@ -327,29 +327,6 @@
     }
   }
 
-  .plans-card {
-    min-height: 348px;
-    height: 100%;
-
-    .card-body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card-title {
-      @include heading-sm;
-
-      padding: 0;
-    }
-
-    .plans-card-footer {
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-05);
-      margin-top: auto;
-    }
-  }
-
   .customer-story-card-title {
     @include heading-md;
 

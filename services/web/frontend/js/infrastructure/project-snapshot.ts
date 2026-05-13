@@ -1,6 +1,6 @@
 import pLimit from 'p-limit'
-import { Change, Chunk, Snapshot, File } from 'overleaf-editor-core'
-import { RawChange, RawChunk } from 'overleaf-editor-core/lib/types'
+import { Change, Chunk, Snapshot, File } from 'superpaper-editor-core'
+import { RawChange, RawChunk } from 'superpaper-editor-core/lib/types'
 import { FetchError, getJSON, postJSON } from '@/infrastructure/fetch-json'
 import path from 'path-browserify'
 

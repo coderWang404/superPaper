@@ -1,7 +1,7 @@
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { isValidTeXFile } from '../../../main/is-valid-tex-file'
 
-const visualEditorProviders = importOverleafModules('visualEditorProviders')
+const visualEditorProviders = importSuperPaperModules('visualEditorProviders')
 
 export function isVisualEditorAvailable(filename: string): boolean {
   // Core LaTeX visual editor

@@ -30,7 +30,7 @@ const {
   AddFileOperation,
   EditFileOperation,
   TextOperation,
-} = require('overleaf-editor-core')
+} = require('superpaper-editor-core')
 const testProjects = require('./support/test_projects')
 const { ObjectId } = require('mongodb')
 
@@ -101,7 +101,7 @@ describe('project controller', function () {
       expect(createZipResponse.status).to.equal(HTTPStatus.OK)
       const zipInfo = createZipResponse.obj
       expect(zipInfo.zipUrl).to.match(
-        /^http:\/\/gcs:9090\/download\/storage\/v1\/b\/overleaf-test-zips/
+        /^http:\/\/gcs:9090\/download\/storage\/v1\/b\/superpaper-test-zips/
       )
       expect(zipStore.storeZip.calledOnce).to.be.true
     })
@@ -436,7 +436,7 @@ describe('project controller', function () {
   // eslint-disable-next-line mocha/no-skipped-tests
   describe.skip('getLatestContent', function () {
     // TODO: remove this endpoint entirely, see
-    // https://github.com/overleaf/write_latex/pull/5120#discussion_r244291862
+    // https://github.com/superpaper/write_latex/pull/5120#discussion_r244291862
   })
 
   describe('project with changes', function () {

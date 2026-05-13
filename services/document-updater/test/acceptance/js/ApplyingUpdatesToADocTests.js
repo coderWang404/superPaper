@@ -1,11 +1,11 @@
 const sinon = require('sinon')
 const { expect } = require('chai')
 const { setTimeout } = require('node:timers/promises')
-const Settings = require('@overleaf/settings')
-const rclientProjectHistory = require('@overleaf/redis-wrapper').createClient(
+const Settings = require('@superpaper/settings')
+const rclientProjectHistory = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.project_history
 )
-const rclientDU = require('@overleaf/redis-wrapper').createClient(
+const rclientDU = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
 const Keys = Settings.redis.documentupdater.key_schema
@@ -14,7 +14,7 @@ const ProjectHistoryKeys = Settings.redis.project_history.key_schema
 const MockWebApi = require('./helpers/MockWebApi')
 const DocUpdaterClient = require('./helpers/DocUpdaterClient')
 const DocUpdaterApp = require('./helpers/DocUpdaterApp')
-const { RequestFailedError } = require('@overleaf/fetch-utils')
+const { RequestFailedError } = require('@superpaper/fetch-utils')
 
 async function sendUpdateAndWait(projectId, docId, update) {
   await DocUpdaterClient.sendUpdate(projectId, docId, update)

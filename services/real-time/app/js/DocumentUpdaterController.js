@@ -1,12 +1,12 @@
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import RedisClientManager from './RedisClientManager.js'
 import SafeJsonParse from './SafeJsonParse.js'
 import EventLogger from './EventLogger.js'
 import HealthCheckManager from './HealthCheckManager.js'
 import RoomManager from './RoomManager.js'
 import ChannelManager from './ChannelManager.js'
-import metrics from '@overleaf/metrics'
+import metrics from '@superpaper/metrics'
 
 let DocumentUpdaterController
 

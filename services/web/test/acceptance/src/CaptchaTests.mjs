@@ -1,6 +1,6 @@
 import { db } from '../../../app/src/infrastructure/mongodb.mjs'
 import { expect } from 'chai'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import UserHelper from './helpers/User.mjs'
 import MockHaveIBeenPwnedApiClass from './mocks/MockHaveIBeenPwnedApi.mjs'
 

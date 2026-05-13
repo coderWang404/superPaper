@@ -1,6 +1,6 @@
-import OError from '@overleaf/o-error'
-import Metrics from '@overleaf/metrics'
-import { promisify } from '@overleaf/promise-utils'
+import OError from '@superpaper/o-error'
+import Metrics from '@superpaper/metrics'
+import { promisify } from '@superpaper/promise-utils'
 import LearnedWordsManager from './LearnedWordsManager.mjs'
 
 const SpellingHandler = {

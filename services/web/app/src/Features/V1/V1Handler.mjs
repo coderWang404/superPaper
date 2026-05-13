@@ -10,9 +10,9 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import V1Api from './V1Api.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 let V1Handler
 
@@ -21,7 +21,7 @@ export default V1Handler = {
     return V1Api.request(
       {
         method: 'POST',
-        url: '/api/v1/overleaf/login',
+        url: '/api/v1/superpaper/login',
         json: { email, password },
         expectedStatusCodes: [403],
       },
@@ -58,7 +58,7 @@ export default V1Handler = {
     return V1Api.request(
       {
         method: 'POST',
-        url: '/api/v1/overleaf/reset_password',
+        url: '/api/v1/superpaper/reset_password',
         json: {
           user_id: v1UserId,
           password,

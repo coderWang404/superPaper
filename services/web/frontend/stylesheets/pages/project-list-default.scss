@@ -138,13 +138,4 @@
     }
   }
 
-  .project-list-sidebar-survey-wrapper {
-    position: sticky;
-    bottom: 0;
-
-    @include media-breakpoint-down(md) {
-      position: static;
-      margin-top: var(--spacing-05);
-    }
-  }
 }

@@ -31,7 +31,7 @@ import { verticalOverflow } from './vertical-overflow'
 import { thirdPartyExtensions } from './third-party-extensions'
 import { lineNumbers } from './line-numbers'
 import { highlightActiveLine } from './highlight-active-line'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { emptyLineFiller } from './empty-line-filler'
 import { goToLinePanel } from './go-to-line'
 import { drawSelection } from './draw-selection'
@@ -59,7 +59,7 @@ import { selectionListener } from '@/features/source-editor/extensions/selection
 import { contextMenu } from './context-menu'
 
 const moduleExtensions: Array<(options: Record<string, any>) => Extension> =
-  importOverleafModules('sourceEditorExtensions').map(
+  importSuperPaperModules('sourceEditorExtensions').map(
     (item: { import: { extension: Extension } }) => item.import.extension
   )
 

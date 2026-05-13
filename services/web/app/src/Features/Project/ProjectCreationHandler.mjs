@@ -1,9 +1,8 @@
-import OError from '@overleaf/o-error'
-import metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import OError from '@superpaper/o-error'
+import metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import mongodb from 'mongodb-legacy'
-import Features from '../../infrastructure/Features.mjs'
 import { Project } from '../../models/Project.mjs'
 import { Folder } from '../../models/Folder.mjs'
 import ProjectEntityUpdateHandler from './ProjectEntityUpdateHandler.mjs'
@@ -14,9 +13,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { callbackify } from 'node:util'
 import _ from 'lodash'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
 import TpdsUpdateSender from '../ThirdPartyDataStore/TpdsUpdateSender.mjs'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
+import SplitTestHandler from '../FeatureRollouts/FeatureRolloutHandler.mjs'
 import ClsiCacheManager from '../Compile/ClsiCacheManager.mjs'
 import crypto from 'node:crypto'
 
@@ -37,9 +36,7 @@ const MONTH_NAMES = [
   'December',
 ]
 
-const templateProjectDir = Features.hasFeature('saas')
-  ? 'example-project'
-  : 'example-project-sp'
+const templateProjectDir = 'example-project-sp'
 
 async function createBlankProject(
   ownerId,
@@ -47,7 +44,7 @@ async function createBlankProject(
   attributes = {},
   options
 ) {
-  const isImport = attributes && attributes.overleaf
+  const isImport = attributes && attributes.superpaper
   const project = await _createBlankProject(
     ownerId,
     projectName,
@@ -247,19 +244,18 @@ async function _createBlankProject(
 
   // Initialise the history unless the caller has overridden it in the attributes
   // (to allow scripted creation of projects without full project history)
-  if (project.overleaf.history.id == null && !attributes.overleaf) {
+  if (project.superpaper.history.id == null && !attributes.superpaper) {
     const historyId = await HistoryManager.promises.initializeProject(
       project._id
     )
     if (historyId != null) {
-      project.overleaf.history.id = historyId
+      project.superpaper.history.id = historyId
     }
   }
 
-  // All the projects are initialised with Full Project History. This property
-  // is still set for backwards compatibility: Server Pro requires all projects
-  // have it set to `true` since SP 4.0
-  project.overleaf.history.display = true
+  // All projects are initialised with Full Project History. Keep this flag for
+  // backwards-compatible project records created before the cleanup.
+  project.superpaper.history.display = true
 
   if (Settings.currentImageName) {
     // avoid clobbering any imageName already set in attributes (e.g. importedImageName)
@@ -279,11 +275,11 @@ async function _createBlankProject(
       'history-ranges-support'
     )
   if (historyRangesSupportAssignment.variant === 'enabled') {
-    project.overleaf.history.rangesSupportEnabled = true
+    project.superpaper.history.rangesSupportEnabled = true
   }
 
   if (attributes.isDebugCopyOf) {
-    project.overleaf.isDebugCopyOf = new ObjectId(attributes.isDebugCopyOf)
+    project.superpaper.isDebugCopyOf = new ObjectId(attributes.isDebugCopyOf)
   }
 
   await project.save()

@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import HistoryVersion from './history-version'
 import LoadingSpinner from '../../../../shared/components/loading-spinner'
-import { OwnerPaywallPrompt } from './owner-paywall-prompt'
-import { NonOwnerPaywallPrompt } from './non-owner-paywall-prompt'
 import { isVersionSelected } from '../../utils/history-details'
 import { useUserContext } from '../../../../shared/context/user-context'
 import useDropdownActiveItem from '../../hooks/use-dropdown-active-item'
@@ -14,7 +12,6 @@ function AllHistoryList() {
     projectId,
     updatesInfo,
     fetchNextBatchOfUpdates,
-    currentUserIsOwner,
     selection,
     setSelection,
   } = useHistoryContext()
@@ -30,10 +27,6 @@ function AllHistoryList() {
   const [bottomVisible, setBottomVisible] = useState(false)
   const { activeDropdownItem, setActiveDropdownItem, closeDropdownForItem } =
     useDropdownActiveItem()
-  const showPaywall =
-    updatesLoadingState === 'ready' && updatesInfo.freeHistoryLimitHit
-  const showOwnerPaywall = showPaywall && currentUserIsOwner
-  const showNonOwnerPaywall = showPaywall && !currentUserIsOwner
   const visibleUpdates =
     visibleUpdateCount === null ? updates : updates.slice(0, visibleUpdateCount)
 
@@ -101,21 +94,15 @@ function AllHistoryList() {
             update === activeDropdownItem.item &&
             activeDropdownItem.whichDropDown === 'compare'
           const showDivider = Boolean(update.meta.first_in_day && index > 0)
-          const faded =
-            updatesInfo.freeHistoryLimitHit &&
-            index === visibleUpdates.length - 1 &&
-            visibleUpdates.length > 1
           const selectable =
-            !faded &&
-            (selection.comparing ||
-              selectionState === 'aboveSelected' ||
-              selectionState === 'belowSelected')
+            selection.comparing ||
+            selectionState === 'aboveSelected' ||
+            selectionState === 'belowSelected'
 
           return (
             <HistoryVersion
               key={`${update.fromV}_${update.toV}`}
               update={update}
-              faded={faded}
               showDivider={showDivider}
               setSelection={setSelection}
               selectionState={selectionState}
@@ -134,8 +121,6 @@ function AllHistoryList() {
           )
         })}
       </div>
-      {showOwnerPaywall ? <OwnerPaywallPrompt /> : null}
-      {showNonOwnerPaywall ? <NonOwnerPaywallPrompt /> : null}
       {updatesLoadingState === 'loadingInitial' ||
       updatesLoadingState === 'loadingUpdates' ? (
         <div className="history-all-versions-loading">

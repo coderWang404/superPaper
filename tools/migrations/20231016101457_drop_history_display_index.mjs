@@ -4,8 +4,8 @@ const tags = ['saas']
 
 const indexes = [
   {
-    key: { 'overleaf.history.display': 1 },
-    name: 'overleaf.history.display_1',
+    key: { 'superpaper.history.display': 1 },
+    name: 'superpaper.history.display_1',
   },
 ]
 

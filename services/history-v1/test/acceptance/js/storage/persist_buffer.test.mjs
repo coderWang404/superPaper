@@ -9,7 +9,7 @@ import {
   TextOperation,
   AddFileOperation,
   EditFileOperation, // Added EditFileOperation
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import persistBuffer from '../../../../storage/lib/persist_buffer.js'
 import chunkStore from '../../../../storage/lib/chunk_store/index.js'
 import { BlobStore } from '../../../../storage/lib/blob_store/index.js'

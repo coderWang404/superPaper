@@ -82,7 +82,7 @@
     }
   }
 
-  &.card-premium-border {
+  &.card-feature-border {
     h1,
     h2,
     h3,
@@ -141,7 +141,7 @@
         var(--dark-jungle-green) 75%,
         rgba(0 0 0 / 40%) 100%
       ),
-      url('../../../public/img/website-redesign/overleaf-pattern-purple.png');
+      url('../../../public/img/website-redesign/superpaper-pattern-purple.png');
   }
 
   &.card-pattern-left-only {
@@ -154,7 +154,7 @@
         var(--dark-jungle-green) 20%,
         var(--dark-jungle-green) 100%
       ),
-      url('../../../public/img/website-redesign/overleaf-pattern-purple.png');
+      url('../../../public/img/website-redesign/superpaper-pattern-purple.png');
   }
 
   &.card-pattern-bottom {
@@ -167,7 +167,7 @@
         rgba($dark-jungle-green, 0.75) 25%,
         rgba($dark-jungle-green, 1) 50%
       ),
-      url('../../../public/img/website-redesign/overleaf-pattern-purple.png');
+      url('../../../public/img/website-redesign/superpaper-pattern-purple.png');
 
     .card-body {
       color: var(--neutral-20);

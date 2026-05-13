@@ -32,7 +32,7 @@ describe('Notifications Tests', () => {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({}))
+    vi.doMock('@superpaper/settings', () => ({}))
     vi.doMock('../../../app/js/mongodb', () => ({
       db,
       ObjectId,

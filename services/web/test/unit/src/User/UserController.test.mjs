@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import sinon from 'sinon'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import Errors from '../../../../app/src/Features/Errors/Errors.js'
 const modulePath = '../../../../app/src/Features/User/UserController.mjs'
 
@@ -14,7 +14,7 @@ describe('UserController', function () {
 
     ctx.user = {
       _id: ctx.user_id,
-      email: 'email@overleaf.com',
+      email: 'email@superpaper.com',
       save: sinon.stub().resolves(),
       ace: {},
     }
@@ -76,11 +76,10 @@ describe('UserController', function () {
       promises: {
         changeEmailAddress: sinon.stub().resolves(),
         confirmEmail: sinon.stub().resolves(),
-        addAffiliationForNewUser: sinon.stub().resolves(),
       },
     }
 
-    ctx.settings = { siteUrl: 'overleaf.example.com' }
+    ctx.settings = { siteUrl: 'superpaper.example.com' }
 
     ctx.UserHandler = {
       promises: { populateTeamInvites: sinon.stub().resolves() },
@@ -108,10 +107,6 @@ describe('UserController', function () {
       .withArgs('https://evil.com')
       .returns(undefined)
     ctx.UrlHelper.getSafeRedirectPath.returnsArg(0)
-
-    ctx.Features = {
-      hasFeature: sinon.stub(),
-    }
 
     ctx.UserAuditLogHandler = {
       promises: {
@@ -141,7 +136,7 @@ describe('UserController', function () {
     }
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: ctx.AnalyticsManager,
       })
@@ -188,10 +183,6 @@ describe('UserController', function () {
       })
     )
 
-    vi.doMock('../../../../app/src/infrastructure/Features', () => ({
-      default: ctx.Features,
-    }))
-
     vi.doMock('../../../../app/src/Features/User/UserAuditLogHandler', () => ({
       default: ctx.UserAuditLogHandler,
     }))
@@ -208,11 +199,11 @@ describe('UserController', function () {
       default: ctx.HttpErrorHandler,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
-    vi.doMock('@overleaf/o-error', () => ({
+    vi.doMock('@superpaper/o-error', () => ({
       default: OError,
     }))
 
@@ -381,31 +372,6 @@ describe('UserController', function () {
       })
     })
 
-    describe('when deleteUser produces a known error', function () {
-      beforeEach(function (ctx) {
-        ctx.UserDeleter.promises.deleteUser.rejects(
-          new Errors.SubscriptionAdminDeletionError()
-        )
-      })
-
-      it('should return a HTTP Unprocessable Entity error', function (ctx) {
-        return new Promise(resolve => {
-          ctx.HttpErrorHandler.unprocessableEntity = sinon.spy(
-            (req, res, message, info) => {
-              expect(req).to.exist
-              expect(res).to.exist
-              expect(message).to.equal('error while deleting user account')
-              expect(info).to.deep.equal({
-                error: 'SubscriptionAdminDeletionError',
-              })
-              resolve()
-            }
-          )
-          ctx.UserController.tryDeleteUser(ctx.req, ctx.res)
-        })
-      })
-    })
-
     describe('when session.destroy produces an error', function () {
       beforeEach(function (ctx) {
         ctx.req.session.destroy = sinon
@@ -460,17 +426,6 @@ describe('UserController', function () {
         ctx.req.body = { role: 'student' }
         ctx.res.sendStatus = code => {
           ctx.user.role.should.equal('student')
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should set the institution', function (ctx) {
-      return new Promise(resolve => {
-        ctx.req.body = { institution: 'MIT' }
-        ctx.res.sendStatus = code => {
-          ctx.user.institution.should.equal('MIT')
           resolve()
         }
         ctx.UserController.updateUserSettings(ctx.req, ctx.res)
@@ -559,126 +514,6 @@ describe('UserController', function () {
         ctx.req.body = { darkModePdf: 'foobar' }
         ctx.res.sendStatus = code => {
           ctx.user.ace.darkModePdf.should.equal(true)
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should set zotero settings object', function (ctx) {
-      return new Promise(resolve => {
-        ctx.req.body = {
-          zotero: {
-            enabled: false,
-            groups: [{ id: '123' }],
-            disablePersonalLibrary: true,
-          },
-        }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.zotero.enabled.should.equal(false)
-          ctx.user.ace.zotero.groups.should.deep.equal([{ id: '123' }])
-          ctx.user.ace.zotero.disablePersonalLibrary.should.equal(true)
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should set zotero settings with partial update', function (ctx) {
-      return new Promise(resolve => {
-        ctx.user.ace.zotero = {
-          enabled: true,
-          groups: [{ id: 'existing' }],
-          disablePersonalLibrary: false,
-        }
-        ctx.req.body = {
-          zotero: { enabled: false },
-        }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.zotero.enabled.should.equal(false)
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should set mendeley settings object', function (ctx) {
-      return new Promise(resolve => {
-        ctx.req.body = {
-          mendeley: {
-            enabled: false,
-            groups: [{ id: 'group-456' }],
-            disablePersonalLibrary: true,
-          },
-        }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.mendeley.enabled.should.equal(false)
-          ctx.user.ace.mendeley.groups.should.deep.equal([{ id: 'group-456' }])
-          ctx.user.ace.mendeley.disablePersonalLibrary.should.equal(true)
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should set mendeley with multiple groups', function (ctx) {
-      return new Promise(resolve => {
-        ctx.req.body = {
-          mendeley: {
-            enabled: true,
-            groups: [{ id: 'group-1' }, { id: 'group-2' }, { id: 'group-3' }],
-            disablePersonalLibrary: false,
-          },
-        }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.mendeley.groups.should.have.length(3)
-          ctx.user.ace.mendeley.groups[0].id.should.equal('group-1')
-          ctx.user.ace.mendeley.groups[1].id.should.equal('group-2')
-          ctx.user.ace.mendeley.groups[2].id.should.equal('group-3')
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should set papers settings object', function (ctx) {
-      return new Promise(resolve => {
-        ctx.req.body = {
-          papers: {
-            enabled: true,
-            groups: [],
-            disablePersonalLibrary: false,
-          },
-        }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.papers.enabled.should.equal(true)
-          ctx.user.ace.papers.groups.should.deep.equal([])
-          ctx.user.ace.papers.disablePersonalLibrary.should.equal(false)
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should allow setting only papers disablePersonalLibrary', function (ctx) {
-      return new Promise(resolve => {
-        ctx.req.body = {
-          papers: { disablePersonalLibrary: true },
-        }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.papers.disablePersonalLibrary.should.equal(true)
-          resolve()
-        }
-        ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-      })
-    })
-
-    it('should handle undefined mendeley by not setting it', function (ctx) {
-      return new Promise(resolve => {
-        ctx.user.ace.mendeley = { enabled: true, groups: [] }
-        ctx.req.body = { mendeley: undefined }
-        ctx.res.sendStatus = code => {
-          ctx.user.ace.mendeley.enabled.should.equal(true)
           resolve()
         }
         ctx.UserController.updateUserSettings(ctx.req, ctx.res)
@@ -799,26 +634,6 @@ describe('UserController', function () {
       })
     })
 
-    describe('when using an external auth source', function () {
-      beforeEach(function (ctx) {
-        ctx.newEmail = 'someone23@example.com'
-        ctx.req.externalAuthenticationSystemUsed = sinon.stub().returns(true)
-      })
-
-      it('should not set a new email', function (ctx) {
-        return new Promise(resolve => {
-          ctx.req.body.email = ctx.newEmail
-          ctx.res.sendStatus = code => {
-            code.should.equal(200)
-            ctx.UserUpdater.promises.changeEmailAddress
-              .calledWith(ctx.user_id, ctx.newEmail)
-              .should.equal(false)
-            resolve()
-          }
-          ctx.UserController.updateUserSettings(ctx.req, ctx.res)
-        })
-      })
-    })
   })
 
   describe('logout', function () {
@@ -859,7 +674,7 @@ describe('UserController', function () {
 
     it('should redirect after logout', function (ctx) {
       return new Promise(resolve => {
-        ctx.req.body.redirect = '/sso-login'
+        ctx.req.body.redirect = '/external-login'
         ctx.req.session.destroy = sinon.stub().callsArgWith(0)
         ctx.res.redirect = url => {
           url.should.equal(ctx.req.body.redirect)
@@ -1231,218 +1046,6 @@ describe('UserController', function () {
             ctx.UserController.changePassword(ctx.req, ctx.res)
           })
         })
-      })
-    })
-  })
-
-  describe('ensureAffiliationMiddleware', function () {
-    describe('without affiliations feature', function () {
-      beforeEach(async function (ctx) {
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should not run affiliation check', function (ctx) {
-        expect(ctx.UserGetter.promises.getUser).to.not.have.been.called
-        expect(ctx.UserUpdater.promises.confirmEmail).to.not.have.been.called
-        expect(ctx.UserUpdater.promises.addAffiliationForNewUser).to.not.have
-          .been.called
-      })
-
-      it('should not return an error', function (ctx) {
-        expect(ctx.next).to.be.calledWith()
-      })
-    })
-
-    describe('without ensureAffiliation query parameter', function () {
-      beforeEach(async function (ctx) {
-        ctx.Features.hasFeature.withArgs('affiliations').returns(true)
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should not run middleware', function (ctx) {
-        expect(ctx.UserGetter.promises.getUser).to.not.have.been.called
-        expect(ctx.UserUpdater.promises.confirmEmail).to.not.have.been.called
-        expect(ctx.UserUpdater.promises.addAffiliationForNewUser).to.not.have
-          .been.called
-      })
-
-      it('should not return an error', function (ctx) {
-        expect(ctx.next).to.be.calledWith()
-      })
-    })
-
-    describe('no flagged email', function () {
-      beforeEach(async function (ctx) {
-        const email = 'unit-test@overleaf.com'
-        ctx.user.email = email
-        ctx.user.emails = [
-          {
-            email,
-          },
-        ]
-        ctx.Features.hasFeature.withArgs('affiliations').returns(true)
-        ctx.req.query.ensureAffiliation = true
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should get the user', function (ctx) {
-        expect(ctx.UserGetter.promises.getUser).to.have.been.calledWith(
-          ctx.user._id
-        )
-      })
-
-      it('should not try to add affiliation or update user', function (ctx) {
-        expect(ctx.UserUpdater.promises.addAffiliationForNewUser).to.not.have
-          .been.called
-      })
-
-      it('should not return an error', function (ctx) {
-        expect(ctx.next).to.be.calledWith()
-      })
-    })
-
-    describe('flagged non-SSO email', function () {
-      let emailFlagged
-      beforeEach(async function (ctx) {
-        emailFlagged = 'flagged@overleaf.com'
-        ctx.user.email = emailFlagged
-        ctx.user.emails = [
-          {
-            email: emailFlagged,
-            affiliationUnchecked: true,
-          },
-        ]
-        ctx.Features.hasFeature.withArgs('affiliations').returns(true)
-        ctx.req.query.ensureAffiliation = true
-        ctx.req.assertPermission = sinon.stub()
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should check the user has permission', function (ctx) {
-        expect(ctx.req.assertPermission).to.have.been.calledWith(
-          'add-affiliation'
-        )
-      })
-
-      it('should unflag the emails but not confirm', function (ctx) {
-        expect(
-          ctx.UserUpdater.promises.addAffiliationForNewUser
-        ).to.have.been.calledWith(ctx.user._id, emailFlagged)
-        expect(
-          ctx.UserUpdater.promises.confirmEmail
-        ).to.not.have.been.calledWith(ctx.user._id, emailFlagged)
-      })
-
-      it('should not return an error', function (ctx) {
-        expect(ctx.next).to.be.calledWith()
-      })
-    })
-
-    describe('flagged SSO email', function () {
-      let emailFlagged
-      beforeEach(async function (ctx) {
-        emailFlagged = 'flagged@overleaf.com'
-        ctx.user.email = emailFlagged
-        ctx.user.emails = [
-          {
-            email: emailFlagged,
-            affiliationUnchecked: true,
-            samlProviderId: '123',
-          },
-        ]
-        ctx.Features.hasFeature.withArgs('affiliations').returns(true)
-        ctx.req.query.ensureAffiliation = true
-        ctx.req.assertPermission = sinon.stub()
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should check the user has permission', function (ctx) {
-        expect(ctx.req.assertPermission).to.have.been.calledWith(
-          'add-affiliation'
-        )
-      })
-
-      it('should add affiliation to v1, unflag and confirm on v2', function (ctx) {
-        expect(ctx.UserUpdater.promises.addAffiliationForNewUser).to.have.not
-          .been.called
-        expect(ctx.UserUpdater.promises.confirmEmail).to.have.been.calledWith(
-          ctx.user._id,
-          emailFlagged
-        )
-      })
-
-      it('should not return an error', function (ctx) {
-        expect(ctx.next).to.be.calledWith()
-      })
-    })
-
-    describe('when v1 returns an error', function () {
-      let emailFlagged
-      beforeEach(async function (ctx) {
-        ctx.UserUpdater.promises.addAffiliationForNewUser.rejects()
-        emailFlagged = 'flagged@overleaf.com'
-        ctx.user.email = emailFlagged
-        ctx.user.emails = [
-          {
-            email: emailFlagged,
-            affiliationUnchecked: true,
-          },
-        ]
-        ctx.Features.hasFeature.withArgs('affiliations').returns(true)
-        ctx.req.query.ensureAffiliation = true
-        ctx.req.assertPermission = sinon.stub()
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should check the user has permission', function (ctx) {
-        expect(ctx.req.assertPermission).to.have.been.calledWith(
-          'add-affiliation'
-        )
-      })
-
-      it('should return the error', function (ctx) {
-        expect(ctx.next).to.be.calledWith(sinon.match.instanceOf(Error))
-      })
-    })
-
-    describe('when user is not found', function () {
-      beforeEach(async function (ctx) {
-        ctx.UserGetter.promises.getUser.rejects(new Error('not found'))
-        ctx.Features.hasFeature.withArgs('affiliations').returns(true)
-        ctx.req.query.ensureAffiliation = true
-        await ctx.UserController.ensureAffiliationMiddleware(
-          ctx.req,
-          ctx.res,
-          ctx.next
-        )
-      })
-
-      it('should return the error', function (ctx) {
-        expect(ctx.next).to.be.calledWith(sinon.match.instanceOf(Error))
       })
     })
   })

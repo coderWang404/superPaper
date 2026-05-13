@@ -6,12 +6,12 @@ import { ElementType } from 'react'
 import { createPortal } from 'react-dom'
 import { useGlobalAlertsContainer } from '@/features/ide-react/context/global-alerts-context'
 import OLNotification from '@/shared/components/ol/ol-notification'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 
 const rollingBuildsUpdatedAlert: Array<{
   import: { default: ElementType }
   path: string
-}> = importOverleafModules('rollingBuildsUpdatedAlert')
+}> = importSuperPaperModules('rollingBuildsUpdatedAlert')
 
 export function Alerts() {
   const { t } = useTranslation()

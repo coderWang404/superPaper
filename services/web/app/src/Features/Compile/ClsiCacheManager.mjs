@@ -4,12 +4,10 @@ import { NotFoundError, ResourceGoneError } from '../Errors/Errors.js'
 import ClsiCacheHandler from './ClsiCacheHandler.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
-import UserGetter from '../User/UserGetter.mjs'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import { fetchJson, RequestFailedError } from '@overleaf/fetch-utils'
-import Metrics from '@overleaf/metrics'
-import Features from '../../infrastructure/Features.mjs'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import { fetchJson, RequestFailedError } from '@superpaper/fetch-utils'
+import Metrics from '@superpaper/metrics'
 import ClsiManager from './ClsiManager.mjs'
 import Crypto from 'node:crypto'
 import ClsiCookieManagerFactory from './ClsiCookieManager.mjs'
@@ -100,7 +98,7 @@ async function tryGetLatestCompileResult(projectId, userId, signal) {
   } = await getLatestBuildFromCache(
     projectId,
     userId,
-    'output.overleaf.json',
+    'output.superpaper.json',
     signal
   )
   if (!isUpToDate) throw new ResourceGoneError()
@@ -119,7 +117,7 @@ async function tryGetLatestCompileResult(projectId, userId, signal) {
     throw err
   }
   Metrics.count('clsi_cache_egress', jsonSize, 1, {
-    path: ClsiCacheHandler.getEgressLabel('output.overleaf.json'),
+    path: ClsiCacheHandler.getEgressLabel('output.superpaper.json'),
   })
 
   const [, editorId, buildId] = metaLocation.match(
@@ -146,7 +144,7 @@ async function tryGetLatestCompileResult(projectId, userId, signal) {
   }
 
   const outputFiles = allFiles
-    .filter(path => path !== 'output.overleaf.json' && path !== 'output.tar.gz')
+    .filter(path => path !== 'output.superpaper.json' && path !== 'output.tar.gz')
     .map(path => {
       const f = {
         url: `${baseURL}/build/${editorId}-${buildId}/output/${path}`,
@@ -204,9 +202,7 @@ async function prepareClsiCache(
   userId,
   { sourceProjectId, templateVersionId, imageName }
 ) {
-  if (!Features.hasFeature('saas')) return undefined
-  const features = await UserGetter.promises.getUserFeatures(userId)
-  if (features.compileGroup !== 'priority') return undefined
+  if (!Settings.apis?.clsiCache?.instances?.length) return undefined
 
   const signal = AbortSignal.timeout(ClsiCacheHandler.TIMEOUT)
   let lastUpdated
@@ -252,7 +248,7 @@ async function createTemplateClsiCache({
   const compileBackendClass = Settings.apis.clsi.submissionBackendClass
   const submissionId = new ObjectId().toString()
   const editorId = Crypto.randomUUID()
-  const historyId = project.overleaf.history.id
+  const historyId = project.superpaper.history.id
   const rawSnapshot = {
     files: Object.fromEntries(
       docEntries

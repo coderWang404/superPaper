@@ -14,7 +14,7 @@ import {
 import { makeProjectKey } from '../../../../storage/lib/blob_store/index.js'
 import config from 'config'
 import Stream from 'node:stream'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import { ListObjectsV2Command } from '@aws-sdk/client-s3'
 
 /**
@@ -108,7 +108,7 @@ describe('backupDeletion', function () {
           deleterData: {
             deletedProjectId: projectIdPostgres,
             deletedAt: new Date('2024-01-01T00:00:00Z'),
-            deletedProjectOverleafHistoryId: postgresHistoryId,
+            deletedProjectsuperPaperHistoryId: postgresHistoryId,
           },
         },
         {
@@ -116,7 +116,7 @@ describe('backupDeletion', function () {
           deleterData: {
             deletedProjectId: projectIdNonExpired,
             deletedAt: new Date(),
-            deletedProjectOverleafHistoryId: projectIdNonExpired.toString(),
+            deletedProjectsuperPaperHistoryId: projectIdNonExpired.toString(),
           },
         },
         {
@@ -132,7 +132,7 @@ describe('backupDeletion', function () {
             deleterData: {
               deletedProjectId: projectId,
               deletedAt: new Date('2024-01-01T00:00:00Z'),
-              deletedProjectOverleafHistoryId: projectId.toString(),
+              deletedProjectsuperPaperHistoryId: projectId.toString(),
             },
           }
         }),

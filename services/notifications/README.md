@@ -1,6 +1,6 @@
-# overleaf/notifications
+# superpaper/notifications
 
-An API for managing user notifications in Overleaf
+An API for managing user notifications in superPaper
 
 # database indexes
 
@@ -14,4 +14,4 @@ db.notifications.createIndex({ expires: 1 }, { expireAfterSeconds: 10 })
 
 The code in this repository is released under the GNU AFFERO GENERAL PUBLIC LICENSE, version 3.
 
-Copyright (c) Overleaf, 2016–2019.
+Copyright (c) superPaper, 2016–2019.

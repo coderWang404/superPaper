@@ -1,28 +1,28 @@
 import { callbackify } from 'node:util'
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
 import {
   fetchStream,
   fetchString,
   fetchStringWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
-import Settings from '@overleaf/settings'
+} from '@superpaper/fetch-utils'
+import Settings from '@superpaper/settings'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import { Cookie } from 'tough-cookie'
 import ClsiCookieManagerFactory from './ClsiCookieManager.mjs'
 import ClsiStateManager from './ClsiStateManager.mjs'
 import _ from 'lodash'
 import ClsiFormatChecker from './ClsiFormatChecker.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import Errors from '../Errors/Errors.js'
 import ClsiCacheHandler from './ClsiCacheHandler.mjs'
 import HistoryManager from '../History/HistoryManager.mjs'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
+import SplitTestHandler from '../FeatureRollouts/FeatureRolloutHandler.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
 import { getOutputFileURL } from './ClsiURLHelpers.mjs'
 
@@ -90,10 +90,10 @@ function getNewCompileBackendClass(projectId, compileBackendClass) {
   let cfg
   switch (compileBackendClass) {
     case 'c3d':
-      cfg = Settings.apis.clsi_new.doubleCompileFree
+      cfg = Settings.apis.clsi_new.doubleCompileStandard
       break
     case 'c4d':
-      cfg = Settings.apis.clsi_new.doubleCompilePremium
+      cfg = Settings.apis.clsi_new.doubleCompilePriority
       break
     default:
       throw new Error('unknown ?compileBackendClass')
@@ -740,7 +740,7 @@ async function _buildRequest(projectId, userId, options) {
   const project = await ProjectGetter.promises.getProject(projectId, {
     compiler: 1,
     imageName: 1,
-    'overleaf.history.id': 1,
+    'superpaper.history.id': 1,
     ...(options.compileFromHistory ? {} : { rootDoc_id: 1, rootFolder: 1 }),
   })
   if (project == null) {
@@ -749,7 +749,7 @@ async function _buildRequest(projectId, userId, options) {
   if (!VALID_COMPILERS.includes(project.compiler)) {
     project.compiler = 'pdflatex'
   }
-  const historyId = project.overleaf.history.id
+  const historyId = project.superpaper.history.id
   let { baseHistoryVersion } = options
 
   if (options.compileFromHistory && !baseHistoryVersion) {
@@ -883,8 +883,8 @@ async function getOutputFileStream(
 }
 
 /**
- * @param {import('overleaf-editor-core/lib/types.js').RawChange[]} changes
- * @return {import('overleaf-editor-core/lib/types.js').RawOperation[][]}
+ * @param {import('superpaper-editor-core/lib/types.js').RawChange[]} changes
+ * @return {import('superpaper-editor-core/lib/types.js').RawOperation[][]}
  * @private
  */
 function _rawChangeOperationsFromChanges(changes) {
@@ -898,7 +898,7 @@ function _rawChangeOperationsFromChanges(changes) {
 }
 
 /**
- * @param {import('overleaf-editor-core/lib/types.js').RawOperation[][]} rawChangeOperations
+ * @param {import('superpaper-editor-core/lib/types.js').RawOperation[][]} rawChangeOperations
  * @return {Set<string>}
  * @private
  */
@@ -1116,7 +1116,7 @@ function _finaliseRequest(projectId, options, project, docs, files) {
     }
   }
 
-  const historyId = project.overleaf.history.id
+  const historyId = project.superpaper.history.id
   if (!historyId) {
     throw new OError('project does not have a history id', { projectId })
   }
@@ -1149,9 +1149,9 @@ function _finaliseRequest(projectId, options, project, docs, files) {
         syncType: options.syncType,
         syncState: options.syncState,
         compileGroup: options.compileGroup,
-        // Overleaf alpha/staff users get compileGroup=alpha (via getProjectCompileLimits in CompileManager), enroll them into the premium rollout of clsi-cache.
+        // Compile groups can opt into clsi-cache when the worker pool supports it.
         compileFromClsiCache:
-          // enable for premium compiles
+          // enable for selected compile groups
           (['alpha', 'priority'].includes(options.compileGroup) ||
             // enable for free for short period when we saw low capacity
             enableCompileFromCacheUntil > Date.now()) &&
@@ -1178,7 +1178,7 @@ async function buildDocumentConversionRequest(projectId) {
   const project = await ProjectGetter.promises.getProject(projectId, {
     compiler: 1,
     imageName: 1,
-    'overleaf.history.id': 1,
+    'superpaper.history.id': 1,
     rootDoc_id: 1,
     rootFolder: 1,
   })

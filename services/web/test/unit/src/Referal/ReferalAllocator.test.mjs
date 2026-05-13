@@ -9,14 +9,7 @@ describe('ReferalAllocator', function () {
       User: (ctx.User = {}),
     }))
 
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/FeaturesUpdater.mjs',
-      () => ({
-        default: (ctx.FeaturesUpdater = {}),
-      })
-    )
-
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {}),
     }))
 
@@ -25,9 +18,6 @@ describe('ReferalAllocator', function () {
     ctx.referal_medium = 'twitter'
     ctx.user_id = 'user-id-123'
     ctx.new_user_id = 'new-user-id-123'
-    ctx.FeaturesUpdater.promises = {
-      refreshFeatures: sinon.stub().resolves(),
-    }
     ctx.User.updateOne = sinon.stub().returns({
       exec: sinon.stub().resolves(),
     })
@@ -72,11 +62,6 @@ describe('ReferalAllocator', function () {
           .should.equal(true)
       })
 
-      it("should refresh the user's subscription", function (ctx) {
-        ctx.FeaturesUpdater.promises.refreshFeatures
-          .calledWith(ctx.user_id)
-          .should.equal(true)
-      })
     })
 
     describe('when there is no user for the referal id', function () {
@@ -104,9 +89,6 @@ describe('ReferalAllocator', function () {
         ctx.User.updateOne.called.should.equal(false)
       })
 
-      it('should not assign the user a bonus', function (ctx) {
-        ctx.FeaturesUpdater.promises.refreshFeatures.called.should.equal(false)
-      })
     })
 
     describe('when the referal is not a bonus referal', function () {
@@ -130,9 +112,6 @@ describe('ReferalAllocator', function () {
           .should.equal(true)
       })
 
-      it('should not assign the user a bonus', function (ctx) {
-        ctx.FeaturesUpdater.promises.refreshFeatures.called.should.equal(false)
-      })
     })
   })
 })

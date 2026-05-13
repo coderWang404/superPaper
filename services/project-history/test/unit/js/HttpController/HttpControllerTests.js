@@ -128,7 +128,7 @@ describe('HttpController', function () {
       this.HistoryStoreManager.initializeProject.calledWith().should.equal(true)
     })
 
-    it('should return the new overleaf id', function () {
+    it('should return the new superpaper id', function () {
       this.res.json
         .calledWith({ project: { id: this.historyId } })
         .should.equal(true)

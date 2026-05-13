@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import assert from 'node:assert'
 import crypto from 'node:crypto'
 import mongodb from 'mongodb-legacy'
@@ -223,7 +223,7 @@ describe('Sending Updates', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: {
+        superpaper: {
           history: {
             id: historyId,
           },
@@ -770,7 +770,7 @@ describe('Sending Updates', function () {
         .get(`/project/${this.projectId}/details`)
         .reply(200, {
           name: 'Test Project',
-          overleaf: {
+          superpaper: {
             history: {
               id: historyId,
             },

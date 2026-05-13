@@ -1,8 +1,8 @@
 // @ts-check
 
-import Metrics from '@overleaf/metrics'
-import MongoUtils from '@overleaf/mongo-utils'
-import Settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import MongoUtils from '@superpaper/mongo-utils'
+import Settings from '@superpaper/settings'
 import { MongoClient } from 'mongodb'
 
 export { ObjectId } from 'mongodb'

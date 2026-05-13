@@ -18,14 +18,14 @@ describe('Translations', function () {
   }
 
   beforeEach(async function () {
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         i18n: {
           escapeHTMLInVars: false,
           subdomainLang: {
-            www: { lngCode: 'en', url: 'https://www.overleaf.com' },
-            fr: { lngCode: 'fr', url: 'https://fr.overleaf.com' },
-            da: { lngCode: 'da', url: 'https://da.overleaf.com' },
+            www: { lngCode: 'en', url: 'https://www.superpaper.com' },
+            fr: { lngCode: 'fr', url: 'https://fr.superpaper.com' },
+            da: { lngCode: 'da', url: 'https://da.superpaper.com' },
           },
         },
       },
@@ -85,17 +85,12 @@ describe('Translations', function () {
       )
     })
 
-    it('handles dashes after interpolation', function () {
-      // This translation string has a problematic interpolation followed by a
-      // dash: `__len__-day`
+    it('handles interpolation cleanly', function () {
       expect(
-        req.i18n.t('faq_how_does_free_trial_works_answer', {
-          appName: 'Overleaf',
-          len: '5',
+        req.i18n.t('expires_in_days', {
+          days: '5',
         })
-      ).to.equal(
-        'You get full access to your chosen Overleaf plan during your 5-day free trial. There is no obligation to continue beyond the trial. Your card will be charged at the end of your 5 day trial unless you cancel before then. You can cancel via your subscription settings.'
-      )
+      ).to.equal('Expires in 5 days')
     })
 
     it('disables escaping', function () {
@@ -111,7 +106,7 @@ describe('Translations', function () {
 
   describe('setLangBasedOnDomainMiddleware', function () {
     it('should set the lang to french if the domain is fr', async function () {
-      req.headers.host = 'fr.overleaf.com'
+      req.headers.host = 'fr.superpaper.com'
       await runMiddlewares()
       expect(req.lng).to.equal('fr')
     })
@@ -119,7 +114,7 @@ describe('Translations', function () {
     describe('suggestedLanguageSubdomainConfig', function () {
       it('should set suggestedLanguageSubdomainConfig if the detected lang is different to subdomain lang', async function () {
         req.headers['accept-language'] = 'da, en-gb;q=0.8, en;q=0.7'
-        req.headers.host = 'fr.overleaf.com'
+        req.headers.host = 'fr.superpaper.com'
         await runMiddlewares()
         expect(res.locals.suggestedLanguageSubdomainConfig).to.exist
         expect(res.locals.suggestedLanguageSubdomainConfig.lngCode).to.equal(
@@ -129,7 +124,7 @@ describe('Translations', function () {
 
       it('should not set suggestedLanguageSubdomainConfig if the detected lang is the same as subdomain lang', async function () {
         req.headers['accept-language'] = 'da, en-gb;q=0.8, en;q=0.7'
-        req.headers.host = 'da.overleaf.com'
+        req.headers.host = 'da.superpaper.com'
         await runMiddlewares()
         expect(res.locals.suggestedLanguageSubdomainConfig).to.not.exist
       })

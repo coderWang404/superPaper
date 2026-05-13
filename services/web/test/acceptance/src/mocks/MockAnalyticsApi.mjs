@@ -10,9 +10,9 @@ class MockAnalyticsApi extends AbstractMockApi {
       return res.json({})
     })
 
-    this.app.get('/recentInstitutionActivity', (req, res) => {
+    this.app.get('/recentActivity', (req, res) => {
       res.json({
-        institutionId: 123,
+        id: 123,
         day: {
           projects: 0,
           users: 0,

@@ -17,9 +17,9 @@ describe('Customization', function () {
   describe('custom settings', function () {
     startWith({
       vars: {
-        OVERLEAF_APP_NAME: 'CUSTOM APP NAME',
-        OVERLEAF_LEFT_FOOTER: JSON.stringify([{ text: 'CUSTOM LEFT FOOTER' }]),
-        OVERLEAF_RIGHT_FOOTER: JSON.stringify([
+        SUPERPAPER_APP_NAME: 'CUSTOM APP NAME',
+        SUPERPAPER_LEFT_FOOTER: JSON.stringify([{ text: 'CUSTOM LEFT FOOTER' }]),
+        SUPERPAPER_RIGHT_FOOTER: JSON.stringify([
           { text: 'CUSTOM RIGHT FOOTER' },
         ]),
       },

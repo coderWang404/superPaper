@@ -44,8 +44,8 @@ const parseIntOrFail = function (value) {
   return parsedValue
 }
 
-const DATA_DIR = '/var/lib/overleaf/data'
-const TMP_DIR = '/var/lib/overleaf/tmp'
+const DATA_DIR = '/var/lib/superpaper/data'
+const TMP_DIR = '/var/lib/superpaper/tmp'
 
 const settings = {
   clsi: {
@@ -55,31 +55,31 @@ const settings = {
   brandPrefix: '',
 
   allowAnonymousReadAndWriteSharing:
-    process.env.OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING === 'true',
+    process.env.SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING === 'true',
 
   // Databases
   // ---------
 
-  // Overleaf Community Edition's main persistent data store is MongoDB (http://www.mongodb.org/)
+  // superPaper Community Edition's main persistent data store is MongoDB (http://www.mongodb.org/)
   // Documentation about the URL connection string format can be found at:
   //
   //    http://docs.mongodb.org/manual/reference/connection-string/
   //
   // The following works out of the box with Mongo's default settings:
   mongo: {
-    url: process.env.OVERLEAF_MONGO_URL || 'mongodb://dockerhost/sharelatex',
+    url: process.env.SUPERPAPER_MONGO_URL || 'mongodb://dockerhost/sharelatex',
   },
 
-  // Redis is used in Overleaf Community Edition for high volume queries, like real-time
+  // Redis is used in superPaper Community Edition for high volume queries, like real-time
   // editing, and session management.
   //
   // The following config will work with Redis's default settings:
   redis: {
     web: (redisConfig = {
-      host: process.env.OVERLEAF_REDIS_HOST || 'dockerhost',
-      port: process.env.OVERLEAF_REDIS_PORT || '6379',
-      password: process.env.OVERLEAF_REDIS_PASS || undefined,
-      tls: process.env.OVERLEAF_REDIS_TLS === 'true' ? {} : undefined,
+      host: process.env.SUPERPAPER_REDIS_HOST || 'dockerhost',
+      port: process.env.SUPERPAPER_REDIS_PORT || '6379',
+      password: process.env.SUPERPAPER_REDIS_PASS || undefined,
+      tls: process.env.SUPERPAPER_REDIS_TLS === 'true' ? {} : undefined,
       key_schema: {
         // document-updater
         blockingKey({ doc_id }) {
@@ -178,47 +178,47 @@ const settings = {
   // Server Config
   // -------------
 
-  // Where your instance of Overleaf Community Edition can be found publicly. This is used
+  // Where your instance of superPaper Community Edition can be found publicly. This is used
   // when emails are sent out and in generated links:
-  siteUrl: (siteUrl = process.env.OVERLEAF_SITE_URL || 'http://localhost'),
+  siteUrl: (siteUrl = process.env.SUPERPAPER_SITE_URL || 'http://localhost'),
 
   // Status page URL as displayed on the maintenance/500 pages.
-  statusPageUrl: process.env.OVERLEAF_STATUS_PAGE_URL
+  statusPageUrl: process.env.SUPERPAPER_STATUS_PAGE_URL
     ? // Add https:// protocol prefix if not set (Allow plain-text http:// for Server Pro/CE).
-      process.env.OVERLEAF_STATUS_PAGE_URL.startsWith('http://') ||
-      process.env.OVERLEAF_STATUS_PAGE_URL.startsWith('https://')
-      ? process.env.OVERLEAF_STATUS_PAGE_URL
-      : `https://${process.env.OVERLEAF_STATUS_PAGE_URL}`
+      process.env.SUPERPAPER_STATUS_PAGE_URL.startsWith('http://') ||
+      process.env.SUPERPAPER_STATUS_PAGE_URL.startsWith('https://')
+      ? process.env.SUPERPAPER_STATUS_PAGE_URL
+      : `https://${process.env.SUPERPAPER_STATUS_PAGE_URL}`
     : undefined,
-  maintenanceMessage: process.env.OVERLEAF_MAINTENANCE_MESSAGE,
-  maintenanceMessageHTML: process.env.OVERLEAF_MAINTENANCE_MESSAGE_HTML,
+  maintenanceMessage: process.env.SUPERPAPER_MAINTENANCE_MESSAGE,
+  maintenanceMessageHTML: process.env.SUPERPAPER_MAINTENANCE_MESSAGE_HTML,
 
-  // The name this is used to describe your Overleaf Community Edition Installation
-  appName: process.env.OVERLEAF_APP_NAME || 'Overleaf Community Edition',
+  // The name this is used to describe your superPaper Community Edition Installation
+  appName: process.env.SUPERPAPER_APP_NAME || 'superPaper Community Edition',
 
   restrictInvitesToExistingAccounts:
-    process.env.OVERLEAF_RESTRICT_INVITES_TO_EXISTING_ACCOUNTS === 'true',
+    process.env.SUPERPAPER_RESTRICT_INVITES_TO_EXISTING_ACCOUNTS === 'true',
 
   nav: {
     title:
-      process.env.OVERLEAF_NAV_TITLE ||
-      process.env.OVERLEAF_APP_NAME ||
-      'Overleaf Community Edition',
+      process.env.SUPERPAPER_NAV_TITLE ||
+      process.env.SUPERPAPER_APP_NAME ||
+      'superPaper Community Edition',
   },
 
   // The email address which users will be directed to as the main point of
-  // contact for this installation of Overleaf Community Edition.
-  adminEmail: process.env.OVERLEAF_ADMIN_EMAIL || 'placeholder@example.com',
+  // contact for this installation of superPaper Community Edition.
+  adminEmail: process.env.SUPERPAPER_ADMIN_EMAIL || 'placeholder@example.com',
 
   // If provided, a sessionSecret is used to sign cookies so that they cannot be
   // spoofed. This is recommended.
   security: {
     sessionSecret:
-      process.env.OVERLEAF_SESSION_SECRET || process.env.CRYPTO_RANDOM,
+      process.env.SUPERPAPER_SESSION_SECRET || process.env.CRYPTO_RANDOM,
   },
 
   csp: {
-    enabled: process.env.OVERLEAF_CSP_ENABLED !== 'false',
+    enabled: process.env.SUPERPAPER_CSP_ENABLED !== 'false',
   },
 
   rateLimit: {
@@ -238,36 +238,36 @@ const settings = {
   // but should be set to true in production.
   cacheStaticAssets: true,
 
-  // If you are running Overleaf Community Edition over https, set this to true to send the
+  // If you are running superPaper Community Edition over https, set this to true to send the
   // cookie with a secure flag (recommended).
-  secureCookie: process.env.OVERLEAF_SECURE_COOKIE != null,
+  secureCookie: process.env.SUPERPAPER_SECURE_COOKIE != null,
 
-  // If you are running Overleaf Community Edition behind a proxy (like Apache, Nginx, etc)
+  // If you are running superPaper Community Edition behind a proxy (like Apache, Nginx, etc)
   // then set this to true to allow it to correctly detect the forwarded IP
   // address and http/https protocol information.
 
   behindProxy: true,
-  trustedProxyIps: process.env.OVERLEAF_TRUSTED_PROXY_IPS || 'loopback',
+  trustedProxyIps: process.env.SUPERPAPER_TRUSTED_PROXY_IPS || 'loopback',
 
   // The amount of time, in milliseconds, until the (rolling) cookie session expires
   cookieSessionLength: parseInt(
-    process.env.OVERLEAF_COOKIE_SESSION_LENGTH || 5 * 24 * 60 * 60 * 1000, // default 5 days
+    process.env.SUPERPAPER_COOKIE_SESSION_LENGTH || 5 * 24 * 60 * 60 * 1000, // default 5 days
     10
   ),
 
   redisLockTTLSeconds: parseInt(
-    process.env.OVERLEAF_REDIS_LOCK_TTL_SECONDS || '60',
+    process.env.SUPERPAPER_REDIS_LOCK_TTL_SECONDS || '60',
     10
   ),
 
   i18n: {
     subdomainLang: {
       www: {
-        lngCode: process.env.OVERLEAF_SITE_LANGUAGE || 'en',
+        lngCode: process.env.SUPERPAPER_SITE_LANGUAGE || 'en',
         url: siteUrl,
       },
     },
-    defaultLng: process.env.OVERLEAF_SITE_LANGUAGE || 'en',
+    defaultLng: process.env.SUPERPAPER_SITE_LANGUAGE || 'en',
   },
 
   currentImageName: process.env.TEX_LIVE_DOCKER_IMAGE,
@@ -287,7 +287,7 @@ const settings = {
       user: 'staging',
       pass: process.env.STAGING_PASSWORD,
       requestTimeout: parseInt(
-        process.env.OVERLEAF_HISTORY_V1_HTTP_REQUEST_TIMEOUT || '300000', // default is 5min
+        process.env.SUPERPAPER_HISTORY_V1_HTTP_REQUEST_TIMEOUT || '300000', // default is 5min
         10
       ),
     },
@@ -298,112 +298,111 @@ const settings = {
     collaborators: -1,
     dropbox: true,
     versioning: true,
-    compileTimeout: parseIntOrFail(process.env.COMPILE_TIMEOUT || 180),
-    compileGroup: 'standard',
-    trackChanges: true,
-    references: true,
-  },
+      compileTimeout: parseIntOrFail(process.env.COMPILE_TIMEOUT || 180),
+      compileGroup: 'standard',
+      references: true,
+    },
 }
 
 // # OPTIONAL CONFIGURABLE SETTINGS
 
-if (process.env.OVERLEAF_LEFT_FOOTER != null) {
+if (process.env.SUPERPAPER_LEFT_FOOTER != null) {
   try {
-    settings.nav.left_footer = JSON.parse(process.env.OVERLEAF_LEFT_FOOTER)
+    settings.nav.left_footer = JSON.parse(process.env.SUPERPAPER_LEFT_FOOTER)
   } catch (error) {
     e = error
-    console.error('could not parse OVERLEAF_LEFT_FOOTER, not valid JSON')
+    console.error('could not parse SUPERPAPER_LEFT_FOOTER, not valid JSON')
   }
 }
 
-if (process.env.OVERLEAF_RIGHT_FOOTER != null) {
-  settings.nav.right_footer = process.env.OVERLEAF_RIGHT_FOOTER
+if (process.env.SUPERPAPER_RIGHT_FOOTER != null) {
+  settings.nav.right_footer = process.env.SUPERPAPER_RIGHT_FOOTER
   try {
-    settings.nav.right_footer = JSON.parse(process.env.OVERLEAF_RIGHT_FOOTER)
+    settings.nav.right_footer = JSON.parse(process.env.SUPERPAPER_RIGHT_FOOTER)
   } catch (error1) {
     e = error1
-    console.error('could not parse OVERLEAF_RIGHT_FOOTER, not valid JSON')
+    console.error('could not parse SUPERPAPER_RIGHT_FOOTER, not valid JSON')
   }
 }
 
-if (process.env.OVERLEAF_HEADER_IMAGE_URL != null) {
-  settings.nav.custom_logo = process.env.OVERLEAF_HEADER_IMAGE_URL
+if (process.env.SUPERPAPER_HEADER_IMAGE_URL != null) {
+  settings.nav.custom_logo = process.env.SUPERPAPER_HEADER_IMAGE_URL
 }
 
-if (process.env.OVERLEAF_HEADER_EXTRAS != null) {
+if (process.env.SUPERPAPER_HEADER_EXTRAS != null) {
   try {
-    settings.nav.header_extras = JSON.parse(process.env.OVERLEAF_HEADER_EXTRAS)
+    settings.nav.header_extras = JSON.parse(process.env.SUPERPAPER_HEADER_EXTRAS)
   } catch (error2) {
     e = error2
-    console.error('could not parse OVERLEAF_HEADER_EXTRAS, not valid JSON')
+    console.error('could not parse SUPERPAPER_HEADER_EXTRAS, not valid JSON')
   }
 }
 
-if (process.env.OVERLEAF_LOGIN_SUPPORT_TEXT != null) {
-  settings.nav.login_support_text = process.env.OVERLEAF_LOGIN_SUPPORT_TEXT
+if (process.env.SUPERPAPER_LOGIN_SUPPORT_TEXT != null) {
+  settings.nav.login_support_text = process.env.SUPERPAPER_LOGIN_SUPPORT_TEXT
 }
 
-if (process.env.OVERLEAF_LOGIN_SUPPORT_TITLE != null) {
-  settings.nav.login_support_title = process.env.OVERLEAF_LOGIN_SUPPORT_TITLE
+if (process.env.SUPERPAPER_LOGIN_SUPPORT_TITLE != null) {
+  settings.nav.login_support_title = process.env.SUPERPAPER_LOGIN_SUPPORT_TITLE
 }
 
 // Sending Email
 // -------------
 //
 // You must configure a mail server to be able to send invite emails from
-// Overleaf Community Edition. The config settings are passed to nodemailer. See the nodemailer
+// superPaper Community Edition. The config settings are passed to nodemailer. See the nodemailer
 // documentation for available options:
 //
 //     http://www.nodemailer.com/docs/transports
 
-if (process.env.OVERLEAF_EMAIL_FROM_ADDRESS != null) {
+if (process.env.SUPERPAPER_EMAIL_FROM_ADDRESS != null) {
   settings.email = {
-    fromAddress: process.env.OVERLEAF_EMAIL_FROM_ADDRESS,
-    replyTo: process.env.OVERLEAF_EMAIL_REPLY_TO || '',
-    driver: process.env.OVERLEAF_EMAIL_DRIVER,
+    fromAddress: process.env.SUPERPAPER_EMAIL_FROM_ADDRESS,
+    replyTo: process.env.SUPERPAPER_EMAIL_REPLY_TO || '',
+    driver: process.env.SUPERPAPER_EMAIL_DRIVER,
     parameters: {
       // AWS Creds
-      AWSAccessKeyID: process.env.OVERLEAF_EMAIL_AWS_SES_ACCESS_KEY_ID,
-      AWSSecretKey: process.env.OVERLEAF_EMAIL_AWS_SES_SECRET_KEY,
-      region: process.env.OVERLEAF_EMAIL_AWS_SES_REGION || 'us-east-1',
+      AWSAccessKeyID: process.env.SUPERPAPER_EMAIL_AWS_SES_ACCESS_KEY_ID,
+      AWSSecretKey: process.env.SUPERPAPER_EMAIL_AWS_SES_SECRET_KEY,
+      region: process.env.SUPERPAPER_EMAIL_AWS_SES_REGION || 'us-east-1',
 
       // SMTP Creds
-      host: process.env.OVERLEAF_EMAIL_SMTP_HOST,
-      port: process.env.OVERLEAF_EMAIL_SMTP_PORT,
-      secure: parse(process.env.OVERLEAF_EMAIL_SMTP_SECURE),
-      ignoreTLS: parse(process.env.OVERLEAF_EMAIL_SMTP_IGNORE_TLS),
-      name: process.env.OVERLEAF_EMAIL_SMTP_NAME,
-      logger: process.env.OVERLEAF_EMAIL_SMTP_LOGGER === 'true',
+      host: process.env.SUPERPAPER_EMAIL_SMTP_HOST,
+      port: process.env.SUPERPAPER_EMAIL_SMTP_PORT,
+      secure: parse(process.env.SUPERPAPER_EMAIL_SMTP_SECURE),
+      ignoreTLS: parse(process.env.SUPERPAPER_EMAIL_SMTP_IGNORE_TLS),
+      name: process.env.SUPERPAPER_EMAIL_SMTP_NAME,
+      logger: process.env.SUPERPAPER_EMAIL_SMTP_LOGGER === 'true',
     },
 
-    textEncoding: process.env.OVERLEAF_EMAIL_TEXT_ENCODING,
+    textEncoding: process.env.SUPERPAPER_EMAIL_TEXT_ENCODING,
     template: {
-      customFooter: process.env.OVERLEAF_CUSTOM_EMAIL_FOOTER,
+      customFooter: process.env.SUPERPAPER_CUSTOM_EMAIL_FOOTER,
     },
   }
 
   if (
-    process.env.OVERLEAF_EMAIL_SMTP_USER != null ||
-    process.env.OVERLEAF_EMAIL_SMTP_PASS != null
+    process.env.SUPERPAPER_EMAIL_SMTP_USER != null ||
+    process.env.SUPERPAPER_EMAIL_SMTP_PASS != null
   ) {
     settings.email.parameters.auth = {
-      user: process.env.OVERLEAF_EMAIL_SMTP_USER,
-      pass: process.env.OVERLEAF_EMAIL_SMTP_PASS,
+      user: process.env.SUPERPAPER_EMAIL_SMTP_USER,
+      pass: process.env.SUPERPAPER_EMAIL_SMTP_PASS,
     }
   }
 
-  if (process.env.OVERLEAF_EMAIL_SMTP_TLS_REJECT_UNAUTH != null) {
+  if (process.env.SUPERPAPER_EMAIL_SMTP_TLS_REJECT_UNAUTH != null) {
     settings.email.parameters.tls = {
       rejectUnauthorized: parse(
-        process.env.OVERLEAF_EMAIL_SMTP_TLS_REJECT_UNAUTH
+        process.env.SUPERPAPER_EMAIL_SMTP_TLS_REJECT_UNAUTH
       ),
     }
   }
 }
 
 // i18n
-if (process.env.OVERLEAF_LANG_DOMAIN_MAPPING != null) {
-  settings.i18n.subdomainLang = parse(process.env.OVERLEAF_LANG_DOMAIN_MAPPING)
+if (process.env.SUPERPAPER_LANG_DOMAIN_MAPPING != null) {
+  settings.i18n.subdomainLang = parse(process.env.SUPERPAPER_LANG_DOMAIN_MAPPING)
 }
 
 // Password Settings
@@ -411,41 +410,41 @@ if (process.env.OVERLEAF_LANG_DOMAIN_MAPPING != null) {
 // These restrict the passwords users can use when registering
 // opts are from http://antelle.github.io/passfield
 if (
-  process.env.OVERLEAF_PASSWORD_VALIDATION_PATTERN ||
-  process.env.OVERLEAF_PASSWORD_VALIDATION_MIN_LENGTH ||
-  process.env.OVERLEAF_PASSWORD_VALIDATION_MAX_LENGTH
+  process.env.SUPERPAPER_PASSWORD_VALIDATION_PATTERN ||
+  process.env.SUPERPAPER_PASSWORD_VALIDATION_MIN_LENGTH ||
+  process.env.SUPERPAPER_PASSWORD_VALIDATION_MAX_LENGTH
 ) {
   settings.passwordStrengthOptions = {
-    pattern: process.env.OVERLEAF_PASSWORD_VALIDATION_PATTERN || 'aA$3',
+    pattern: process.env.SUPERPAPER_PASSWORD_VALIDATION_PATTERN || 'aA$3',
     length: {
-      min: process.env.OVERLEAF_PASSWORD_VALIDATION_MIN_LENGTH || 8,
-      max: process.env.OVERLEAF_PASSWORD_VALIDATION_MAX_LENGTH || 72,
+      min: process.env.SUPERPAPER_PASSWORD_VALIDATION_MIN_LENGTH || 8,
+      max: process.env.SUPERPAPER_PASSWORD_VALIDATION_MAX_LENGTH || 72,
     },
   }
 }
 
 // filestore
-switch (process.env.OVERLEAF_FILESTORE_BACKEND) {
+switch (process.env.SUPERPAPER_FILESTORE_BACKEND) {
   case 's3':
     settings.filestore = {
       backend: 's3',
       stores: {
         template_files:
-          process.env.OVERLEAF_FILESTORE_TEMPLATE_FILES_BUCKET_NAME,
-        project_blobs: process.env.OVERLEAF_HISTORY_PROJECT_BLOBS_BUCKET,
-        global_blobs: process.env.OVERLEAF_HISTORY_BLOBS_BUCKET,
+          process.env.SUPERPAPER_FILESTORE_TEMPLATE_FILES_BUCKET_NAME,
+        project_blobs: process.env.SUPERPAPER_HISTORY_PROJECT_BLOBS_BUCKET,
+        global_blobs: process.env.SUPERPAPER_HISTORY_BLOBS_BUCKET,
       },
       s3: {
         key:
-          process.env.OVERLEAF_FILESTORE_S3_ACCESS_KEY_ID ||
+          process.env.SUPERPAPER_FILESTORE_S3_ACCESS_KEY_ID ||
           process.env.AWS_ACCESS_KEY_ID,
         secret:
-          process.env.OVERLEAF_FILESTORE_S3_SECRET_ACCESS_KEY ||
+          process.env.SUPERPAPER_FILESTORE_S3_SECRET_ACCESS_KEY ||
           process.env.AWS_SECRET_ACCESS_KEY,
-        endpoint: process.env.OVERLEAF_FILESTORE_S3_ENDPOINT,
-        pathStyle: process.env.OVERLEAF_FILESTORE_S3_PATH_STYLE === 'true',
+        endpoint: process.env.SUPERPAPER_FILESTORE_S3_ENDPOINT,
+        pathStyle: process.env.SUPERPAPER_FILESTORE_S3_PATH_STYLE === 'true',
         region:
-          process.env.OVERLEAF_FILESTORE_S3_REGION ||
+          process.env.SUPERPAPER_FILESTORE_S3_REGION ||
           process.env.AWS_DEFAULT_REGION,
       },
     }
@@ -457,13 +456,13 @@ switch (process.env.OVERLEAF_FILESTORE_BACKEND) {
         template_files: Path.join(DATA_DIR, 'template_files'),
 
         // NOTE: The below paths are hard-coded in server-ce/config/production.json, so hard code them here as well.
-        // We can use DATA_DIR after switching history-v1 from 'config' to '@overleaf/settings'.
+        // We can use DATA_DIR after switching history-v1 from 'config' to '@superpaper/settings'.
         project_blobs:
-          process.env.OVERLEAF_HISTORY_PROJECT_BLOBS_BUCKET ||
-          '/var/lib/overleaf/data/history/overleaf-project-blobs',
+          process.env.SUPERPAPER_HISTORY_PROJECT_BLOBS_BUCKET ||
+          '/var/lib/superpaper/data/history/superpaper-project-blobs',
         global_blobs:
-          process.env.OVERLEAF_HISTORY_BLOBS_BUCKET ||
-          '/var/lib/overleaf/data/history/overleaf-global-blobs',
+          process.env.SUPERPAPER_HISTORY_BLOBS_BUCKET ||
+          '/var/lib/superpaper/data/history/superpaper-global-blobs',
       },
     }
 }
@@ -476,7 +475,7 @@ if (
   !settings.trustedProxyIps.includes('127.0.0.1')
 ) {
   throw new Error(
-    'OVERLEAF_TRUSTED_PROXY_IPS must include one of "loopback", "localhost" or "127.0.0.1", which trusts the nginx instance running inside the container'
+    'SUPERPAPER_TRUSTED_PROXY_IPS must include one of "loopback", "localhost" or "127.0.0.1", which trusts the nginx instance running inside the container'
   )
 }
 

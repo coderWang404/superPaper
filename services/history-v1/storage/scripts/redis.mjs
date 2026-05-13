@@ -1,4 +1,4 @@
-import redis from '@overleaf/redis-wrapper'
+import redis from '@superpaper/redis-wrapper'
 import config from 'config'
 
 // Get allowed Redis dbs from config

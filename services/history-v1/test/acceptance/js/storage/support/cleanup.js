@@ -1,7 +1,7 @@
 const config = require('config')
 
 const { knex, persistor, mongodb, redis } = require('../../../../../storage')
-const { S3Persistor } = require('@overleaf/object-persistor/src/S3Persistor')
+const { S3Persistor } = require('@superpaper/object-persistor/src/S3Persistor')
 
 const POSTGRES_TABLES = [
   'chunks',

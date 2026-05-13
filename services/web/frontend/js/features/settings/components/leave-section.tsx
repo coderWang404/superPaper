@@ -17,7 +17,7 @@ function LeaveSection() {
     setIsModalOpen(true)
   }, [])
 
-  // Prevent managed users deleting their own accounts
+  // Prevent users blocked by account policy from deleting their own accounts.
   if (getMeta('ol-cannot-delete-own-account')) {
     return (
       <>

@@ -1,7 +1,7 @@
 // import Errors from object-persistor to pass instanceof checks
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
-import { Errors } from '@overleaf/object-persistor'
+import { Errors } from '@superpaper/object-persistor'
 
 class Md5MismatchError extends OError {}
 

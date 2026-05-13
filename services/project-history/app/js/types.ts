@@ -5,7 +5,7 @@ import {
   RawOrigin,
   CommentRawData,
   TrackedChangeRawData,
-} from 'overleaf-editor-core/lib/types'
+} from 'superpaper-editor-core/lib/types'
 
 export type Update =
   | TextUpdate

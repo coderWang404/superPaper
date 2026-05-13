@@ -56,7 +56,7 @@ const meta: Meta<typeof Dropdown> = {
     align: { sm: 'start' },
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-194077&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-194077&m=dev'
   ),
 }
 

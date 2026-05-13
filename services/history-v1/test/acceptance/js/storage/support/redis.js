@@ -1,6 +1,6 @@
 'use strict'
 
-const { Snapshot } = require('overleaf-editor-core')
+const { Snapshot } = require('superpaper-editor-core')
 const redis = require('../../../../../storage/lib/redis')
 const redisBackend = require('../../../../../storage/lib/chunk_store/redis')
 const rclient = redis.rclientHistory

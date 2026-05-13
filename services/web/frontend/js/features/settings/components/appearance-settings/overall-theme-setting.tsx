@@ -5,7 +5,6 @@ import { useMemo } from 'react'
 import type { Option } from '../dropdown-setting'
 import { useTranslation } from 'react-i18next'
 import { OverallThemeMeta } from '@ol-types/project-settings'
-import { isIEEEBranded } from '@/utils/is-ieee-branded'
 import { useLayoutContext } from '@/shared/context/layout-context'
 import { OverallTheme } from '@/shared/utils/styles'
 
@@ -27,7 +26,7 @@ export default function OverallThemeSetting() {
     [overallThemes]
   )
 
-  if (!overallThemes || isIEEEBranded()) {
+  if (!overallThemes) {
     return null
   }
 
@@ -35,7 +34,7 @@ export default function OverallThemeSetting() {
     <DropdownSetting
       id="overallTheme"
       label={t('overall_theme')}
-      description={t('the_overleaf_color_scheme')}
+      description={t('the_superpaper_color_scheme')}
       options={options}
       onChange={setOverallTheme}
       value={overallTheme}

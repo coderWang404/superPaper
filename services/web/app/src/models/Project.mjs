@@ -44,7 +44,6 @@ export const ProjectSchema = new Schema(
     trashed: [{ type: ObjectId, ref: 'User' }],
     deletedDocs: [DeletedDocSchema],
     imageName: { type: String },
-    brandVariationId: { type: String },
     track_changes: { type: Object },
     tokens: {
       readOnly: {
@@ -75,7 +74,7 @@ export const ProjectSchema = new Schema(
     tokenAccessReadAndWrite_refs: [{ type: ObjectId, ref: 'User' }],
     fromV1TemplateId: { type: Number },
     fromV1TemplateVersionId: { type: Number },
-    overleaf: {
+    superpaper: {
       id: { type: Number },
       imported_at_ver_id: { type: Number },
       token: { type: String },
@@ -92,19 +91,6 @@ export const ProjectSchema = new Schema(
       },
       isDebugCopyOf: { type: ObjectId },
     },
-    collabratecUsers: [
-      {
-        user_id: { type: ObjectId, ref: 'User' },
-        collabratec_document_id: { type: String },
-        collabratec_privategroup_id: { type: String },
-        added_at: {
-          type: Date,
-          default() {
-            return new Date()
-          },
-        },
-      },
-    ],
     deferredTpdsFlushCounter: { type: Number },
   },
   { minimize: false }

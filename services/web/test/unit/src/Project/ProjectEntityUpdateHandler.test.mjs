@@ -25,7 +25,7 @@ describe('ProjectEntityUpdateHandler', function () {
     ctx.project = {
       _id: projectId,
       name: 'project name',
-      overleaf: {
+      superpaper: {
         history: {
           id: projectHistoryId,
         },
@@ -170,7 +170,7 @@ describe('ProjectEntityUpdateHandler', function () {
       setHistoryRangesSupport: sinon.stub().resolves(),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: { validRootDocExtensions: ['tex'] },
     }))
 
@@ -764,7 +764,7 @@ describe('ProjectEntityUpdateHandler', function () {
         ctx.TpdsUpdateSender.promises.addFile
           .calledWith({
             projectId,
-            historyId: ctx.project.overleaf.history.id,
+            historyId: ctx.project.superpaper.history.id,
             projectName: ctx.project.name,
             fileId,
             hash: ctx.newFile.hash,
@@ -1008,7 +1008,7 @@ describe('ProjectEntityUpdateHandler', function () {
       beforeEach(async function (ctx) {
         ctx.newProject = {
           name: 'new project',
-          overleaf: { history: { id: projectHistoryId } },
+          superpaper: { history: { id: projectHistoryId } },
         }
         ctx.existingFile = { _id: fileId, name: 'foo.tex', rev: 12 }
         ctx.folder = { _id: folderId, docs: [], fileRefs: [ctx.existingFile] }
@@ -1206,7 +1206,7 @@ describe('ProjectEntityUpdateHandler', function () {
       it('notifies the tpds', function (ctx) {
         ctx.TpdsUpdateSender.promises.addFile.should.have.been.calledWith({
           projectId,
-          historyId: ctx.project.overleaf.history.id,
+          historyId: ctx.project.superpaper.history.id,
           projectName: ctx.project.name,
           fileId: ctx.newFile._id,
           hash: ctx.newFile.hash,
@@ -1378,7 +1378,7 @@ describe('ProjectEntityUpdateHandler', function () {
         }
         ctx.newProject = {
           name: 'new project',
-          overleaf: { history: { id: projectHistoryId } },
+          superpaper: { history: { id: projectHistoryId } },
         }
         ctx.FileStoreHandler.promises.uploadFileFromDisk.resolves({
           fileRef: ctx.newFile,
@@ -2185,7 +2185,7 @@ describe('ProjectEntityUpdateHandler', function () {
 
     describe('a project without project-history enabled', function () {
       beforeEach(function (ctx) {
-        ctx.project.overleaf = {}
+        ctx.project.superpaper = {}
         ctx.ProjectGetter.promises.getProject.resolves(ctx.project)
       })
 
@@ -2943,7 +2943,7 @@ describe('ProjectEntityUpdateHandler', function () {
           ctx.DocumentUpdaterHandler.promises.updateProjectStructure
         ).to.have.been.calledWith(
           ctx.project._id,
-          ctx.project.overleaf.history.id,
+          ctx.project.superpaper.history.id,
           userId,
           {
             oldDocs: [{ doc: ctx.doc, path: ctx.path }],

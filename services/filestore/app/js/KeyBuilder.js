@@ -1,5 +1,5 @@
-import settings from '@overleaf/settings'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import settings from '@superpaper/settings'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 
 export default {
   getConvertedFolderKey,

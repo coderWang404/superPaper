@@ -11,11 +11,11 @@
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 let DeleteQueueManager
-const Settings = require('@overleaf/settings')
-const { promisifyAll } = require('@overleaf/promise-utils')
+const Settings = require('@superpaper/settings')
+const { promisifyAll } = require('@superpaper/promise-utils')
 const RedisManager = require('./RedisManager')
 const ProjectManager = require('./ProjectManager')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const metrics = require('./Metrics')
 
 // Maintain a sorted set of project flushAndDelete requests, ordered by timestamp

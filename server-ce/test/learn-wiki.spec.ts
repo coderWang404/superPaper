@@ -19,7 +19,7 @@ describe('LearnWiki', function () {
     startWith({
       pro: true,
       vars: {
-        OVERLEAF_PROXY_LEARN: 'true',
+        SUPERPAPER_PROXY_LEARN: 'true',
       },
     })
 
@@ -46,8 +46,8 @@ describe('LearnWiki', function () {
 
       cy.visit(UPLOADING_A_PROJECT_URL)
       cy.findByRole('heading', { name: 'Uploading a project' })
-      cy.contains(/how to create an Overleaf project/)
-      cy.findByRole('img', { name: 'Creating a new project on Overleaf' })
+      cy.contains(/how to create an superPaper project/)
+      cy.findByRole('img', { name: 'Creating a new project on superPaper' })
         .should('be.visible')
         .and((el: any) => {
           expect(el[0].naturalWidth, 'renders image').to.be.greaterThan(0)
@@ -88,7 +88,7 @@ describe('LearnWiki', function () {
     startWith({
       pro: false,
       vars: {
-        OVERLEAF_PROXY_LEARN: 'true',
+        SUPERPAPER_PROXY_LEARN: 'true',
       },
     })
 

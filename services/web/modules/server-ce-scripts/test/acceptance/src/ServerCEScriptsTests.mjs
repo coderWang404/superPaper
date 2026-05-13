@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { expect } from 'chai'
 import { db } from '../../../../../app/src/infrastructure/mongodb.mjs'
 import UserHelper from '../../../../../test/acceptance/src/helpers/User.mjs'
@@ -391,18 +391,17 @@ describe('ServerCEScripts', function () {
       ])
     })
 
-    const serverPro1Features = {
+    const fullFeatures = {
       collaborators: -1,
       dropbox: true,
       versioning: true,
       compileTimeout: 180,
       compileGroup: 'standard',
       references: true,
-      trackChanges: true,
     }
 
     beforeEach('downgrade userSP1', async function () {
-      await userSP1.mongoUpdate({ $set: { features: serverPro1Features } })
+      await userSP1.mongoUpdate({ $set: { features: fullFeatures } })
     })
 
     beforeEach('downgrade userCustomTimeoutLower', async function () {
@@ -521,7 +520,7 @@ describe('ServerCEScripts', function () {
       SANDBOXED_COMPILES,
       TEX_LIVE_DOCKER_IMAGE,
       ALL_TEX_LIVE_DOCKER_IMAGES,
-      OVERLEAF_IS_SERVER_PRO = true,
+      SUPERPAPER_IS_SERVER_PRO = true,
     }) {
       let cmd = `SANDBOXED_COMPILES=${SANDBOXED_COMPILES ? 'true' : 'false'}`
       if (TEX_LIVE_DOCKER_IMAGE) {
@@ -530,8 +529,8 @@ describe('ServerCEScripts', function () {
       if (ALL_TEX_LIVE_DOCKER_IMAGES) {
         cmd += ` ALL_TEX_LIVE_DOCKER_IMAGES='${ALL_TEX_LIVE_DOCKER_IMAGES}'`
       }
-      if (OVERLEAF_IS_SERVER_PRO === true) {
-        cmd += ` OVERLEAF_IS_SERVER_PRO=${OVERLEAF_IS_SERVER_PRO}`
+      if (SUPERPAPER_IS_SERVER_PRO === true) {
+        cmd += ` SUPERPAPER_IS_SERVER_PRO=${SUPERPAPER_IS_SERVER_PRO}`
       }
       return (
         cmd + ' node modules/server-ce-scripts/scripts/check-texlive-images.mjs'
@@ -548,13 +547,13 @@ describe('ServerCEScripts', function () {
     describe('when running in CE', function () {
       beforeEach('run script', async function () {
         output = await run(
-          buildCheckTexLiveCmd({ OVERLEAF_IS_SERVER_PRO: false })
+          buildCheckTexLiveCmd({ SUPERPAPER_IS_SERVER_PRO: false })
         )
       })
 
       it('should skip checks', function () {
         expect(output).to.include(
-          'Running Overleaf Community Edition, skipping TexLive checks'
+          'Running superPaper Community Edition, skipping TexLive checks'
         )
       })
     })

@@ -1,6 +1,6 @@
 import Path from 'node:path'
 import fs from 'node:fs'
-import { callbackifyMultiResult } from '@overleaf/promise-utils'
+import { callbackifyMultiResult } from '@superpaper/promise-utils'
 
 async function walkFolder(compileDir, d, files, allEntries) {
   const dirents = await fs.promises.readdir(Path.join(compileDir, d), {

@@ -44,7 +44,7 @@ export const TableGeneratorHelpModal = () => {
             components={[
               // eslint-disable-next-line react/jsx-key, jsx-a11y/anchor-has-content
               <a
-                href="https://www.overleaf.com/learn/latex/Tables"
+                href="https://www.superpaper.com/learn/latex/Tables"
                 target="_blank"
                 rel="noopener"
               />,
@@ -58,7 +58,7 @@ export const TableGeneratorHelpModal = () => {
             components={[
               // eslint-disable-next-line react/jsx-key, jsx-a11y/anchor-has-content
               <a
-                href="https://www.overleaf.com/learn/latex/Positioning_images_and_tables"
+                href="https://www.superpaper.com/learn/latex/Positioning_images_and_tables"
                 target="_blank"
                 rel="noopener"
               />,
@@ -74,7 +74,7 @@ export const TableGeneratorHelpModal = () => {
               <code />,
               // eslint-disable-next-line react/jsx-key, jsx-a11y/anchor-has-content
               <a
-                href="https://www.overleaf.com/learn/latex/Inserting_Images#Labels_and_cross-references"
+                href="https://www.superpaper.com/learn/latex/Inserting_Images#Labels_and_cross-references"
                 target="_blank"
                 rel="noopener"
               />,

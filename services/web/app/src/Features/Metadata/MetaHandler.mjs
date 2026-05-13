@@ -1,7 +1,7 @@
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import packageMapping from './packageMapping.mjs'
-import { callbackify } from '@overleaf/promise-utils'
+import { callbackify } from '@superpaper/promise-utils'
 
 /** @typedef {{
  *   labels: string[]

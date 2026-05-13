@@ -1,5 +1,5 @@
-import metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 import { callbackify } from 'node:util'
 import SafeExec from './SafeExec.js'
 import Errors from './Errors.js'

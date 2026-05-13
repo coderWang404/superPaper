@@ -7,4 +7,4 @@ FROM sharelatex/sharelatex:5.5.3
 # Move init/shutdown/settings into .patch-abs file
 COPY *.patch* .
 RUN bash -ec 'for p in *.patch; do echo "=== Applying $p ==="; patch -p1 < "$p" && rm $p; done' \
-&&  bash -ec 'cd / && for p in /overleaf/*.patch-abs; do echo "=== Applying $p ==="; patch -p1 < "$p" && rm $p; done'
+&&  bash -ec 'cd / && for p in /superpaper/*.patch-abs; do echo "=== Applying $p ==="; patch -p1 < "$p" && rm $p; done'

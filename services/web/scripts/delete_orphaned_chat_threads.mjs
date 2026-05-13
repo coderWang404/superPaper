@@ -1,6 +1,6 @@
 import mongodb from 'mongodb-legacy'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 import ChatApiHandler from '../app/src/Features/Chat/ChatApiHandler.mjs'
 import DeleteOrphanedDataHelper from './delete_orphaned_data_helper.mjs'
 import { ensureMongoTimeout } from './helpers/env_variable_helper.mjs'

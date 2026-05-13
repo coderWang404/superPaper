@@ -2,7 +2,7 @@
 'use strict'
 
 /**
- * @import { Snapshot } from 'overleaf-editor-core'
+ * @import { Snapshot } from 'superpaper-editor-core'
  * @import { BlobStore } from '../../storage/lib/blob_store/index'
  */
 
@@ -11,15 +11,15 @@ const BPromise = require('bluebird')
 const fs = require('node:fs')
 const { pipeline } = require('node:stream')
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 
 const Snapshot = core.Snapshot
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 const assert = require('./assert')
 
 // The maximum safe concurrency appears to be 1.
-// https://github.com/overleaf/issues/issues/1909
+// https://github.com/superpaper/issues/issues/1909
 const FETCH_CONCURRENCY = 1 // number of files to fetch at once
 const DEFAULT_ZIP_TIMEOUT = 25000 // ms
 

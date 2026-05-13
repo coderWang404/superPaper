@@ -2,10 +2,10 @@ import { expect } from 'chai'
 import async from 'async'
 import User from './helpers/User.mjs'
 import request from './helpers/request.js'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import { db } from '../../../app/src/infrastructure/mongodb.mjs'
 import expectErrorResponse from './helpers/expectErrorResponse.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import sinon from 'sinon'
 
 const tryEditorAccess = (user, projectId, test, callback) =>
@@ -841,11 +841,11 @@ describe('TokenAccess', function () {
                 this.anon,
                 this.tokens.readOnly,
                 (response, body) => {
-                  // NOTE: This would be 404 when recreating the router. The Server Pro E2E tests cover this.
+                  // NOTE: This would be 404 when recreating the router.
                   expect(response.statusCode).to.equal(200)
                 },
                 (response, body) => {
-                  // NOTE: This would be 404 when recreating the router. The Server Pro E2E tests cover this.
+                  // NOTE: This would be 404 when recreating the router.
                   expect(response.statusCode).to.equal(500)
                   expect(loggerStub).to.have.been.calledWithMatch(
                     {
@@ -1099,9 +1099,9 @@ describe('TokenAccess', function () {
     })
   })
 
-  describe('private overleaf project', function () {
+  describe('private superpaper project', function () {
     beforeEach(function (done) {
-      this.owner.createProject('overleaf-import', (err, projectId) => {
+      this.owner.createProject('superpaper-import', (err, projectId) => {
         expect(err).not.to.exist
         this.projectId = projectId
         this.owner.makeTokenBased(this.projectId, err => {
@@ -1114,7 +1114,7 @@ describe('TokenAccess', function () {
                 { _id: project._id },
                 {
                   $set: {
-                    overleaf: { id: 1234 },
+                    superpaper: { id: 1234 },
                   },
                 },
                 err => {

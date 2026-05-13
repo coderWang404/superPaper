@@ -15,7 +15,7 @@ import Path from 'node:path'
 import { promisify } from 'node:util'
 import ResourceWriter from './ResourceWriter.js'
 import SafeReader from './SafeReader.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 let TikzManager
 
 // for \tikzexternalize or pstool to work the main file needs to match the
@@ -35,7 +35,7 @@ export default TikzManager = {
 
   /**
    * @param {string} compileDir
-   * @param {import('overleaf-editor-core').Snapshot} snapshot
+   * @param {import('superpaper-editor-core').Snapshot} snapshot
    * @param {string} content
    * @return {Promise<void>}
    */

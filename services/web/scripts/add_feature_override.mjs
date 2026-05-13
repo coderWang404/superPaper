@@ -26,11 +26,8 @@
 import minimist from 'minimist'
 
 import fs from 'node:fs'
-import { ObjectId } from '../app/src/infrastructure/mongodb.mjs'
+import { db, ObjectId } from '../app/src/infrastructure/mongodb.mjs'
 import pLimit from 'p-limit'
-import FeaturesUpdater from '../app/src/Features/Subscription/FeaturesUpdater.mjs'
-import FeaturesHelper from '../app/src/Features/Subscription/FeaturesHelper.mjs'
-import UserFeaturesUpdater from '../app/src/Features/Subscription/UserFeaturesUpdater.mjs'
 import UserGetter from '../app/src/Features/User/UserGetter.mjs'
 
 const processLogger = {
@@ -47,6 +44,23 @@ const processLogger = {
       `\nDONE. ${processLogger.success.length} successful. ${processLogger.skipped.length} skipped. ${processLogger.failed.length} failed to update.`
     )
   },
+}
+
+function hasRequestedFeatures(currentFeatures = {}, requestedFeatures = {}) {
+  return Object.entries(requestedFeatures).every(([key, requestedValue]) => {
+    const currentValue = currentFeatures[key]
+    if (typeof requestedValue === 'number' && typeof currentValue === 'number') {
+      return currentValue >= requestedValue || currentValue === -1
+    }
+    return currentValue === requestedValue
+  })
+}
+
+function mergeFeatures(currentFeatures = {}, requestedFeatures = {}) {
+  return {
+    ...currentFeatures,
+    ...requestedFeatures,
+  }
 }
 
 function _validateUserIdList(userIds) {
@@ -69,10 +83,7 @@ async function _handleUser(userId) {
   }
   const desiredFeatures = OVERRIDE.features
   // Does the user have the requested features already?
-  if (
-    SKIP_EXISTING &&
-    FeaturesHelper.isFeatureSetBetter(user.features, desiredFeatures)
-  ) {
+  if (SKIP_EXISTING && hasRequestedFeatures(user.features, desiredFeatures)) {
     console.log(
       userId,
       `already has ${JSON.stringify(desiredFeatures)}, skipping`
@@ -80,44 +91,27 @@ async function _handleUser(userId) {
     processLogger.skipped.push(userId)
     return
   }
-  // Would the user have the requested feature if the features were refreshed?
-  const freshFeatures = await FeaturesUpdater.promises.computeFeatures(userId)
-  if (
-    SKIP_EXISTING &&
-    FeaturesHelper.isFeatureSetBetter(freshFeatures, desiredFeatures)
-  ) {
-    console.log(
-      userId,
-      `would have ${JSON.stringify(
-        desiredFeatures
-      )} if refreshed, skipping override`
-    )
-  } else {
-    // create the override (if not in dry-run mode)
-    if (COMMIT) {
-      await UserFeaturesUpdater.promises.createFeaturesOverride(
-        userId,
-        OVERRIDE
-      )
-    }
-  }
   if (!COMMIT) {
     // not saving features; nothing else to do
     return
   }
-  const refreshResult = await FeaturesUpdater.promises.refreshFeatures(
-    userId,
-    'add-feature-override-script'
+  const nextFeatures = mergeFeatures(user.features, desiredFeatures)
+  await db.users.updateOne(
+    { _id: userId },
+    {
+      $push: { featuresOverrides: OVERRIDE },
+      $set: {
+        features: nextFeatures,
+        featuresUpdatedAt: new Date(),
+      },
+    }
   )
-  const featureSetIncludesNewFeatures = FeaturesHelper.isFeatureSetBetter(
-    refreshResult.features,
-    desiredFeatures
-  )
-  if (featureSetIncludesNewFeatures) {
+  const updatedUser = await UserGetter.promises.getUser(userId, { features: 1 })
+  if (hasRequestedFeatures(updatedUser?.features, desiredFeatures)) {
     // features added successfully
     processLogger.success.push(userId)
   } else {
-    console.log('FEATURE NOT ADDED', refreshResult)
+    console.log('FEATURE NOT ADDED', updatedUser)
     processLogger.failed.push(userId)
   }
 }

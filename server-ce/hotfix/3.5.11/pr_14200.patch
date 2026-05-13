@@ -5,8 +5,8 @@
 +const fs = require('fs')
  const { ReadPreference, ObjectId } = require('mongodb')
  const { db } = require('../../../../app/src/infrastructure/mongodb')
- const Settings = require('@overleaf/settings')
-+const logger = require('@overleaf/logger')
+ const Settings = require('@superpaper/settings')
++const logger = require('@superpaper/logger')
 
  const ProjectHistoryHandler = require('../../../../app/src/Features/Project/ProjectHistoryHandler')
  const HistoryManager = require('../../../../app/src/Features/History/HistoryManager')

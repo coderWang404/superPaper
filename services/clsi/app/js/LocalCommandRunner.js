@@ -14,7 +14,7 @@
 import { spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import _ from 'lodash'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 let CommandRunner
 
 logger.debug('using standard command runner')

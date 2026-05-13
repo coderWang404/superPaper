@@ -10,7 +10,7 @@ import TokenAccessHandler from '../TokenAccess/TokenAccessHandler.mjs'
 import PublicAccessLevels from './PublicAccessLevels.mjs'
 import Errors from '../Errors/Errors.js'
 import AdminAuthorizationHelper from '../Helpers/AdminAuthorizationHelper.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import ChatApiHandler from '../Chat/ChatApiHandler.mjs'
 
 const { hasAdminAccess, getAdminCapabilities } = AdminAuthorizationHelper

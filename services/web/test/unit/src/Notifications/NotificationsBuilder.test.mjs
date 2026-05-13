@@ -11,12 +11,6 @@ describe('NotificationsBuilder', function () {
 
   beforeEach(async function (ctx) {
     ctx.handler = { promises: { createNotification: sinon.stub().resolves() } }
-    ctx.settings = {
-      apis: { v1: { url: 'http://v1.url', user: '', pass: '' } },
-    }
-    ctx.FetchUtils = {
-      fetchJson: sinon.stub(),
-    }
 
     vi.doMock(
       '../../../../app/src/Features/Notifications/NotificationsHandler',
@@ -24,12 +18,6 @@ describe('NotificationsBuilder', function () {
         default: ctx.handler,
       })
     )
-
-    vi.doMock('@overleaf/settings', () => ({
-      default: ctx.settings,
-    }))
-
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
 
     ctx.controller = (await import(modulePath)).default
   })
@@ -70,99 +58,4 @@ describe('NotificationsBuilder', function () {
     })
   })
 
-  describe('groupInvitation', function () {
-    const subscriptionId = '123123bcabca'
-    beforeEach(function (ctx) {
-      ctx.invite = {
-        token: '123123abcabc',
-        inviterName: 'Mr Overleaf',
-        managedUsersEnabled: false,
-      }
-    })
-
-    it('should create the notification', async function (ctx) {
-      await ctx.controller.promises
-        .groupInvitation(userId, subscriptionId, ctx.invite.managedUsersEnabled)
-        .create(ctx.invite)
-      expect(ctx.handler.promises.createNotification).to.have.been.calledWith(
-        userId,
-        `groupInvitation-${subscriptionId}-${userId}`,
-        'notification_group_invitation',
-        {
-          token: ctx.invite.token,
-          inviterName: ctx.invite.inviterName,
-          managedUsersEnabled: ctx.invite.managedUsersEnabled,
-        },
-        null,
-        true
-      )
-    })
-  })
-
-  describe('ipMatcherAffiliation', function () {
-    describe('with portal and with SSO', function () {
-      beforeEach(function (ctx) {
-        ctx.body = {
-          id: 1,
-          name: 'stanford',
-          is_university: true,
-          portal_slug: null,
-          sso_enabled: false,
-        }
-        ctx.FetchUtils.fetchJson.resolves(ctx.body)
-      })
-
-      it('should call v1 and create affiliation notifications', async function (ctx) {
-        const ip = '192.168.0.1'
-        await ctx.controller.promises.ipMatcherAffiliation(userId).create(ip)
-        ctx.FetchUtils.fetchJson.calledOnce.should.equal(true)
-        const expectedOpts = {
-          institutionId: ctx.body.id,
-          university_name: ctx.body.name,
-          ssoEnabled: false,
-          portalPath: undefined,
-        }
-        ctx.handler.promises.createNotification
-          .calledWith(
-            userId,
-            `ip-matched-affiliation-${ctx.body.id}`,
-            'notification_ip_matched_affiliation',
-            expectedOpts
-          )
-          .should.equal(true)
-      })
-    })
-    describe('without portal and without SSO', function () {
-      beforeEach(function (ctx) {
-        ctx.body = {
-          id: 1,
-          name: 'stanford',
-          is_university: true,
-          portal_slug: 'stanford',
-          sso_enabled: true,
-        }
-        ctx.FetchUtils.fetchJson.resolves(ctx.body)
-      })
-
-      it('should call v1 and create affiliation notifications', async function (ctx) {
-        const ip = '192.168.0.1'
-        await ctx.controller.promises.ipMatcherAffiliation(userId).create(ip)
-        ctx.FetchUtils.fetchJson.calledOnce.should.equal(true)
-        const expectedOpts = {
-          institutionId: ctx.body.id,
-          university_name: ctx.body.name,
-          ssoEnabled: true,
-          portalPath: '/edu/stanford',
-        }
-        ctx.handler.promises.createNotification
-          .calledWith(
-            userId,
-            `ip-matched-affiliation-${ctx.body.id}`,
-            'notification_ip_matched_affiliation',
-            expectedOpts
-          )
-          .should.equal(true)
-      })
-    })
-  })
 })

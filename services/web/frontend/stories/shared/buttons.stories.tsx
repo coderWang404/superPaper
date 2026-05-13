@@ -15,8 +15,6 @@ const variants: ButtonProps['variant'][] = [
   'ghost',
   'danger',
   'danger-ghost',
-  'premium',
-  'premium-secondary',
   'link',
 ]
 

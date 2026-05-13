@@ -15,14 +15,14 @@ export const useScope = (scope: Record<string, unknown>) => {
       for (const [path, value] of Object.entries(scopeRef.current)) {
         let existingValue: typeof value | undefined
         try {
-          existingValue = window.overleaf.unstable.store.get(path)
+          existingValue = window.superPaper.unstable.store.get(path)
         } catch {
           // allowed not to exist
         }
         if (typeof existingValue === 'object' && typeof value === 'object') {
-          window.overleaf.unstable.store.set(path, merge(existingValue, value))
+          window.superPaper.unstable.store.set(path, merge(existingValue, value))
         } else {
-          window.overleaf.unstable.store.set(path, value)
+          window.superPaper.unstable.store.set(path, value)
         }
       }
     }

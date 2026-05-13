@@ -6,4 +6,4 @@
 
 - Improve logging in Google Cloud Platform. Set environment variable `GCP_LOGGING=true` to enable.
 
-This version of the metrics module only works with versions of the `@overleaf/metrics` module greater than v4.0.0
+This version of the metrics module only works with versions of the `@superpaper/metrics` module greater than v4.0.0

@@ -4,11 +4,11 @@ import Path from 'node:path'
 import _ from 'lodash'
 import config from 'config'
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import {
   PerProjectEncryptedS3Persistor,
   RootKeyEncryptionKey,
-} from '@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor.js'
+} from '@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor.js'
 import { HistoryStore } from './history_store.js'
 
 const persistorConfig = _.cloneDeep(config.get('backupPersistor'))

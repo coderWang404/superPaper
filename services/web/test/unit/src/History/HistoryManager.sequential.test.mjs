@@ -73,7 +73,7 @@ describe('HistoryManager', function () {
     }
 
     ctx.project = {
-      overleaf: {
+      superpaper: {
         history: {
           id: ctx.historyId,
         },
@@ -96,9 +96,9 @@ describe('HistoryManager', function () {
       waitForDb,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -167,7 +167,7 @@ describe('HistoryManager', function () {
         )
       })
 
-      it('should return the overleaf id', function (ctx) {
+      it('should return the superpaper id', function (ctx) {
         expect(ctx.result).to.equal(ctx.historyId)
       })
     })
@@ -198,7 +198,7 @@ describe('HistoryManager', function () {
         first_name: 'Jane',
         last_name: 'Doe',
         email: 'jane@example.com',
-        overleaf: { id: 5011 },
+        superpaper: { id: 5011 },
       }
       ctx.user1_view = {
         id: ctx.user_id1,

@@ -30,9 +30,6 @@ describe('<FileTreeRoot/>', function () {
         permissionsLevel="owner"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -72,9 +69,6 @@ describe('<FileTreeRoot/>', function () {
           permissionsLevel="owner"
         >
           <FileTreeRoot
-            refProviders={{}}
-            setRefProviderEnabled={cy.stub()}
-            setStartedFreeTrial={cy.stub()}
             onSelect={cy.stub()}
             onInit={cy.stub()}
             isConnected
@@ -115,9 +109,6 @@ describe('<FileTreeRoot/>', function () {
         permissionsLevel="owner"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected={false}
@@ -151,9 +142,6 @@ describe('<FileTreeRoot/>', function () {
         permissionsLevel="readOnly"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub().as('onSelect')}
           onInit={cy.stub()}
           isConnected
@@ -198,9 +186,6 @@ describe('<FileTreeRoot/>', function () {
         permissionsLevel="owner"
       >
         <FileTreeRoot
-          refProviders={{}}
-          setRefProviderEnabled={cy.stub()}
-          setStartedFreeTrial={cy.stub()}
           onSelect={cy.stub()}
           onInit={cy.stub()}
           isConnected
@@ -277,9 +262,6 @@ describe('<FileTreeRoot/>', function () {
           socket={socket}
         >
           <FileTreeRoot
-            refProviders={{}}
-            setRefProviderEnabled={cy.stub()}
-            setStartedFreeTrial={cy.stub()}
             onSelect={cy.stub()}
             onInit={cy.stub()}
             isConnected

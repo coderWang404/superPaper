@@ -1,4 +1,4 @@
-const domainBlocklist = ['overleaf.com']
+const domainBlocklist = ['superpaper.com']
 const commonTLDs = [
   'br',
   'cn',

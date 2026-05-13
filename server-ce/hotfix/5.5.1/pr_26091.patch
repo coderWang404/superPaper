@@ -33,10 +33,10 @@
 +  if (major < minMajor || (major === minMajor && minor < minMinor)) {
 +    const minVersion = MIN_MONGO_FEATURE_COMPATIBILITY_VERSION.join('.')
 +    console.error(`
-+The MongoDB server has featureCompatibilityVersion=${version}, but Overleaf requires at least version ${minVersion}.
++The MongoDB server has featureCompatibilityVersion=${version}, but superPaper requires at least version ${minVersion}.
 +
 +Open a mongo shell:
-+- Overleaf Toolkit deployments: $ bin/mongo
++- superPaper Toolkit deployments: $ bin/mongo
 +- Legacy docker-compose.yml deployments: $ docker exec -it mongo mongosh localhost/sharelatex
 +
 +In the mongo shell:

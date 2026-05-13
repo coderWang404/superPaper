@@ -10,5 +10,5 @@ RUN npm install --omit=dev
 
 # fix tls configuration in redis
 COPY issue_24996.patch .
-RUN patch -p0 /etc/overleaf/settings.js < issue_24996.patch \
+RUN patch -p0 /etc/superpaper/settings.js < issue_24996.patch \
     && rm issue_24996.patch

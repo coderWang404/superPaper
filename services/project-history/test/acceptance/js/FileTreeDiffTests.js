@@ -25,7 +25,7 @@ describe('FileTree Diffs', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: this.historyId } },
+        superpaper: { history: { id: this.historyId } },
       })
 
     await ProjectHistoryClient.initializeProject(this.historyId)
@@ -105,7 +105,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -208,7 +208,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 2,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
     MockHistoryStore()
       .get(`/api/projects/${this.historyId}/versions/7/history`)
@@ -259,7 +259,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 5,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -341,7 +341,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -402,7 +402,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -464,7 +464,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -521,7 +521,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -573,7 +573,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 5,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { statusCode } = await ProjectHistoryClient.getFileTreeDiff(
@@ -615,7 +615,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 5,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff, statusCode } = await ProjectHistoryClient.getFileTreeDiff(
@@ -669,7 +669,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -721,7 +721,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(
@@ -768,7 +768,7 @@ describe('FileTree Diffs', function () {
           },
           startVersion: 3,
         },
-        authors: [{ id: 31, email: 'james.allen@overleaf.com', name: 'James' }],
+        authors: [{ id: 31, email: 'james.allen@superpaper.com', name: 'James' }],
       })
 
     const { diff } = await ProjectHistoryClient.getFileTreeDiff(

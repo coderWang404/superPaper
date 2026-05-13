@@ -20,7 +20,7 @@ export const Editor = () => {
   const isPythonDocument =
     openEntity?.type === 'doc' &&
     openEntity.entity.name.toLowerCase().endsWith('.py')
-  const pythonExecutionEnabled = isSplitTestEnabled('overleaf-code')
+  const pythonExecutionEnabled = isSplitTestEnabled('superpaper-code')
 
   if (!currentDocumentId) {
     return null

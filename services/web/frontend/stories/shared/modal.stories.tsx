@@ -28,13 +28,13 @@ export const Default: Story = {
     ),
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?m=auto&node-id=3488-82657&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?m=auto&node-id=3488-82657&m=dev'
   ),
 }
 
 export const Informative: Story = {
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?m=auto&node-id=3488-86576&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?m=auto&node-id=3488-86576&m=dev'
   ),
   args: {
     title: 'Informative',
@@ -49,7 +49,7 @@ export const Informative: Story = {
 
 export const Acknowledgment: Story = {
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?m=auto&node-id=3488-86581&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?m=auto&node-id=3488-86581&m=dev'
   ),
   args: {
     title: 'Acknowledgment',
@@ -65,7 +65,7 @@ export const Acknowledgment: Story = {
 
 export const Danger: Story = {
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?m=auto&node-id=3488-86586&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?m=auto&node-id=3488-86586&m=dev'
   ),
   args: {
     title: 'Danger',

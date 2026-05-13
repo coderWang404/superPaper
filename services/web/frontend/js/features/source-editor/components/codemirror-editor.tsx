@@ -7,11 +7,8 @@ import CodeMirrorSearch from './codemirror-search'
 import { CodeMirrorToolbar } from './codemirror-toolbar'
 import { CodemirrorOutline } from './codemirror-outline'
 import { CodeMirrorCommandTooltip } from './codemirror-command-tooltip'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { FigureModal } from './figure-modal/figure-modal'
-import { ReviewPanelProviders } from '@/features/review-panel/context/review-panel-providers'
-import { ReviewPanelRoot } from '@/features/review-panel/components/review-panel-root'
-import ReviewTooltipMenu from '@/features/review-panel/components/review-tooltip-menu'
 import {
   CodeMirrorStateContext,
   CodeMirrorViewContext,
@@ -20,16 +17,14 @@ import MathPreviewTooltip from './math-preview-tooltip'
 import { getVisualEditorComponent } from '../utils/visual-editor'
 import EditorContextMenu from './editor-context-menu'
 import { useToolbarMenuBarEditorCommands } from '@/features/source-editor/hooks/use-toolbar-menu-editor-commands'
-import { useProjectContext } from '@/shared/context/project-context'
 import { useFeatureFlag } from '@/shared/context/split-test-context'
 import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
 import { useEditorPropertiesContext } from '@/features/ide-react/context/editor-properties-context'
-import UpgradeTrackChangesModal from '@/features/review-panel/components/upgrade-track-changes-modal'
 
 // TODO: remove this when definitely no longer used
 export * from './codemirror-context'
 
-const sourceEditorComponents = importOverleafModules(
+const sourceEditorComponents = importSuperPaperModules(
   'sourceEditorComponents'
 ) as { import: { default: ElementType }; path: string }[]
 
@@ -91,9 +86,8 @@ function CodeMirrorEditorComponents({
   hidden = false,
 }: CodeMirrorEditorComponentsProps) {
   useToolbarMenuBarEditorCommands()
-  const { features } = useProjectContext()
   return (
-    <ReviewPanelProviders>
+    <>
       <CodemirrorOutline />
       <CodeMirrorView hidden={hidden} />
       <FigureModal />
@@ -103,16 +97,13 @@ function CodeMirrorEditorComponents({
 
       <MathPreviewTooltip />
       <EditorContextMenu />
-      {features.trackChangesVisible && <ReviewTooltipMenu />}
-      {features.trackChangesVisible && <ReviewPanelRoot />}
-      {features.trackChangesVisible && <UpgradeTrackChangesModal />}
 
       {sourceEditorComponents.map(
         ({ import: { default: Component }, path }) => (
           <Component key={path} />
         )
       )}
-    </ReviewPanelProviders>
+    </>
   )
 }
 

@@ -7,19 +7,12 @@ import { useSendProjectListMB } from '@/features/project-list/components/project
 
 export default function NavItemFromData({
   item,
-  showContactUsModal,
 }: {
   item: NavbarItemData
-  showContactUsModal: (event?: Event) => void
 }) {
   const sendProjectListMB = useSendProjectListMB()
   if (isDropdownItem(item)) {
-    return (
-      <NavDropdownFromData
-        item={item}
-        showContactUsModal={showContactUsModal}
-      />
-    )
+    return <NavDropdownFromData item={item} />
   } else if (isLinkItem(item)) {
     return (
       <NavLinkItem

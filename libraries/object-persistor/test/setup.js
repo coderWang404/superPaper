@@ -7,7 +7,7 @@ chai.use(require('chai-as-promised'))
 
 SandboxedModule.configure({
   requires: {
-    '@overleaf/logger': {
+    '@superpaper/logger': {
       debug() {},
       log() {},
       info() {},
@@ -15,7 +15,7 @@ SandboxedModule.configure({
       error() {},
       err() {},
     },
-    '@overleaf/metrics': {
+    '@superpaper/metrics': {
       inc: sinon.stub(),
       count: sinon.stub(),
       histogram: sinon.stub(),

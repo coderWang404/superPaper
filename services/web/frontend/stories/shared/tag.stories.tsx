@@ -37,7 +37,7 @@ export const Default: Story = {
   },
 }
 Default.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-244790&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-244790&m=dev'
 )
 
 export const Prepend: Story = {
@@ -46,7 +46,7 @@ export const Prepend: Story = {
   },
 }
 Prepend.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-245386&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-245386&m=dev'
 )
 
 export const Removable: Story = {
@@ -63,7 +63,7 @@ export const Removable: Story = {
   },
 }
 Removable.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-238534&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-238534&m=dev'
 )
 
 export const InteractiveRemovable: Story = {

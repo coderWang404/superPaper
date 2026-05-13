@@ -50,7 +50,7 @@ const stubs = {
 
 beforeEach(ctx => {
   ctx.logger = stubs.logger
-  vi.doMock('@overleaf/logger', () => ({
+  vi.doMock('@superpaper/logger', () => ({
     default: ctx.logger,
   }))
 })

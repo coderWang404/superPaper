@@ -1,8 +1,8 @@
 import { callbackify } from 'node:util'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { Project } from '../../models/Project.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import ContactManager from '../Contacts/ContactManager.mjs'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
 import TpdsProjectFlusher from '../ThirdPartyDataStore/TpdsProjectFlusher.mjs'
@@ -10,7 +10,6 @@ import CollaboratorsGetter from './CollaboratorsGetter.mjs'
 import CollaboratorsInviteHelper from './CollaboratorsInviteHelper.mjs'
 import Errors from '../Errors/Errors.js'
 import TpdsUpdateSender from '../ThirdPartyDataStore/TpdsUpdateSender.mjs'
-import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
 import AsyncLocalStorage from '../../infrastructure/AsyncLocalStorage.mjs'
 
@@ -27,7 +26,6 @@ export default {
     addUserIdToProject,
     transferProjects,
     setCollaboratorPrivilegeLevel,
-    convertTrackChangesToExplicitFormat,
   },
 }
 
@@ -106,7 +104,6 @@ async function addUserIdToProject(
     collaberator_refs: 1,
     readOnly_refs: 1,
     reviewer_refs: 1,
-    track_changes: 1,
   })
   let level
   let existingUsers = project.collaberator_refs || []
@@ -150,26 +147,7 @@ async function addUserIdToProject(
     ContactManager.addContact(addingUserId, userId, () => {})
   }
 
-  if (privilegeLevel === PrivilegeLevels.REVIEW) {
-    const trackChanges = await convertTrackChangesToExplicitFormat(
-      projectId,
-      project.track_changes
-    )
-    trackChanges[userId] = true
-
-    await Project.updateOne(
-      { _id: projectId },
-      { track_changes: trackChanges, $addToSet: level }
-    ).exec()
-
-    EditorRealTimeController.emitToRoom(
-      projectId,
-      'toggle-track-changes',
-      trackChanges
-    )
-  } else {
-    await Project.updateOne({ _id: projectId }, { $addToSet: level }).exec()
-  }
+  await Project.updateOne({ _id: projectId }, { $addToSet: level }).exec()
 
   // Ensure there is a dedicated folder for this "new" project.
   await TpdsUpdateSender.promises.createProject({
@@ -315,22 +293,6 @@ async function setCollaboratorPrivilegeLevel(
         },
         $addToSet: { reviewer_refs: userId },
       }
-
-      const project = await ProjectGetter.promises.getProject(projectId, {
-        track_changes: true,
-      })
-      const newTrackChangesState = await convertTrackChangesToExplicitFormat(
-        projectId,
-        project.track_changes
-      )
-      if (newTrackChangesState[userId] !== true) {
-        newTrackChangesState[userId] = true
-      }
-      if (typeof project.track_changes === 'object') {
-        update.$set = { [`track_changes.${userId}`]: true }
-      } else {
-        update.$set = { track_changes: newTrackChangesState }
-      }
       break
     }
     case PrivilegeLevels.READ_ONLY: {
@@ -372,14 +334,6 @@ async function setCollaboratorPrivilegeLevel(
       role: CollaboratorsInviteHelper.privilegeLevelToRole(privilegeLevel),
     }
   )
-
-  if (update.$set?.track_changes) {
-    EditorRealTimeController.emitToRoom(
-      projectId,
-      'toggle-track-changes',
-      update.$set.track_changes
-    )
-  }
 }
 
 async function userIsTokenMember(userId, projectId) {
@@ -412,38 +366,4 @@ async function _flushProjects(projectIds) {
   for (const projectId of projectIds) {
     await TpdsProjectFlusher.promises.flushProjectToTpds(projectId)
   }
-}
-
-async function convertTrackChangesToExplicitFormat(
-  projectId,
-  trackChangesState
-) {
-  if (typeof trackChangesState === 'object') {
-    return { ...trackChangesState }
-  }
-
-  if (trackChangesState === true) {
-    // track changes are enabled for all
-    const members =
-      await CollaboratorsGetter.promises.getMemberIdsWithPrivilegeLevels(
-        projectId
-      )
-
-    const newTrackChangesState = {}
-    for (const { id, privilegeLevel } of members) {
-      if (
-        [
-          PrivilegeLevels.OWNER,
-          PrivilegeLevels.READ_AND_WRITE,
-          PrivilegeLevels.REVIEW,
-        ].includes(privilegeLevel)
-      ) {
-        newTrackChangesState[id] = true
-      }
-    }
-
-    return newTrackChangesState
-  }
-
-  return {}
 }

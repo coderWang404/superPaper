@@ -3,6 +3,6 @@
 set -euo pipefail
 
 source /etc/container_environment.sh
-source /etc/overleaf/env.sh
-cd /overleaf/services/project-history
+source /etc/superpaper/env.sh
+cd /superpaper/services/project-history
 node scripts/force_resync.js 1000 force

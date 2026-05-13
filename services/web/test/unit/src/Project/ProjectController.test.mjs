@@ -16,10 +16,10 @@ describe('ProjectController', function () {
 
     ctx.user = {
       _id: new ObjectId('123456123456123456123456'),
-      email: 'test@overleaf.com',
+      email: 'test@superpaper.com',
       first_name: 'bjkdsjfk',
       features: {},
-      emails: [{ email: 'test@overleaf.com' }],
+      emails: [{ email: 'test@superpaper.com' }],
     }
     ctx.settings = {
       apis: {
@@ -27,7 +27,7 @@ describe('ProjectController', function () {
           url: 'chat.com',
         },
       },
-      siteUrl: 'https://overleaf.com',
+      siteUrl: 'https://superpaper.com',
       algolia: {},
       plans: [],
       features: {},
@@ -41,13 +41,6 @@ describe('ProjectController', function () {
           },
         },
       },
-    }
-    ctx.brandVariationDetails = {
-      id: '12',
-      active: true,
-      brand_name: 'The journal',
-      home_url: 'http://www.thejournal.com/',
-      publish_menu_link_html: 'Submit your paper to the <em>The Journal</em>',
     }
     ctx.token = 'some-token'
     ctx.ProjectDeleter = {
@@ -66,23 +59,6 @@ describe('ProjectController', function () {
       promises: {
         createExampleProject: sinon.stub().resolves({ _id: ctx.project_id }),
         createBasicProject: sinon.stub().resolves({ _id: ctx.project_id }),
-      },
-    }
-    ctx.SubscriptionLocator = {
-      promises: {
-        getUsersSubscription: sinon.stub().resolves(),
-      },
-    }
-    ctx.SubscriptionController = {
-      getRecommendedCurrency: sinon.stub().resolves({ currency: 'USD' }),
-      promises: {
-        getRecommendedCurrency: sinon.stub().resolves({ currency: 'USD' }),
-      },
-    }
-    ctx.LimitationsManager = {
-      hasPaidSubscription: sinon.stub(),
-      promises: {
-        userIsMemberOfGroupSubscription: sinon.stub().resolves(false),
       },
     }
     ctx.TagsHandler = {
@@ -177,20 +153,6 @@ describe('ProjectController', function () {
     ctx.Features = {
       hasFeature: sinon.stub(),
     }
-    ctx.FeaturesUpdater = {
-      featuresEpochIsCurrent: sinon.stub().returns(true),
-      promises: {
-        refreshFeatures: sinon.stub().resolves({
-          features: { symbolPalette: true },
-          featuresChanged: true,
-        }),
-      },
-    }
-    ctx.BrandVariationsHandler = {
-      promises: {
-        getBrandVariationById: sinon.stub().resolves(ctx.brandVariationDetails),
-      },
-    }
     ctx.TpdsProjectFlusher = {
       promises: {
         flushProjectToTpdsIfNeeded: sinon.stub().resolves(),
@@ -209,30 +171,14 @@ describe('ProjectController', function () {
         sessionMaintenance: sinon.stub().resolves(),
       },
     }
-    ctx.InstitutionsFeatures = {
-      promises: {
-        hasLicence: sinon.stub().resolves(false),
-      },
-    }
-    ctx.InstitutionsGetter = {
-      promises: {
-        getCurrentAffiliations: sinon.stub().resolves([]),
-      },
-    }
-    ctx.SurveyHandler = {
-      getSurvey: sinon.stub().yields(null, {}),
-    }
     ctx.ProjectAuditLogHandler = {
-      addEntryIfManagedInBackground: sinon.stub().resolves(),
+      addEntryInBackground: sinon.stub().resolves(),
       promises: {
         addEntry: sinon.stub().resolves(),
       },
     }
     ctx.TutorialHandler = {
       getInactiveTutorials: sinon.stub().returns([]),
-    }
-    ctx.OnboardingDataCollectionManager = {
-      getOnboardingDataValue: sinon.stub().resolves(null),
     }
     ctx.Modules = {
       promises: { hooks: { fire: sinon.stub().resolves() } },
@@ -254,7 +200,7 @@ describe('ProjectController', function () {
       default: { ObjectId },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -266,14 +212,14 @@ describe('ProjectController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestSessionHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutSessionHandler',
       () => ({
         default: ctx.SplitTestSessionHandler,
       })
@@ -306,27 +252,6 @@ describe('ProjectController', function () {
       default: ctx.ProjectHelper,
     }))
 
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionLocator',
-      () => ({
-        default: ctx.SubscriptionLocator,
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionController',
-      () => ({
-        default: ctx.SubscriptionController,
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/LimitationsManager',
-      () => ({
-        default: ctx.LimitationsManager,
-      })
-    )
-
     vi.doMock('../../../../app/src/Features/Tags/TagsHandler', () => ({
       default: ctx.TagsHandler,
     }))
@@ -334,8 +259,6 @@ describe('ProjectController', function () {
     vi.doMock('../../../../app/src/models/User', () => ({
       User: ctx.UserModel,
     }))
-
-    vi.doMock('../../../../app/src/models/Subscription', () => ({}))
 
     vi.doMock(
       '../../../../app/src/Features/Authorization/AuthorizationManager',
@@ -401,23 +324,9 @@ describe('ProjectController', function () {
       default: ctx.Features,
     }))
 
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/FeaturesUpdater',
-      () => ({
-        default: ctx.FeaturesUpdater,
-      })
-    )
-
     vi.doMock('../../../../app/src/Features/User/UserGetter', () => ({
       default: ctx.UserGetter,
     }))
-
-    vi.doMock(
-      '../../../../app/src/Features/BrandVariations/BrandVariationsHandler',
-      () => ({
-        default: ctx.BrandVariationsHandler,
-      })
-    )
 
     vi.doMock(
       '../../../../app/src/Features/ThirdPartyDataStore/TpdsProjectFlusher',
@@ -429,19 +338,12 @@ describe('ProjectController', function () {
     vi.doMock('../../../../app/src/models/Project', () => ({}))
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: {
           recordEventForUserInBackground: () => {},
           setUserPropertyForUserInBackground: () => {},
         },
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionViewModelBuilder',
-      () => ({
-        default: ctx.SubscriptionViewModelBuilder,
       })
     )
 
@@ -454,24 +356,6 @@ describe('ProjectController', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Institutions/InstitutionsFeatures',
-      () => ({
-        default: ctx.InstitutionsFeatures,
-      })
-    )
-
-    vi.doMock(
-      '../../../../app/src/Features/Institutions/InstitutionsGetter',
-      () => ({
-        default: ctx.InstitutionsGetter,
-      })
-    )
-
-    vi.doMock('../../../../app/src/Features/Survey/SurveyHandler', () => ({
-      default: ctx.SurveyHandler,
-    }))
-
-    vi.doMock(
       '../../../../app/src/Features/Project/ProjectAuditLogHandler',
       () => ({
         default: ctx.ProjectAuditLogHandler,
@@ -481,13 +365,6 @@ describe('ProjectController', function () {
     vi.doMock('../../../../app/src/Features/Tutorial/TutorialHandler', () => ({
       default: ctx.TutorialHandler,
     }))
-
-    vi.doMock(
-      '../../../../app/src/Features/OnboardingDataCollection/OnboardingDataCollectionManager',
-      () => ({
-        default: ctx.OnboardingDataCollectionManager,
-      })
-    )
 
     vi.doMock('../../../../app/src/Features/User/UserUpdater', () => ({
       default: {
@@ -788,12 +665,12 @@ describe('ProjectController', function () {
       })
     })
 
-    it('adds project audit log for managed for managed users', async function (ctx) {
+    it('adds project audit log', async function (ctx) {
       await new Promise(resolve => {
         ctx.req.body.template = 'basic'
         ctx.res.json = () => {
-          expect(ctx.ProjectAuditLogHandler.addEntryIfManagedInBackground).to
-            .have.been.called
+          expect(ctx.ProjectAuditLogHandler.addEntryInBackground).to.have.been
+            .called
           resolve()
         }
         ctx.ProjectController.newProject(ctx.req, ctx.res)
@@ -852,12 +729,6 @@ describe('ProjectController', function () {
         _id: '213123kjlkj',
         owner_ref: '59fc84d5fbea77482d436e1b',
       }
-      ctx.brandedProject = {
-        name: 'my branded proj',
-        _id: '3252332',
-        owner_ref: '59fc84d5fbea77482d436e1b',
-        brandVariationId: '12',
-      }
       ctx.user = {
         _id: ctx.user._id,
         ace: {
@@ -865,16 +736,11 @@ describe('ProjectController', function () {
           theme: 'sexy',
         },
         email: 'bob@bob.com',
-        refProviders: {
-          mendeley: { encrypted: 'aaaa' },
-          zotero: { encrypted: 'bbbb' },
-        },
       }
       ctx.ProjectGetter.promises.getProject.resolves(ctx.project)
       ctx.UserModel.findById.returns({
         exec: sinon.stub().resolves(ctx.user),
       })
-      ctx.SubscriptionLocator.promises.getUsersSubscription.resolves({})
       ctx.AuthorizationManager.promises.getPrivilegeLevelForProject.resolves(
         'owner'
       )
@@ -893,46 +759,10 @@ describe('ProjectController', function () {
       })
     })
 
-    it('should redirect to domain capture page', async function (ctx) {
-      ctx.Features.hasFeature.withArgs('saas').returns(true)
-      ctx.SplitTestHandler.promises.getAssignment
-        .withArgs(ctx.req, ctx.res, 'domain-capture-redirect')
-        .resolves({ variant: 'enabled' })
-      ctx.Modules.promises.hooks.fire
-        .withArgs('findDomainCaptureGroupsUserCouldBePartOf', ctx.user._id)
-        .resolves([
-          [
-            {
-              subscription: { managedUsersEnabled: true },
-            },
-          ],
-        ])
-      await new Promise(resolve => {
-        ctx.res.redirect = url => {
-          url.should.equal('/domain-capture')
-          resolve()
-        }
-        ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-      })
-    })
-
     it('should add user', async function (ctx) {
       await new Promise(resolve => {
         ctx.res.render = (pageName, opts) => {
           opts.user.email.should.equal(ctx.user.email)
-          resolve()
-        }
-        ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-      })
-    })
-
-    it('should sanitize refProviders', async function (ctx) {
-      await new Promise(resolve => {
-        ctx.res.render = (_pageName, opts) => {
-          expect(opts.user.refProviders).to.deep.equal({
-            mendeley: true,
-            zotero: true,
-          })
           resolve()
         }
         ctx.ProjectController.loadEditor(ctx.req, ctx.res)
@@ -1067,42 +897,6 @@ describe('ProjectController', function () {
       })
     })
 
-    it('should call the brand variations handler for branded projects', async function (ctx) {
-      await new Promise(resolve => {
-        ctx.ProjectGetter.promises.getProject.resolves(ctx.brandedProject)
-        ctx.res.render = (pageName, opts) => {
-          ctx.BrandVariationsHandler.promises.getBrandVariationById
-            .calledWith()
-            .should.equal(true)
-          resolve()
-        }
-        ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-      })
-    })
-
-    it('should not call the brand variations handler for unbranded projects', async function (ctx) {
-      await new Promise(resolve => {
-        ctx.res.render = (pageName, opts) => {
-          ctx.BrandVariationsHandler.promises.getBrandVariationById.called.should.equal(
-            false
-          )
-          resolve()
-        }
-        ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-      })
-    })
-
-    it('should expose the brand variation details as locals for branded projects', async function (ctx) {
-      await new Promise(resolve => {
-        ctx.ProjectGetter.promises.getProject.resolves(ctx.brandedProject)
-        ctx.res.render = (pageName, opts) => {
-          opts.brandVariation.should.deep.equal(ctx.brandVariationDetails)
-          resolve()
-        }
-        ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-      })
-    })
-
     it('flushes the project to TPDS if a flush is pending', async function (ctx) {
       await new Promise(resolve => {
         ctx.res.render = () => {
@@ -1112,24 +906,6 @@ describe('ProjectController', function () {
           resolve()
         }
         ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-      })
-    })
-
-    it('should refresh the user features if the epoch is outdated', async function (ctx) {
-      ctx.Features.hasFeature.withArgs('saas').returns(true)
-      await new Promise((resolve, reject) => {
-        ctx.FeaturesUpdater.featuresEpochIsCurrent = sinon.stub().returns(false)
-        ctx.res.render = (_, data) => {
-          ctx.FeaturesUpdater.promises.refreshFeatures.should.have.been.calledWith(
-            ctx.user._id,
-            'load-editor'
-          )
-          expect(data.showSymbolPalette).to.equal(true)
-          resolve()
-        }
-        ctx.ProjectController.loadEditor(ctx.req, ctx.res, err => {
-          if (err) reject(err)
-        })
       })
     })
 
@@ -1145,7 +921,7 @@ describe('ProjectController', function () {
           })
         })
       }
-      function checkWsFallback(isBeta, isV2) {
+      function checkWsFallback(isV2) {
         describe('with ws=fallback', function () {
           beforeEach(function (ctx) {
             ctx.req.query = {}
@@ -1161,9 +937,7 @@ describe('ProjectController', function () {
             })
           })
           checkLoadEditorWsMetric(
-            `load-editor-ws${isBeta ? '-beta' : ''}${
-              isV2 ? '-v2' : ''
-            }-fallback`
+            `load-editor-ws${isV2 ? '-v2' : ''}-fallback`
           )
         })
       }
@@ -1181,47 +955,10 @@ describe('ProjectController', function () {
         })
       })
       checkLoadEditorWsMetric('load-editor-ws')
-      checkWsFallback(false)
-
-      describe('beta program', function () {
-        beforeEach(function (ctx) {
-          ctx.settings.wsUrlBeta = '/beta.socket.io'
-        })
-        describe('for a normal user', function () {
-          it('should set the normal custom wsUrl', async function (ctx) {
-            await new Promise(resolve => {
-              ctx.res.render = (pageName, opts) => {
-                opts.wsUrl.should.equal('/other.socket.io')
-                resolve()
-              }
-              ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-            })
-          })
-          checkLoadEditorWsMetric('load-editor-ws')
-          checkWsFallback(false)
-        })
-
-        describe('for a beta user', function () {
-          beforeEach(function (ctx) {
-            ctx.user.betaProgram = true
-          })
-          it('should set the beta wsUrl', async function (ctx) {
-            await new Promise(resolve => {
-              ctx.res.render = (pageName, opts) => {
-                opts.wsUrl.should.equal('/beta.socket.io')
-                resolve()
-              }
-              ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-            })
-          })
-          checkLoadEditorWsMetric('load-editor-ws-beta')
-          checkWsFallback(true)
-        })
-      })
+      checkWsFallback()
 
       describe('v2-rollout', function () {
         beforeEach(function (ctx) {
-          ctx.settings.wsUrlBeta = '/beta.socket.io'
           ctx.settings.wsUrlV2 = '/socket.io.v2'
         })
 
@@ -1236,7 +973,7 @@ describe('ProjectController', function () {
             })
           })
           checkLoadEditorWsMetric('load-editor-ws')
-          checkWsFallback(false)
+          checkWsFallback()
         }
         function checkMatch() {
           it('should set the v2 wsUrl', async function (ctx) {
@@ -1249,25 +986,7 @@ describe('ProjectController', function () {
             })
           })
           checkLoadEditorWsMetric('load-editor-ws-v2')
-          checkWsFallback(false, true)
-        }
-        function checkForBetaUser() {
-          describe('for a beta user', function () {
-            beforeEach(function (ctx) {
-              ctx.user.betaProgram = true
-            })
-            it('should set the beta wsUrl', async function (ctx) {
-              await new Promise(resolve => {
-                ctx.res.render = (pageName, opts) => {
-                  opts.wsUrl.should.equal('/beta.socket.io')
-                  resolve()
-                }
-                ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-              })
-            })
-            checkLoadEditorWsMetric('load-editor-ws-beta')
-            checkWsFallback(true)
-          })
+          checkWsFallback(true)
         }
 
         describe('when the roll out percentage is 0', function () {
@@ -1286,7 +1005,6 @@ describe('ProjectController', function () {
             })
             checkNonMatch()
           })
-          checkForBetaUser()
         })
         describe('when the roll out percentage is 1', function () {
           beforeEach(function (ctx) {
@@ -1297,14 +1015,12 @@ describe('ProjectController', function () {
               ctx.req.params.Project_id = ObjectId.createFromTime(0)
             })
             checkMatch()
-            checkForBetaUser()
           })
           describe('when the projectId does not match (1)', function () {
             beforeEach(function (ctx) {
               ctx.req.params.Project_id = ObjectId.createFromTime(1)
             })
             checkNonMatch()
-            checkForBetaUser()
           })
           describe('when the projectId does not match (42)', function () {
             beforeEach(function (ctx) {
@@ -1328,7 +1044,6 @@ describe('ProjectController', function () {
               ctx.req.params.Project_id = ObjectId.createFromTime(9)
             })
             checkMatch()
-            checkForBetaUser()
           })
           describe('when the projectId does not match (10)', function () {
             beforeEach(function (ctx) {
@@ -1341,7 +1056,6 @@ describe('ProjectController', function () {
               ctx.req.params.Project_id = ObjectId.createFromTime(42)
             })
             checkNonMatch()
-            checkForBetaUser()
           })
         })
         describe('when the roll out percentage is 100', function () {
@@ -1353,7 +1067,6 @@ describe('ProjectController', function () {
               ctx.req.params.Project_id = ObjectId.createFromTime(0)
             })
             checkMatch()
-            checkForBetaUser()
           })
           describe('when the projectId matches (10)', function () {
             beforeEach(function (ctx) {
@@ -1377,70 +1090,7 @@ describe('ProjectController', function () {
       })
     })
 
-    describe('upgrade prompt (on header and share project modal)', function () {
-      beforeEach(function (ctx) {
-        // default to saas enabled
-        ctx.Features.hasFeature.withArgs('saas').returns(true)
-        // default to without a subscription
-        ctx.SubscriptionLocator.promises.getUsersSubscription = sinon
-          .stub()
-          .resolves(null)
-      })
-      it('should not show without the saas feature', async function (ctx) {
-        ctx.Features.hasFeature.withArgs('saas').returns(false)
-        await new Promise(resolve => {
-          ctx.res.render = (pageName, opts) => {
-            expect(opts.showUpgradePrompt).to.equal(false)
-            resolve()
-          }
-          ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-        })
-      })
-      it('should show for a user without a subscription or only non-paid affiliations', async function (ctx) {
-        await new Promise(resolve => {
-          ctx.res.render = (pageName, opts) => {
-            expect(opts.showUpgradePrompt).to.equal(true)
-            resolve()
-          }
-          ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-        })
-      })
-      it('should not show for a user with a personal subscription', async function (ctx) {
-        ctx.SubscriptionLocator.promises.getUsersSubscription = sinon
-          .stub()
-          .resolves({})
-        await new Promise(resolve => {
-          ctx.res.render = (pageName, opts) => {
-            expect(opts.showUpgradePrompt).to.equal(false)
-            resolve()
-          }
-          ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-        })
-      })
-      it('should not show for a user who is a member of a group subscription', async function (ctx) {
-        ctx.InstitutionsFeatures.promises.hasLicence = sinon
-          .stub()
-          .resolves(true)
-        await new Promise(resolve => {
-          ctx.res.render = (pageName, opts) => {
-            expect(opts.showUpgradePrompt).to.equal(false)
-            resolve()
-          }
-          ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-        })
-      })
-      it('should not show for a user with an affiliated paid university', async function (ctx) {
-        await new Promise(resolve => {
-          ctx.LimitationsManager.promises.userIsMemberOfGroupSubscription =
-            sinon.stub().resolves({ isMember: true })
-          ctx.res.render = (pageName, opts) => {
-            expect(opts.showUpgradePrompt).to.equal(false)
-            resolve()
-          }
-          ctx.ProjectController.loadEditor(ctx.req, ctx.res)
-        })
-      })
-
+    describe('sharing updates and collaborator limits', function () {
       describe('when user is a read write token member (and not already a named editor)', function () {
         beforeEach(function (ctx) {
           ctx.CollaboratorsGetter.promises.userIsTokenMember.resolves(true)

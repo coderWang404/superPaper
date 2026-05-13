@@ -2,12 +2,12 @@
 
 const config = require('config')
 const fs = require('node:fs')
-const isValidUtf8 = require('utf-8-validate')
-const { ReadableString } = require('@overleaf/stream-utils')
+const { isUtf8: isValidUtf8 } = require('node:buffer')
+const { ReadableString } = require('@superpaper/stream-utils')
 
-const core = require('overleaf-editor-core')
-const objectPersistor = require('@overleaf/object-persistor')
-const OError = require('@overleaf/o-error')
+const core = require('superpaper-editor-core')
+const objectPersistor = require('@superpaper/object-persistor')
+const OError = require('@superpaper/o-error')
 const Blob = core.Blob
 const TextOperation = core.TextOperation
 const containsNonBmpChars = core.util.containsNonBmpChars
@@ -16,12 +16,12 @@ const assert = require('../assert')
 const blobHash = require('../blob_hash')
 const mongodb = require('../mongodb')
 const persistor = require('../persistor')
-const projectKey = require('@overleaf/object-persistor/src/ProjectKey.js')
+const projectKey = require('@superpaper/object-persistor/src/ProjectKey.js')
 const streams = require('../streams')
 const postgresBackend = require('./postgres')
 const mongoBackend = require('./mongo')
-const logger = require('@overleaf/logger')
-const { promiseMapWithLimit } = require('@overleaf/promise-utils')
+const logger = require('@superpaper/logger')
+const { promiseMapWithLimit } = require('@superpaper/promise-utils')
 
 /** @import { Readable } from 'stream' */
 

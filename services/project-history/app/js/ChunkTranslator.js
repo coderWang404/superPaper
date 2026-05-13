@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import * as HistoryStoreManager from './HistoryStoreManager.js'
 import * as WebApiManager from './WebApiManager.js'
 import * as Errors from './Errors.js'
@@ -11,10 +11,10 @@ import {
   RetainOp,
   Range,
   TrackedChangeList,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 
 /**
- * @import { RawEditOperation, TrackedChangeRawData } from 'overleaf-editor-core/lib/types'
+ * @import { RawEditOperation, TrackedChangeRawData } from 'superpaper-editor-core/lib/types'
  */
 
 export function convertToSummarizedUpdates(chunk, callback) {

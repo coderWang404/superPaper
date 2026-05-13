@@ -54,6 +54,6 @@ export default {
   title: 'Shared / Components / Toggle Button Group',
   component: OLToggleButtonGroup,
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-191910&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-191910&m=dev'
   ),
 }

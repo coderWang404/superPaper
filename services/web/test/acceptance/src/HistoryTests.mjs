@@ -6,7 +6,7 @@ import MockV1HistoryApiClass from './mocks/MockV1HistoryApi.mjs'
 import ProjectGetter from '../../../app/src/Features/Project/ProjectGetter.mjs'
 import { fileURLToPath } from 'node:url'
 import sinon from 'sinon'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import Metrics from './helpers/metrics.mjs'
 const User = UserHelper.promises
 
@@ -138,7 +138,7 @@ describe('HistoryTests', function () {
     })
   })
 
-  // Legacy endpoint that is powered by history-v1 in SaaS
+  // Legacy endpoint that is powered by history-v1.
   describe('/project/:projectId/file/:fileId', function () {
     describe('HEAD', function () {
       it('should fetch the file size from history-v1', async function () {

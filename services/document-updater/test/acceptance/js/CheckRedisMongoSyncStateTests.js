@@ -4,13 +4,13 @@ const DocUpdaterApp = require('./helpers/DocUpdaterApp')
 const { promisify } = require('node:util')
 const { exec } = require('node:child_process')
 const { expect } = require('chai')
-const Settings = require('@overleaf/settings')
+const Settings = require('@superpaper/settings')
 const fs = require('node:fs')
 const Path = require('node:path')
 const MockDocstoreApi = require('./helpers/MockDocstoreApi')
 const sinon = require('sinon')
 
-const rclient = require('@overleaf/redis-wrapper').createClient(
+const rclient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
 

@@ -1,5 +1,5 @@
 import { db } from '../lib/mongodb.mjs'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const LOG_EVERY_IN_S = parseInt(process.env.LOG_EVERY_IN_S, 10) || 5
 

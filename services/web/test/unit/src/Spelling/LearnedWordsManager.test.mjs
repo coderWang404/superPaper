@@ -22,7 +22,7 @@ describe('LearnedWordsManager', function () {
       default: { db: ctx.db },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         maxDictionarySize: 20,
       },

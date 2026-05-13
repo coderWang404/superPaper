@@ -24,9 +24,9 @@ import { useProjectSettingsContext } from '@/features/editor-left-menu/context/p
 import getMeta from '@/utils/meta'
 import EditorCloneProjectModalWrapper from '@/features/clone-project-modal/components/editor-clone-project-modal-wrapper'
 import useOpenProject from '@/shared/hooks/use-open-project'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 
-const menubarExtraComponents = importOverleafModules(
+const menubarExtraComponents = importSuperPaperModules(
   'menubarExtraComponents'
 ) as {
   import: { default: ElementType }
@@ -43,7 +43,6 @@ export const ToolbarMenuBar = () => {
   const openProject = useOpenProject()
 
   const anonymous = getMeta('ol-anonymous')
-  const showSupport = getMeta('ol-showSupport')
   const showDocumentation = getMeta('ol-wikiEnabled')
 
   useCommandProvider(
@@ -217,9 +216,6 @@ export const ToolbarMenuBar = () => {
   const openKeyboardShortcutsModal = useCallback(() => {
     setActiveModal('keyboard-shortcuts')
   }, [setActiveModal])
-  const openContactUsModal = useCallback(() => {
-    setActiveModal('contact-us')
-  }, [setActiveModal])
 
   return (
     <>
@@ -286,16 +282,6 @@ export const ToolbarMenuBar = () => {
               target="_blank"
               rel="noopener noreferrer"
             />
-          )}
-          {showSupport && (
-            <>
-              <DropdownDivider />
-              <MenuBarOption
-                eventKey="contact_us"
-                title={t('contact_us')}
-                onClick={openContactUsModal}
-              />
-            </>
           )}
         </MenuBarDropdown>
       </MenuBar>

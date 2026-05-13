@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
 import { useLayoutContext } from '@/shared/context/layout-context'
-import { useEditorContext } from '@/shared/context/editor-context'
 import useEventListener from '@/shared/hooks/use-event-listener'
 
 function scrollIntoView(element: Element) {
@@ -17,14 +16,9 @@ function scrollIntoView(element: Element) {
  */
 export const useLogEvents = (setShowLogs: (show: boolean) => void) => {
   const { pdfLayout, setView } = useLayoutContext()
-  const { hasSuggestionsLeft } = useEditorContext()
 
   const selectLogNewLogs = useCallback(
-    (
-      id: string,
-      suggestFix: boolean,
-      showPaywallIfOutOfSuggestions: boolean
-    ) => {
+    (id: string, suggestFix: boolean) => {
       window.setTimeout(() => {
         const logEntry = document.querySelector(
           `.log-entry[data-log-entry-id="${id}"]`
@@ -44,24 +38,16 @@ export const useLogEvents = (setShowLogs: (show: boolean) => void) => {
           }
 
           if (suggestFix) {
-            if (hasSuggestionsLeft) {
-              logEntry
-                .querySelector<HTMLButtonElement>(
-                  'button[data-action="suggest-fix"]'
-                )
-                ?.click()
-            } else if (showPaywallIfOutOfSuggestions) {
-              window.dispatchEvent(
-                new CustomEvent('aiAssist:showPaywall', {
-                  detail: { origin: 'suggest-fix' },
-                })
+            logEntry
+              .querySelector<HTMLButtonElement>(
+                'button[data-action="suggest-fix"]'
               )
-            }
+              ?.click()
           }
         }
       })
     },
-    [hasSuggestionsLeft]
+    []
   )
 
   const openLogs = useCallback(() => {
@@ -74,21 +60,16 @@ export const useLogEvents = (setShowLogs: (show: boolean) => void) => {
 
   const handleViewCompileLogEntryEvent = useCallback(
     (event: Event) => {
-      const { id, suggestFix, showPaywallIfOutOfSuggestions } = (
+      const { id, suggestFix } = (
         event as CustomEvent<{
           id: string
           suggestFix?: boolean
-          showPaywallIfOutOfSuggestions?: boolean
         }>
       ).detail
 
       openLogs()
 
-      selectLogNewLogs(
-        id,
-        Boolean(suggestFix),
-        Boolean(showPaywallIfOutOfSuggestions)
-      )
+      selectLogNewLogs(id, Boolean(suggestFix))
     },
     [openLogs, selectLogNewLogs]
   )

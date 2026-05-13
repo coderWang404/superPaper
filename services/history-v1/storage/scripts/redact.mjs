@@ -11,7 +11,7 @@ import redis from '../lib/redis.js'
 const require = createRequire(import.meta.url)
 const config = require('config')
 const persistor = require('../lib/persistor.js')
-const { Errors } = require('@overleaf/object-persistor')
+const { Errors } = require('@superpaper/object-persistor')
 
 const optionDefinitions = [
   { name: 'historyId', alias: 'p', type: String },

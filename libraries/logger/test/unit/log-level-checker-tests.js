@@ -39,7 +39,7 @@ describe('LogLevelChecker', function () {
 
     this.module = SandboxedModule.require(MODULE_PATH, {
       requires: {
-        '@overleaf/fetch-utils': this.FetchUtils,
+        '@superpaper/fetch-utils': this.FetchUtils,
         fs: this.fs,
       },
     })

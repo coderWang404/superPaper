@@ -11,13 +11,11 @@ export type HistoryContextValue = {
     visibleUpdateCount: Nullable<number>
     atEnd: boolean
     nextBeforeTimestamp: number | undefined
-    freeHistoryLimitHit: boolean
     loadingState: UpdatesLoadingState
   }
   setUpdatesInfo: React.Dispatch<
     React.SetStateAction<HistoryContextValue['updatesInfo']>
   >
-  userHasFullFeature: boolean
   currentUserIsOwner: boolean
   loadingFileDiffs: boolean
   labels: Nullable<LoadedLabel[]>

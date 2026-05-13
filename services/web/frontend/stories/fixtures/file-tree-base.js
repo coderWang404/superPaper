@@ -36,8 +36,8 @@ export const rootFolderBase = [
       { _id: '5f46789522d556004e72a556', name: 'perso.bib' },
       {
         _id: '5da532e29019e800015321c6',
-        name: 'zotero.bib',
-        linkedFileData: { provider: 'zotero' },
+        name: 'linked-references.bib',
+        linkedFileData: { provider: 'external-reference' },
       },
     ],
   },

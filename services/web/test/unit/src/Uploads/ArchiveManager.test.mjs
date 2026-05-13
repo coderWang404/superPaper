@@ -21,7 +21,7 @@ describe('ArchiveManager', function () {
     ctx.zipfile.close = sinon.stub()
 
     ctx.Settings = {}
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
@@ -31,7 +31,7 @@ describe('ArchiveManager', function () {
       }),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: ctx.metrics,
     }))
     ctx.fs = { mkdir: sinon.stub().yields() }

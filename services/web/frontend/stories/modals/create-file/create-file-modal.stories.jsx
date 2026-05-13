@@ -28,9 +28,7 @@ export const WithExtraFeatures = args => {
   return <FileTreeModalCreateFile {...args} />
 }
 WithExtraFeatures.decorators = [
-  createFileModalDecorator({
-    refProviders: { mendeley: true, zotero: true },
-  }),
+  createFileModalDecorator(),
 ]
 
 export const ErrorImportingFileFromExternalURL = args => {
@@ -56,9 +54,7 @@ export const ErrorImportingFileFromReferenceProvider = args => {
   return <FileTreeModalCreateFile {...args} />
 }
 ErrorImportingFileFromReferenceProvider.decorators = [
-  createFileModalDecorator({
-    refProviders: { mendeley: true, zotero: true },
-  }),
+  createFileModalDecorator(),
 ]
 
 export const FileLimitReached = args => {

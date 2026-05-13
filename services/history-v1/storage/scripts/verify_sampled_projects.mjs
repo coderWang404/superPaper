@@ -9,7 +9,7 @@ import {
 import knex from '../lib/knex.js'
 import { client } from '../lib/mongodb.js'
 import { setTimeout } from 'node:timers/promises'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { loadGlobalBlobs } from '../lib/blob_store/index.js'
 import { getDatesBeforeRPO } from '../../backupVerifier/utils.mjs'
 import { EventEmitter } from 'node:events'

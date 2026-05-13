@@ -1,24 +1,23 @@
 import { URL } from 'node:url'
 import { pipeline } from 'node:stream/promises'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import CompileManager from './CompileManager.mjs'
 import ClsiManager from './ClsiManager.mjs'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import Errors from '../Errors/Errors.js'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import { RateLimiter } from '../../infrastructure/RateLimiter.mjs'
 import Validation from '../../infrastructure/Validation.mjs'
 import Path from 'node:path'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
+import SplitTestHandler from '../FeatureRollouts/FeatureRolloutHandler.mjs'
+import { expressify } from '@superpaper/promise-utils'
 import {
   fetchStreamWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
-import Features from '../../infrastructure/Features.mjs'
+} from '@superpaper/fetch-utils'
 import ClsiCacheController from './ClsiCacheController.mjs'
 import { prepareZipAttachment } from '../../infrastructure/Response.mjs'
 import ClsiCacheHandler from './ClsiCacheHandler.mjs'
@@ -97,7 +96,7 @@ async function _syncTeX(req, res, direction, validatedOptions) {
   try {
     const body = await CompileManager.promises.syncTeX(projectId, userId, {
       direction,
-      compileFromClsiCache: Features.hasFeature('saas'),
+      compileFromClsiCache: Boolean(Settings.apis?.clsiCache?.instances?.length),
       validatedOptions: {
         ...validatedOptions,
         editorId,
@@ -219,7 +218,7 @@ const _CompileController = {
       pdfDownloadDomain,
       compileFromHistory,
     } = await _getSplitTestOptions(req, res)
-    if (Features.hasFeature('saas')) {
+    if (Settings.apis?.clsiCache?.instances?.length) {
       options.compileFromClsiCache = true
       options.populateClsiCache = true
       options.compileFromHistory = compileFromHistory
@@ -752,7 +751,7 @@ async function _proxyToClsi(
       return
     }
     if (err instanceof RequestFailedError) {
-      // Ignore noisy error: https://github.com/overleaf/internal/issues/15201
+      // Ignore noisy error: https://github.com/superpaper/internal/issues/15201
       return
     }
     logger.warn(

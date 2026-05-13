@@ -2,14 +2,14 @@ import type { DefaultNavbarMetadata } from '@/shared/components/types/default-na
 import getMeta from '@/utils/meta'
 
 export default function HeaderLogoOrTitle({
-  overleafLogo,
+  brandLogo,
   customLogo,
   title,
 }: Pick<DefaultNavbarMetadata, 'customLogo' | 'title'> & {
-  overleafLogo?: string
+  brandLogo?: string
 }) {
   const { appName } = getMeta('ol-ExposedSettings')
-  const logoUrl = customLogo ?? overleafLogo
+  const logoUrl = customLogo ?? brandLogo
   return (
     <a href="/" aria-label={appName} className="navbar-brand">
       {(customLogo || !title) && (

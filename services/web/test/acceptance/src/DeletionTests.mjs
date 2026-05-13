@@ -1,19 +1,17 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import sinon from 'sinon'
 import User from './helpers/User.mjs'
-import Subscription from './helpers/Subscription.mjs'
 import request from './helpers/request.js'
 import async from 'async'
 import { expect } from 'chai'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import { db, ObjectId } from '../../../app/src/infrastructure/mongodb.mjs'
 import Features from '../../../app/src/infrastructure/Features.mjs'
 import MockDocstoreApiClass from './mocks/MockDocstoreApi.mjs'
 import MockChatApiClass from './mocks/MockChatApi.mjs'
 import MockGitBridgeApiClass from './mocks/MockGitBridgeApi.mjs'
-import MockHistoryBackupDeletionApiClass from './mocks/MockHistoryBackupDeletionApi.mjs'
 
-let MockDocstoreApi, MockChatApi, MockGitBridgeApi, MockHistoryBackupDeletionApi
+let MockDocstoreApi, MockChatApi, MockGitBridgeApi
 
 let spy
 
@@ -21,7 +19,6 @@ before(function () {
   MockDocstoreApi = MockDocstoreApiClass.instance()
   MockChatApi = MockChatApiClass.instance()
   MockGitBridgeApi = MockGitBridgeApiClass.instance()
-  MockHistoryBackupDeletionApi = MockHistoryBackupDeletionApiClass.instance()
 })
 
 describe('Deleting a user', function () {
@@ -41,27 +38,10 @@ describe('Deleting a user', function () {
             results.user.login(cb)
           },
         ],
-        subscription: [
-          'user',
-          'login',
-          (results, cb) => {
-            if (Features.hasFeature('saas')) {
-              const subscription = new Subscription({
-                admin_id: results.user._id,
-              })
-              subscription.ensureExists(err => {
-                cb(err, subscription)
-              })
-            } else {
-              cb()
-            }
-          },
-        ],
       },
       (err, results) => {
         expect(err).not.to.exist
         this.user = results.user
-        this.subscription = results.subscription
         done()
       }
     )
@@ -415,65 +395,6 @@ describe('Deleting a project', function () {
         )
       })
 
-      if (Features.hasFeature('saas')) {
-        it('Should destroy the history backup', function (done) {
-          MockHistoryBackupDeletionApi.prepareProject(this.projectId, 204)
-
-          request.post(
-            `/internal/project/${this.projectId}/expire-deleted-project`,
-            {
-              auth: {
-                user: settings.apis.web.user,
-                pass: settings.apis.web.pass,
-                sendImmediately: true,
-              },
-            },
-            (error, res) => {
-              expect(error).not.to.exist
-              expect(res.statusCode).to.equal(200)
-
-              expect(
-                MockHistoryBackupDeletionApi.projects[this.projectId.toString()]
-              ).not.to.exist
-              done()
-            }
-          )
-        })
-
-        it('Should abort when the history backup cannot be deleted', function (done) {
-          MockHistoryBackupDeletionApi.prepareProject(this.projectId, 422)
-
-          request.post(
-            `/internal/project/${this.projectId}/expire-deleted-project`,
-            {
-              auth: {
-                user: settings.apis.web.user,
-                pass: settings.apis.web.pass,
-                sendImmediately: true,
-              },
-            },
-            (error, res) => {
-              expect(error).not.to.exist
-              expect(res.statusCode).to.equal(500)
-
-              expect(
-                MockHistoryBackupDeletionApi.projects[this.projectId.toString()]
-              ).to.exist
-              db.deletedProjects.findOne(
-                {
-                  'deleterData.deletedProjectId': new ObjectId(this.projectId),
-                },
-                (error, deletedProject) => {
-                  expect(error).not.to.exist
-                  expect(deletedProject).to.exist
-                  expect(deletedProject.project).to.exist
-                  done()
-                }
-              )
-            }
-          )
-        })
-      }
     })
   })
 

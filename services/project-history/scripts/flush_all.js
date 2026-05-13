@@ -10,7 +10,7 @@
 
 import _ from 'lodash'
 import async from 'async'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import * as RedisManager from '../app/js/RedisManager.js'
 import * as UpdatesProcessor from '../app/js/UpdatesProcessor.js'
 

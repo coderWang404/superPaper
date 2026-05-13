@@ -1,35 +1,4 @@
 .references-search-modal {
-  .references-search-upgrade-prompt {
-    padding: var(--spacing-08);
-    padding-bottom: var(--spacing-11);
-
-    .upgrade-prompt {
-      text-align: center;
-      width: 400px;
-      padding: var(--spacing-06) var(--spacing-10);
-      margin: auto;
-      background: rgb($white, 0.95);
-      border-radius: var(--border-radius-medium);
-
-      .message {
-        margin-top: var(--spacing-06);
-
-        &.call-to-action {
-          font-weight: bold;
-        }
-
-        ul.upgrade-benefits {
-          text-align: left;
-
-          li {
-            display: flex;
-            align-items: center;
-          }
-        }
-      }
-    }
-  }
-
   .notification {
     margin-top: var(--spacing-05);
     margin-bottom: 0;
@@ -109,8 +78,4 @@
 .write-and-cite-pro {
   flex: 0 1 100%;
   margin-bottom: 0;
-}
-
-.write-and-cite-upgrade-prompt-header {
-  font-size: var(--font-size-05);
 }

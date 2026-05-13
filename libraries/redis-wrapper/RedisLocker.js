@@ -1,6 +1,6 @@
 const { promisify } = require('node:util')
-const metrics = require('@overleaf/metrics')
-const logger = require('@overleaf/logger')
+const metrics = require('@superpaper/metrics')
+const logger = require('@superpaper/logger')
 const os = require('node:os')
 const crypto = require('node:crypto')
 

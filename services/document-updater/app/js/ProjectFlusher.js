@@ -1,9 +1,9 @@
 const { setTimeout } = require('node:timers/promises')
-const Settings = require('@overleaf/settings')
+const Settings = require('@superpaper/settings')
 const { rclient } = require('./RedisManager')
 const ProjectManager = require('./ProjectManager')
-const logger = require('@overleaf/logger')
-const { promiseMapSettledWithLimit } = require('@overleaf/promise-utils')
+const logger = require('@superpaper/logger')
+const { promiseMapSettledWithLimit } = require('@superpaper/promise-utils')
 const docUpdaterKeys = Settings.redis.documentupdater.key_schema
 
 // iterate over keys asynchronously using redis scan (non-blocking)

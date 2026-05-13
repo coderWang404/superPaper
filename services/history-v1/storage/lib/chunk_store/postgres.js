@@ -1,6 +1,6 @@
 // @ts-check
 
-const { Chunk } = require('overleaf-editor-core')
+const { Chunk } = require('superpaper-editor-core')
 const assert = require('../assert')
 const knex = require('../knex')
 const knexReadOnly = require('../knex_read_only')

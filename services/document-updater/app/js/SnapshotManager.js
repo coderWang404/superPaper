@@ -10,7 +10,7 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-const { promisifyAll } = require('@overleaf/promise-utils')
+const { promisifyAll } = require('@superpaper/promise-utils')
 const { db, ObjectId } = require('./mongodb')
 
 const SnapshotManager = {

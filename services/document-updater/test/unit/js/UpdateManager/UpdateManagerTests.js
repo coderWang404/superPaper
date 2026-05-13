@@ -90,7 +90,7 @@ describe('UpdateManager', function () {
         './ShareJsUpdateManager': this.ShareJsUpdateManager,
         './HistoryManager': this.HistoryManager,
         './Metrics': this.Metrics,
-        '@overleaf/settings': this.Settings,
+        '@superpaper/settings': this.Settings,
         './DocumentManager': this.DocumentManager,
         './RangesManager': this.RangesManager,
         './SnapshotManager': this.SnapshotManager,

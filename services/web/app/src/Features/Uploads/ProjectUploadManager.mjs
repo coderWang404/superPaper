@@ -15,8 +15,8 @@ import ProjectDetailsHandler from '../Project/ProjectDetailsHandler.mjs'
 import ProjectDeleter from '../Project/ProjectDeleter.mjs'
 import { DeletedProjectReasons } from '../Project/DeletedProjectReasons.mjs'
 import TpdsProjectFlusher from '../ThirdPartyDataStore/TpdsProjectFlusher.mjs'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 
 export default {
   createProjectFromZipArchive: callbackify(createProjectFromZipArchive),
@@ -215,7 +215,7 @@ async function _createDoc(project, projectPath, docLines) {
 
 async function _createFile(project, projectPath, fsPath) {
   const projectId = project._id
-  const historyId = project.overleaf?.history?.id
+  const historyId = project.superpaper?.history?.id
   if (!historyId) {
     throw new OError('missing history id')
   }
@@ -232,7 +232,7 @@ async function _createFile(project, projectPath, fsPath) {
 
 async function _notifyDocumentUpdater(project, userId, changes) {
   const projectHistoryId =
-    project.overleaf && project.overleaf.history && project.overleaf.history.id
+    project.superpaper && project.superpaper.history && project.superpaper.history.id
   await DocumentUpdaterHandler.promises.updateProjectStructure(
     project._id,
     projectHistoryId,

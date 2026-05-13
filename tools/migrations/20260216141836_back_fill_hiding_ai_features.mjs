@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const tags = ['saas']
 

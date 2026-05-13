@@ -1,15 +1,15 @@
 import fs from 'node:fs'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import {
   CustomHttpAgent,
   CustomHttpsAgent,
   fetchStream,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import { URL } from 'node:url'
 import { pipeline } from 'node:stream/promises'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const MAX_CONNECT_TIME = 1000
 const httpAgent = new CustomHttpAgent({ connectTimeout: MAX_CONNECT_TIME })

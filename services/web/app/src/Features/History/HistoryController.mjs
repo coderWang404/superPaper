@@ -2,9 +2,9 @@
 
 import { setTimeout } from 'node:timers/promises'
 import { pipeline } from 'node:stream/promises'
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
-import { expressify } from '@overleaf/promise-utils'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
+import { expressify } from '@superpaper/promise-utils'
 
 import {
   fetchStream,
@@ -12,9 +12,9 @@ import {
   fetchJson,
   fetchNothing,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 /** @type {any} */
 import SessionManager from '../Authentication/SessionManager.mjs'
 import UserGetter from '../User/UserGetter.mjs'
@@ -30,7 +30,6 @@ import ProjectEntityUpdateHandler from '../Project/ProjectEntityUpdateHandler.mj
 /** @type {any} */
 import RestoreManager from './RestoreManager.mjs'
 import { prepareZipAttachment } from '../../infrastructure/Response.mjs'
-import Features from '../../infrastructure/Features.mjs'
 import { z, zz, parseReq } from '../../infrastructure/Validation.mjs'
 /** @type {any} */
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
@@ -240,7 +239,7 @@ async function restoreFileFromV2(req, res, next) {
     pathname
   )
 
-  ProjectAuditLogHandler.addEntryIfManagedInBackground(
+  ProjectAuditLogHandler.addEntryInBackground(
     projectId,
     'project-history-version-restored',
     userId,
@@ -277,7 +276,7 @@ async function revertFile(req, res, next) {
     {}
   )
 
-  ProjectAuditLogHandler.addEntryIfManagedInBackground(
+  ProjectAuditLogHandler.addEntryInBackground(
     projectId,
     'project-history-version-restored',
     userId,
@@ -312,7 +311,7 @@ async function revertProject(req, res, next) {
     version
   )
 
-  ProjectAuditLogHandler.addEntryIfManagedInBackground(
+  ProjectAuditLogHandler.addEntryInBackground(
     projectId,
     'project-history-version-restored',
     userId,
@@ -490,7 +489,7 @@ async function downloadZipOfVersion(req, res, next) {
   /** @type {any} */
   const project = await ProjectDetailsHandler.promises.getDetails(projectId)
   const v1Id =
-    project.overleaf && project.overleaf.history && project.overleaf.history.id
+    project.superpaper && project.superpaper.history && project.superpaper.history.id
 
   if (v1Id == null) {
     logger.error(
@@ -508,7 +507,7 @@ async function downloadZipOfVersion(req, res, next) {
     res
   )
 
-  ProjectAuditLogHandler.addEntryIfManagedInBackground(
+  ProjectAuditLogHandler.addEntryInBackground(
     projectId,
     'project-history-version-downloaded',
     userId,
@@ -540,99 +539,27 @@ async function _pipeHistoryZipToResponse(v1ProjectId, version, name, req, res) {
     password: settings.apis.v1_history.pass,
   }
 
-  if (!Features.hasFeature('saas')) {
-    let stream
-    try {
-      stream = await fetchStream(url, { basicAuth })
-    } catch (/** @type {any} */ err) {
-      if (err instanceof RequestFailedError && err.response.status === 404) {
-        return res.sendStatus(404)
-      } else {
-        throw err
-      }
-    }
-
-    prepareZipAttachment(res, `${name}.zip`)
-
-    try {
-      await pipeline(stream, res)
-    } catch (/** @type {any} */ err) {
-      // If the downstream request is cancelled, we get an
-      // ERR_STREAM_PREMATURE_CLOSE.
-      if (!isPrematureClose(err)) {
-        throw err
-      }
-    }
-    return
-  }
-
-  let body
+  let stream
   try {
-    body = await fetchJson(url, { method: 'POST', basicAuth })
+    stream = await fetchStream(url, { basicAuth })
   } catch (/** @type {any} */ err) {
     if (err instanceof RequestFailedError && err.response.status === 404) {
-      throw new Errors.NotFoundError('zip not found')
+      return res.sendStatus(404)
     } else {
       throw err
     }
   }
 
-  if (req.destroyed) {
-    // client has disconnected -- skip delayed s3 download
-    return
-  }
+  prepareZipAttachment(res, `${name}.zip`)
 
-  if (!body.zipUrl) {
-    throw new OError('Missing zipUrl, cannot fetch zip file', {
-      v1ProjectId,
-      body,
-    })
-  }
-
-  // retry for about 6 minutes starting with short delay
-  let retryDelay = 2000
-  let attempt = 0
-  while (true) {
-    attempt += 1
-    await setTimeout(retryDelay)
-
-    if (req.destroyed) {
-      // client has disconnected -- skip s3 download
-      return
+  try {
+    await pipeline(stream, res)
+  } catch (/** @type {any} */ err) {
+    // If the downstream request is cancelled, we get an
+    // ERR_STREAM_PREMATURE_CLOSE.
+    if (!isPrematureClose(err)) {
+      throw err
     }
-
-    // increase delay by 1 second up to 10
-    if (retryDelay < 10000) {
-      retryDelay += 1000
-    }
-
-    try {
-      const stream = await fetchStream(body.zipUrl)
-      prepareZipAttachment(res, `${name}.zip`)
-      await pipeline(stream, res)
-    } catch (/** @type {any} */ err) {
-      if (attempt > MAX_HISTORY_ZIP_ATTEMPTS) {
-        throw err
-      }
-
-      if (err instanceof RequestFailedError && err.response.status === 404) {
-        // File not ready yet. Retry.
-        continue
-      } else if (isPrematureClose(err)) {
-        // Downstream request cancelled. Retry.
-        continue
-      } else {
-        // Unknown error. Log and retry.
-        logger.warn(
-          { err, v1ProjectId, version, retryAttempt: attempt },
-          'history s3 proxying error'
-        )
-        continue
-      }
-    }
-
-    // We made it through. No need to retry anymore. Exit loop
-    break
   }
 }
 

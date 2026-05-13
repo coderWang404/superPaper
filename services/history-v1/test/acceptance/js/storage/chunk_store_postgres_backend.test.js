@@ -7,7 +7,7 @@ const {
   Change,
   AddFileOperation,
   File,
-} = require('overleaf-editor-core')
+} = require('superpaper-editor-core')
 const cleanup = require('./support/cleanup')
 const { ChunkVersionConflictError } = require('../../../../storage')
 const backend = require('../../../../storage/lib/chunk_store/postgres')

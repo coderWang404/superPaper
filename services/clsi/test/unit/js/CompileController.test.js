@@ -19,7 +19,7 @@ describe('CompileController', () => {
       default: (ctx.RequestParser = {}),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.Settings = {
         apis: {
           clsi: {
@@ -35,7 +35,7 @@ describe('CompileController', () => {
       }),
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: {
         Timer: sinon.stub().returns({ done: sinon.stub() }),
       },

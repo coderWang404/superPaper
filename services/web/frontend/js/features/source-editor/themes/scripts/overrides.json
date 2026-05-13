@@ -9,7 +9,7 @@
       }
     }
   },
-  "overleaf": {
+  "superpaper": {
     "highlightStyle": {
       ".tok-labelName": {
         "color": "#3F7F7F"
@@ -61,7 +61,7 @@
       }
     }
   },
-  "overleaf-dark": {
+  "superpaper-dark": {
     "highlightStyle": {
       ".tok-literal": {
         "color": "#ff79c6"

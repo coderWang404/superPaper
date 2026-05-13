@@ -1,6 +1,6 @@
 // Conditionally enable Sentry based on whether the DSN token is set
 import getMeta from '../utils/meta'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { debugConsole } from '@/utils/debugging'
 import type { ErrorEvent } from '@sentry/types/types/event'
 
@@ -47,24 +47,6 @@ const sanitizeUrls = (event: ErrorEvent) => {
   return event
 }
 
-const isPropensityNetworkError = (err: ErrorEvent) => {
-  const errorBreadcrumbs = err.breadcrumbs?.filter(b => b.level === 'error')
-
-  if (!errorBreadcrumbs || errorBreadcrumbs.length !== 1) {
-    // don't ignore Propensity if there are more errors to report
-    return false
-  }
-
-  const breadcrumbUrl = errorBreadcrumbs[0]?.data?.url
-  return Boolean(
-    breadcrumbUrl &&
-    [
-      'https://analytics.propensity.com/',
-      'https://analytics.propensity-abm.com/',
-    ].some(url => breadcrumbUrl.startsWith(url))
-  )
-}
-
 function sentryReporter() {
   return (
     import(/* webpackMode: "eager" */ '@sentry/browser')
@@ -84,11 +66,11 @@ function sentryReporter() {
           ignoreErrors: [
             // Ignore very noisy error
             'SecurityError: Permission denied to access property "pathname" on cross-origin object',
-            // Ignore unhandled error that is "expected" - see https://github.com/overleaf/issues/issues/3321
+            // Ignore unhandled error that is "expected" - see https://github.com/superpaper/issues/issues/3321
             /^Missing PDF/,
-            // Ignore "expected" error from aborted fetch - see https://github.com/overleaf/issues/issues/3321
+            // Ignore "expected" error from aborted fetch - see https://github.com/superpaper/issues/issues/3321
             /^AbortError/,
-            // Ignore spurious error from Ace internals - see https://github.com/overleaf/issues/issues/3321
+            // Ignore spurious error from Ace internals - see https://github.com/superpaper/issues/issues/3321
             'ResizeObserver loop limit exceeded',
             'ResizeObserver loop completed with undelivered notifications.',
             // Microsoft Outlook SafeLink crawler
@@ -96,13 +78,11 @@ function sentryReporter() {
             /Non-Error promise rejection captured with value: Object Not Found Matching Id/,
             // Ignore CM6 error until upgraded
             "Cannot read properties of undefined (reading 'length')",
-            // Ignore Angular digest iteration limit - see https://github.com/overleaf/internal/issues/15750
+            // Ignore Angular digest iteration limit - see https://github.com/superpaper/internal/issues/15750
             '10 $digest() iterations reached',
             // Ignore a frequent unhandled promise rejection
             /Non-Error promise rejection captured with keys: currentTarget, detail, isTrusted, target/,
             /Non-Error promise rejection captured with keys: message, status/,
-            // Ignore a frequent blocked image
-            "Blocked 'image' from 'www.googletagmanager.com'",
           ],
 
           denyUrls: [
@@ -138,10 +118,6 @@ function sentryReporter() {
                 refererUrl.pathname = '/read/'
                 event.request.headers.Referer = refererUrl.toString()
               }
-            }
-
-            if (isPropensityNetworkError(event)) {
-              return null
             }
 
             // Extract OError tag info so it appears in Sentry extra for all

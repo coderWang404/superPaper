@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import async from 'async'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import * as HistoryStoreManager from './HistoryStoreManager.js'
 import * as UpdateTranslator from './UpdateTranslator.js'
 

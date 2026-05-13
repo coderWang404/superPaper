@@ -1,4 +1,4 @@
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { expect } from 'chai'
 import UserHelper from './helpers/User.mjs'
 import MetricsHelper from './helpers/metrics.mjs'

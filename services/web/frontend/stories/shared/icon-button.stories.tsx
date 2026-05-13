@@ -32,12 +32,11 @@ const meta: Meta<typeof IconButton> = {
         'ghost',
         'danger',
         'danger-ghost',
-        'premium',
       ],
     },
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3460-168934&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3460-168934&m=dev'
   ),
 }
 

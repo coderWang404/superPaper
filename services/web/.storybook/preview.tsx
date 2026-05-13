@@ -23,9 +23,9 @@ function resetMeta() {
   })
   window.metaAttributesCache.set('ol-ExposedSettings', {
     adminEmail: 'placeholder@example.com',
-    appName: 'Overleaf',
-    cookieDomain: '.overleaf.stories',
-    dropboxAppName: 'Overleaf-Stories',
+    appName: 'SuperPaper',
+    cookieDomain: '.superpaper.stories',
+    dropboxAppName: 'SuperPaper-Stories',
     emailConfirmationDisabled: false,
     enableSubscriptions: true,
     hasAffiliationsFeature: false,
@@ -34,7 +34,7 @@ function resetMeta() {
     hasLinkedProjectOutputFileFeature: true,
     hasSamlFeature: true,
     ieeeBrandId: 15,
-    isOverleaf: true,
+    isSuperPaper: true,
     labsEnabled: true,
     maxEntitiesPerProject: 10,
     maxUploadSize: 5 * 1024 * 1024,
@@ -118,7 +118,7 @@ i18n.use(initReactI18next).init({
     skipOnVariables: true,
     escapeValue: false,
     defaultVariables: {
-      appName: 'Overleaf',
+      appName: 'SuperPaper',
     },
   },
 })

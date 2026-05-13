@@ -1,10 +1,54 @@
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import { db } from '../../../app/src/infrastructure/mongodb.mjs'
-import FeaturesHelper from '../../../app/src/Features/Subscription/FeaturesHelper.mjs'
 import { fileURLToPath } from 'url'
 const DRY_RUN = !process.argv.includes('--dry-run=false')
-const { mergeFeatures, compareFeatures } = FeaturesHelper
+
+function mergeFeatures(currentFeatures = {}, defaultFeatures = {}) {
+  const merged = { ...currentFeatures }
+  for (const [key, defaultValue] of Object.entries(defaultFeatures)) {
+    const currentValue = currentFeatures[key]
+    if (currentValue === undefined) {
+      merged[key] = defaultValue
+      continue
+    }
+
+    if (typeof defaultValue === 'number' && typeof currentValue === 'number') {
+      if (key === 'compileTimeout') {
+        merged[key] = Math.max(currentValue, defaultValue)
+      } else {
+        merged[key] = currentValue
+      }
+      continue
+    }
+
+    if (typeof defaultValue === 'boolean') {
+      merged[key] = currentValue || defaultValue
+      continue
+    }
+
+    merged[key] = currentValue
+  }
+  return merged
+}
+
+function compareFeatures(nextFeatures, previousFeatures) {
+  const diff = {}
+  const keys = new Set([
+    ...Object.keys(nextFeatures || {}),
+    ...Object.keys(previousFeatures || {}),
+  ])
+  for (const key of keys) {
+    if (nextFeatures?.[key] !== previousFeatures?.[key]) {
+      diff[key] = {
+        from: previousFeatures?.[key],
+        to: nextFeatures?.[key],
+      }
+    }
+  }
+  return diff
+}
+
 async function main(DRY_RUN, defaultFeatures) {
   logger.info({ defaultFeatures }, 'default features')
 

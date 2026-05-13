@@ -3,7 +3,7 @@
  */
 
 /**
- * @import { CurrencyCode } from '../../../types/subscription/currency'
+ * @typedef {string} CurrencyCode
  */
 
 /**

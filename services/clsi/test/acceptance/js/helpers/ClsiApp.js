@@ -1,6 +1,6 @@
 import app from '../../../../app.js'
-import Settings from '@overleaf/settings'
-import testLogRecorder from '@overleaf/logger/test-log-recorder.js'
+import Settings from '@superpaper/settings'
+import testLogRecorder from '@superpaper/logger/test-log-recorder.js'
 
 function startApp() {
   return new Promise((resolve, reject) => {

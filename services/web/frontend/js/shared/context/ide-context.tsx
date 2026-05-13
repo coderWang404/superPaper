@@ -25,7 +25,7 @@ export const IdeProvider: FC<
   }>
 > = ({ ide, scopeEventEmitter, unstableStore, children }) => {
   /**
-   * Expose unstableStore via `window.overleaf.unstable.store`, so it can be accessed by external extensions.
+   * Expose unstableStore via `window.superPaper.unstable.store`, so it can be accessed by external extensions.
    *
    * These properties are expected to be available:
    *   - `editor.view`
@@ -38,10 +38,10 @@ export const IdeProvider: FC<
    *   - `settings.lineHeight`
    */
   useEffect(() => {
-    window.overleaf = {
-      ...window.overleaf,
+    window.superPaper = {
+      ...window.superPaper,
       unstable: {
-        ...window.overleaf?.unstable,
+        ...window.superPaper?.unstable,
         store: unstableStore,
       },
     }

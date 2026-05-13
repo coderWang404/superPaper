@@ -3,8 +3,6 @@ import {
   useCodeMirrorViewContext,
 } from '@/features/source-editor/components/codemirror-context'
 import { usePermissionsContext } from '@/features/ide-react/context/permissions-context'
-import { useEditorPropertiesContext } from '@/features/ide-react/context/editor-properties-context'
-import { useProjectContext } from '@/shared/context/project-context'
 import useSynctex from '@/features/pdf-preview/hooks/use-synctex'
 import { useDetachCompileContext } from '@/shared/context/detach-compile-context'
 import { useLayoutContext } from '@/shared/context/layout-context'
@@ -25,8 +23,6 @@ import {
 } from '../commands/clipboard'
 import { showClipboardPasteErrorToast } from '../components/clipboard-toasts'
 import { isVisual } from '../extensions/visual/visual'
-import { useEditorContext } from '@/shared/context/editor-context'
-import { useTrackingChangesMode } from '@/shared/hooks/use-tracking-changes-mode'
 import {
   sendContextMenuEvent,
   ContextMenuItemSegmentation,
@@ -37,7 +33,6 @@ export const useContextMenuItems = () => {
   const view = useCodeMirrorViewContext()
   const state = useCodeMirrorStateContext()
   const permissions = usePermissionsContext()
-  const { wantTrackChanges } = useEditorPropertiesContext()
   const { syncToPdf, syncToPdfInFlight, canSyncToPdf } = useSynctex()
   const { pdfUrl, pdfViewer } = useDetachCompileContext()
   const {
@@ -49,11 +44,7 @@ export const useContextMenuItems = () => {
   const visualPreviewEnabled = useFeatureFlag('visual-preview')
   const { t } = useTranslation()
   const { shortcuts } = useCommandRegistry()
-  const { features } = useProjectContext()
   const requestedPdfSyncRef = useRef(false)
-  const { setUpgradeTrackChangesModal } = useEditorContext()
-  const trackingChangesMode = useTrackingChangesMode()
-  const isReview = trackingChangesMode === 'review'
 
   const closeMenu = useCallback(() => {
     view.dispatch({ effects: closeContextMenuEffect.of(null) })
@@ -148,22 +139,6 @@ export const useContextMenuItems = () => {
     commands.deleteSelection(view)
   )
 
-  const handleToggleTrackChanges = wrapForContextMenu(
-    wantTrackChanges ? 'back-to-editing' : 'suggest-edits',
-    () => {
-      // Matching the logic in review toggle to ensure consistency for server pro
-      if (!features.trackChanges && !isReview) {
-        setUpgradeTrackChangesModal({
-          show: true,
-          location: 'editor-context-menu',
-        })
-        return true
-      }
-      window.dispatchEvent(new Event('toggle-track-changes'))
-      return true
-    }
-  )
-
   const handleComment = wrapForContextMenu('comment', () => {
     commands.addComment('editor-context-menu')
     return true
@@ -237,14 +212,6 @@ export const useContextMenuItems = () => {
         separatorAbove: true,
         show: jumpToLocationInPdfEnabled,
         shortcut: undefined,
-      },
-      {
-        label: wantTrackChanges ? t('back_to_editing') : t('suggest_edits'),
-        handler: handleToggleTrackChanges,
-        disabled: false,
-        separatorAbove: true,
-        show: canEdit && features.trackChangesVisible,
-        shortcut: getShortcut('toggle-track-changes'),
       },
       {
         label: t('comment'),

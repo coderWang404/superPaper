@@ -86,7 +86,7 @@ describe('MigrationPersistorTests', function () {
         stream: Stream,
         'stream/promises': StreamPromises,
         './Errors': Errors,
-        '@overleaf/logger': Logger,
+        '@superpaper/logger': Logger,
       },
       globals: { console },
     })

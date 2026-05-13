@@ -1,5 +1,5 @@
 const Path = require('node:path')
-const { merge } = require('@overleaf/settings/merge')
+const { merge } = require('@superpaper/settings/merge')
 
 let defaultFeatures, siteUrl
 
@@ -123,7 +123,7 @@ module.exports = {
   },
 
   allowAnonymousReadAndWriteSharing:
-    process.env.OVERLEAF_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING === 'true',
+    process.env.SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING === 'true',
 
   // Databases
   // ---------
@@ -274,7 +274,7 @@ module.exports = {
       url: `http://${process.env.WEBPACK_HOST || '127.0.0.1'}:3808`,
     },
     wiki: {
-      url: process.env.WIKI_URL || 'https://learnwiki.overleaf.com',
+      url: process.env.WIKI_URL || 'https://learnwiki.superpaper.com',
       maxCacheAge: parseInt(process.env.WIKI_MAX_CACHE_AGE || 5 * minutes, 10),
     },
 
@@ -298,14 +298,13 @@ module.exports = {
         'password',
 
       buckets: {
-        globalBlobs: process.env.OVERLEAF_EDITOR_BLOBS_BUCKET,
-        projectBlobs: process.env.OVERLEAF_EDITOR_PROJECT_BLOBS_BUCKET,
+        globalBlobs: process.env.SUPERPAPER_EDITOR_BLOBS_BUCKET,
+        projectBlobs: process.env.SUPERPAPER_EDITOR_PROJECT_BLOBS_BUCKET,
       },
     },
 
-    // For legacy reasons, we need to populate the below objects.
+    // For legacy reasons, we need to populate the below object.
     v1: {},
-    recurly: {},
   },
 
   // Defines which features are allowed in the
@@ -322,9 +321,7 @@ module.exports = {
     enabled: false,
   },
 
-  splitTests: [],
-
-  // Where your instance of Overleaf Community Edition/Server Pro can be found publicly. Used in emails
+  // Where your instance of superPaper can be found publicly. Used in emails
   // that are sent out, generated links, etc.
   siteUrl: (siteUrl = process.env.PUBLIC_URL || 'http://127.0.0.1:3000'),
 
@@ -345,7 +342,6 @@ module.exports = {
   // Optional separate location for websocket connections, if unset defaults to siteUrl.
   wsUrl: process.env.WEBSOCKET_URL,
   wsUrlV2: process.env.WEBSOCKET_URL_V2,
-  wsUrlBeta: process.env.WEBSOCKET_URL_BETA,
 
   wsUrlV2Percentage: parseInt(
     process.env.WEBSOCKET_URL_V2_PERCENTAGE || '0',
@@ -357,7 +353,7 @@ module.exports = {
   // use full domain for cookies to only be accessible from that domain,
   // replace subdomain with dot to have them accessible on all subdomains
   cookieDomain: process.env.COOKIE_DOMAIN,
-  cookieName: process.env.COOKIE_NAME || 'overleaf.sid',
+  cookieName: process.env.COOKIE_NAME || 'superpaper.sid',
   cookieRollingSession: true,
 
   // this is only used if cookies are used for clsi backend
@@ -419,7 +415,6 @@ module.exports = {
     compileTimeout: 180,
     compileGroup: 'standard',
     references: true,
-    trackChanges: true,
   }),
 
   // featuresEpoch: 'YYYY-MM-DD',
@@ -444,24 +439,8 @@ module.exports = {
     },
   },
 
-  groupPlanModalOptions: {
-    plan_codes: [],
-    currencies: [],
-    sizes: [],
-    usages: [],
-  },
-  plans: [
-    {
-      planCode: 'personal',
-      name: 'Personal',
-      price_in_cents: 0,
-      features: defaultFeatures,
-    },
-  ],
-
-  disableChat: process.env.OVERLEAF_DISABLE_CHAT === 'true',
-  disableLinkSharing: process.env.OVERLEAF_DISABLE_LINK_SHARING === 'true',
-  enableSubscriptions: false,
+  disableChat: process.env.SUPERPAPER_DISABLE_CHAT === 'true',
+  disableLinkSharing: process.env.SUPERPAPER_DISABLE_LINK_SHARING === 'true',
   restrictedCountries: [],
   enableOnboardingEmails: process.env.ENABLE_ONBOARDING_EMAILS === 'true',
 
@@ -645,7 +624,7 @@ module.exports = {
   // Email support
   // -------------
   //
-  //	Overleaf uses nodemailer (http://www.nodemailer.com/) to send transactional emails.
+  //	superPaper uses nodemailer (http://www.nodemailer.com/) to send transactional emails.
   //	To see the range of transport and options they support, see http://www.nodemailer.com/docs/transports
   // email:
   //	fromAddress: ""
@@ -675,7 +654,7 @@ module.exports = {
   // them.
   cacheStaticAssets: false,
 
-  // If you are running Overleaf over https, set this to true to send the
+  // If you are running superPaper over https, set this to true to send the
   // cookie with a secure flag (recommended).
   secureCookie: false,
 
@@ -684,7 +663,7 @@ module.exports = {
   // https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
   sameSiteCookie: 'lax',
 
-  // If you are running Overleaf behind a proxy (like Apache, Nginx, etc)
+  // If you are running superPaper behind a proxy (like Apache, Nginx, etc)
   // then set this to true to allow it to correctly detect the forwarded IP
   // address and http/https protocol information.
   behindProxy: true,
@@ -711,7 +690,7 @@ module.exports = {
 
   // Should we allow access to any page without logging in? This includes
   // public projects, /learn, /templates, about pages, etc.
-  allowPublicAccess: process.env.OVERLEAF_ALLOW_PUBLIC_ACCESS === 'true',
+  allowPublicAccess: process.env.SUPERPAPER_ALLOW_PUBLIC_ACCESS === 'true',
 
   // editor should be open by default
   editorIsOpen: process.env.EDITOR_OPEN !== 'false',
@@ -737,10 +716,10 @@ module.exports = {
   primary_email_check_expiration: 1000 * 60 * 60 * 24 * 90, // 90 days
 
   userHardDeletionDelay:
-    parseInt(process.env.OVERLEAF_USER_HARD_DELETION_DELAY, 10) ||
+    parseInt(process.env.SUPERPAPER_USER_HARD_DELETION_DELAY, 10) ||
     1000 * 60 * 60 * 24 * 90, // 90 days
   projectHardDeletionDelay:
-    parseInt(process.env.OVERLEAF_PROJECT_HARD_DELETION_DELAY, 10) ||
+    parseInt(process.env.SUPERPAPER_PROJECT_HARD_DELETION_DELAY, 10) ||
     1000 * 60 * 60 * 24 * 90, // 90 days
 
   // Maximum Delay before sending comment mention notifications
@@ -794,7 +773,7 @@ module.exports = {
     userId: process.env.SMOKE_TEST_USER_ID,
   },
 
-  appName: process.env.APP_NAME || 'Overleaf (Community Edition)',
+  appName: process.env.APP_NAME || 'superPaper',
 
   adminEmail: process.env.ADMIN_EMAIL || 'placeholder@example.com',
   adminDomains: process.env.ADMIN_DOMAINS
@@ -802,18 +781,16 @@ module.exports = {
     : undefined,
 
   nav: {
-    title: process.env.APP_NAME || 'Overleaf Community Edition',
+    title: process.env.APP_NAME || 'superPaper',
 
     hide_powered_by: process.env.NAV_HIDE_POWERED_BY === 'true',
     left_footer: [],
 
     right_footer: [
       {
-        text: '<a href="https://github.com/overleaf/overleaf">Fork on GitHub!</a>',
+        text: '<a href="https://github.com/coderWang404/superPaper">View on GitHub</a>',
       },
     ],
-
-    showSubscriptionLink: false,
 
     header_extras: [],
   },
@@ -863,10 +840,6 @@ module.exports = {
       ip: { points: 20, subnetPoints: 200, duration: 60 },
       email: { points: 10, duration: 120 },
     },
-  },
-
-  analytics: {
-    enabled: false,
   },
 
   compileBodySizeLimitMb: process.env.COMPILE_BODY_SIZE_LIMIT_MB || 7,
@@ -995,7 +968,7 @@ module.exports = {
     },
   },
 
-  overleafModuleImports: {
+  superPaperModuleImports: {
     // modules to import (an empty array for each set of modules)
     //
     // Restart webpack after making changes.
@@ -1033,7 +1006,6 @@ module.exports = {
     editorLeftMenuManageTemplate: [],
     menubarExtraComponents: [],
     oauth2Server: [],
-    managedGroupSubscriptionEnrollmentNotification: [],
     managedGroupEnrollmentInvite: [],
     ssoCertificateInfo: [],
     v1ImportDataScreen: [],
@@ -1105,10 +1077,6 @@ module.exports = {
 
   // ID of the IEEE brand in the rails app
   ieeeBrandId: intFromEnv('IEEE_BRAND_ID', 15),
-
-  managedUsers: {
-    enabled: false,
-  },
 
   enablePandocConversions: process.env.ENABLE_PANDOC_CONVERSIONS === 'true',
 }

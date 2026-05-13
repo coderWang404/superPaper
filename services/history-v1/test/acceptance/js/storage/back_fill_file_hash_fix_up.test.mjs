@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import Crypto from 'node:crypto'
 import { promisify } from 'node:util'
 import { Binary, ObjectId } from 'mongodb'
-import { Blob } from 'overleaf-editor-core'
+import { Blob } from 'superpaper-editor-core'
 import { db } from '../../../../storage/lib/mongodb.js'
 import cleanup from './support/cleanup.js'
 import testProjects from '../api/support/test_projects.js'
@@ -327,7 +327,7 @@ describe('back_fill_file_hash_fix_up script', function () {
             ],
           },
         ],
-        overleaf: { history: { id: historyId0 } },
+        superpaper: { history: { id: historyId0 } },
         version: 0,
       },
     ])
@@ -354,7 +354,7 @@ describe('back_fill_file_hash_fix_up script', function () {
               ],
             },
           ],
-          overleaf: { history: { id: historyIdDeleted0 } },
+          superpaper: { history: { id: historyIdDeleted0 } },
           version: 100,
         },
         deleterData: {
@@ -553,7 +553,7 @@ describe('back_fill_file_hash_fix_up script', function () {
               ],
             },
           ],
-          overleaf: { history: { id: historyId0 } },
+          superpaper: { history: { id: historyId0 } },
           // Incremented when removing file/updating hash
           version: 5,
         },
@@ -588,7 +588,7 @@ describe('back_fill_file_hash_fix_up script', function () {
               ],
             },
           ],
-          overleaf: { history: { id: historyIdDeleted0 } },
+          superpaper: { history: { id: historyIdDeleted0 } },
           // Incremented when removing file/updating hash
           version: 102,
         },

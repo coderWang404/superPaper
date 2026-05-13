@@ -3,10 +3,10 @@ import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectLocator from '../Project/ProjectLocator.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 import ProjectEntityUpdateHandler from '../Project/ProjectEntityUpdateHandler.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import _ from 'lodash'
 import { plainTextResponse } from '../../infrastructure/Response.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import Modules from '../../infrastructure/Modules.mjs'
 
 async function getDocument(req, res) {
@@ -15,7 +15,7 @@ async function getDocument(req, res) {
   const peek = req.query.peek === 'true'
   const project = await ProjectGetter.promises.getProject(projectId, {
     rootFolder: true,
-    overleaf: true,
+    superpaper: true,
   })
   if (!project) {
     return res.sendStatus(404)
@@ -47,15 +47,15 @@ async function getDocument(req, res) {
   if (plain) {
     plainTextResponse(res, lines.join('\n'))
   } else {
-    const projectHistoryId = _.get(project, 'overleaf.history.id')
+    const projectHistoryId = _.get(project, 'superpaper.history.id')
     const historyRangesSupport = _.get(
       project,
-      'overleaf.history.rangesSupportEnabled',
+      'superpaper.history.rangesSupportEnabled',
       false
     )
     const otMigrationStage = _.get(
       project,
-      'overleaf.history.otMigrationStage',
+      'superpaper.history.otMigrationStage',
       0
     )
 

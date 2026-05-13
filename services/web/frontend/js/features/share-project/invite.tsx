@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import OLRow from '@/shared/components/ol/ol-row'
 import OLCol from '@/shared/components/ol/ol-col'
 import OLButton from '@/shared/components/ol/ol-button'
-import overleafLogo from '@/shared/svgs/overleaf-logo.svg'
+import superPaperLogo from '@/shared/images/superpaper-icon.png'
 import getMeta from '@/utils/meta'
 
 type InviteProps = {
@@ -21,7 +21,7 @@ function Invite({ projectName, email, submitHandler, isLoading }: InviteProps) {
       <OLRow>
         <OLCol lg={{ span: 6, offset: 3 }}>
           <div className="project-join-container">
-            <img src={overleafLogo} alt={appName} />
+            <img src={superPaperLogo} alt={appName} />
             <h1 className="h4 mb-2">
               {t('youre_joining_x_as_y', { projectName, email })}
             </h1>

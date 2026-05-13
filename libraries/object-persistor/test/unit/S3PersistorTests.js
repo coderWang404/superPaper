@@ -134,7 +134,7 @@ describe('S3PersistorTests', function () {
         '@aws-sdk/client-s3': S3,
         '@aws-sdk/lib-storage': awsLibStorage,
         '@aws-sdk/s3-request-presigner': awsRequestPresigner,
-        '@overleaf/logger': Logger,
+        '@superpaper/logger': Logger,
         '@aws-sdk/node-http-handler': nodeHttpHandler,
         './Errors': Errors,
         fs: Fs,

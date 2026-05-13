@@ -1,13 +1,13 @@
 // @ts-check
 
-const { callbackifyAll } = require('@overleaf/promise-utils')
+const { callbackifyAll } = require('@superpaper/promise-utils')
 const LockManager = require('./LockManager')
 const RedisManager = require('./RedisManager')
 const ProjectHistoryRedisManager = require('./ProjectHistoryRedisManager')
 const RealTimeRedisManager = require('./RealTimeRedisManager')
 const ShareJsUpdateManager = require('./ShareJsUpdateManager')
 const HistoryManager = require('./HistoryManager')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const Metrics = require('./Metrics')
 const Errors = require('./Errors')
 const DocumentManager = require('./DocumentManager')

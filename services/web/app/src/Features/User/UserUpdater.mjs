@@ -1,20 +1,15 @@
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import { db } from '../../infrastructure/mongodb.mjs'
 import Mongo from '../Helpers/Mongo.mjs'
 import { callbackify } from 'node:util'
 import UserGetter from './UserGetter.mjs'
-import InstitutionsAPI from '../Institutions/InstitutionsAPI.mjs'
-import Features from '../../infrastructure/Features.mjs'
-import FeaturesUpdater from '../Subscription/FeaturesUpdater.mjs'
 import EmailHandler from '../Email/EmailHandler.mjs'
 import EmailHelper from '../Helpers/EmailHelper.mjs'
 import Errors from '../Errors/Errors.js'
 import UserAuditLogHandler from './UserAuditLogHandler.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
-import EmailChangeHelper from '../Analytics/EmailChangeHelper.mjs'
-import SubscriptionLocator from '../Subscription/SubscriptionLocator.mjs'
-import NotificationsBuilder from '../Notifications/NotificationsBuilder.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
+import EmailChangeHelper from '../Telemetry/EmailChangeHelper.mjs'
 import _ from 'lodash'
 import Modules from '../../infrastructure/Modules.mjs'
 import UserSessionsManager from './UserSessionsManager.mjs'
@@ -33,9 +28,8 @@ async function _sendSecurityAlertPrimaryEmailChanged(
   // Send email to the following:
   // - the old primary
   // - the new primary
-  // - for all other current (confirmed or recently-enough reconfirmed) email addresses, group by institution if we
-  //   have it, or domain if we don’t, and for each group send to the most recently reconfirmed (or confirmed if never
-  //   reconfirmed) address in that group.
+  // - for all other current (confirmed or recently-enough reconfirmed) email addresses, group by domain and send to
+  //   the most recently reconfirmed (or confirmed if never reconfirmed) address in that group.
   // See #6101.
   const emailOptions = {
     actionDescribed: `the primary email address on your account was changed to ${email}`,
@@ -67,7 +61,7 @@ async function _sendSecurityAlertPrimaryEmailChanged(
   const oldAndNewPrimaryEmails = [oldEmail, email]
   await sendToRecipients(oldAndNewPrimaryEmails)
 
-  // Next, get extra recipients with affiliation data
+  // Next, get extra confirmed recipients, grouped by email domain.
   const emailsData = await UserGetter.promises.getUserFullEmails(userId)
   const extraRecipients = _securityAlertPrimaryEmailChangedExtraRecipients(
     emailsData,
@@ -82,7 +76,7 @@ async function _sendSecurityAlertPrimaryEmailChanged(
  * Add a new email address for the user. Email cannot be already used by this
  * or any other user
  */
-async function addEmailAddress(userId, newEmail, affiliationOptions, auditLog) {
+async function addEmailAddress(userId, newEmail, auditLog) {
   AsyncLocalStorage.removeItem('userFullEmails')
   newEmail = EmailHelper.parseEmail(newEmail)
   if (!newEmail) {
@@ -106,16 +100,6 @@ async function addEmailAddress(userId, newEmail, affiliationOptions, auditLog) {
       newSecondaryEmail: newEmail,
     }
   )
-
-  try {
-    await InstitutionsAPI.promises.addAffiliation(
-      userId,
-      newEmail,
-      affiliationOptions
-    )
-  } catch (error) {
-    throw OError.tag(error, 'problem adding affiliation while adding email')
-  }
 
   const createdAt = new Date()
   let res
@@ -148,44 +132,6 @@ async function addEmailAddress(userId, newEmail, affiliationOptions, auditLog) {
       { error, userId, newEmail },
       'Error registering email creation with analytics'
     )
-  }
-}
-
-async function clearSAMLData(userId, auditLog, sendEmail) {
-  const user = await UserGetter.promises.getUser(userId, {
-    email: 1,
-    emails: 1,
-  })
-
-  await UserAuditLogHandler.promises.addEntry(
-    userId,
-    'clear-institution-sso-data',
-    auditLog.initiatorId,
-    auditLog.ipAddress,
-    {}
-  )
-
-  const update = {
-    $unset: {
-      samlIdentifiers: 1,
-      'emails.$[].samlProviderId': 1,
-      'enrollment.sso': 1,
-    },
-  }
-
-  await updateUser(userId, update)
-
-  for (const emailData of user.emails) {
-    await InstitutionsAPI.promises.removeEntitlement(userId, emailData.email)
-  }
-
-  await FeaturesUpdater.promises.refreshFeatures(
-    userId,
-    'clear-institution-sso-data'
-  )
-
-  if (sendEmail) {
-    await EmailHandler.promises.sendEmail('SAMLDataCleared', { to: user.email })
   }
 }
 
@@ -366,28 +312,15 @@ async function migrateDefaultEmailAddress(
   )
 }
 
-async function confirmEmail(userId, email, affiliationOptions) {
+async function confirmEmail(userId, email) {
   AsyncLocalStorage.removeItem('userFullEmails')
-  // used for initial email confirmation (non-SSO and SSO)
-  // also used for reconfirmation of non-SSO emails
+  // Used for initial email confirmation and reconfirmation.
   const confirmedAt = new Date()
   email = EmailHelper.parseEmail(email)
   if (email == null) {
     throw new Error('invalid email')
   }
   logger.debug({ userId, email }, 'confirming user email')
-
-  try {
-    affiliationOptions = affiliationOptions || {}
-    affiliationOptions.confirmedAt = confirmedAt
-    await InstitutionsAPI.promises.addAffiliation(
-      userId,
-      email,
-      affiliationOptions
-    )
-  } catch (error) {
-    throw OError.tag(error, 'problem adding affiliation while confirming email')
-  }
 
   const query = {
     _id: userId,
@@ -404,19 +337,11 @@ async function confirmEmail(userId, email, affiliationOptions) {
     },
   }
 
-  if (Features.hasFeature('affiliations')) {
-    update.$unset = {
-      'emails.$.affiliationUnchecked': 1,
-    }
-  }
-
   const res = await updateUser(query, update)
 
   if (res.matchedCount !== 1) {
     throw new Errors.NotFoundError('user id and email do no match')
   }
-  await FeaturesUpdater.promises.refreshFeatures(userId, 'confirm-email')
-
   try {
     await EmailChangeHelper.registerEmailUpdate(userId, email, {
       emailConfirmedAt: confirmedAt,
@@ -430,39 +355,6 @@ async function confirmEmail(userId, email, affiliationOptions) {
     )
   }
 
-  try {
-    await maybeCreateRedundantSubscriptionNotification(userId, email)
-  } catch (error) {
-    logger.err(
-      { err: error },
-      'error checking redundant subscription on email confirmation'
-    )
-  }
-}
-
-async function maybeCreateRedundantSubscriptionNotification(userId, email) {
-  const subscription =
-    await SubscriptionLocator.promises.getUserIndividualSubscription(userId)
-  if (!subscription || subscription.groupPlan) {
-    return
-  }
-
-  const affiliations =
-    await InstitutionsAPI.promises.getUserAffiliations(userId)
-  const confirmedAffiliation = affiliations.find(a => a.email === email)
-  if (!confirmedAffiliation || confirmedAffiliation.licence === 'free') {
-    return
-  }
-
-  await NotificationsBuilder.promises
-    .redundantPersonalSubscription(
-      {
-        institutionId: confirmedAffiliation.institution.id,
-        institutionName: confirmedAffiliation.institution.name,
-      },
-      { _id: userId }
-    )
-    .create()
 }
 
 async function removeEmailAddress(
@@ -503,13 +395,6 @@ async function removeEmailAddress(
     }
   )
 
-  try {
-    await InstitutionsAPI.promises.removeAffiliation(userId, email)
-  } catch (error) {
-    OError.tag(error, 'problem removing affiliation')
-    throw error
-  }
-
   const query = { _id: userId, email: { $ne: email } }
   const update = { $pull: { emails: { email } } }
 
@@ -537,37 +422,6 @@ async function removeEmailAddress(
     )
   }
 
-  await FeaturesUpdater.promises.refreshFeatures(userId, 'remove-email')
-}
-
-async function addAffiliationForNewUser(
-  userId,
-  email,
-  affiliationOptions = {}
-) {
-  AsyncLocalStorage.removeItem('userFullEmails')
-  await InstitutionsAPI.promises.addAffiliation(
-    userId,
-    email,
-    affiliationOptions
-  )
-  try {
-    await updateUser(
-      { _id: userId, 'emails.email': email },
-      { $unset: { 'emails.$.affiliationUnchecked': 1 } }
-    )
-  } catch (error) {
-    logger.error(
-      OError.tag(
-        error,
-        'could not remove affiliationUnchecked flag for user on create',
-        {
-          userId,
-          email,
-        }
-      )
-    )
-  }
 }
 
 async function updateUser(query, update) {
@@ -590,7 +444,7 @@ async function changeEmailAddress(userId, newEmail, auditLog) {
   }
 
   const oldEmail = await UserGetter.promises.getUserEmail(userId)
-  await addEmailAddress(userId, newEmail, {}, auditLog)
+  await addEmailAddress(userId, newEmail, auditLog)
   await setDefaultEmailAddress(userId, newEmail, true, auditLog, true)
   await removeEmailAddress(userId, oldEmail, auditLog)
 }
@@ -638,9 +492,8 @@ function _securityAlertPrimaryEmailChangedExtraRecipients(
   oldEmail,
   email
 ) {
-  // Group by institution if we have it, or domain if we don’t, and for each group send to the most recently
-  // reconfirmed (or confirmed if never reconfirmed) address in that group. We also remove the original and new
-  // primary email addresses because they are emailed separately
+  // Group by domain and send to the most recently reconfirmed or confirmed address in each group.
+  // The original and new primary email addresses are emailed separately.
   // See #6101.
   function sortEmailsByConfirmation(emails) {
     return emails.sort((e1, e2) => e2.lastConfirmedAt - e1.lastConfirmedAt)
@@ -652,14 +505,10 @@ function _securityAlertPrimaryEmailChangedExtraRecipients(
   // Remove non-confirmed emails
   const confirmedEmails = emailsData.filter(email => !!email.lastConfirmedAt)
 
-  // Group other emails by institution, separating out those with no institution and grouping them instead by domain.
-  // The keys for each group are not used for anything other than the grouping, so can have a slightly paranoid format
-  // to avoid any potential clash
+  // The keys for each group are only used for grouping, so keep a namespaced format
+  // to avoid accidental clashes.
   const groupedEmails = _.groupBy(confirmedEmails, emailData => {
-    if (!emailData.affiliation || !emailData.affiliation.institution) {
-      return `domain:${EmailHelper.getDomain(emailData.email)}`
-    }
-    return `institution_id:${emailData.affiliation.institution.id}`
+    return `domain:${EmailHelper.getDomain(emailData.email)}`
   })
 
   // For each group of emails, order the emails by (re-)confirmation date and pick the first
@@ -678,10 +527,8 @@ function _securityAlertPrimaryEmailChangedExtraRecipients(
 }
 
 export default {
-  addAffiliationForNewUser: callbackify(addAffiliationForNewUser),
   addEmailAddress: callbackify(addEmailAddress),
   changeEmailAddress: callbackify(changeEmailAddress),
-  clearSAMLData: callbackify(clearSAMLData),
   confirmEmail: callbackify(confirmEmail),
   removeEmailAddress: callbackify(removeEmailAddress),
   removeReconfirmFlag: callbackify(removeReconfirmFlag),
@@ -690,10 +537,8 @@ export default {
   updateUser: callbackify(updateUser),
   suspendUser: callbackify(suspendUser),
   promises: {
-    addAffiliationForNewUser,
     addEmailAddress,
     changeEmailAddress,
-    clearSAMLData,
     clearThirdPartyIdentifiers,
     confirmEmail,
     removeEmailAddress,

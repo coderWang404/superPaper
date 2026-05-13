@@ -1,8 +1,8 @@
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
-import metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import '@superpaper/metrics/initialize.js'
+import metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import express, {
   type Request,
   type Response,
@@ -14,7 +14,7 @@ import { mongoClient } from './app/js/mongodb.js'
 import NotificationsController from './app/js/NotificationsController.ts'
 import HealthCheckController from './app/js/HealthCheckController.ts'
 import { isZodErrorLike } from 'zod-validation-error'
-import { ParamsError } from '@overleaf/validation-tools'
+import { ParamsError } from '@superpaper/validation-tools'
 
 const app = express()
 

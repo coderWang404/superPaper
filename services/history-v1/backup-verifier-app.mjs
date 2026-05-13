@@ -1,21 +1,21 @@
 // @ts-check
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 import http from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { setTimeout } from 'node:timers/promises'
 import express from 'express'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
 import { healthCheck } from './backupVerifier/healthCheck.mjs'
 import {
   BackupCorruptedError,
   verifyBlob,
 } from './storage/lib/backupVerifier.mjs'
 import { mongodb } from './storage/index.js'
-import { expressify } from '@overleaf/promise-utils'
-import { Blob } from 'overleaf-editor-core'
+import { expressify } from '@superpaper/promise-utils'
+import { Blob } from 'superpaper-editor-core'
 import { loadGlobalBlobs } from './storage/lib/blob_store/index.js'
 import { EventEmitter } from 'node:events'
 import {

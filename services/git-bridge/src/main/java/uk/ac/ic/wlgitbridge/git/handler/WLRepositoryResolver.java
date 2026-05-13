@@ -28,9 +28,9 @@ import uk.ac.ic.wlgitbridge.util.Util;
  * JGit {@link Repository}, or fail by throwing an exception.
  *
  * It has a single method, {@link #open(HttpServletRequest, String)}, which
- * calls into the {@link Bridge} to synchronise the project with Overleaf, i.e.
+ * calls into the {@link Bridge} to synchronise the project with superPaper, i.e.
  * bringing it onto disk and applying commits to it until it is up-to-date with
- * Overleaf.
+ * superPaper.
  */
 public class WLRepositoryResolver implements RepositoryResolver<HttpServletRequest> {
 
@@ -53,8 +53,8 @@ public class WLRepositoryResolver implements RepositoryResolver<HttpServletReque
    * The project lock is acquired for this process so it can't be swapped out.
    *
    * However, it can still be swapped out between this and a Git push. The
-   * push would fail due to the project changed on Overleaf between the sync
-   * and the actual push to Overleaf (performed by the
+   * push would fail due to the project changed on superPaper between the sync
+   * and the actual push to superPaper (performed by the
    * {@link WLReceivePackFactory} and {@link WriteLatexPutHook}. In this case,
    * the user will have to try again (which prompts another update, etc. until
    * this no longer happens).

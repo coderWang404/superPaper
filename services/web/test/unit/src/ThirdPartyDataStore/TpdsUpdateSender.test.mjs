@@ -18,7 +18,7 @@ const projectName = 'project_name_here'
 
 const thirdPartyDataStoreApiUrl = 'http://third-party-json-store.herokuapp.com'
 const siteUrl = 'http://127.0.0.1:3000'
-const filestoreUrl = 'filestore.overleaf.com'
+const filestoreUrl = 'filestore.superpaper.com'
 const projectHistoryUrl = 'http://project-history:3054'
 
 describe('TpdsUpdateSender', function () {
@@ -36,7 +36,7 @@ describe('TpdsUpdateSender', function () {
         getInvitedMemberIds: sinon.stub().resolves(ctx.memberIds),
       },
     }
-    ctx.docstoreUrl = 'docstore.overleaf.env'
+    ctx.docstoreUrl = 'docstore.superpaper.env'
     ctx.response = {
       ok: true,
       json: sinon.stub(),
@@ -80,11 +80,11 @@ describe('TpdsUpdateSender', function () {
       default: { ObjectId },
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
 
     vi.doMock(
       '../../../../app/src/Features/Collaborators/CollaboratorsGetter',

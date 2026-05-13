@@ -2,8 +2,8 @@ import path from 'node:path'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import TemplatesManager from './TemplatesManager.mjs'
 import ProjectHelper from '../Project/ProjectHelper.mjs'
-import logger from '@overleaf/logger'
-import { expressify } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import { expressify } from '@superpaper/promise-utils'
 
 const TemplatesController = {
   async getV1Template(req, res) {
@@ -23,7 +23,6 @@ const TemplatesController = {
       compiler: ProjectHelper.compilerFromV1Engine(req.query.latexEngine),
       imageName: req.query.texImage,
       mainFile: req.query.mainFile,
-      brandVariationId: req.query.brandVariationId,
     }
     res.render(
       path.resolve(
@@ -37,7 +36,6 @@ const TemplatesController = {
   async createProjectFromV1Template(req, res) {
     const userId = SessionManager.getLoggedInUserId(req.session)
     const project = await TemplatesManager.promises.createProjectFromV1Template(
-      req.body.brandVariationId,
       req.body.compiler,
       req.body.mainFile,
       req.body.templateId,

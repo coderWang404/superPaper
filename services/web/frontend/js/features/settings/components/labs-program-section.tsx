@@ -6,15 +6,15 @@ function LabsProgramSection() {
   const { labsProgram } = useUserContext()
 
   const labsStatusText = labsProgram
-    ? t('youre_a_member_of_overleaf_labs')
+    ? t('youre_a_member_of_superpaper_labs')
     : t('get_exclusive_access_to_labs')
   const labsRedirectText = labsProgram
     ? t('view_labs_experiments')
-    : t('join_overleaf_labs')
+    : t('join_superpaper_labs')
 
   return (
     <>
-      <h3>{t('overleaf_labs')}</h3>
+      <h3>{t('superpaper_labs')}</h3>
 
       <p className="small">{labsStatusText}</p>
 

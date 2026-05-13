@@ -23,11 +23,11 @@ import {
   TrackedChangeList,
   EditOperationBuilder,
   CommentList,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import {
   StringFileRawData,
   RawEditOperation,
-} from 'overleaf-editor-core/lib/types'
+} from 'superpaper-editor-core/lib/types'
 import { HistoryOTShareDoc } from '../../../../../types/share-doc'
 
 // All times below are in milliseconds

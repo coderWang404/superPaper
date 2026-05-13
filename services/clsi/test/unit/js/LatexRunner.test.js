@@ -29,7 +29,7 @@ describe('LatexRunner', () => {
         .yields(new Error('ENOENT: no such file or directory, unlink ...')),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 

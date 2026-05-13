@@ -27,10 +27,7 @@ function RemoveSharingLinksModal({
     confirmationModalBodyText = t(
       'this_change_will_permanently_remove_your_original_links_you_can_still_share_new_link'
     )
-  } else if (
-    pendingAccess === 'anyoneInXyzWithTheLink' ||
-    pendingAccess === 'anyoneWithTheLink'
-  ) {
+  } else if (pendingAccess === 'anyoneWithTheLink') {
     confirmationModalBodyText = t(
       'this_change_will_permanently_remove_your_original_links_you_need_to_share_the_new_link'
     )

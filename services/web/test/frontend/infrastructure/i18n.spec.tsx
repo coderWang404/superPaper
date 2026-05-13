@@ -17,7 +17,7 @@ describe('i18n', function () {
         return <div>{t('welcome_to_sl')}</div>
       }
       cy.mount(<Test />)
-      cy.findByText('Welcome to Overleaf')
+      cy.findByText('Welcome to superPaper')
     })
 
     it('uses values', function () {
@@ -53,9 +53,9 @@ describe('i18n', function () {
         return (
           <div data-testid="container">
             <Trans
-              i18nKey="in_order_to_match_institutional_metadata_associated"
+              i18nKey="account_has_been_link_to_group_account"
               components={{ b: <b /> }}
-              values={{ email: 'test@example.com' }}
+              values={{ email: 'test@example.com', groupName: 'group' }}
               shouldUnescape
               tOptions={{ interpolation: { escapeValue: true } }}
             />
@@ -66,7 +66,7 @@ describe('i18n', function () {
       cy.findByTestId('container')
         .should(
           'have.text',
-          'In order to match your institutional metadata, your account is associated with the email test@example.com.'
+          'Your superPaper account on test@example.com has been linked to your group account.'
         )
         .find('b')
         .should('have.length', 1)
@@ -80,7 +80,7 @@ describe('i18n', function () {
             <Trans
               i18nKey="are_you_still_at"
               components={[<b />]} // eslint-disable-line react/jsx-key
-              values={{ institutionName: 'Test' }}
+              values={{ accountName: 'Test' }}
               shouldUnescape
               tOptions={{ interpolation: { escapeValue: true } }}
             />
@@ -89,7 +89,7 @@ describe('i18n', function () {
       }
       cy.mount(<Test />)
       cy.findByTestId('container')
-        .should('have.text', 'Are you still at Test?')
+        .should('have.text', 'Are you still with Test?')
         .find('b')
         .should('have.length', 1)
         .should('have.text', 'Test')
@@ -102,7 +102,7 @@ describe('i18n', function () {
             <Trans
               i18nKey="are_you_still_at"
               components={[<b />]} // eslint-disable-line react/jsx-key
-              values={{ institutionName: "T&e's<code>t</code>ing" }}
+              values={{ accountName: "T&e's<code>t</code>ing" }}
               shouldUnescape
               tOptions={{ interpolation: { escapeValue: true } }}
             />
@@ -111,7 +111,7 @@ describe('i18n', function () {
       }
       cy.mount(<Test />)
       cy.findByTestId('container')
-        .should('have.text', "Are you still at T&e's<code>t</code>ing?")
+        .should('have.text', "Are you still with T&e's<code>t</code>ing?")
         .find('b')
         .should('have.length', 1)
         .should('have.text', "T&e's<code>t</code>ing")
@@ -125,7 +125,7 @@ describe('i18n', function () {
               i18nKey="are_you_still_at"
               components={[<b />]} // eslint-disable-line react/jsx-key
               values={{
-                institutionName: "<i>T</i>&<b>e</b>'s<code>t</code>ing",
+                accountName: "<i>T</i>&<b>e</b>'s<code>t</code>ing",
               }}
               shouldUnescape
               tOptions={{ interpolation: { escapeValue: true } }}
@@ -135,10 +135,7 @@ describe('i18n', function () {
       }
       cy.mount(<Test />)
       cy.findByTestId('container')
-        .should(
-          'have.text',
-          "Are you still at <i>T</i>&<b>e</b>'s<code>t</code>ing?"
-        )
+        .should('have.text', "Are you still with <i>T</i>&<b>e</b>'s<code>t</code>ing?")
         .find('b')
         .should('have.length', 1)
         .should('have.text', "<i>T</i>&<b>e</b>'s<code>t</code>ing")

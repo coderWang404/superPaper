@@ -1,11 +1,11 @@
 import { CompletionContext, CompletionSection } from '@codemirror/autocomplete'
-import importOverleafModules from '../../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../../macros/import-superpaper-module.macro'
 
 type SectionGenerator = (
   context: CompletionContext,
   type: string
 ) => CompletionSection | string | undefined
-const sectionTitleGenerators: Array<SectionGenerator> = importOverleafModules(
+const sectionTitleGenerators: Array<SectionGenerator> = importSuperPaperModules(
   'sectionTitleGenerators'
 ).map(
   (item: { import: { getSection: SectionGenerator } }) => item.import.getSection

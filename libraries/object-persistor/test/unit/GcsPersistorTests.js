@@ -132,7 +132,7 @@ describe('GcsPersistorTests', function () {
     GcsPersistor = new (SandboxedModule.require(modulePath, {
       requires: {
         '@google-cloud/storage': { Storage },
-        '@overleaf/logger': Logger,
+        '@superpaper/logger': Logger,
         'tiny-async-pool': asyncPool,
         './Errors': Errors,
         fs: Fs,

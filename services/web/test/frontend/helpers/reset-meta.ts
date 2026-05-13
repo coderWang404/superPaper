@@ -7,10 +7,10 @@ export function resetMeta() {
     'link-sharing',
   ])
   window.metaAttributesCache.set('ol-ExposedSettings', {
-    appName: 'Overleaf',
+    appName: 'superPaper',
     maxEntitiesPerProject: 10,
     maxUploadSize: 5 * 1024 * 1024,
-    siteUrl: 'https://www.dev-overleaf.com',
+    siteUrl: 'https://www.dev-superpaper.com',
     hasLinkUrlFeature: true,
     hasLinkedProjectFileFeature: true,
     hasLinkedProjectOutputFileFeature: true,

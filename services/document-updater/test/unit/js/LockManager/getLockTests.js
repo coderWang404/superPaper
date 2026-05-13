@@ -21,12 +21,12 @@ describe('LockManager - getting the lock', function () {
     let Profiler
     this.LockManager = SandboxedModule.require(modulePath, {
       requires: {
-        '@overleaf/redis-wrapper': {
+        '@superpaper/redis-wrapper': {
           createClient: () => {
             return { auth() {} }
           },
         },
-        '@overleaf/metrics': { inc() {} },
+        '@superpaper/metrics': { inc() {} },
         './Profiler': (Profiler = (function () {
           Profiler = class Profiler {
             static initClass() {

@@ -1,21 +1,14 @@
 import { ComponentProps, FC, useRef, useState } from 'react'
 import FileTreeContext from '@/features/file-tree/components/file-tree-context'
 
-export const FileTreeProvider: FC<
-  React.PropsWithChildren<{
-    refProviders?: Record<string, boolean>
-  }>
-> = ({ children, refProviders = {} }) => {
+export const FileTreeProvider: FC<React.PropsWithChildren> = ({ children }) => {
   const [fileTreeContainer, setFileTreeContainer] =
     useState<HTMLDivElement | null>(null)
 
-  const propsRef =
-    useRef<Omit<ComponentProps<typeof FileTreeContext>, 'refProviders'>>()
+  const propsRef = useRef<ComponentProps<typeof FileTreeContext>>()
 
   if (propsRef.current === undefined) {
     propsRef.current = {
-      setRefProviderEnabled: cy.stub().as('setRefProviderEnabled'),
-      setStartedFreeTrial: cy.stub().as('setStartedFreeTrial'),
       onSelect: cy.stub(),
     }
   }
@@ -23,11 +16,7 @@ export const FileTreeProvider: FC<
   return (
     <div ref={setFileTreeContainer}>
       {fileTreeContainer && (
-        <FileTreeContext
-          refProviders={refProviders}
-          fileTreeContainer={fileTreeContainer}
-          {...propsRef.current}
-        >
+        <FileTreeContext fileTreeContainer={fileTreeContainer} {...propsRef.current}>
           <>{children}</>
         </FileTreeContext>
       )}

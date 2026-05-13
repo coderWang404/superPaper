@@ -1,10 +1,10 @@
 import mongodb from 'mongodb-legacy'
-import OError from '@overleaf/o-error'
-import Settings from '@overleaf/settings'
-import MongoUtils from '@overleaf/mongo-utils'
+import OError from '@superpaper/o-error'
+import Settings from '@superpaper/settings'
+import MongoUtils from '@superpaper/mongo-utils'
 import Mongoose from './Mongoose.mjs'
 import { addConnectionDrainer } from './GracefulShutdown.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 // Ensure Mongoose is using the same mongodb instance as the mongodb module,
 // otherwise we will get multiple versions of the ObjectId class. Mongoose
@@ -38,7 +38,6 @@ const internalDb = mongoClient.db()
 export const db = {
   contacts: internalDb.collection('contacts'),
   deletedProjects: internalDb.collection('deletedProjects'),
-  deletedSubscriptions: internalDb.collection('deletedSubscriptions'),
   deletedUsers: internalDb.collection('deletedUsers'),
   domainVerifications: internalDb.collection('domainVerifications'),
   dropboxEntities: internalDb.collection('dropboxEntities'),
@@ -50,9 +49,6 @@ export const db = {
   githubSyncProjectStates: internalDb.collection('githubSyncProjectStates'),
   githubSyncUserCredentials: internalDb.collection('githubSyncUserCredentials'),
   globalMetrics: internalDb.collection('globalMetrics'),
-  grouppolicies: internalDb.collection('grouppolicies'),
-  groupAuditLogEntries: internalDb.collection('groupAuditLogEntries'),
-  institutions: internalDb.collection('institutions'),
   libraryReferences: internalDb.collection('libraryReferences'),
   messages: internalDb.collection('messages'),
   migrations: internalDb.collection('migrations'),
@@ -71,22 +67,13 @@ export const db = {
   projectHistorySyncState: internalDb.collection('projectHistorySyncState'),
   projectInvites: internalDb.collection('projectInvites'),
   projects: internalDb.collection('projects'),
-  publishers: internalDb.collection('publishers'),
   rooms: internalDb.collection('rooms'),
-  samlCache: internalDb.collection('samlCache'),
-  samlLogs: internalDb.collection('samlLogs'),
   spellingPreferences: internalDb.collection('spellingPreferences'),
-  splittests: internalDb.collection('splittests'),
-  ssoConfigs: internalDb.collection('ssoConfigs'),
-  subscriptions: internalDb.collection('subscriptions'),
-  surveys: internalDb.collection('surveys'),
   systemmessages: internalDb.collection('systemmessages'),
   tags: internalDb.collection('tags'),
-  teamInvites: internalDb.collection('teamInvites'),
   tokens: internalDb.collection('tokens'),
   userAuditLogEntries: internalDb.collection('userAuditLogEntries'),
   users: internalDb.collection('users'),
-  onboardingDataCollection: internalDb.collection('onboardingDataCollection'),
   scriptLogs: internalDb.collection('scriptLogs'),
 }
 

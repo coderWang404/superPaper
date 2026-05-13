@@ -1,6 +1,6 @@
 //  @ts-check
 
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 /**
  * @import { HttpPermissionsPolicy } from './types'

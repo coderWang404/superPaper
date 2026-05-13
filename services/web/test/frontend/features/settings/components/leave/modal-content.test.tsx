@@ -7,7 +7,7 @@ import getMeta from '@/utils/meta'
 
 describe('<LeaveModalContent />', function () {
   beforeEach(function () {
-    Object.assign(getMeta('ol-ExposedSettings'), { isOverleaf: true })
+    Object.assign(getMeta('ol-ExposedSettings'), { isSuperPaper: true })
     window.metaAttributesCache.set('ol-hasPassword', true)
   })
 
@@ -32,7 +32,6 @@ describe('<LeaveModalContent />', function () {
   })
 
   it('shows no password message', function () {
-    window.metaAttributesCache.set('ol-isSaas', true)
     window.metaAttributesCache.set('ol-hasPassword', false)
     render(
       <LeaveModalContent

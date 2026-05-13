@@ -2,8 +2,8 @@ import path from 'node:path'
 import DocstoreManager from '../Docstore/DocstoreManager.mjs'
 import Errors from '../Errors/Errors.js'
 import ProjectGetter from './ProjectGetter.mjs'
-import { callbackifyAll } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
+import { callbackifyAll } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
 import { iterablePaths } from './IterablePath.mjs'
 
 /** @import {ProjectDoc, ProjectFile} from './types' */

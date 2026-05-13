@@ -4,8 +4,7 @@ import UserHelper from './helpers/User.mjs'
 import redis from './helpers/redis.mjs'
 import Metrics from './helpers/metrics.mjs'
 import UserSessionsRedis from '../../../app/src/Features/User/UserSessionsRedis.mjs'
-import UserAnalyticsIdCache from '../../../app/src/Features/Analytics/UserAnalyticsIdCache.mjs'
-import Features from '../../../app/src/infrastructure/Features.mjs'
+import UserAnalyticsIdCache from '../../../app/src/Features/Telemetry/UserActivityCache.mjs'
 
 const rclient = UserSessionsRedis.client()
 
@@ -372,9 +371,6 @@ describe('Sessions', function () {
     }
     let usersAnalyticsId
     beforeEach(function () {
-      if (!Features.hasFeature('saas')) {
-        this.skip()
-      }
       usersAnalyticsId = this.user1.analyticsId
       expect(usersAnalyticsId).to.match(/^[0-9a-f-]{36}$/)
     })

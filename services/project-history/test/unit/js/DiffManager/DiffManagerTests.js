@@ -249,7 +249,7 @@ describe('DiffManager', function () {
 
   describe('_getChunks', function () {
     beforeEach(function () {
-      this.historyId = 'mock-overleaf-id'
+      this.historyId = 'mock-superpaper-id'
       this.WebApiManager.getHistoryId.yields(null, this.historyId)
     })
 
@@ -277,7 +277,7 @@ describe('DiffManager', function () {
         )
       })
 
-      it("should the project's overleaf id", function () {
+      it("should the project's superpaper id", function () {
         this.WebApiManager.getHistoryId
           .calledWith(this.projectId)
           .should.equal(true)

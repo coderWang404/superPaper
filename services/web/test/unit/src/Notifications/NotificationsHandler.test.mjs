@@ -9,7 +9,7 @@ const modulePath = path.join(
 describe('NotificationsHandler', function () {
   const userId = '123nd3ijdks'
   const notificationId = '123njdskj9jlk'
-  const notificationUrl = 'http://notification.overleaf.testing'
+  const notificationUrl = 'http://notification.superpaper.testing'
 
   beforeEach(async function (ctx) {
     ctx.FetchUtils = {
@@ -17,13 +17,13 @@ describe('NotificationsHandler', function () {
       fetchNothing: sinon.stub().resolves(),
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
         apis: { notifications: { url: notificationUrl } },
       },
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
 
     ctx.handler = (await import(modulePath)).default
   })

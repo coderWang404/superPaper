@@ -85,7 +85,7 @@ describe('HttpController', function () {
         './Errors': Errors,
         './Utils': this.Utils,
         './HistoryConversions': this.HistoryConversions,
-        '@overleaf/settings': { max_doc_length: 2 * 1024 * 1024 },
+        '@superpaper/settings': { max_doc_length: 2 * 1024 * 1024 },
       },
     })
   })

@@ -1,7 +1,7 @@
 // @ts-check
 
 const config = require('config')
-const redis = require('@overleaf/redis-wrapper')
+const redis = require('@superpaper/redis-wrapper')
 
 const historyRedisOptions = config.get('redis.history')
 const rclientHistory = redis.createClient(historyRedisOptions)

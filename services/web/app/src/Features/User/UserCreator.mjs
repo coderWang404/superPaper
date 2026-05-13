@@ -1,39 +1,7 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import util from 'node:util'
-import { AffiliationError } from '../Errors/Errors.js'
-import Features from '../../infrastructure/Features.mjs'
 import { User } from '../../models/User.mjs'
-import UserDeleter from './UserDeleter.mjs'
-import UserGetter from './UserGetter.mjs'
-import UserUpdater from './UserUpdater.mjs'
-import Analytics from '../Analytics/AnalyticsManager.mjs'
-import UserOnboardingEmailManager from './UserOnboardingEmailManager.mjs'
-import UserPostRegistrationAnalyticsManager from './UserPostRegistrationAnalyticsManager.mjs'
-import OError from '@overleaf/o-error'
-
-async function _addAffiliation(user, affiliationOptions) {
-  try {
-    await UserUpdater.promises.addAffiliationForNewUser(
-      user._id,
-      user.email,
-      affiliationOptions
-    )
-  } catch (error) {
-    throw new AffiliationError('add affiliation failed').withCause(error)
-  }
-
-  try {
-    user = await UserGetter.promises.getUser(user._id)
-  } catch (error) {
-    logger.error(
-      OError.tag(error, 'could not get fresh user data', {
-        userId: user._id,
-        email: user.email,
-      })
-    )
-  }
-  return user
-}
+import Analytics from '../Telemetry/TelemetryManager.mjs'
 
 async function recordRegistrationEvent(user) {
   try {
@@ -71,40 +39,13 @@ async function createNewUser(attributes, options = {}) {
     createdAt: new Date(),
     reversedHostname,
   }
-  if (Features.hasFeature('affiliations') && !options.requireAffiliation) {
-    emailData.affiliationUnchecked = true
-  }
-  if (
-    attributes.samlIdentifiers &&
-    attributes.samlIdentifiers[0] &&
-    attributes.samlIdentifiers[0].providerId
-  ) {
-    emailData.samlProviderId = attributes.samlIdentifiers[0].providerId
-  }
-
-  const affiliationOptions = options.affiliationOptions || {}
 
   if (options.confirmedAt) {
     emailData.confirmedAt = options.confirmedAt
-    affiliationOptions.confirmedAt = options.confirmedAt
   }
   user.emails = [emailData]
 
   user = await user.save()
-
-  if (Features.hasFeature('affiliations')) {
-    try {
-      user = await _addAffiliation(user, affiliationOptions)
-    } catch (error) {
-      if (options.requireAffiliation) {
-        await UserDeleter.promises.deleteMongoUser(user._id)
-        throw OError.tag(error)
-      } else {
-        const err = OError.tag(error, 'adding affiliations failed')
-        logger.error({ err, userId: user._id }, err.message)
-      }
-    }
-  }
 
   await recordRegistrationEvent(user)
   await Analytics.setUserPropertyForUser(user._id, 'created-at', new Date())
@@ -115,21 +56,6 @@ async function createNewUser(attributes, options = {}) {
       'analytics-id',
       attributes.analyticsId
     )
-  }
-
-  if (Features.hasFeature('saas')) {
-    try {
-      await UserOnboardingEmailManager.scheduleOnboardingEmail(user)
-      await UserPostRegistrationAnalyticsManager.schedulePostRegistrationAnalytics(
-        user
-      )
-    } catch (error) {
-      logger.error(
-        OError.tag(error, 'Failed to schedule sending of onboarding email', {
-          userId: user._id,
-        })
-      )
-    }
   }
 
   return user

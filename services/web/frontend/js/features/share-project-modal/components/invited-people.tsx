@@ -7,17 +7,11 @@ import { useEditorContext } from '@/shared/context/editor-context'
 import { ProjectMember } from '@/shared/context/types/project-metadata'
 
 type InvitedPeopleProps = {
-  hasExceededCollaboratorLimit: boolean
-  hasTrackChangesFeature: boolean
-  canAddCollaborators: boolean
   sortedMembers: ProjectMember[]
   invites?: ProjectMember[]
 }
 
 function InvitedPeople({
-  hasExceededCollaboratorLimit,
-  hasTrackChangesFeature,
-  canAddCollaborators,
   sortedMembers,
   invites,
 }: InvitedPeopleProps) {
@@ -33,14 +27,9 @@ function InvitedPeople({
           <EditMember
             key={member._id}
             member={member}
-            hasExceededCollaboratorLimit={hasExceededCollaboratorLimit}
             hasBeenDowngraded={Boolean(
               member.pendingEditor || member.pendingReviewer
             )}
-            canAddCollaborators={canAddCollaborators}
-            isReviewerOnFreeProject={
-              member.privileges === 'review' && !hasTrackChangesFeature
-            }
           />
         ) : (
           <ViewMember key={member._id} member={member} />

@@ -8,7 +8,7 @@ const {
   EditOperationBuilder,
   StringFileData,
   EditOperationTransformer,
-} = require('overleaf-editor-core')
+} = require('superpaper-editor-core')
 const Metrics = require('./Metrics')
 const ProjectHistoryRedisManager = require('./ProjectHistoryRedisManager')
 const HistoryManager = require('./HistoryManager')

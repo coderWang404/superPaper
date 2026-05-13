@@ -11,7 +11,6 @@ describe('UserAuditLogHandler', function () {
   beforeEach(async function (ctx) {
     ctx.userId = new ObjectId()
     ctx.initiatorId = new ObjectId()
-    ctx.subscriptionId = new ObjectId()
     ctx.action = {
       operation: 'clear-sessions',
       initiatorId: ctx.initiatorId,
@@ -26,19 +25,6 @@ describe('UserAuditLogHandler', function () {
       ip: '0:0:0:0',
     }
     ctx.UserAuditLogEntryMock = sinon.mock(UserAuditLogEntry)
-    ctx.getUniqueManagedSubscriptionMemberOfMock = sinon.stub().resolves()
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionLocator',
-      () => ({
-        default: {
-          promises: {
-            getUniqueManagedSubscriptionMemberOf:
-              ctx.getUniqueManagedSubscriptionMemberOfMock,
-          },
-        },
-      })
-    )
-
     vi.doMock('../../../../app/src/models/UserAuditLogEntry', () => ({
       UserAuditLogEntry,
     }))
@@ -93,41 +79,6 @@ describe('UserAuditLogHandler', function () {
         ctx.UserAuditLogEntryMock.verify()
       })
 
-      it('updates the log when no ip address or initiatorId is specified for a group join event', async function (ctx) {
-        await ctx.UserAuditLogHandler.promises.addEntry(
-          ctx.userId,
-          'join-group-subscription',
-          undefined,
-          undefined,
-          {
-            subscriptionId: 'foo',
-          }
-        )
-        ctx.UserAuditLogEntryMock.verify()
-      })
-
-      it('includes managedSubscriptionId for managed group user events ', async function (ctx) {
-        await ctx.UserAuditLogHandler.promises.addEntry(
-          ctx.userId,
-          'reset-password',
-          undefined,
-          ctx.action.ip
-        )
-        ctx.UserAuditLogEntryMock.verify()
-        expect(ctx.getUniqueManagedSubscriptionMemberOfMock).to.have.been.called
-      })
-
-      it('does not includes managedSubscriptionId for events not in the managed group event list', async function (ctx) {
-        await ctx.UserAuditLogHandler.promises.addEntry(
-          ctx.userId,
-          'foo',
-          ctx.action.initiatorId,
-          ctx.action.ip
-        )
-        ctx.UserAuditLogEntryMock.verify()
-        expect(ctx.getUniqueManagedSubscriptionMemberOfMock).not.to.have.been
-          .called
-      })
     })
 
     describe('errors', function () {

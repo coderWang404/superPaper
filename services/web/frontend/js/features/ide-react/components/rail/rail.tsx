@@ -19,7 +19,6 @@ import {
   hasFullProjectSearch,
 } from '@/features/ide-react/components/rail/full-project-search-panel'
 import { sendSearchEvent } from '@/features/event-tracking/search-events'
-import { useProjectContext } from '@/shared/context/project-context'
 import { useCommandProvider } from '@/features/ide-react/hooks/use-command-provider'
 import RailHelpDropdown from './rail-help-dropdown'
 import RailTab from './rail-tab'
@@ -30,20 +29,20 @@ import RailResizeHandle from './rail-resize-handle'
 import RailModals from './rail-modals'
 import RailOverflowDropdown from './rail-overflow-dropdown'
 import useRailOverflow from '@/features/ide-react/hooks/use-rail-overflow'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 import { shouldIncludeElement } from '@/features/ide-react/util/rail-utils'
 import { useEditorContext } from '@/shared/context/editor-context'
 import useEventListener from '@/shared/hooks/use-event-listener'
 
 const moduleRailEntries = (
-  importOverleafModules('railEntries') as {
+  importSuperPaperModules('railEntries') as {
     import: { default: RailElement }
     path: string
   }[]
 ).map(({ import: { default: element } }) => element)
 
 const moduleRailPopovers = (
-  importOverleafModules('railPopovers') as {
+  importSuperPaperModules('railPopovers') as {
     import: {
       default: {
         key: string
@@ -61,10 +60,9 @@ export const RailLayout = () => {
   const { t } = useTranslation()
   const { selectedTab, openTab, isOpen, setIsOpen, togglePane, selectTab } =
     useRailContext()
-  const { features } = useProjectContext()
   const { isRestrictedTokenMember } = useEditorContext()
   const gitBridgeEnabled = getMeta('ol-gitBridgeEnabled')
-  const { isOverleaf } = getMeta('ol-ExposedSettings')
+  const { isSuperPaper } = getMeta('ol-ExposedSettings')
 
   const { view, setLeftMenuShown } = useLayoutContext()
 
@@ -112,15 +110,7 @@ export const RailLayout = () => {
         icon: 'integration_instructions',
         title: t('integrations'),
         component: <IntegrationsPanel />,
-        hide: !isOverleaf && !gitBridgeEnabled,
-      },
-      {
-        key: 'review-panel',
-        icon: 'rate_review',
-        title: t('review_panel'),
-        component: null,
-        hide: !features.trackChangesVisible,
-        disabled: view !== 'editor',
+        hide: !isSuperPaper && !gitBridgeEnabled,
       },
       {
         key: 'chat',
@@ -136,10 +126,9 @@ export const RailLayout = () => {
     ],
     [
       t,
-      features.trackChangesVisible,
       view,
       isRestrictedTokenMember,
-      isOverleaf,
+      isSuperPaper,
       gitBridgeEnabled,
     ]
   )
@@ -227,8 +216,7 @@ export const RailLayout = () => {
     }
   }, [railTabs, selectedTab, openTab, isOpen])
 
-  const isReviewPanelOpen =
-    selectedTab === 'review-panel' && isOpen && !isHistoryView
+  const isReviewPanelOpen = false
 
   const { tabsInRail, tabsInOverflow, tabWrapperRef } =
     useRailOverflow(railTabs)

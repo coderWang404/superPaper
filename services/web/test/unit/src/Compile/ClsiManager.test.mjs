@@ -2,7 +2,7 @@ import { vi, expect } from 'vitest'
 import { setTimeout } from 'node:timers/promises'
 import sinon from 'sinon'
 import tk from 'timekeeper'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 import _ from 'lodash'
 
 const FILESTORE_URL = 'http://filestore.example.com'
@@ -52,7 +52,7 @@ describe('ClsiManager', function () {
       compiler: 'latex',
       rootDoc_id: 'mock-doc-id-1',
       imageName: 'mock-image-name',
-      overleaf: { history: { id: 42 } },
+      superpaper: { history: { id: 42 } },
       rootFolder: [
         {
           docs: [],
@@ -170,11 +170,11 @@ describe('ClsiManager', function () {
           submissionBackendClass: 'c3d',
         },
         clsi_new: {
-          doubleCompileFree: {
+          doubleCompileStandard: {
             sample: 100,
             backendClass: 'n4',
           },
-          doubleCompilePremium: {
+          doubleCompilePriority: {
             sample: 100,
             backendClass: 'n4d',
           },
@@ -216,12 +216,12 @@ describe('ClsiManager', function () {
       }),
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.Settings,
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })
@@ -261,13 +261,13 @@ describe('ClsiManager', function () {
       default: ctx.ClsiCacheHandler,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ctx.FetchUtils)
+    vi.doMock('@superpaper/fetch-utils', () => ctx.FetchUtils)
 
     vi.doMock('../../../../app/src/Features/Compile/ClsiFormatChecker', () => ({
       default: ctx.ClsiFormatChecker,
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: ctx.Metrics,
     }))
 
@@ -276,7 +276,7 @@ describe('ClsiManager', function () {
     }))
 
     vi.doMock(
-      '../../../../app/src/Features/Analytics/AnalyticsManager',
+      '../../../../app/src/Features/Telemetry/TelemetryManager',
       () => ({
         default: ctx.AnalyticsManager,
       })
@@ -373,7 +373,7 @@ describe('ClsiManager', function () {
             rootDoc_id: 1,
             imageName: 1,
             rootFolder: 1,
-            'overleaf.history.id': 1,
+            'superpaper.history.id': 1,
           }
         )
       })
@@ -523,7 +523,7 @@ describe('ClsiManager', function () {
             rootDoc_id: 1,
             imageName: 1,
             rootFolder: 1,
-            'overleaf.history.id': 1,
+            'superpaper.history.id': 1,
           }
         )
       })
@@ -659,7 +659,7 @@ describe('ClsiManager', function () {
             rootDoc_id: 1,
             imageName: 1,
             rootFolder: 1,
-            'overleaf.history.id': 1,
+            'superpaper.history.id': 1,
           }
         )
       })
@@ -1096,7 +1096,7 @@ describe('ClsiManager', function () {
     describe('when a new backend is configured with low sample', function () {
       beforeEach(async function (ctx) {
         ctx.Settings.apis.clsi_new.url = 'https://compiles.somewhere.test'
-        ctx.Settings.apis.clsi_new.doubleCompileFree.sample = 0
+        ctx.Settings.apis.clsi_new.doubleCompileStandard.sample = 0
         await ctx.ClsiManager.promises.sendRequest(
           ctx.project._id,
           ctx.user_id,
@@ -1124,7 +1124,7 @@ describe('ClsiManager', function () {
       })
     })
 
-    describe('when a new backend is configured (premium)', function () {
+    describe('when a new backend is configured (priority)', function () {
       beforeEach(async function (ctx) {
         ctx.Settings.apis.clsi_new.url = 'https://compiles.somewhere.test'
         await ctx.ClsiManager.promises.sendRequest(
@@ -1487,7 +1487,7 @@ function _makeResources(project, docs, files) {
     if (file.hash === GLOBAL_BLOB_HASH) {
       url = `${FILESTORE_URL}/history/global/hash/${file.hash}`
     } else {
-      url = `${FILESTORE_URL}/history/project/${project.overleaf.history.id}/hash/${file.hash}`
+      url = `${FILESTORE_URL}/history/project/${project.superpaper.history.id}/hash/${file.hash}`
     }
     resources.push({
       path: path.replace(/^\//, ''),

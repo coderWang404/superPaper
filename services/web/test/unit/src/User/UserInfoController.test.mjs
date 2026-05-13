@@ -71,12 +71,12 @@ describe('UserInfoController', function () {
       })
     })
 
-    describe('when the user exists with overleaf id', function () {
+    describe('when the user exists with superpaper id', function () {
       beforeEach(function (ctx) {
         ctx.user_id = 12345
         ctx.user = {
           _id: new ObjectId(),
-          overleaf: {
+          superpaper: {
             id: ctx.user_id,
           },
         }
@@ -88,7 +88,7 @@ describe('UserInfoController', function () {
       it('should look up the user in the database', function (ctx) {
         ctx.UserGetter.getUser
           .calledWith(
-            { 'overleaf.id': ctx.user_id },
+            { 'superpaper.id': ctx.user_id },
             { _id: true, first_name: true, last_name: true, email: true }
           )
           .should.equal(true)
@@ -128,7 +128,7 @@ describe('UserInfoController', function () {
         _id: new ObjectId(),
         first_name: 'Douglas',
         last_name: 'Adams',
-        email: 'doug@overleaf.com',
+        email: 'doug@superpaper.com',
       }
       ctx.formattedInfo = {
         id: ctx.user._id.toString(),
@@ -150,11 +150,10 @@ describe('UserInfoController', function () {
         _id: new ObjectId(),
         first_name: 'Douglas',
         last_name: 'Adams',
-        email: 'doug@overleaf.com',
+        email: 'doug@superpaper.com',
         password: 'should-not-get-included',
         signUpDate: new Date(),
         role: 'student',
-        institution: 'sheffield',
       }
       expect(ctx.UserInfoController.formatPersonalInfo(ctx.user)).to.deep.equal(
         {
@@ -164,7 +163,6 @@ describe('UserInfoController', function () {
           email: ctx.user.email,
           signUpDate: ctx.user.signUpDate,
           role: ctx.user.role,
-          institution: ctx.user.institution,
         }
       )
     })
@@ -176,7 +174,6 @@ describe('UserInfoController', function () {
         ctx.user_id = new ObjectId().toString()
         ctx.features = {
           collaborators: 10,
-          trackChanges: true,
           references: true,
         }
         ctx.SessionManager.getLoggedInUserId.returns(ctx.user_id)

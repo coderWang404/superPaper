@@ -17,7 +17,7 @@ import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mj
 import _ from 'lodash'
 import LinkedFilesHandler from './LinkedFilesHandler.mjs'
 import LinkedFilesErrors from './LinkedFilesErrors.mjs'
-import { promisify } from '@overleaf/promise-utils'
+import { promisify } from '@superpaper/promise-utils'
 import HistoryManager from '../History/HistoryManager.mjs'
 import Errors from '../Errors/Errors.js'
 
@@ -139,7 +139,7 @@ export default ProjectFileAgent = {
               ) // Created
             } else if (type === 'file') {
               return HistoryManager.requestBlob(
-                sourceProject.overleaf.history.id,
+                sourceProject.superpaper.history.id,
                 entity.hash,
                 'GET',
                 function (err, result) {

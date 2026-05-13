@@ -11,11 +11,11 @@ describe('AdminAuthorizationHelper', function () {
     ctx.fireHook = sinon.stub().resolves([])
     ctx.settings = {
       adminPrivilegeAvailable: true,
-      adminUrl: 'https://admin.overleaf.com',
+      adminUrl: 'https://admin.superpaper.com',
       adminRolesEnabled: true,
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

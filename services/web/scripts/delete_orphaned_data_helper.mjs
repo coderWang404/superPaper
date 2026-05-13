@@ -3,7 +3,7 @@ import {
   READ_PREFERENCE_PRIMARY,
   READ_PREFERENCE_SECONDARY,
 } from '../app/src/infrastructure/mongodb.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 
 async function getDeletedProject(projectId, readPreference) {
   return await db.deletedProjects.findOne(

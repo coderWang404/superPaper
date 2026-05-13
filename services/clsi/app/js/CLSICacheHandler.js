@@ -10,14 +10,14 @@ import {
   fetchNothing,
   fetchStream,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
-import { MeteredStream } from '@overleaf/stream-utils'
+} from '@superpaper/fetch-utils'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
+import { MeteredStream } from '@superpaper/stream-utils'
 import OutputCacheManager from './OutputCacheManager.js'
 import ResourceWriter from './ResourceWriter.js'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 const { CACHE_SUBDIR } = OutputCacheManager
 const { isExtraneousFile } = ResourceWriter

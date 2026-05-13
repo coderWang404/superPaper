@@ -23,7 +23,7 @@ describe('LockManager - checking the lock', function () {
   const existsStub = sinon.stub()
 
   const mocks = {
-    '@overleaf/redis-wrapper': {
+    '@superpaper/redis-wrapper': {
       createClient() {
         return {
           auth() {},
@@ -31,7 +31,7 @@ describe('LockManager - checking the lock', function () {
         }
       },
     },
-    '@overleaf/metrics': { inc() {} },
+    '@superpaper/metrics': { inc() {} },
     './Profiler': (Profiler = (function () {
       Profiler = class Profiler {
         static initClass() {

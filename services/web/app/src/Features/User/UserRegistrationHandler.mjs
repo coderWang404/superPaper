@@ -2,15 +2,14 @@ import { User } from '../../models/User.mjs'
 import UserCreator from './UserCreator.mjs'
 import UserGetter from './UserGetter.mjs'
 import AuthenticationManager from '../Authentication/AuthenticationManager.mjs'
-import Modules from '../../infrastructure/Modules.mjs'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import crypto from 'node:crypto'
 import EmailHandler from '../Email/EmailHandler.mjs'
 import OneTimeTokenHandler from '../Security/OneTimeTokenHandler.mjs'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import EmailHelper from '../Helpers/EmailHelper.mjs'
-import { callbackify, callbackifyMultiResult } from '@overleaf/promise-utils'
-import OError from '@overleaf/o-error'
+import { callbackify, callbackifyMultiResult } from '@superpaper/promise-utils'
+import OError from '@superpaper/o-error'
 
 const UserRegistrationHandler = {
   _registrationRequestIsValid(body) {
@@ -73,23 +72,6 @@ const UserRegistrationHandler = {
       user,
       userDetails.password
     )
-
-    if (userDetails.subscribeToNewsletter === 'true') {
-      try {
-        await Modules.promises.hooks.fire(
-          'updateTopicSubscription',
-          user._id,
-          'newsletter',
-          true
-        )
-      } catch (error) {
-        logger.warn(
-          { err: error, user },
-          'Failed to subscribe user to newsletter'
-        )
-        throw error
-      }
-    }
 
     return user
   },

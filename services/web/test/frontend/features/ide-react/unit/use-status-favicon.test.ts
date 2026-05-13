@@ -56,7 +56,7 @@ describe('useStatusFavicon', function () {
 
     window.metaAttributesCache.set(
       'ol-baseAssetPath',
-      'https://cdn.test-overleaf.com/'
+      'https://cdn.test-superpaper.com/'
     )
   })
 

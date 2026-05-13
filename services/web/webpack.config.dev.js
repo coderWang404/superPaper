@@ -84,7 +84,7 @@ module.exports = merge(base, {
   ].filter(Boolean),
 
   devServer: {
-    // Expose dev server at www.dev-overleaf.com
+    // Expose dev server at www.dev-superpaper.com
     host: '0.0.0.0',
     port: parseInt(process.env.PORT, 10) || 3808,
     client: {
@@ -92,7 +92,7 @@ module.exports = merge(base, {
       overlay: process.env.DISABLE_WEBPACK_OVERLAY !== 'true',
     },
     hot: true,
-    allowedHosts: '.dev-overleaf.com',
+    allowedHosts: '.dev-superpaper.com',
     setupMiddlewares(middlewares, devServer) {
       devServer.app.get('/status', (req, res) => res.send('webpack is up'))
       return middlewares

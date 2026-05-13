@@ -1,44 +1,27 @@
-import { useTranslation } from 'react-i18next'
-import { sendMB } from '@/infrastructure/event-tracking'
-import OLButton from '@/shared/components/ol/ol-button'
-
-function trackUpgradeClick() {
-  sendMB('settings-upgrade-click')
-}
+import { useTranslation } from "react-i18next";
+import OLButton from "@/shared/components/ol/ol-button";
 
 type ActionButtonProps = {
-  hasFeature?: boolean
-  linked?: boolean
-  handleUnlinkClick: () => void
-  handleLinkClick: () => void
-  disabled?: boolean
-  linkText?: string
-  unlinkText?: string
-}
+  linked?: boolean;
+  handleUnlinkClick: () => void;
+  handleLinkClick: () => void;
+  disabled?: boolean;
+  linkText?: string;
+  unlinkText?: string;
+};
 
 export function ActionButton({
   linked,
   handleUnlinkClick,
   handleLinkClick,
-  hasFeature,
   disabled,
   linkText,
   unlinkText,
 }: ActionButtonProps) {
-  const { t } = useTranslation()
-  const linkingText = linkText || t('turn_on')
-  const unlinkingText = unlinkText || t('turn_off')
-  if (!hasFeature) {
-    return (
-      <OLButton
-        variant="primary"
-        href="/user/subscription/plans"
-        onClick={trackUpgradeClick}
-      >
-        <span>{t('upgrade')}</span>
-      </OLButton>
-    )
-  } else if (linked) {
+  const { t } = useTranslation();
+  const linkingText = linkText || t("turn_on");
+  const unlinkingText = unlinkText || t("turn_off");
+  if (linked) {
     return (
       <OLButton
         variant="danger-ghost"
@@ -47,7 +30,7 @@ export function ActionButton({
       >
         {unlinkingText}
       </OLButton>
-    )
+    );
   } else {
     return (
       <OLButton
@@ -57,6 +40,6 @@ export function ActionButton({
       >
         {linkingText}
       </OLButton>
-    )
+    );
   }
 }

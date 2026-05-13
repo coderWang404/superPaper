@@ -1,21 +1,21 @@
 const fs = require('fs')
 const Path = require('path')
-const Settings = require('@overleaf/settings')
+const Settings = require('@superpaper/settings')
 
 module.exports = function invalidateBabelCacheIfNeeded() {
   const cacheDir = Path.join(__dirname, '../../node_modules/.cache')
   const cachePath = Path.join(cacheDir, 'babel-loader')
-  const statePath = Path.join(cacheDir, 'last-overleafModuleImports.json')
+  const statePath = Path.join(cacheDir, 'last-superPaperModuleImports.json')
   let lastState = ''
   try {
     lastState = fs.readFileSync(statePath, { encoding: 'utf-8' })
   } catch (e) {}
 
-  const newState = JSON.stringify(Settings.overleafModuleImports)
+  const newState = JSON.stringify(Settings.superPaperModuleImports)
   if (lastState !== newState) {
     // eslint-disable-next-line no-console
     console.warn(
-      'Detected change in overleafModuleImports, purging babel cache!'
+      'Detected change in superPaperModuleImports, purging babel cache!'
     )
     // Gracefully handle cache mount in Server Pro build, only purge nested folder and keep .cache/ folder.
     fs.mkdirSync(cacheDir, { recursive: true })

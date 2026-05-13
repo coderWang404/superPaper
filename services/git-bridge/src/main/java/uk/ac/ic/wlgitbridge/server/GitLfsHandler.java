@@ -30,7 +30,7 @@ public class GitLfsHandler extends Handler.Abstract {
       response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY_422);
       ByteBuffer responseBuffer =
           ByteBuffer.wrap(
-              "{\"message\": \"ERROR: Git LFS is not supported on Overleaf\"}\n"
+              "{\"message\": \"ERROR: Git LFS is not supported on superPaper\"}\n"
                   .getBytes(StandardCharsets.UTF_8));
       response.write(true, responseBuffer, callback);
       return true;

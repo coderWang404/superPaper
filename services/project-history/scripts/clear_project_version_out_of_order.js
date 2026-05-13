@@ -9,11 +9,11 @@
 // docker run --rm $(docker ps -lq) scripts/clear_deleted.js
 
 import async from 'async'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
 import { db, ObjectId } from '../app/js/mongodb.js'
-import { fetchStringWithResponse } from '@overleaf/fetch-utils'
+import { fetchStringWithResponse } from '@superpaper/fetch-utils'
 
 logger.logger.level('fatal')
 
@@ -34,13 +34,13 @@ function checkAndClear(project, callback) {
   const projectId = project.project_id
   console.log('checking project', projectId)
 
-  // These can probably also be reset and their overleaf.history.id unset
+  // These can probably also be reset and their superpaper.history.id unset
   // (unless they are v1 projects).
 
   function checkNotV1Project(cb) {
     db.projects.findOne(
       { _id: new ObjectId(projectId) },
-      { projection: { overleaf: true } },
+      { projection: { superpaper: true } },
       (err, result) => {
         console.log(
           '1. looking in mongo projects collection: err',
@@ -55,21 +55,21 @@ function checkAndClear(project, callback) {
           return cb(new Error('project not found in mongo'))
         }
 
-        const isV1Project = result && result.overleaf && result.overleaf.id
+        const isV1Project = result && result.superpaper && result.superpaper.id
         const hasHistoryId =
           result &&
-          result.overleaf &&
-          result.overleaf.history &&
-          result.overleaf.history.id
+          result.superpaper &&
+          result.superpaper.history &&
+          result.superpaper.history.id
         const hasV2HistoryInUse =
           result &&
-          result.overleaf &&
-          result.overleaf.history &&
-          result.overleaf.history.display
+          result.superpaper &&
+          result.superpaper.history &&
+          result.superpaper.history.display
         const hasExistingDeletedHistory =
           result &&
-          result.overleaf.history &&
-          result.overleaf.history.deleted_id
+          result.superpaper.history &&
+          result.superpaper.history.deleted_id
         if (
           hasHistoryId &&
           !(isV1Project || hasV2HistoryInUse || hasExistingDeletedHistory)
@@ -103,11 +103,11 @@ function checkAndClear(project, callback) {
 
   function clearProjectHistoryInMongo(cb) {
     if (force) {
-      console.log('2. deleting overleaf.history.id in mongo project', projectId)
+      console.log('2. deleting superpaper.history.id in mongo project', projectId)
       // Accessing mongo projects collection directly - BE CAREFUL!
       db.projects.updateOne(
         { _id: new ObjectId(projectId) },
-        { $rename: { 'overleaf.history.id': 'overleaf.history.deleted_id' } },
+        { $rename: { 'superpaper.history.id': 'superpaper.history.deleted_id' } },
         (err, result) => {
           console.log(' - got result from remove', err, result)
           if (err) {
@@ -120,14 +120,14 @@ function checkAndClear(project, callback) {
             return cb()
           } else {
             return cb(
-              new Error('error: problem trying to unset overleaf.history.id')
+              new Error('error: problem trying to unset superpaper.history.id')
             )
           }
         }
       )
     } else {
       console.log(
-        '2. would delete overleaf.history.id for',
+        '2. would delete superpaper.history.id for',
         projectId,
         'from mongo'
       )

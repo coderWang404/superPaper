@@ -27,7 +27,7 @@ class EmptyLineWidget extends WidgetType {
 export const emptyLineFiller = () => {
   if (browser.ios) {
     // disable on iOS as it breaks Backspace across empty lines
-    // https://github.com/overleaf/internal/issues/12192
+    // https://github.com/superpaper/internal/issues/12192
     return []
   }
 

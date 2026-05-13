@@ -41,7 +41,7 @@ function initializeOpenTelemetryInstrumentation() {
 
   const resource = new Resource({
     [SemanticResourceAttributes.SERVICE_NAME]: APP_NAME,
-    [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'Overleaf',
+    [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'superPaper',
     'host.type': 'VM',
   })
 
@@ -80,7 +80,15 @@ function initializeOpenTelemetryLogging() {
 
 function initializeProfileAgent() {
   console.log('Starting Google Profile Agent')
-  const profiler = require('@google-cloud/profiler')
+  let profiler
+  try {
+    profiler = require('@google-cloud/profiler')
+  } catch (error) {
+    console.warn(
+      'Google Profile Agent is unavailable in this environment; skipping profile collection'
+    )
+    return
+  }
   profiler.start({
     serviceContext: {
       service: APP_NAME,

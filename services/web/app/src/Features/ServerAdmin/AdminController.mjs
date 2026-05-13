@@ -1,15 +1,14 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import http from 'node:http'
 import https from 'node:https'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import TpdsUpdateSender from '../ThirdPartyDataStore/TpdsUpdateSender.mjs'
 import TpdsProjectFlusher from '../ThirdPartyDataStore/TpdsProjectFlusher.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
 import SystemMessageManager from '../SystemMessages/SystemMessageManager.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
-import Features from '../../infrastructure/Features.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 
 const AdminController = {
   _sendDisconnectAllUsersMessage: delay => {
@@ -50,12 +49,10 @@ const AdminController = {
       privilegesMatrix,
     }
 
-    if (Features.hasFeature('saas')) {
-      const debugProjects = await ProjectGetter.promises.findAllDebugProjects(
-        'name lastUpdated owner_ref'
-      )
-      toRender.debugProjects = debugProjects
-    }
+    const debugProjects = await ProjectGetter.promises.findAllDebugProjects(
+      'name lastUpdated owner_ref'
+    )
+    toRender.debugProjects = debugProjects
     res.render('admin/index', toRender)
   }),
 

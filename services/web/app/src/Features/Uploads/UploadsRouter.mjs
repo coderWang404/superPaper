@@ -3,7 +3,7 @@ import AuthenticationController from '../Authentication/AuthenticationController
 import ProjectUploadController from './ProjectUploadController.mjs'
 import { RateLimiter } from '../../infrastructure/RateLimiter.mjs'
 import RateLimiterMiddleware from '../Security/RateLimiterMiddleware.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import AsyncLocalStorage from '../../infrastructure/AsyncLocalStorage.mjs'
 
 const rateLimiters = {

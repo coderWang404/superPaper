@@ -2,15 +2,15 @@
 
 'use strict'
 
-const metrics = require('@overleaf/metrics')
+const metrics = require('@superpaper/metrics')
 const redisBackend = require('./chunk_store/redis')
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 const queueChanges = require('./queue_changes')
 const persistChanges = require('./persist_changes')
 const persistBuffer = require('./persist_buffer')
 
 /**
- * @typedef {import('overleaf-editor-core').Change} Change
+ * @typedef {import('superpaper-editor-core').Change} Change
  */
 
 /**

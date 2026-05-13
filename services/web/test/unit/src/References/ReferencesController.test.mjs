@@ -9,7 +9,7 @@ describe('ReferencesController', function () {
   beforeEach(async function (ctx) {
     ctx.projectId = '2222'
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         apis: { web: { url: 'http://some.url' } },
       }),

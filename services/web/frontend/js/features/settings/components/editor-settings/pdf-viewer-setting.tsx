@@ -13,7 +13,7 @@ export default function PDFViewerSetting() {
       options={[
         {
           value: 'pdfjs',
-          label: t('overleaf'),
+          label: t('superpaper'),
         },
         {
           value: 'native',

@@ -1,6 +1,6 @@
 import { vi, expect } from 'vitest'
 import sinon from 'sinon'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 import Errors from '../../../../app/src/Features/Errors/Errors.js'
 import mongodb from 'mongodb-legacy'
 
@@ -56,11 +56,11 @@ describe('HistoryController', function () {
 
     vi.doMock('stream/promises', () => ctx.Stream)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {}),
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ({
+    vi.doMock('@superpaper/fetch-utils', () => ({
       fetchJson: ctx.fetchJson,
       fetchStream: ctx.fetchStream,
       fetchStreamWithResponse: ctx.fetchStreamWithResponse,
@@ -103,7 +103,7 @@ describe('HistoryController', function () {
       '../../../../app/src/Features/Project/ProjectAuditLogHandler.mjs',
       () => ({
         default: (ctx.ProjectAuditLogHandler = {
-          addEntryIfManagedInBackground: sinon.stub(),
+          addEntryInBackground: sinon.stub(),
         }),
       })
     )
@@ -122,10 +122,6 @@ describe('HistoryController', function () {
         default: (ctx.RestoreManager = {}),
       })
     )
-
-    vi.doMock('../../../../app/src/infrastructure/Features.mjs', () => ({
-      default: (ctx.Features = sinon.stub().withArgs('saas').returns(true)),
-    }))
 
     ctx.HistoryController = (await import(modulePath)).default
     ctx.settings.apis = {

@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import overleafLogo from '@/shared/svgs/overleaf-green.svg'
+import superPaperLogo from '@/shared/images/superpaper-icon.png'
 
 type InterstitialProps = {
   className?: string
@@ -18,7 +18,7 @@ export function Interstitial({
 }: InterstitialProps) {
   return (
     <div className={classNames('interstitial', className)}>
-      {showLogo && <img className="logo" src={overleafLogo} alt="Overleaf" />}
+      {showLogo && <img className="logo" src={superPaperLogo} alt="superPaper" />}
       {title && <h1 className="h3 interstitial-header">{title}</h1>}
       <div className={classNames(contentClassName)}>{children}</div>
     </div>

@@ -5,6 +5,6 @@ promise-utils
 --esmock-loader=False
 --is-library=True
 --node-version=24.14.1
---package-name=@overleaf/promise-utils
+--package-name=@superpaper/promise-utils
 --pipeline-owner=32
 --public-repo=False

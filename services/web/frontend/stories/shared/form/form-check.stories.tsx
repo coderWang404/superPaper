@@ -24,7 +24,7 @@ export const Checkbox: Story = {
     disabled: false,
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3494-247203&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3494-247203&m=dev'
   ),
 }
 
@@ -36,7 +36,7 @@ export const CheckboxChecked: Story = {
     defaultChecked: true,
   },
   parameters: figmaDesignUrl(
-    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3495-249055&m=dev'
+    'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3495-249055&m=dev'
   ),
 }
 
@@ -57,5 +57,5 @@ CheckboxIndeterminate.args = {
   disabled: false,
 }
 CheckboxIndeterminate.parameters = figmaDesignUrl(
-  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3495-249055&m=dev'
+  'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3495-249055&m=dev'
 )

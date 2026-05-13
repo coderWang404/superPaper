@@ -1,16 +1,14 @@
 import ExportsHandler from './ExportsHandler.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import SessionManager from '../Authentication/SessionManager.mjs'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 
 async function exportProject(req, res, next) {
-  const { project_id: projectId, brand_variation_id: brandVariationId } =
-    req.params
+  const { project_id: projectId } = req.params
   const userId = SessionManager.getLoggedInUserId(req.session)
   const exportParams = {
     project_id: projectId,
-    brand_variation_id: brandVariationId,
     user_id: userId,
   }
 
@@ -41,15 +39,7 @@ async function exportProject(req, res, next) {
 
   try {
     const exportData = await ExportsHandler.exportProject(exportParams)
-    logger.debug(
-      {
-        userId,
-        projectId,
-        brandVariationId,
-        exportV1Id: exportData.v1_id,
-      },
-      'exported project'
-    )
+    logger.debug({ userId, projectId, exportV1Id: exportData.v1_id }, 'exported project')
     return res.json({
       export_v1_id: exportData.v1_id,
       message: exportData.message,

@@ -2,7 +2,7 @@ import {
   TrackingPropsRawData,
   ClearTrackingPropsRawData,
   RawEditOperation,
-} from 'overleaf-editor-core/lib/types'
+} from 'superpaper-editor-core/lib/types'
 
 export type OTType = 'sharejs-text-ot' | 'history-ot'
 

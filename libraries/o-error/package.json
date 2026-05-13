@@ -1,5 +1,5 @@
 {
-  "name": "@overleaf/o-error",
+  "name": "@superpaper/o-error",
   "version": "3.4.0",
   "description": "Light-weight helpers for handling JavaScript Errors in node.js and the browser. Helps with long stack traces, Error subclasses, wrapping internal errors (causes), and attaching extra data to errors for logging.",
   "keywords": [
@@ -25,9 +25,9 @@
     "test:unit": "mocha --exit test/**/*.{js,cjs}",
     "types:check": "tsc --noEmit"
   },
-  "author": "Overleaf (https://www.overleaf.com)",
+  "author": "superPaper (https://www.superpaper.com)",
   "license": "MIT",
-  "repository": "github:overleaf/o-error",
+  "repository": "github:superpaper/o-error",
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/node": "^24.5.2",

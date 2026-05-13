@@ -10,7 +10,7 @@ const storage = require('../../../../storage')
 const chunkStore = storage.chunkStore
 const persistChanges = storage.persistChanges
 
-const core = require('overleaf-editor-core')
+const core = require('superpaper-editor-core')
 const AddFileOperation = core.AddFileOperation
 const EditFileOperation = core.EditFileOperation
 const TextOperation = core.TextOperation

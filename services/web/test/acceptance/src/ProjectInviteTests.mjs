@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import Async from 'async'
 import User from './helpers/User.mjs'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import CollaboratorsEmailHandler from '../../../app/src/Features/Collaborators/CollaboratorsEmailHandler.mjs'
 import CollaboratorsInviteHelper from '../../../app/src/Features/Collaborators/CollaboratorsInviteHelper.mjs'
 import Features from '../../../app/src/infrastructure/Features.mjs'
@@ -237,7 +237,7 @@ const expectLoginPage = (user, callback) => {
     expect(err).not.to.exist
     expect(response.statusCode).to.equal(200)
     expect(body).to.match(
-      /<title[^>]*>(Login|Log in to Overleaf) - .*<\/title>/
+      /<title[^>]*>(Login|Log in to superPaper) - .*<\/title>/
     )
     callback()
   })
@@ -255,17 +255,8 @@ const expectRegistrationRedirectToInvite = (user, link, callback) => {
   user.register((err, _user, response) => {
     expect(err).not.to.exist
     expect(response.statusCode).to.equal(200)
-
-    if (response.body.redir === '/registration/try-premium') {
-      user.request.get('/registration/onboarding', (err, response) => {
-        if (err) return callback(err)
-        expect(response.statusCode).to.equal(200)
-        callback()
-      })
-    } else {
-      expect(response.body.redir).to.equal(link)
-      callback()
-    }
+    expect(response.body.redir).to.equal(link)
+    callback()
   })
 }
 

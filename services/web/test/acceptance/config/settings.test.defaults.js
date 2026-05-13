@@ -1,8 +1,8 @@
-const { merge } = require('@overleaf/settings/merge')
+const { merge } = require('@superpaper/settings/merge')
 
 let features
 
-const httpAuthUser = 'overleaf'
+const httpAuthUser = 'superpaper'
 const httpAuthPass = 'password'
 const httpAuthUsers = {}
 httpAuthUsers[httpAuthUser] = httpAuthPass
@@ -84,12 +84,12 @@ module.exports = {
     },
     v1_history: {
       url: `http://127.0.0.1:23100/api`,
-      user: 'overleaf',
+      user: 'superpaper',
       pass: 'password',
     },
     historyBackupDeletion: {
       url: `http://127.0.0.1:23101`,
-      user: 'overleaf',
+      user: 'superpaper',
       pass: 'password',
     },
     webpack: {
@@ -109,15 +109,9 @@ module.exports = {
       gitBridge: true,
       references: false,
       referencesSearch: false,
-      mendeley: true,
-      papers: true,
-      zotero: true,
       compileTimeout: 60,
       compileGroup: 'standard',
-      trackChanges: false,
       symbolPalette: false,
-      aiUsageQuota: 'basic',
-      aiErrorAssistant: false,
     },
     personal: {
       collaborators: 1,
@@ -127,15 +121,9 @@ module.exports = {
       gitBridge: false,
       references: false,
       referencesSearch: false,
-      mendeley: false,
-      papers: false,
-      zotero: false,
       compileTimeout: 60,
       compileGroup: 'standard',
-      trackChanges: false,
       symbolPalette: false,
-      aiUsageQuota: 'basic',
-      aiErrorAssistant: false,
     },
     collaborator: {
       collaborators: 10,
@@ -145,15 +133,9 @@ module.exports = {
       gitBridge: true,
       references: true,
       referencesSearch: true,
-      mendeley: true,
-      papers: true,
-      zotero: true,
       compileTimeout: 180,
       compileGroup: 'priority',
-      trackChanges: true,
       symbolPalette: true,
-      aiUsageQuota: 'basic',
-      aiErrorAssistant: false,
     },
     professional: {
       collaborators: -1,
@@ -163,72 +145,13 @@ module.exports = {
       gitBridge: true,
       references: true,
       referencesSearch: true,
-      mendeley: true,
-      papers: true,
-      zotero: true,
       compileTimeout: 180,
       compileGroup: 'priority',
-      trackChanges: true,
       symbolPalette: true,
-      aiUsageQuota: 'basic',
-      aiErrorAssistant: false,
     },
   }),
 
   defaultFeatures: features.personal,
-  defaultPlanCode: 'personal',
-  institutionPlanCode: 'professional',
-
-  plans: [
-    {
-      planCode: 'v1_free',
-      name: 'V1 Free',
-      price_in_cents: 0,
-      features: features.v1_free,
-    },
-    {
-      planCode: 'personal',
-      name: 'Personal',
-      price_in_cents: 0,
-      features: features.personal,
-    },
-    {
-      planCode: 'collaborator',
-      name: 'Standard monthly',
-      price_in_cents: 1500,
-      features: features.collaborator,
-    },
-    {
-      planCode: 'professional',
-      name: 'Pro monthly',
-      price_in_cents: 3000,
-      features: features.professional,
-    },
-    {
-      planCode: 'group_professional',
-      name: 'Pro group',
-      hideFromUsers: true,
-      price_in_cents: 0,
-      annual: true,
-      features: features.professional,
-      groupPlan: true,
-      membersLimit: 0,
-      membersLimitAddOn: 'additional-license',
-      canUseFlexibleLicensing: true,
-    },
-    {
-      planCode: 'group_collaborator',
-      name: 'Standard group',
-      hideFromUsers: true,
-      price_in_cents: 0,
-      annual: true,
-      features: features.collaborator,
-      groupPlan: true,
-      membersLimit: 0,
-      membersLimitAddOn: 'additional-license',
-      canUseFlexibleLicensing: true,
-    },
-  ],
 
   bonus_features: {
     1: {

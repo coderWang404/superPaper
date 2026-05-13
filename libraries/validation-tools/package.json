@@ -1,10 +1,10 @@
 {
-  "name": "@overleaf/validation-tools",
-  "homepage": "www.overleaf.com",
+  "name": "@superpaper/validation-tools",
+  "homepage": "www.superpaper.com",
   "description": "Validation tools that can be used in a service.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/overleaf/overleaf"
+    "url": "https://github.com/superpaper/superpaper"
   },
   "main": "index.js",
   "license": "AGPL-3.0-only",
@@ -18,7 +18,7 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@overleaf/o-error": "workspace:*",
+    "@superpaper/o-error": "workspace:*",
     "mongodb": "^6.12.0",
     "zod": "^4.1.8",
     "zod-validation-error": "^4.0.1"

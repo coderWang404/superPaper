@@ -5,7 +5,7 @@ const {
   fetchJsonWithResponse,
   fetchStreamWithResponse,
   RequestFailedError,
-} = require('@overleaf/fetch-utils')
+} = require('@superpaper/fetch-utils')
 
 /**
  * Create an HTTP client that mimics the swagger-client API

@@ -41,8 +41,6 @@ const meta: Meta<typeof OLButton> = {
         'ghost',
         'danger',
         'danger-ghost',
-        'premium',
-        'premium-secondary',
         'link',
       ],
     },
@@ -52,7 +50,7 @@ const meta: Meta<typeof OLButton> = {
       include: ['children', 'disabled', 'isLoading', 'size', 'variant'],
     },
     ...figmaDesignUrl(
-      'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/Overleaf---Components?node-id=3458-22412&m=dev'
+      'https://www.figma.com/design/V7Ogph1Ocs4ux2A4WMNAh7/superPaper---Components?node-id=3458-22412&m=dev'
     ),
   },
 }

@@ -272,7 +272,7 @@
       -webkit-font-smoothing: initial;
       -moz-osx-font-smoothing: initial;
 
-      /* fix review-panel overflow issue, see: https://github.com/overleaf/internal/issues/6781#issuecomment-1112708638 */
+      /* fix review-panel overflow issue, see: https://github.com/superpaper/internal/issues/6781#issuecomment-1112708638 */
       /* stylelint-disable-next-line selector-class-pattern */
       .pdfViewer {
         min-height: 100%;

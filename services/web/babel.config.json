@@ -36,7 +36,7 @@
       "sourceType": "script"
     },
     {
-      "test": "../../libraries/overleaf-editor-core/**/*.js",
+      "test": "../../libraries/superpaper-editor-core/**/*.js",
       "sourceType": "script"
     }
   ]

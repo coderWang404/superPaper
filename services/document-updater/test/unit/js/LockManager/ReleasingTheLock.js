@@ -26,10 +26,10 @@ describe('LockManager - releasing the lock', function () {
       eval: sinon.stub(),
     }
     const mocks = {
-      '@overleaf/redis-wrapper': {
+      '@superpaper/redis-wrapper': {
         createClient: () => this.client,
       },
-      '@overleaf/settings': {
+      '@superpaper/settings': {
         redis: {
           lock: {
             key_schema: {
@@ -40,7 +40,7 @@ describe('LockManager - releasing the lock', function () {
           },
         },
       },
-      '@overleaf/metrics': { inc() {} },
+      '@superpaper/metrics': { inc() {} },
       './Profiler': (Profiler = (function () {
         Profiler = class Profiler {
           static initClass() {

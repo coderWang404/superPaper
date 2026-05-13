@@ -25,13 +25,7 @@ const FileTreeRoot = React.memo<{
   onDelete: () => void
   onInit: () => void
   isConnected: boolean
-  setRefProviderEnabled: () => void
-  setStartedFreeTrial: () => void
-  refProviders: Record<string, boolean>
 }>(function FileTreeRoot({
-  refProviders,
-  setRefProviderEnabled,
-  setStartedFreeTrial,
   onSelect,
   onInit,
   onDelete,
@@ -55,14 +49,14 @@ const FileTreeRoot = React.memo<{
             dataset.fileType !== 'folder'
           ) {
             event.dataTransfer.setData(
-              'application/x-overleaf-file-id',
+              'application/x-superpaper-file-id',
               dataset.fileId
             )
 
             const filePath = pathInFolder(fileTreeData, dataset.fileId)
             if (filePath) {
               event.dataTransfer.setData(
-                'application/x-overleaf-file-path',
+                'application/x-superpaper-file-path',
                 filePath
               )
             }
@@ -91,9 +85,6 @@ const FileTreeRoot = React.memo<{
     >
       {fileTreeContainer && (
         <FileTreeContext
-          refProviders={refProviders}
-          setRefProviderEnabled={setRefProviderEnabled}
-          setStartedFreeTrial={setStartedFreeTrial}
           onSelect={onSelect}
           fileTreeContainer={fileTreeContainer}
         >

@@ -1,6 +1,6 @@
 const _ = require('lodash')
 const { Readable } = require('node:stream')
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 const fetch = require('node-fetch')
 const http = require('node:http')
 const https = require('node:https')

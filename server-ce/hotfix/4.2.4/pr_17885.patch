@@ -17,7 +17,7 @@
 +. /etc/container_environment.sh
 +. /etc/sharelatex/env.sh
 +
- cd /overleaf/services/document-updater && node scripts/flush_all.js >> /var/log/sharelatex/document-updater.log 2>&1
+ cd /superpaper/services/document-updater && node scripts/flush_all.js >> /var/log/sharelatex/document-updater.log 2>&1
 
  EXIT_CODE="$?"
 --- 02_flush_project_history
@@ -28,6 +28,6 @@
 +. /etc/container_environment.sh
 +. /etc/sharelatex/env.sh
 +
- cd /overleaf/services/project-history && node scripts/flush_all.js >> /var/log/sharelatex/project-history.log 2>&1
+ cd /superpaper/services/project-history && node scripts/flush_all.js >> /var/log/sharelatex/project-history.log 2>&1
 
  EXIT_CODE="$?"

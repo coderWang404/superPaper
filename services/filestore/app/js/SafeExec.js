@@ -1,6 +1,6 @@
 import lodashOnce from 'lodash.once'
 import childProcess from 'node:child_process'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Errors from './Errors.js'
 
 const { ConversionsDisabledError, FailedCommandError } = Errors

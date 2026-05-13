@@ -1,20 +1,12 @@
-import fs from 'node:fs'
-import Path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
-import Settings from '@overleaf/settings'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
+import Settings from '@superpaper/settings'
 import { connectionPromise, db } from '../app/src/infrastructure/mongodb.mjs'
 import GracefulShutdown from '../app/src/infrastructure/GracefulShutdown.mjs'
 import ProjectDeleter from '../app/src/Features/Project/ProjectDeleter.mjs'
-import SplitTestManager from '../app/src/Features/SplitTests/SplitTestManager.mjs'
 import UserDeleter from '../app/src/Features/User/UserDeleter.mjs'
 import UserRegistrationHandler from '../app/src/Features/User/UserRegistrationHandler.mjs'
 import HistoryManager from '../app/src/Features/History/HistoryManager.mjs'
 import ProjectCreationHandler from '../app/src/Features/Project/ProjectCreationHandler.mjs'
-
-const MONOREPO = Path.dirname(
-  Path.dirname(Path.dirname(Path.dirname(fileURLToPath(import.meta.url))))
-)
 
 /**
  * @param {string} email
@@ -62,8 +54,6 @@ async function createUser(email) {
 async function deleteUser(email) {
   const user = await db.users.findOne({ email })
   if (!user) return
-  // Delete the subscriptions of the user
-  await db.subscriptions.deleteMany({ admin_id: user._id })
   // Soft delete the user.
   await UserDeleter.promises.deleteUser(user._id, {
     force: true,
@@ -96,7 +86,7 @@ export async function createProjectWithOldHistoryId(
   await ProjectCreationHandler.promises.createExampleProject(
     userId,
     projectName,
-    { overleaf: { history: { id: historyId } } }
+    { superpaper: { history: { id: historyId } } }
   )
 }
 
@@ -139,41 +129,6 @@ async function purgeNewUsers() {
   )
 }
 
-export async function provisionSplitTests(merge = false, extraSplitTests = []) {
-  const backup = Path.join(
-    MONOREPO,
-    'backup',
-    'split-tests',
-    new Date().toISOString() + '.json'
-  )
-  console.log(
-    `> Backing up previous split-tests into ${backup}. You can import them again on https://www.dev-overleaf.com/admin/split-test via the [Import] button.`
-  )
-  const splitTests = await SplitTestManager.getRuntimeTests()
-  await fs.promises.mkdir(Path.dirname(backup), { recursive: true })
-  await fs.promises.writeFile(
-    backup,
-    JSON.stringify(splitTests.sort((a, b) => (a.name > b.name ? 1 : -1)))
-  )
-
-  // Imported from production via https://www.overleaf.com/admin/split-test -> "Copy all split tests" -> "Copy for E2E test setup"
-  const SPLIT_TESTS = JSON.parse(
-    await fs.promises.readFile(
-      Path.join(MONOREPO, 'tools/saas-e2e/split-tests.json'),
-      'utf-8'
-    )
-  )
-  console.log(`> Importing ${SPLIT_TESTS.length} split-tests from production.`)
-  if (merge) {
-    await SplitTestManager.mergeSplitTests(SPLIT_TESTS, false)
-  } else {
-    await SplitTestManager.replaceSplitTests(SPLIT_TESTS)
-  }
-  if (extraSplitTests.length > 0) {
-    await SplitTestManager.mergeSplitTests(extraSplitTests, false)
-  }
-}
-
 async function checkNoTableScan() {
   const client = await connectionPromise
   const { notablescan } = await client
@@ -200,7 +155,7 @@ async function main() {
   }
   await checkNoTableScan()
 
-  await Promise.all([purgeNewUsers(), provisionUsers(), provisionSplitTests()])
+  await Promise.all([purgeNewUsers(), provisionUsers()])
 }
 
 if (import.meta.main) {

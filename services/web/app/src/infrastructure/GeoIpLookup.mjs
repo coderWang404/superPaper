@@ -1,11 +1,11 @@
 // @ts-check
 
-import settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import { fetchJson } from '@overleaf/fetch-utils'
+import settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import { fetchJson } from '@superpaper/fetch-utils'
 
 /**
- * @typedef {import('../../../types/subscription/currency').CurrencyCode} CurrencyCode
+ * @typedef {string} CurrencyCode
  */
 
 const DEFAULT_CURRENCY_CODE = /** @type {const} */ 'USD'

@@ -1,35 +1,34 @@
 import AuthenticationManager from './AuthenticationManager.mjs'
 import SessionManager from './SessionManager.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import LoginRateLimiter from '../Security/LoginRateLimiter.mjs'
 import UserUpdater from '../User/UserUpdater.mjs'
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
 import querystring from 'node:querystring'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import basicAuth from 'basic-auth'
 import tsscmp from 'tsscmp'
 import UserHandler from '../User/UserHandler.mjs'
 import UserSessionsManager from '../User/UserSessionsManager.mjs'
-import Analytics from '../Analytics/AnalyticsManager.mjs'
+import Analytics from '../Telemetry/TelemetryManager.mjs'
 import passport from 'passport'
-import NotificationsBuilder from '../Notifications/NotificationsBuilder.mjs'
 import UrlHelper from '../Helpers/UrlHelper.mjs'
 import AsyncFormHelper from '../Helpers/AsyncFormHelper.mjs'
 import _ from 'lodash'
 import UserAuditLogHandler from '../User/UserAuditLogHandler.mjs'
-import AnalyticsRegistrationSourceHelper from '../Analytics/AnalyticsRegistrationSourceHelper.mjs'
+import AnalyticsRegistrationSourceHelper from '../Telemetry/LoginSourceHelper.mjs'
 import { acceptsJson } from '../../infrastructure/RequestContentTypeDetection.mjs'
 import AdminAuthorizationHelper from '../Helpers/AdminAuthorizationHelper.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
-import { expressify, promisify } from '@overleaf/promise-utils'
+import { expressify, promisify } from '@superpaper/promise-utils'
 import { handleAuthenticateErrors } from './AuthenticationErrors.mjs'
 import EmailHelper from '../Helpers/EmailHelper.mjs'
 
 const { hasAdminAccess } = AdminAuthorizationHelper
 
 function send401WithChallenge(res) {
-  res.setHeader('WWW-Authenticate', 'OverleafLogin')
+  res.setHeader('WWW-Authenticate', 'superPaperLogin')
   res.sendStatus(401)
 }
 
@@ -79,10 +78,9 @@ const AuthenticationController = {
       session_created: new Date().toISOString(),
       ip_address: user._login_req_ip,
       must_reconfirm: user.must_reconfirm,
-      v1_id: user.overleaf != null ? user.overleaf.id : undefined,
+      v1_id: user.superpaper != null ? user.superpaper.id : undefined,
       analyticsId: user.analyticsId || user._id,
       alphaProgram: user.alphaProgram || undefined, // only store if set
-      betaProgram: user.betaProgram || undefined, // only store if set
     }
     if (user.isAdmin) {
       lightUser.isAdmin = true
@@ -114,12 +112,6 @@ const AuthenticationController = {
           })
 
           try {
-            // We could investigate whether this can be done together with 'preFinishLogin' instead of being its own hook
-            await Modules.promises.hooks.fire(
-              'saasLogin',
-              { email: user.email },
-              req
-            )
             await AuthenticationController.promises.finishLogin(user, req, res)
           } catch (err) {
             return next(err)
@@ -331,12 +323,6 @@ const AuthenticationController = {
   },
 
   ipMatchCheck(req, user) {
-    if (req.ip !== user.lastLoginIp) {
-      NotificationsBuilder.ipMatcherAffiliation(user._id.toString()).create(
-        req.ip,
-        () => {}
-      )
-    }
     return UserUpdater.updateUser(
       user._id.toString(),
       {
@@ -520,11 +506,7 @@ const AuthenticationController = {
   },
 
   _redirectToLoginOrRegisterPage(req, res) {
-    if (
-      req.query.zipUrl != null ||
-      req.session.sharedProjectData ||
-      req.path === '/user/subscription/new'
-    ) {
+    if (req.query.zipUrl != null || req.session.sharedProjectData) {
       AuthenticationController._redirectToRegisterPage(req, res)
     } else {
       AuthenticationController._redirectToLoginPage(req, res)
@@ -651,9 +633,7 @@ function _loginAsyncHandlers(req, user, anonymousAnalyticsId, isNewUser) {
   AuthenticationController._recordSuccessfulLogin(user._id, () => {})
   AuthenticationController.ipMatchCheck(req, user)
   Analytics.recordEventForUserInBackground(user._id, 'user-logged-in', {
-    source: req.session.saml
-      ? 'saml'
-      : req.user_info?.auth_provider || 'email-password',
+    source: req.user_info?.auth_provider || 'email-password',
   })
   Analytics.identifyUser(user._id, anonymousAnalyticsId, isNewUser)
 

@@ -1,6 +1,6 @@
-import Metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
-import Settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
+import Settings from '@superpaper/settings'
 import Errors from '../Errors/Errors.js'
 
 export class InvalidEmailError extends Errors.BackwardCompatibleError {}

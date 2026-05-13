@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import minimist from 'minimist'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import PQueue from 'p-queue'
 import * as RedisManager from '../app/js/RedisManager.js'
 import * as ErrorRecorder from '../app/js/ErrorRecorder.js'

@@ -738,6 +738,6 @@ function getLastFetchMockQueryParam(key: string) {
     throw new Error('No fetchMock calls found')
   }
   const { url } = calls.at(-1)!
-  const { searchParams } = new URL(url, 'https://www.overleaf.com')
+  const { searchParams } = new URL(url, 'https://www.superpaper.com')
   return searchParams.get(key)
 }

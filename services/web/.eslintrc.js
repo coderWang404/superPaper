@@ -12,7 +12,7 @@ module.exports = {
     'prettier',
     'plugin:storybook/recommended',
   ],
-  plugins: ['@overleaf'],
+  plugins: ['@superpaper'],
   env: {
     es2020: true,
   },
@@ -29,8 +29,8 @@ module.exports = {
     // do not allow importing of implicit dependencies.
     'import/no-extraneous-dependencies': 'error',
 
-    '@overleaf/prefer-kebab-url': 'error',
-    '@overleaf/require-cio-snake-case-properties': 'error',
+    '@superpaper/prefer-kebab-url': 'error',
+    '@superpaper/require-cio-snake-case-properties': 'error',
 
     // disable some TypeScript rules
     '@typescript-eslint/no-var-requires': 'off',
@@ -125,7 +125,7 @@ module.exports = {
         'chai-expect/missing-assertion': 'error',
         'chai-expect/terminating-properties': 'error',
         '@typescript-eslint/no-unused-expressions': 'off',
-        '@overleaf/require-vi-doMock-valid-path': 'error',
+        '@superpaper/require-vi-doMock-valid-path': 'error',
       },
     },
     {
@@ -264,7 +264,7 @@ module.exports = {
       // Insist on using Script Runner for new scripts. Old scripts should be
       // converted to use Script Runner in future, but are excluded for now
       rules: {
-        '@overleaf/require-script-runner': 'error',
+        '@superpaper/require-script-runner': 'error',
       },
       files: ['**/scripts/**/*.mjs'], // ESM only
       excludedFiles: [
@@ -295,7 +295,7 @@ module.exports = {
         'scripts/backfill_users_sso_attribute.mjs',
         'scripts/bench_bcrypt.mjs',
         'scripts/check_institution_users.mjs',
-        'scripts/check_overleafModuleImports.mjs',
+        'scripts/check_superpaperModuleImports.mjs',
         'scripts/check_saml_emails.mjs',
         'scripts/clear_feedback_collection.mjs',
         'scripts/clear_sessions_set_must_reconfirm.mjs',
@@ -432,7 +432,7 @@ module.exports = {
         'react/no-did-update-set-state': 'error',
         'react/no-unused-prop-types': 'error',
         'react/prop-types': 'error',
-        '@overleaf/no-generated-editor-themes': 'error',
+        '@superpaper/no-generated-editor-themes': 'error',
         // "react/react-in-jsx-scope": "error",
         // END: inline standard-react rules
 
@@ -532,9 +532,9 @@ module.exports = {
         '**/frontend/js/**/hooks/**/*.{js,jsx,ts,tsx}',
       ],
       rules: {
-        '@overleaf/no-unnecessary-trans': 'error',
-        '@overleaf/should-unescape-trans': 'error',
-        '@overleaf/require-loading-label': 'error',
+        '@superpaper/no-unnecessary-trans': 'error',
+        '@superpaper/should-unescape-trans': 'error',
+        '@superpaper/require-loading-label': 'error',
 
         // https://astexplorer.net/
         'no-restricted-syntax': [
@@ -625,13 +625,13 @@ module.exports = {
     },
     {
       files: [
-        // Backend: Use @overleaf/logger
-        //          Docs: https://manual.dev-overleaf.com/development/code/logging/#structured-logging
+        // Backend: Use @superpaper/logger
+        //          Docs: https://manual.dev-superpaper.com/development/code/logging/#structured-logging
         '**/app/**/*.{js,cjs,mjs}',
         'app.{js,mjs}',
         'modules/*/*.{js,mjs}',
         // Frontend: Prefer debugConsole over bare console
-        //           Docs: https://manual.dev-overleaf.com/development/code/logging/#frontend
+        //           Docs: https://manual.dev-superpaper.com/development/code/logging/#frontend
         '**/frontend/**/*.{js,jsx,ts,tsx}',
         // Tests
         '**/test/**/*.{js,cjs,mjs,jsx,ts,tsx}',

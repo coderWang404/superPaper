@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import express from 'express'
 import bodyParser from 'body-parser'
 

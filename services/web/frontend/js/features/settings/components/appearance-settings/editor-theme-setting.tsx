@@ -2,7 +2,6 @@ import { useProjectSettingsContext } from '@/features/editor-left-menu/context/p
 import DropdownSetting from '../dropdown-setting'
 import { useTranslation } from 'react-i18next'
 import { useEditorThemesOptionGroups } from '@/features/editor-left-menu/hooks/use-editor-theme-option-groups'
-import { isIEEEBranded } from '@/utils/is-ieee-branded'
 
 export default function EditorThemeSetting() {
   const {
@@ -18,7 +17,7 @@ export default function EditorThemeSetting() {
 
   const optGroups = useEditorThemesOptionGroups()
 
-  if (overallTheme === 'system' && !isIEEEBranded()) {
+  if (overallTheme === 'system') {
     return (
       <>
         <DropdownSetting

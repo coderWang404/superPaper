@@ -5,7 +5,7 @@ import ProjectLocator from '../Project/ProjectLocator.mjs'
 import { Project } from '../../models/Project.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import LinkedFilesErrors from './LinkedFilesErrors.mjs'
-import { callbackifyAll } from '@overleaf/promise-utils'
+import { callbackifyAll } from '@superpaper/promise-utils'
 
 const { ProjectNotFoundError, V1ProjectNotFoundError, BadDataError } =
   LinkedFilesErrors
@@ -23,10 +23,10 @@ const LinkedFilesHandler = {
   },
 
   async getSourceProject(data) {
-    const projection = { _id: 1, name: 1, overleaf: 1 } // include the historyId for future use
+    const projection = { _id: 1, name: 1, superpaper: 1 } // include the historyId for future use
     if (data.v1_source_doc_id != null) {
       const project = await Project.findOne(
-        { 'overleaf.id': data.v1_source_doc_id },
+        { 'superpaper.id': data.v1_source_doc_id },
         projection
       ).exec()
 

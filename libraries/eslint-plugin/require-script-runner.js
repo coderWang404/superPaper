@@ -19,7 +19,7 @@ module.exports = {
           context.report({
             loc: { line: 1, column: 0 },
             message:
-              'Please use Script Runner for scripts. Refer to the developer manual (https://manual.dev-overleaf.com/development/code/web_scripts/#monitor-script-execution-and-usage-with-script-runner) for more information.',
+              'Please use Script Runner for scripts. Refer to the developer manual (https://manual.dev-superpaper.com/development/code/web_scripts/#monitor-script-execution-and-usage-with-script-runner) for more information.',
           })
         }
       },

@@ -16,12 +16,10 @@ ifeq ($(MONOREPO),)
 	export MONOREPO := $(shell cd ../../ && pwd)
 endif
 
-export OVERLEAF_CONFIG ?= /overleaf/services/web/test/acceptance/config/settings.test.saas.js
-export BASE_CONFIG ?= ${OVERLEAF_CONFIG}
+export SUPERPAPER_CONFIG ?= /superpaper/services/web/test/acceptance/config/settings.test.server-ce.js
+export BASE_CONFIG ?= ${SUPERPAPER_CONFIG}
 
-CFG_SAAS=/overleaf/services/web/test/acceptance/config/settings.test.saas.js
-CFG_SERVER_CE=/overleaf/services/web/test/acceptance/config/settings.test.server-ce.js
-CFG_SERVER_PRO=/overleaf/services/web/test/acceptance/config/settings.test.server-pro.js
+CFG_SERVER_CE=/superpaper/services/web/test/acceptance/config/settings.test.server-ce.js
 
 DOCKER_COMPOSE := BUILD_NUMBER=$(BUILD_NUMBER) \
 	BRANCH_NAME=$(BRANCH_NAME_TAG_SAFE) \
@@ -56,17 +54,8 @@ SHARD_PROJECT_NAMES = \
 	unit_test_mocha_$(BUILD_DIR_NAME) \
 	unit_test_parallel_$(BUILD_DIR_NAME) \
 	unit_test_parallel_make_$(BUILD_DIR_NAME) \
-	acceptance_test_saas_$(BUILD_DIR_NAME) \
 	acceptance_test_server_ce_$(BUILD_DIR_NAME) \
-	acceptance_test_server_pro_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_saas_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_saas_1_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_saas_2_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_saas_3_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_saas_4_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_saas_5_$(BUILD_DIR_NAME) \
 	acceptance_test_modules_merged_server_ce_$(BUILD_DIR_NAME) \
-	acceptance_test_modules_merged_server_pro_$(BUILD_DIR_NAME) \
 	frontend_test_$(BUILD_DIR_NAME) \
 	test_frontend_ct_$(BUILD_DIR_NAME) \
 	test_frontend_ct_core_other_$(BUILD_DIR_NAME) \
@@ -78,7 +67,7 @@ SHARD_PROJECT_NAMES = \
 
 CLEAN_SHARDS=$(addprefix clean/,$(SHARD_PROJECT_NAMES))
 clean: $(CLEAN_SHARDS)
-	-docker run --rm --volume /dev/shm:/dev/shm --user root $(IMAGE_CI) rm -rf /dev/shm/overleaf
+	-docker run --rm --volume /dev/shm:/dev/shm --user root $(IMAGE_CI) rm -rf /dev/shm/superpaper
 	-docker rmi --force $(IMAGE_CI) $(IMAGE_CI)-dev $(IMAGE_CI)-pug $(IMAGE_CI)-webpack $(IMAGE_REPO_FINAL)
 	-docker compose down --remove-orphans --rmi local --timeout 0 --volumes
 	-git clean -dfX data/
@@ -96,7 +85,7 @@ clean_ci:
 # Tests
 #
 
-test: test_unit test_acceptance test_frontend test_writefull
+test: test_unit test_acceptance test_frontend
 
 test_module: test_unit_module test_acceptance_module
 
@@ -163,7 +152,7 @@ test_unit_module: mongo_migrations_for_tests
 	$(MAKE) modules/$(MODULE_NAME)/test_unit
 
 mongo_migrations_for_tests:
-	$(DOCKER_COMPOSE) run --rm --workdir /overleaf/tools/migrations test_unit yarn run migrations migrate -t saas
+	$(DOCKER_COMPOSE) run --rm --workdir /superpaper/tools/migrations test_unit yarn run migrations migrate -t server-ce
 
 #
 # Frontend tests
@@ -204,15 +193,10 @@ test_frontend_ct_ui:
 # Writefull tests
 #
 
-test_writefull: export JUNIT_ROOT_SUITE_NAME = Writefull tests
-test_writefull:
-	COMPOSE_PROJECT_NAME=writefull_test_$(BUILD_DIR_NAME) $(DOCKER_COMPOSE) run --rm test_writefull
-	COMPOSE_PROJECT_NAME=writefull_test_$(BUILD_DIR_NAME) $(DOCKER_COMPOSE) down -v -t 0
-
 # Note: The below cypress targets are for CI only
 build_test_frontend_ct:
 	$(DOCKER_COMPOSE) build test_frontend_ct
-	docker run --rm --volume /dev/shm:/dev/shm --user root $(IMAGE_CI) bash -ec 'for path in /overleaf/services/web/cypress/results /overleaf/services/web/cypress/support /overleaf/services/web/node_modules/.cache; do mkdir -p $$path; chown -R node:node $$path; done && tar -cC / overleaf | tar -xC /dev/shm'
+	docker run --rm --volume /dev/shm:/dev/shm --user root $(IMAGE_CI) bash -ec 'for path in /superpaper/services/web/cypress/results /superpaper/services/web/cypress/support /superpaper/services/web/node_modules/.cache; do mkdir -p $$path; chown -R node:node $$path; done && tar -cC / superpaper | tar -xC /dev/shm'
 
 test_frontend_ct_core_other: export CYPRESS_DOWNLOADS=./cypress/downloads/core
 test_frontend_ct_core_other: export CYPRESS_RESULTS=./cypress/results/core
@@ -245,15 +229,10 @@ $(TEST_FRONTEND_CT_VARIANTS):
 # Acceptance tests
 #
 
-test_acceptance: test_acceptance_app test_acceptance_modules
-test_acceptance_saas: test_acceptance_app_saas test_acceptance_modules_merged_saas
+test_acceptance: test_acceptance_app_server_ce test_acceptance_modules_merged_server_ce
 test_acceptance_server_ce: test_acceptance_app_server_ce test_acceptance_modules_merged_server_ce
-test_acceptance_server_pro: test_acceptance_app_server_pro test_acceptance_modules_merged_server_pro
 
-TEST_ACCEPTANCE_APP :=  \
-	test_acceptance_app_saas \
-	test_acceptance_app_server_ce \
-	test_acceptance_app_server_pro \
+TEST_ACCEPTANCE_APP := test_acceptance_app_server_ce
 
 ifeq ($(DEBUG),true)
 TEST_ACCEPTANCE_DEBUG_PORT := -p 127.0.0.1:19999:19999
@@ -264,15 +243,9 @@ TEST_ACCEPTANCE_YARN_SCRIPT := yarn run --silent test:acceptance:app
 endif
 
 test_acceptance_app: $(TEST_ACCEPTANCE_APP)
-test_acceptance_app_saas: export JUNIT_ROOT_SUITE_NAME = SaaS app acceptance tests
-test_acceptance_app_saas: export COMPOSE_PROJECT_NAME=acceptance_test_saas_$(BUILD_DIR_NAME)
-test_acceptance_app_saas: export OVERLEAF_CONFIG=$(CFG_SAAS)
 test_acceptance_app_server_ce: export JUNIT_ROOT_SUITE_NAME = Server CE app acceptance tests
 test_acceptance_app_server_ce: export COMPOSE_PROJECT_NAME=acceptance_test_server_ce_$(BUILD_DIR_NAME)
-test_acceptance_app_server_ce: export OVERLEAF_CONFIG=$(CFG_SERVER_CE)
-test_acceptance_app_server_pro: export JUNIT_ROOT_SUITE_NAME = Server Pro app acceptance tests
-test_acceptance_app_server_pro: export COMPOSE_PROJECT_NAME=acceptance_test_server_pro_$(BUILD_DIR_NAME)
-test_acceptance_app_server_pro: export OVERLEAF_CONFIG=$(CFG_SERVER_PRO)
+test_acceptance_app_server_ce: export SUPERPAPER_CONFIG=$(CFG_SERVER_CE)
 
 $(TEST_ACCEPTANCE_APP):
 	$(DOCKER_COMPOSE) run --rm $(TEST_ACCEPTANCE_DEBUG_PORT) test_acceptance $(TEST_ACCEPTANCE_YARN_SCRIPT)
@@ -285,12 +258,12 @@ $(TEST_ACCEPTANCE_APP):
 #  template at the very top of this file.
 # Example: `web$ make modules/server-ce-scripts/test_acceptance_server_ce`
 # Description: Run the acceptance tests of the server-ce-scripts module in an
-#               Overleaf Community Edition Environment.
+#               superPaper Community Edition Environment.
 # Break down:
 #  Target: modules/server-ce-scripts/test_acceptance_server_ce
 #    -> depends on modules/server-ce-scripts/Makefile
 #    -> add environment variable BASE_CONFIG=$(CFG_SERVER_CE)
-#    -> BASE_CONFIG=/overleaf/services/web/test/acceptance/config/settings.test.server-ce.js
+#    -> BASE_CONFIG=/superpaper/services/web/test/acceptance/config/settings.test.server-ce.js
 #    -> automatic target: `make -C server-ce-scripts test_acceptance_server_ce`
 #    -> automatic target: run `make test_acceptance_server_ce` in module
 #  Target: modules/server-ce-scripts/Makefile
@@ -301,21 +274,12 @@ $(TEST_ACCEPTANCE_MODULES): %/test_acceptance: %/Makefile
 $(TEST_ACCEPTANCE_MODULES): modules/%/test_acceptance:
 	$(MAKE) test_acceptance_module MODULE_NAME=$*
 
-TEST_ACCEPTANCE_MODULES_SAAS = $(MODULE_DIRS:=/test_acceptance_saas)
-$(TEST_ACCEPTANCE_MODULES_SAAS): %/test_acceptance_saas: %/Makefile
-$(TEST_ACCEPTANCE_MODULES_SAAS): export BASE_CONFIG = $(CFG_SAAS)
-
-# This line adds `/test_acceptance_saas` suffix to all items in $(MODULE_DIRS).
 TEST_ACCEPTANCE_MODULES_SERVER_CE = $(MODULE_DIRS:=/test_acceptance_server_ce)
 # This line adds a dependency on the modules Makefile.
 $(TEST_ACCEPTANCE_MODULES_SERVER_CE): %/test_acceptance_server_ce: %/Makefile
 # This line adds the environment variable BASE_CONFIG=$(CFG_SERVER_CE) to all
 #  invocations of `web$ make modules/foo/test_acceptance_server_ce`.
 $(TEST_ACCEPTANCE_MODULES_SERVER_CE): export BASE_CONFIG = $(CFG_SERVER_CE)
-
-TEST_ACCEPTANCE_MODULES_SERVER_PRO = $(MODULE_DIRS:=/test_acceptance_server_pro)
-$(TEST_ACCEPTANCE_MODULES_SERVER_PRO): %/test_acceptance_server_pro: %/Makefile
-$(TEST_ACCEPTANCE_MODULES_SERVER_PRO): export BASE_CONFIG = $(CFG_SERVER_PRO)
 
 CLEAN_TEST_ACCEPTANCE_MODULES = $(MODULE_DIRS:=/clean_test_acceptance)
 $(CLEAN_TEST_ACCEPTANCE_MODULES): %/clean_test_acceptance: %/Makefile
@@ -327,15 +291,10 @@ test_acceptance_module_noop:
 	@echo Module '$(MODULE_NAME)' does not run in ${LABEL}.
 	@echo
 
-TEST_ACCEPTANCE_MODULE_MAYBE_IN := \
-	test_acceptance_module_maybe_in_saas \
-	test_acceptance_module_maybe_in_server_ce \
-	test_acceptance_module_maybe_in_server_pro \
+TEST_ACCEPTANCE_MODULE_MAYBE_IN := test_acceptance_module_maybe_in_server_ce
 
 test_acceptance_module: $(TEST_ACCEPTANCE_MODULE_MAYBE_IN)
-test_acceptance_module_maybe_in_saas: export BASE_CONFIG=$(CFG_SAAS)
 test_acceptance_module_maybe_in_server_ce: export BASE_CONFIG=$(CFG_SERVER_CE)
-test_acceptance_module_maybe_in_server_pro: export BASE_CONFIG=$(CFG_SERVER_PRO)
 
 # We need to figure out whether the module is loaded in a given environment.
 # This information is stored in the (base-)settings.
@@ -348,35 +307,26 @@ test_acceptance_module_maybe_in_server_pro: export BASE_CONFIG=$(CFG_SERVER_PRO)
 #  service would start mongo/redis.
 $(TEST_ACCEPTANCE_MODULE_MAYBE_IN): test_acceptance_module_maybe_in_%:
 	$(MAKE) $(shell \
-		OVERLEAF_CONFIG=$(BASE_CONFIG) \
+		SUPERPAPER_CONFIG=$(BASE_CONFIG) \
 		$(DOCKER_COMPOSE) run --rm test_unit \
 		yarn node test/acceptance/getModuleTargets test_acceptance_$* \
 		| grep -e /$(MODULE_NAME)/ || echo test_acceptance_module_noop LABEL=$* \
 	)
 
-# See docs for test_acceptance_server_ce how this works.
-test_acceptance_module_saas: export BASE_CONFIG = $(CFG_SAAS)
-test_acceptance_module_saas:
-	$(MAKE) modules/$(MODULE_NAME)/test_acceptance_saas
-
 test_acceptance_module_server_ce: export BASE_CONFIG = $(CFG_SERVER_CE)
 test_acceptance_module_server_ce:
 	$(MAKE) modules/$(MODULE_NAME)/test_acceptance_server_ce
-
-test_acceptance_module_server_pro: export BASE_CONFIG = $(CFG_SERVER_PRO)
-test_acceptance_module_server_pro:
-	$(MAKE) modules/$(MODULE_NAME)/test_acceptance_server_pro
 
 # See docs for test_acceptance_server_ce how this works.
 TEST_ACCEPTANCE_MODULES_MERGED_INNER = $(MODULE_DIRS:=/test_acceptance_merged_inner)
 $(TEST_ACCEPTANCE_MODULES_MERGED_INNER): %/test_acceptance_merged_inner: %/Makefile
 test_acceptance_modules_merged_inner:
 	$(MAKE) $(shell \
-		OVERLEAF_CONFIG=$(BASE_CONFIG) \
+		SUPERPAPER_CONFIG=$(BASE_CONFIG) \
 		yarn node test/acceptance/getModuleTargets test_acceptance_merged_inner \
 	)
 
-# inner loop for running saas tests in parallel
+# inner loop for running module tests in parallel
 no_more_targets:
 
 # If we ever have more than 50 modules, we need to add _6 targets to all the places and have it START at 51.
@@ -397,62 +347,24 @@ TEST_ACCEPTANCE_MODULES_MERGED_INNER_SPLIT = \
 # Finally we check with grep for any targets in a batch and print a fallback if none were found.
 $(TEST_ACCEPTANCE_MODULES_MERGED_INNER_SPLIT):
 	$(MAKE) $(shell \
-		OVERLEAF_CONFIG=$(BASE_CONFIG) \
+		SUPERPAPER_CONFIG=$(BASE_CONFIG) \
 		yarn node test/acceptance/getModuleTargets test_acceptance_merged_inner \
 		| tail -n+$(START) | head -n 10 \
 		| grep -e . || echo no_more_targets \
 	)
 
 # See docs for test_acceptance_server_ce how this works.
-test_acceptance_modules_merged_saas: export JUNIT_ROOT_SUITE_NAME = SaaS modules acceptance tests
-test_acceptance_modules_merged_saas: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_saas_$(BUILD_DIR_NAME)
-test_acceptance_modules_merged_saas: export BASE_CONFIG = $(CFG_SAAS)
-
 test_acceptance_modules_merged_server_ce: export JUNIT_ROOT_SUITE_NAME = Server CE modules acceptance tests
 test_acceptance_modules_merged_server_ce: export COMPOSE_PROJECT_NAME = \
 	acceptance_test_modules_merged_server_ce_$(BUILD_DIR_NAME)
 test_acceptance_modules_merged_server_ce: export BASE_CONFIG = $(CFG_SERVER_CE)
 
-test_acceptance_modules_merged_server_pro: export JUNIT_ROOT_SUITE_NAME = Server Pro modules acceptance tests
-test_acceptance_modules_merged_server_pro: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_server_pro_$(BUILD_DIR_NAME)
-test_acceptance_modules_merged_server_pro: export BASE_CONFIG = $(CFG_SERVER_PRO)
-
 # All these variants run the same command.
 # Each target has a different set of environment defined above.
-TEST_ACCEPTANCE_MODULES_MERGED_VARIANTS = \
-	test_acceptance_modules_merged_saas \
-	test_acceptance_modules_merged_server_ce \
-	test_acceptance_modules_merged_server_pro \
+TEST_ACCEPTANCE_MODULES_MERGED_VARIANTS = test_acceptance_modules_merged_server_ce
 
 $(TEST_ACCEPTANCE_MODULES_MERGED_VARIANTS):
 	$(DOCKER_COMPOSE) run --rm test_acceptance yarn exec make test_acceptance_modules_merged_inner
-	$(DOCKER_COMPOSE) down -v -t 0
-
-# outer loop for running saas tests in parallel
-TEST_ACCEPTANCE_MODULES_MERGED_SPLIT_SAAS = \
-	test_acceptance_modules_merged_saas_1 \
-	test_acceptance_modules_merged_saas_2 \
-	test_acceptance_modules_merged_saas_3 \
-	test_acceptance_modules_merged_saas_4 \
-	test_acceptance_modules_merged_saas_5 \
-
-test_acceptance_modules_merged_saas_1: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_saas_1_$(BUILD_DIR_NAME)
-test_acceptance_modules_merged_saas_2: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_saas_2_$(BUILD_DIR_NAME)
-test_acceptance_modules_merged_saas_3: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_saas_3_$(BUILD_DIR_NAME)
-test_acceptance_modules_merged_saas_4: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_saas_4_$(BUILD_DIR_NAME)
-test_acceptance_modules_merged_saas_5: export COMPOSE_PROJECT_NAME = \
-	acceptance_test_modules_merged_saas_5_$(BUILD_DIR_NAME)
-$(TEST_ACCEPTANCE_MODULES_MERGED_SPLIT_SAAS): export BASE_CONFIG = $(CFG_SAAS)
-$(TEST_ACCEPTANCE_MODULES_MERGED_SPLIT_SAAS): export JUNIT_ROOT_SUITE_NAME = SaaS modules acceptance tests
-
-$(TEST_ACCEPTANCE_MODULES_MERGED_SPLIT_SAAS): test_acceptance_modules_merged_saas_%:
-	$(DOCKER_COMPOSE) run --rm test_acceptance yarn exec make test_acceptance_modules_merged_inner_$*
 	$(DOCKER_COMPOSE) down -v -t 0
 
 test_acceptance_modules: $(TEST_ACCEPTANCE_MODULES_MERGED_VARIANTS)
@@ -462,7 +374,7 @@ test_acceptance_modules: $(TEST_ACCEPTANCE_MODULES_MERGED_VARIANTS)
 #
 
 rebase_coverage_reports:
-	sed -i 's_path="/overleaf/_path="_' data/coverage/*/clover.xml
+	sed -i 's_path="/superpaper/_path="_' data/coverage/*/clover.xml
 
 # Create the bundle with full paths inside the monorepo to make it easier to organize them later.
 bundle_coverage_reports:
@@ -478,14 +390,14 @@ ci:
 
 # Run the linting commands in the scope of the monorepo.
 # Eslint and prettier (plus some configs) are on the root.
-RUN_LINTING_CI_MONOREPO = docker run --rm --volume $(MONOREPO)/.editorconfig:/overleaf/.editorconfig --volume $(MONOREPO)/.eslintignore:/overleaf/.eslintignore --volume $(MONOREPO)/.eslintrc:/overleaf/.eslintrc --volume $(MONOREPO)/.prettierignore:/overleaf/.prettierignore --volume $(MONOREPO)/.prettierrc:/overleaf/.prettierrc --volume $(MONOREPO)/tsconfig.backend.json:/overleaf/tsconfig.backend.json --volume $(MONOREPO)/services/web/data/reports:/overleaf/services/web/data/reports --volume $(MONOREPO)/node_modules/.cache/:/overleaf/node_modules/.cache/ -w /overleaf $(IMAGE_CI) yarn run --silent
+RUN_LINTING_CI_MONOREPO = docker run --rm --volume $(MONOREPO)/.editorconfig:/superpaper/.editorconfig --volume $(MONOREPO)/.eslintignore:/superpaper/.eslintignore --volume $(MONOREPO)/.eslintrc:/superpaper/.eslintrc --volume $(MONOREPO)/.prettierignore:/superpaper/.prettierignore --volume $(MONOREPO)/.prettierrc:/superpaper/.prettierrc --volume $(MONOREPO)/tsconfig.backend.json:/superpaper/tsconfig.backend.json --volume $(MONOREPO)/services/web/data/reports:/superpaper/services/web/data/reports --volume $(MONOREPO)/node_modules/.cache/:/superpaper/node_modules/.cache/ -w /superpaper $(IMAGE_CI) yarn run --silent
 RUN_LINTING_MONOREPO = docker run --rm -v $(MONOREPO):$(MONOREPO) -w $(MONOREPO) --user node node:24.14.1 corepack yarn run --silent
 
 ORG_PATH = /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN_LINT_FORMAT ?= \
-	docker run --rm --env BRANCH_NAME --env CI --env COMMIT_SHA --env MONOREPO --env PATH=/overleaf/node_modules/.bin:$(ORG_PATH) --volume $(MONOREPO)/.prettierignore:/overleaf/.prettierignore --volume $(MONOREPO)/.prettierrc:/overleaf/.prettierrc --volume ${PWD}/data/reports:/overleaf/services/web/data/reports --volume $(MONOREPO)/node_modules/.cache/:/overleaf/node_modules/.cache/ ${IMAGE_CI}
+	docker run --rm --env BRANCH_NAME --env CI --env COMMIT_SHA --env MONOREPO --env PATH=/superpaper/node_modules/.bin:$(ORG_PATH) --volume $(MONOREPO)/.prettierignore:/superpaper/.prettierignore --volume $(MONOREPO)/.prettierrc:/superpaper/.prettierrc --volume ${PWD}/data/reports:/superpaper/services/web/data/reports --volume $(MONOREPO)/node_modules/.cache/:/superpaper/node_modules/.cache/ ${IMAGE_CI}
 
-NODE_MODULES_PATH := ${PATH}:${PWD}/node_modules/.bin:/overleaf/services/web/node_modules/.bin
+NODE_MODULES_PATH := ${PATH}:${PWD}/node_modules/.bin:/superpaper/services/web/node_modules/.bin
 WITH_NODE_MODULES_PATH = \
 	format_backend \
 	format_frontend \
@@ -529,7 +441,7 @@ lint: lint_eslint
 lint_eslint:
 ifeq ($(CI),true)
 	-yarn run lint --format json --output-file data/reports/eslint.json
-	sed -i 's_"filePath":"/overleaf_"filePath":"$(MONOREPO)_g' data/reports/eslint.json
+	sed -i 's_"filePath":"/superpaper_"filePath":"$(MONOREPO)_g' data/reports/eslint.json
 else
 	yarn run lint
 endif
@@ -538,7 +450,7 @@ lint: lint_stylelint
 lint_stylelint:
 ifeq ($(CI),true)
 	-yarn run lint:styles --formatter json --output-file data/reports/stylelint.json
-	sed -i 's_"source":"/overleaf_"source":"$(MONOREPO)_g' data/reports/stylelint.json
+	sed -i 's_"source":"/superpaper_"source":"$(MONOREPO)_g' data/reports/stylelint.json
 else
 	yarn run lint:styles
 endif
@@ -568,9 +480,9 @@ lint: lint_flag_res_send_usage
 lint_flag_res_send_usage:
 	bin/lint_flag_res_send_usage
 
-lint: lint_overleafModuleImports
-lint_overleafModuleImports:
-	node scripts/check_overleafModuleImports.mjs
+lint: lint_superpaperModuleImports
+lint_superpaperModuleImports:
+	node scripts/check_superpaperModuleImports.mjs
 
 lint: typecheck_frontend
 typecheck_frontend:
@@ -612,7 +524,7 @@ format_jenkins_fix:
 	$(RUN_LINTING_MONOREPO) format:jenkins:fix
 
 format_in_docker:
-	$(RUN_LINT_FORMAT) bash -c 'cd /overleaf && yarn run format services/web'
+	$(RUN_LINT_FORMAT) bash -c 'cd /superpaper && yarn run format services/web'
 
 SHELLCHECK_OPTS = \
 	--shell=bash \
@@ -637,7 +549,7 @@ shellcheck_fix:
 #
 
 IMAGE_CI ?= ci/$(PROJECT_NAME):$(BRANCH_NAME_TAG_SAFE)-$(BUILD_NUMBER)
-IMAGE_REPO ?= us-east1-docker.pkg.dev/overleaf-ops/ol-docker/$(PROJECT_NAME)
+IMAGE_REPO ?= us-east1-docker.pkg.dev/superpaper-ops/ol-docker/$(PROJECT_NAME)
 IMAGE_REPO_FINAL ?= $(IMAGE_REPO):$(BRANCH_NAME_TAG_SAFE)-$(BUILD_NUMBER)
 # A shared scratch tag that is used by all the pipelines for pushing the layers of the production image ASAP from a parallel step.
 # We do not want to make the image available before all the tests have passed.
@@ -654,7 +566,7 @@ IMAGE_CACHE ?= $(IMAGE_REPO):cache-$(shell cat \
   $(MONOREPO)/libraries/mongo-utils/package.json \
   $(MONOREPO)/libraries/o-error/package.json \
   $(MONOREPO)/libraries/object-persistor/package.json \
-  $(MONOREPO)/libraries/overleaf-editor-core/package.json \
+  $(MONOREPO)/libraries/superpaper-editor-core/package.json \
   $(MONOREPO)/libraries/promise-utils/package.json \
   $(MONOREPO)/libraries/ranges-tracker/package.json \
   $(MONOREPO)/libraries/redis-wrapper/package.json \

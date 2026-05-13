@@ -18,7 +18,7 @@ import { useConnectionContext } from '@/features/ide-react/context/connection-co
 import useSocketListener from '@/features/ide-react/hooks/use-socket-listener'
 import { UserId } from '../../../../../types/user'
 import { deleteJSON, getJSON, postJSON } from '@/infrastructure/fetch-json'
-import RangesTracker from '@overleaf/ranges-tracker'
+import RangesTracker from '@superpaper/ranges-tracker'
 import { CommentOperation } from '../../../../../types/change'
 import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
 import { useEditorContext } from '@/shared/context/editor-context'
@@ -28,8 +28,8 @@ import {
   AddCommentOperation,
   DeleteCommentOperation,
   SetCommentStateOperation,
-} from 'overleaf-editor-core'
-import Range from 'overleaf-editor-core/lib/range'
+} from 'superpaper-editor-core'
+import Range from 'superpaper-editor-core/lib/range'
 import { trackedDeletesFromState } from '@/features/source-editor/utils/tracked-deletes'
 import { useCodeMirrorViewContext } from '@/features/source-editor/components/codemirror-context'
 import { rangesUpdatedEffect } from '@/features/source-editor/extensions/history-ot'

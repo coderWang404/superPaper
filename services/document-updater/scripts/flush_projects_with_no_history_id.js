@@ -1,12 +1,12 @@
 // @ts-check
 
-const Settings = require('@overleaf/settings')
-const logger = require('@overleaf/logger')
+const Settings = require('@superpaper/settings')
+const logger = require('@superpaper/logger')
 const RedisManager = require('../app/js/RedisManager')
 const minimist = require('minimist')
 const { db, ObjectId } = require('../app/js/mongodb')
 const ProjectManager = require('../app/js/ProjectManager')
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 const docUpdaterKeys = Settings.redis.documentupdater.key_schema
 
@@ -58,12 +58,12 @@ async function getHistoryId(docId) {
   const project = await db.projects.findOne(
     { _id: doc.project_id },
     {
-      projection: { 'overleaf.history': 1 },
+      projection: { 'superpaper.history': 1 },
       readPreference: 'secondaryPreferred',
     }
   )
 
-  if (!project?.overleaf?.history?.id) {
+  if (!project?.superpaper?.history?.id) {
     throw new OError('Project not present in mongo (or has no history id)', {
       docId,
       project,
@@ -72,7 +72,7 @@ async function getHistoryId(docId) {
   }
 
   return {
-    historyId: project?.overleaf?.history?.id,
+    historyId: project?.superpaper?.history?.id,
     projectId: doc.project_id.toString(),
   }
 }

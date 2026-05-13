@@ -1,5 +1,5 @@
-import redis from '@overleaf/redis-wrapper'
-import logger from '@overleaf/logger'
+import redis from '@superpaper/redis-wrapper'
+import logger from '@superpaper/logger'
 
 export default {
   createClientList(...configs) {

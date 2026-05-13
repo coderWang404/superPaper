@@ -48,7 +48,7 @@ describe('sort comparators', function () {
   describe('owner comparator', function () {
     const owner = {
       id: '62d6d0b4c5c5030a4d696c7a',
-      email: 'picard@overleaf.com',
+      email: 'picard@superpaper.com',
       firstName: 'Jean-Luc',
       lastName: 'Picard',
     }

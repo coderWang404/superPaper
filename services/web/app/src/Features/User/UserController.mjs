@@ -2,22 +2,21 @@ import UserHandler from './UserHandler.mjs'
 import UserDeleter from './UserDeleter.mjs'
 import UserGetter from './UserGetter.mjs'
 import { User } from '../../models/User.mjs'
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
 import AuthenticationManager from '../Authentication/AuthenticationManager.mjs'
 import SessionManager from '../Authentication/SessionManager.mjs'
-import Features from '../../infrastructure/Features.mjs'
 import { z, parseReq } from '../../infrastructure/Validation.mjs'
 import UserAuditLogHandler from './UserAuditLogHandler.mjs'
 import UserSessionsManager from './UserSessionsManager.mjs'
 import UserUpdater from './UserUpdater.mjs'
 import Errors from '../Errors/Errors.js'
 import HttpErrorHandler from '../Errors/HttpErrorHandler.mjs'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import EmailHandler from '../Email/EmailHandler.mjs'
 import UrlHelper from '../Helpers/UrlHelper.mjs'
 import { promisify } from 'node:util'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import { sanitizeControlCharacters } from '../../infrastructure/Sanitize.mjs'
 import { acceptsJson } from '../../infrastructure/RequestContentTypeDetection.mjs'
 import Modules from '../../infrastructure/Modules.mjs'
@@ -55,14 +54,6 @@ function _sendSecurityAlertPasswordChanged(user) {
         'could not send security alert email when password changed'
       )
     })
-}
-
-async function _ensureAffiliation(userId, emailData) {
-  if (emailData.samlProviderId) {
-    await UserUpdater.promises.confirmEmail(userId, emailData.email)
-  } else {
-    await UserUpdater.promises.addAffiliationForNewUser(userId, emailData.email)
-  }
 }
 
 async function changePassword(req, res, next) {
@@ -172,49 +163,6 @@ async function clearSessions(req, res, next) {
   res.sendStatus(201)
 }
 
-async function ensureAffiliation(user) {
-  if (!Features.hasFeature('affiliations')) {
-    return
-  }
-
-  const flaggedEmails = user.emails.filter(email => email.affiliationUnchecked)
-  if (flaggedEmails.length === 0) {
-    return
-  }
-
-  if (flaggedEmails.length > 1) {
-    logger.error(
-      { userId: user._id },
-      `Unexpected number of flagged emails: ${flaggedEmails.length}`
-    )
-  }
-
-  await _ensureAffiliation(user._id, flaggedEmails[0])
-}
-
-async function ensureAffiliationMiddleware(req, res, next) {
-  let user
-  if (!Features.hasFeature('affiliations') || !req.query.ensureAffiliation) {
-    return next()
-  }
-  const userId = SessionManager.getLoggedInUserId(req.session)
-  try {
-    user = await UserGetter.promises.getUser(userId)
-  } catch (error) {
-    throw new Errors.UserNotFoundError({ info: { userId } })
-  }
-  // if the user does not have permission to add an affiliation, we skip this middleware
-  try {
-    req.assertPermission('add-affiliation')
-  } catch (error) {
-    if (error instanceof Errors.ForbiddenError) {
-      return next()
-    }
-  }
-  await ensureAffiliation(user)
-  return next()
-}
-
 async function tryDeleteUser(req, res, next) {
   const userId = SessionManager.getLoggedInUserId(req.session)
   const { password } = req.body
@@ -259,23 +207,7 @@ async function tryDeleteUser(req, res, next) {
       message: 'error while deleting user account',
       info: { userId },
     }
-    if (err instanceof Errors.SubscriptionAdminDeletionError) {
-      // set info.public.error for JSON response so frontend can display
-      // a specific message
-      errorData.info.public = {
-        error: 'SubscriptionAdminDeletionError',
-      }
-      const error = OError.tag(err, errorData.message, errorData.info)
-      logger.warn({ error, req }, error.message)
-      return HttpErrorHandler.unprocessableEntity(
-        req,
-        res,
-        errorData.message,
-        errorData.info.public
-      )
-    } else {
-      throw OError.tag(err, errorData.message, errorData.info)
-    }
+    throw OError.tag(err, errorData.message, errorData.info)
   }
 
   await Modules.promises.hooks.fire('tryDeleteV1Account', user)
@@ -296,57 +228,11 @@ async function tryDeleteUser(req, res, next) {
   res.sendStatus(200)
 }
 
-async function subscribe(req, res, next) {
-  const userId = SessionManager.getLoggedInUserId(req.session)
-  req.logger.addFields({ userId })
-
-  await Modules.promises.hooks.fire(
-    'updateTopicSubscription',
-    userId,
-    'newsletter',
-    true
-  )
-
-  res.json({
-    message: req.i18n.translate('thanks_settings_updated'),
-    subscribed: true,
-  })
-}
-
-async function unsubscribe(req, res, next) {
-  const userId = SessionManager.getLoggedInUserId(req.session)
-  req.logger.addFields({ userId })
-
-  await Modules.promises.hooks.fire(
-    'updateTopicSubscription',
-    userId,
-    'newsletter',
-    false
-  )
-
-  res.json({
-    message: req.i18n.translate('thanks_settings_updated'),
-    subscribed: false,
-  })
-}
-
-const refProviderSettingsSchema = z
-  .object({
-    enabled: z.boolean().optional(),
-    groups: z.array(z.object({ id: z.string() })).optional(),
-    disablePersonalLibrary: z.boolean().optional(),
-    migrated: z.boolean().optional(),
-  })
-  .optional()
-
 const updateUserSettingsSchema = z.object({
   body: z
     .object({
       first_name: z.string().max(255).nullish(),
       last_name: z.string().max(255).nullish(),
-      zotero: refProviderSettingsSchema,
-      mendeley: refProviderSettingsSchema,
-      papers: refProviderSettingsSchema,
     })
     .passthrough(),
   // TODO: complete the schema and remove the passthrough
@@ -370,9 +256,6 @@ async function updateUserSettings(req, res, next) {
   }
   if (typeof body.role === 'string') {
     user.role = sanitizeControlCharacters(body.role).trim()
-  }
-  if (typeof body.institution === 'string') {
-    user.institution = sanitizeControlCharacters(body.institution).trim()
   }
   if (body.mode != null) {
     user.ace.mode = body.mode
@@ -432,23 +315,10 @@ async function updateUserSettings(req, res, next) {
   if (body.darkModePdf != null) {
     user.ace.darkModePdf = Boolean(body.darkModePdf)
   }
-  if (body.zotero != null) {
-    user.ace.zotero = { ...user.ace.zotero, ...body.zotero }
-  }
-  if (body.mendeley != null) {
-    user.ace.mendeley = { ...user.ace.mendeley, ...body.mendeley }
-  }
-  if (body.papers != null) {
-    user.ace.papers = { ...user.ace.papers, ...body.papers }
-  }
   await user.save()
 
   const newEmail = body.email?.trim().toLowerCase()
-  if (
-    newEmail == null ||
-    newEmail === user.email ||
-    req.externalAuthenticationSystemUsed()
-  ) {
+  if (newEmail == null || newEmail === user.email) {
     // end here, don't update email
     SessionManager.setInSessionUser(req.session, {
       first_name: user.first_name,
@@ -563,12 +433,8 @@ export default {
   clearSessions: expressify(clearSessions),
   changePassword: expressify(changePassword),
   tryDeleteUser: expressify(tryDeleteUser),
-  subscribe: expressify(subscribe),
-  unsubscribe: expressify(unsubscribe),
   updateUserSettings: expressify(updateUserSettings),
   logout: expressify(logout),
   expireDeletedUser: expressify(expireDeletedUser),
   expireDeletedUsersAfterDuration: expressify(expireDeletedUsersAfterDuration),
-  ensureAffiliationMiddleware: expressify(ensureAffiliationMiddleware),
-  ensureAffiliation,
 }

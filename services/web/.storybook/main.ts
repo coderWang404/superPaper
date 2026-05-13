@@ -12,14 +12,14 @@ const require = createRequire(import.meta.url)
 const rootDir = path.resolve(__dirname, '..')
 
 // NOTE: must be set before webpack config is imported
-process.env.OVERLEAF_CONFIG = path.join(rootDir, 'config/settings.webpack.js')
+process.env.SUPERPAPER_CONFIG = path.join(rootDir, 'config/settings.webpack.js')
 
 function getAbsolutePath(value: string): any {
   return path.dirname(require.resolve(path.join(value, 'package.json')))
 }
 
 // Make sure that babel-macros are re-evaluated after changing the modules config
-// Import this after setting process.env.OVERLEAF_CONFIG
+// Import this after setting process.env.SUPERPAPER_CONFIG
 const invalidateBabelCacheIfNeeded = require('../frontend/macros/invalidate-babel-cache-if-needed')
 invalidateBabelCacheIfNeeded()
 

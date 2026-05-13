@@ -2,9 +2,9 @@ import AuthenticationController from '../Authentication/AuthenticationController
 import SessionManager from '../Authentication/SessionManager.mjs'
 import TokenAccessHandler from './TokenAccessHandler.mjs'
 import Errors from '../Errors/Errors.js'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
-import { expressify } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
+import { expressify } from '@superpaper/promise-utils'
 import AuthorizationManager from '../Authorization/AuthorizationManager.mjs'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
@@ -14,13 +14,13 @@ import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
 import CollaboratorsGetter from '../Collaborators/CollaboratorsGetter.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import AsyncFormHelper from '../Helpers/AsyncFormHelper.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
 import AdminAuthorizationHelper from '../Helpers/AdminAuthorizationHelper.mjs'
 import UrlHelper from '../Helpers/UrlHelper.mjs'
 import UserGetter from '../User/UserGetter.mjs'
-import Settings from '@overleaf/settings'
-import LimitationsManager from '../Subscription/LimitationsManager.mjs'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
+import Settings from '@superpaper/settings'
+import LimitationsManager from '../Authorization/CollaborationLimitManager.mjs'
+import SplitTestHandler from '../FeatureRollouts/FeatureRolloutHandler.mjs'
 
 const { getSafeAdminDomainRedirect } = UrlHelper
 const { canRedirectToAdminDomain } = AdminAuthorizationHelper
@@ -91,7 +91,7 @@ async function _handleV1Project(token, userId) {
   }
 }
 
-async function _isOverleafStaff(userId) {
+async function _issuperPaperStaff(userId) {
   const emails = await UserGetter.promises.getUserConfirmedEmails(userId)
   const adminDomains = Settings.adminDomains ?? []
   return emails.some(email =>
@@ -175,7 +175,7 @@ async function checkAndGetProjectOrResponseAction(
     token
   )
   if (!project) {
-    if (Settings.overleaf) {
+    if (Settings.superpaper) {
       const v1ImportData = await _handleV1Project(token, userId)
       return [
         null,
@@ -251,15 +251,15 @@ async function checkAndGetProjectOrResponseAction(
   }
 
   // Handle admin redirect
-  // If the project owner is an internal staff (using @overleaf.com email),
+  // If the project owner is an internal staff (using @superpaper.com email),
   // the admin will join the project "for real".
   // If the project owner is a external user
   // the admin will be redirect to admin domain to view the project.
   if (canRedirectToAdminDomain(SessionManager.getSessionUser(req.session))) {
-    const isProjectOwnerOverleafStaff = await _isOverleafStaff(
+    const isProjectOwnersuperPaperStaff = await _issuperPaperStaff(
       project.owner_ref
     )
-    if (isProjectOwnerOverleafStaff) {
+    if (isProjectOwnersuperPaperStaff) {
       logger.warn(
         { projectId, userId },
         'letting admin user join staff project'

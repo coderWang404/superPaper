@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 export const SYNC_ONGOING_ERROR_MESSAGE = 'sync ongoing'
 

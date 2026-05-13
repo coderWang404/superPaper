@@ -1,10 +1,10 @@
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 
 import Events from 'node:events'
-import Metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import express from 'express'
 import bodyParser from 'body-parser'
 import {

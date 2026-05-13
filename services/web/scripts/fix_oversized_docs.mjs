@@ -6,8 +6,8 @@ import FileStoreHandler from '../app/src/Features/FileStore/FileStoreHandler.mjs
 import FileWriter from '../app/src/infrastructure/FileWriter.mjs'
 import ProjectEntityMongoUpdateHandler from '../app/src/Features/Project/ProjectEntityMongoUpdateHandler.mjs'
 import ProjectLocator from '../app/src/Features/Project/ProjectLocator.mjs'
-import RedisWrapper from '@overleaf/redis-wrapper'
-import Settings from '@overleaf/settings'
+import RedisWrapper from '@superpaper/redis-wrapper'
+import Settings from '@superpaper/settings'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 
 const opts = parseArgs()

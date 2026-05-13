@@ -1,5 +1,5 @@
 import 'express'
-import RequestLogger from '@overleaf/metrics'
+import RequestLogger from '@superpaper/metrics'
 
 // Add properties to Express's Request object that are defined in JS middleware
 // or controllers and expected to be present in controllers.

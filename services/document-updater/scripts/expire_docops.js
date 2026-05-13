@@ -1,5 +1,5 @@
-const Settings = require('@overleaf/settings')
-const rclient = require('@overleaf/redis-wrapper').createClient(
+const Settings = require('@superpaper/settings')
+const rclient = require('@superpaper/redis-wrapper').createClient(
   Settings.redis.documentupdater
 )
 let keys = Settings.redis.documentupdater.key_schema

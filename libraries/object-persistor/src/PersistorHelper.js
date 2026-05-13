@@ -1,8 +1,8 @@
 const Crypto = require('node:crypto')
 const Stream = require('node:stream')
 const { pipeline } = require('node:stream/promises')
-const Logger = require('@overleaf/logger')
-const Metrics = require('@overleaf/metrics')
+const Logger = require('@superpaper/logger')
+const Metrics = require('@superpaper/metrics')
 const { WriteError, NotFoundError, AlreadyWrittenError } = require('./Errors')
 
 const _128KiB = 128 * 1024

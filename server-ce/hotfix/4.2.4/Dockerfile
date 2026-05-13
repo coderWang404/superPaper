@@ -9,15 +9,15 @@ RUN apt-get update \
 ADD env.sh /etc/sharelatex/env.sh
 COPY pr_17601-1.patch /etc/sharelatex/
 RUN cd /etc/sharelatex && patch -p0 < pr_17601-1.patch && rm pr_17601-1.patch
-COPY pr_17601-2.patch /overleaf/cron/
-RUN cd /overleaf/cron && patch -p0 < pr_17601-2.patch && rm pr_17601-2.patch
+COPY pr_17601-2.patch /superpaper/cron/
+RUN cd /superpaper/cron && patch -p0 < pr_17601-2.patch && rm pr_17601-2.patch
 COPY pr_17601-3.patch /etc/service/
 RUN cd /etc/service && patch -p0 < pr_17601-3.patch && rm pr_17601-3.patch
 
 # Add history utility scripts
-ADD bin/* /overleaf/bin/
+ADD bin/* /superpaper/bin/
 
-# Patch: https://github.com/overleaf/internal/pull/17885
+# Patch: https://github.com/superpaper/internal/pull/17885
 COPY pr_17885.patch .
 RUN patch -p0 -d /etc/my_init.pre_shutdown.d < pr_17885.patch \
 &&  rm pr_17885.patch

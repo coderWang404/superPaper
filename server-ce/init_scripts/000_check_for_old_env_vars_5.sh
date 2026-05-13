@@ -12,34 +12,34 @@ N=$(echo "$OLD_ITEMS" | wc -l)
 cat <<EOF
 ------------------------------------------------------------------------
 
-                   ShareLaTeX to Overleaf rebranding
+                   ShareLaTeX to superPaper rebranding
                    ---------------------------------
 
   Starting with version 5.0, ShareLaTeX branded variables are no
-   longer supported as we are migrating to the Overleaf brand.
+   longer supported as we are migrating to the superPaper brand.
 
   Your configuration still uses $N ShareLaTeX environment variables:
 $OLD_ITEMS
 
-  Please either replace them with the "OVERLEAF_" prefix,
-   e.g. SHARELATEX_MONGO_URL -> OVERLEAF_MONGO_URL, or
+  Please either replace them with the "SUPERPAPER_" prefix,
+   e.g. SHARELATEX_MONGO_URL -> SUPERPAPER_MONGO_URL, or
    remove old entries from your configuration.
 
   You can use the following script for migrating your config.
 
-  Overleaf toolkit setups:
+  superPaper toolkit setups:
 
-    github.com/overleaf/toolkit$ bin/upgrade
-    github.com/overleaf/toolkit$ bin/rename-env-vars-5-0.sh
+    github.com/superpaper/toolkit$ bin/upgrade
+    github.com/superpaper/toolkit$ bin/rename-env-vars-5-0.sh
 
 
   Legacy docker compose setups/Horizontal scaling setups:
 
-    github.com/overleaf/overleaf$ git pull
-    github.com/overleaf/overleaf$ server-ce/bin/rename-env-vars-5-0.sh
+    github.com/superpaper/superpaper$ git pull
+    github.com/superpaper/superpaper$ server-ce/bin/rename-env-vars-5-0.sh
 
     # When using a docker-compose.override.yml file (or other file name):
-    github.com/overleaf/overleaf$ server-ce/bin/rename-env-vars-5-0.sh docker-compose.override.yml
+    github.com/superpaper/superpaper$ server-ce/bin/rename-env-vars-5-0.sh docker-compose.override.yml
 
 
   Other deployment methods:

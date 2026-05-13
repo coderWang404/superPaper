@@ -1,9 +1,9 @@
 // Metrics must be initialized before importing anything else
-import '@overleaf/metrics/initialize.js'
+import '@superpaper/metrics/initialize.js'
 
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import { mongoClient } from './app/js/mongodb.js'
 import { app } from './app/js/server.js'
 

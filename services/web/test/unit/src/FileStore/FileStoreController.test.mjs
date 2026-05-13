@@ -24,7 +24,7 @@ describe('FileStoreController', function () {
 
     vi.doMock('node:stream/promises', () => ctx.Stream)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 

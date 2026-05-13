@@ -4,26 +4,25 @@ import ProjectRootDocManagerModule from '../Project/ProjectRootDocManager.mjs'
 import ProjectUploadManager from '../Uploads/ProjectUploadManager.mjs'
 import fs from 'node:fs'
 import util from 'node:util'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import {
   fetchJson,
   fetchStreamWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
-import settings from '@overleaf/settings'
+} from '@superpaper/fetch-utils'
+import settings from '@superpaper/settings'
 import crypto from 'node:crypto'
 import Errors from '../Errors/Errors.js'
 import { pipeline } from 'node:stream/promises'
 import ClsiCacheManager from '../Compile/ClsiCacheManager.mjs'
 import Path from 'node:path'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 
 const { promises: ProjectRootDocManager } = ProjectRootDocManagerModule
 const { promises: ProjectOptionsHandler } = ProjectOptionsHandlerModule
 
 const TemplatesManager = {
   async createProjectFromV1Template(
-    brandVariationId,
     compiler,
     mainFile,
     templateId,
@@ -37,7 +36,7 @@ const TemplatesManager = {
       imageName || 'wl_texlive:2018.1'
     )
 
-    const zipUrl = `${settings.apis.v1.url}/api/v1/overleaf/templates/${templateVersionId}`
+    const zipUrl = `${settings.apis.v1.url}/api/v1/superpaper/templates/${templateVersionId}`
     const zipReq = await fetchStreamWithResponse(zipUrl, {
       basicAuth: {
         user: settings.apis.v1.user,
@@ -56,7 +55,6 @@ const TemplatesManager = {
         compiler,
         imageName,
       }
-      if (brandVariationId) attributes.brandVariationId = brandVariationId
 
       await pipeline(zipReq.stream, writeStream)
 

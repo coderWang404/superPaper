@@ -1,7 +1,7 @@
 import { vi, expect } from 'vitest'
 import sinon from 'sinon'
-import isUtf8 from 'utf-8-validate'
-import Settings from '@overleaf/settings'
+import { isUtf8 } from 'node:buffer'
+import Settings from '@superpaper/settings'
 
 const MODULE_PATH = '../../../../app/src/Features/Uploads/FileTypeManager.mjs'
 
@@ -56,11 +56,11 @@ describe('FileTypeManager', function () {
       default: ctx.fs,
     }))
 
-    vi.doMock('utf-8-validate', () => ({
-      default: ctx.isUtf8,
+    vi.doMock('node:buffer', () => ({
+      isUtf8: ctx.isUtf8,
     }))
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: Settings,
     }))
 

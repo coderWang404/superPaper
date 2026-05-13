@@ -8,9 +8,9 @@ describe('HttpErrorHandler', function () {
     ctx.req = new MockRequest(vi)
     ctx.res = new MockResponse(vi)
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: {
-        appName: 'Overleaf',
+        appName: 'superPaper',
         statusPageUrl: 'https://status.overlaf.com',
       },
     }))

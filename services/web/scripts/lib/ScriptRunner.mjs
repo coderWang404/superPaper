@@ -1,8 +1,8 @@
-/* eslint-disable @overleaf/require-script-runner */
+/* eslint-disable @superpaper/require-script-runner */
 // This *is* ScriptRunner.
 
 import { ScriptLog } from '../../app/src/models/ScriptLog.mjs'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 
 const UNKNOWN = 'unknown'
 
@@ -47,7 +47,7 @@ export async function scriptRunner(
   canonicalName = process.argv[1].split('/').pop().split('.')[0],
   scriptPath = process.argv[1]
 ) {
-  const isSaaS = Boolean(Settings.overleaf)
+  const isSaaS = Boolean(Settings.superpaper)
   if (!isSaaS) {
     await main(async message => {
       console.warn(message)

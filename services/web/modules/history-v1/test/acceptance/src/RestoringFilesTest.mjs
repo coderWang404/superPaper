@@ -128,7 +128,7 @@ describe('RestoringFiles', function () {
             file => file.name === 'image.png'
           )
           file =
-            MockV1HistoryApi.blobs[project.overleaf.history.id.toString()][
+            MockV1HistoryApi.blobs[project.superpaper.history.id.toString()][
               file.hash
             ]
           expect(file).to.deep.equal(Buffer.from(this.pngData))

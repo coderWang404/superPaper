@@ -1,10 +1,10 @@
 import { callbackify, promisify } from 'node:util'
 import { setTimeout } from 'node:timers/promises'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
-import redis from '@overleaf/redis-wrapper'
-import metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
+import redis from '@superpaper/redis-wrapper'
+import metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
 
 /**
  * Maximum size taken from the redis queue, to prevent project history

@@ -1,4 +1,4 @@
-const OError = require('@overleaf/o-error')
+const OError = require('@superpaper/o-error')
 
 class NotFoundError extends OError {}
 class OpRangeNotAvailableError extends OError {}

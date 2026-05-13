@@ -1,10 +1,10 @@
 import archiver from 'archiver'
 import OutputCacheManager from './OutputCacheManager.js'
 import OutputFileFinder from './OutputFileFinder.js'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import { open } from 'node:fs/promises'
 import { NotFoundError } from './Errors.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 // NOTE: Updating this list requires a corresponding change in
 // * services/web/frontend/js/features/pdf-preview/util/file-list.ts

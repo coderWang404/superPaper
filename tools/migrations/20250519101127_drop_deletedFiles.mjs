@@ -1,6 +1,6 @@
 import Helpers from './lib/helpers.mjs'
 import { getCollectionInternal, db } from './lib/mongodb.mjs'
-import { batchedUpdate } from '@overleaf/mongo-utils/batchedUpdate.js'
+import { batchedUpdate } from '@superpaper/mongo-utils/batchedUpdate.js'
 
 const tags = ['server-ce', 'server-pro', 'saas']
 

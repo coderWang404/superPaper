@@ -28,7 +28,7 @@ describe('LatestSnapshot', function () {
       .get(`/project/${this.projectId}/details`)
       .reply(200, {
         name: 'Test Project',
-        overleaf: { history: { id: v1Project.id } },
+        superpaper: { history: { id: v1Project.id } },
       })
   })
 

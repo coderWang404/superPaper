@@ -1,9 +1,9 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import * as MessageManager from './MessageManager.js'
 import * as MessageFormatter from './MessageFormatter.js'
 import * as ThreadManager from '../Threads/ThreadManager.js'
 import { ObjectId } from '../../mongodb.js'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 
 const DEFAULT_MESSAGE_LIMIT = 50
 const MAX_MESSAGE_LENGTH = 10 * 1024 // 10kb, about 1,500 words

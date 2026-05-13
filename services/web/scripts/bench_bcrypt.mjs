@@ -1,7 +1,7 @@
 import minimist from 'minimist'
 import { promisify } from 'node:util'
 import bcrypt from 'bcrypt'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 // https://github.com/import-js/eslint-plugin-import/issues/1810
 // eslint-disable-next-line import/no-unresolved
 import * as csv from 'csv/sync'

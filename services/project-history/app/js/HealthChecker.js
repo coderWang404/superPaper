@@ -1,10 +1,10 @@
 import { ObjectId } from './mongodb.js'
-import settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import OError from '@overleaf/o-error'
+import settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import OError from '@superpaper/o-error'
 import * as LockManager from './LockManager.js'
-import { fetchNothing } from '@overleaf/fetch-utils'
-import { callbackify } from '@overleaf/promise-utils'
+import { fetchNothing } from '@superpaper/fetch-utils'
+import { callbackify } from '@superpaper/promise-utils'
 
 const { port } = settings.internal.history
 

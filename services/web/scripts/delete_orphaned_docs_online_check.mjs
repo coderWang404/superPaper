@@ -6,7 +6,7 @@ import {
   READ_PREFERENCE_PRIMARY,
   READ_PREFERENCE_SECONDARY,
 } from '../app/src/infrastructure/mongodb.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import DeleteOrphanedDataHelper from './delete_orphaned_data_helper.mjs'
 import { scriptRunner } from './lib/ScriptRunner.mjs'
 

@@ -1,4 +1,4 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import { Project } from '../../models/Project.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import UserGetter from '../User/UserGetter.mjs'
@@ -8,11 +8,10 @@ import Errors from '../Errors/Errors.js'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
 import TpdsProjectFlusher from '../ThirdPartyDataStore/TpdsProjectFlusher.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
-import OError from '@overleaf/o-error'
+import AnalyticsManager from '../Telemetry/TelemetryManager.mjs'
+import OError from '@superpaper/o-error'
 import TagsHandler from '../Tags/TagsHandler.mjs'
-import { promiseMapWithLimit } from '@overleaf/promise-utils'
-import LimitationsManager from '../Subscription/LimitationsManager.mjs'
+import { promiseMapWithLimit } from '@superpaper/promise-utils'
 import AsyncLocalStorage from '../../infrastructure/AsyncLocalStorage.mjs'
 
 export default {
@@ -196,19 +195,8 @@ function _userIsCollaborator(user, project) {
 }
 
 async function _determinePrivilegeLevelForPreviousOwner(projectId) {
-  // Try to give READ_AND_WRITE if space available based on new owner's limits
-  const canAddEditor =
-    await LimitationsManager.promises.canAddXEditCollaborators(projectId, 1)
-
-  if (canAddEditor) {
-    return { privilegeLevel: PrivilegeLevels.READ_AND_WRITE }
-  }
-
-  // Collaborator limit is reached for editor and reviewer so fall back to read-only
-  // Add pending editor status so they are automatically upgraded when possible
   return {
-    privilegeLevel: PrivilegeLevels.READ_ONLY,
-    pendingPrivilegeLevel: { pendingEditor: true },
+    privilegeLevel: PrivilegeLevels.READ_AND_WRITE,
   }
 }
 

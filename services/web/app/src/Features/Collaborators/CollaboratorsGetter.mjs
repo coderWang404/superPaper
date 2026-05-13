@@ -3,7 +3,7 @@ import { callbackify } from 'node:util'
 
 import pLimit from 'p-limit'
 import mongodb from 'mongodb-legacy'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { Project } from '../../models/Project.mjs'
 import UserGetter from '../User/UserGetter.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
@@ -13,7 +13,7 @@ import ProjectEditorHandler from '../Project/ProjectEditorHandler.mjs'
 import Sources from '../Authorization/Sources.mjs'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
 import AsyncLocalStorage from '../../infrastructure/AsyncLocalStorage.mjs'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const { ObjectId } = mongodb
 

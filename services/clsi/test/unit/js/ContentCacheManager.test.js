@@ -8,7 +8,7 @@ describe('ContentCacheManager', function () {
   let contentDir, pdfPath, xrefPath
   let ContentCacheManager, files, Settings
   beforeAll(async function () {
-    Settings = (await import('@overleaf/settings')).default
+    Settings = (await import('@superpaper/settings')).default
     ContentCacheManager = (await import(MODULE_PATH)).default
   })
   let contentRanges, newContentRanges, reclaimed
@@ -37,11 +37,11 @@ describe('ContentCacheManager', function () {
   }
   beforeAll(function () {
     contentDir =
-      '/overleaf/services/clsi/output/602cee6f6460fca0ba7921e6/content/1797a7f48f9-5abc1998509dea1f'
+      '/superpaper/services/clsi/output/602cee6f6460fca0ba7921e6/content/1797a7f48f9-5abc1998509dea1f'
     pdfPath =
-      '/overleaf/services/clsi/output/602cee6f6460fca0ba7921e6/generated-files/1797a7f48ea-8ac6805139f43351/output.pdf'
+      '/superpaper/services/clsi/output/602cee6f6460fca0ba7921e6/generated-files/1797a7f48ea-8ac6805139f43351/output.pdf'
     xrefPath =
-      '/overleaf/services/clsi/output/602cee6f6460fca0ba7921e6/generated-files/1797a7f48ea-8ac6805139f43351/output.pdfxref'
+      '/superpaper/services/clsi/output/602cee6f6460fca0ba7921e6/generated-files/1797a7f48ea-8ac6805139f43351/output.pdfxref'
 
     reclaimed = 0
     Settings.pdfCachingMinChunkSize = 1024

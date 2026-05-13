@@ -12,7 +12,7 @@ import {
   beginEnvironmentCompletionSource,
 } from './complete'
 import { documentCommands } from './document-commands'
-import importOverleafModules from '../../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../../macros/import-superpaper-module.macro'
 import { documentOutline } from './document-outline'
 import { LaTeXLanguage } from './latex-language'
 import { documentEnvironments } from './document-environments'
@@ -26,7 +26,7 @@ const completionSources: CompletionSource[] = [
   inCommandCompletionSource,
   explicitCommandCompletionSource,
   beginEnvironmentCompletionSource,
-  ...importOverleafModules('sourceEditorCompletionSources').map(
+  ...importSuperPaperModules('sourceEditorCompletionSources').map(
     (item: any) => item.import.default
   ),
 ]

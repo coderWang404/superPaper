@@ -13,10 +13,10 @@ describe('HistoryManager', function () {
   beforeEach(function () {
     this.HistoryManager = SandboxedModule.require(modulePath, {
       requires: {
-        '@overleaf/fetch-utils': (this.fetchUtils = {
+        '@superpaper/fetch-utils': (this.fetchUtils = {
           fetchNothing: sinon.stub().resolves(),
         }),
-        '@overleaf/settings': (this.Settings = {
+        '@superpaper/settings': (this.Settings = {
           shortHistoryQueues: [],
           apis: {
             project_history: {

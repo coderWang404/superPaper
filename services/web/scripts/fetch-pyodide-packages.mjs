@@ -1,4 +1,4 @@
-/* eslint-disable @overleaf/require-script-runner */
+/* eslint-disable @superpaper/require-script-runner */
 // This script doesn't work with ScriptRunner because it is run during the build process.
 import { createReadStream, createWriteStream } from 'node:fs'
 import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises'
@@ -40,6 +40,25 @@ async function download(url, dest) {
     throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`)
   }
   await pipeline(Readable.fromWeb(res.body), createWriteStream(dest))
+}
+
+async function downloadWithRetries(url, dest, attempts = 5) {
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await download(url, dest)
+      return
+    } catch (error) {
+      lastError = error
+      if (attempt === attempts) break
+      const backoffMs = attempt * 2000
+      console.warn(
+        `Download attempt ${attempt} failed for ${url}; retrying in ${backoffMs}ms`
+      )
+      await new Promise(resolve => setTimeout(resolve, backoffMs))
+    }
+  }
+  throw lastError
 }
 
 async function sha256(file) {
@@ -103,7 +122,7 @@ async function main() {
 
   const tarballPath = path.join(TARGET_DIR, TARBALL_NAME)
   try {
-    await download(RELEASE_URL, tarballPath)
+    await downloadWithRetries(RELEASE_URL, tarballPath)
     const actual = await sha256(tarballPath)
     if (actual !== EXPECTED_SHA256) {
       throw new Error(

@@ -2,7 +2,7 @@ import sinon from 'sinon'
 import { expect } from 'chai'
 import { strict as esmock } from 'esmock'
 import EventEmitter from 'node:events'
-import { RequestFailedError } from '@overleaf/fetch-utils'
+import { RequestFailedError } from '@superpaper/fetch-utils'
 import * as Errors from '../../../../app/js/Errors.js'
 
 const MODULE_PATH = '../../../../app/js/HistoryStoreManager.js'
@@ -12,10 +12,10 @@ describe('HistoryStoreManager', function () {
     this.projectId = '123456789012345678901234'
     this.historyId = 'mock-ol-project-id'
     this.settings = {
-      overleaf: {
+      superpaper: {
         history: {
           host: 'http://example.com',
-          user: 'overleaf',
+          user: 'superpaper',
           pass: 'password',
           requestTimeout: 123,
         },
@@ -23,17 +23,17 @@ describe('HistoryStoreManager', function () {
       apis: {
         filestore: {
           enabled: true,
-          url: 'http://filestore.overleaf.production',
+          url: 'http://filestore.superpaper.production',
         },
       },
     }
     this.latestChunkRequestArgs = sinon.match({
       method: 'GET',
-      url: `${this.settings.overleaf.history.host}/projects/${this.historyId}/latest/history`,
+      url: `${this.settings.superpaper.history.host}/projects/${this.historyId}/latest/history`,
       json: true,
       auth: {
-        user: this.settings.overleaf.history.user,
-        pass: this.settings.overleaf.history.pass,
+        user: this.settings.superpaper.history.user,
+        pass: this.settings.superpaper.history.pass,
         sendImmediately: true,
       },
     })
@@ -65,13 +65,13 @@ describe('HistoryStoreManager', function () {
     }
 
     this.HistoryStoreManager = await esmock(MODULE_PATH, {
-      '@overleaf/fetch-utils': this.FetchUtils,
+      '@superpaper/fetch-utils': this.FetchUtils,
       request: this.request,
-      '@overleaf/settings': this.settings,
+      '@superpaper/settings': this.settings,
       '../../../../app/js/LocalFileWriter.js': this.LocalFileWriter,
       '../../../../app/js/WebApiManager.js': this.WebApiManager,
       '../../../../app/js/Errors.js': Errors,
-      '@overleaf/logger': this.logger,
+      '@superpaper/logger': this.logger,
     })
   })
 
@@ -568,7 +568,7 @@ describe('HistoryStoreManager', function () {
         beforeEach(function (done) {
           this.FetchUtils.fetchNothing.rejects(
             new RequestFailedError(
-              `${this.settings.overleaf.history.host}/project/${this.projectId}/file/${this.file_id}`,
+              `${this.settings.superpaper.history.host}/project/${this.projectId}/file/${this.file_id}`,
               { method: 'HEAD' },
               { status: 404 }
             )
@@ -625,13 +625,13 @@ describe('HistoryStoreManager', function () {
         )
       })
 
-      it('should get the blob from the overleaf history service', function () {
+      it('should get the blob from the superpaper history service', function () {
         expect(this.request).to.have.been.calledWithMatch({
           method: 'GET',
-          url: `${this.settings.overleaf.history.host}/projects/${this.historyId}/blobs/${this.blobHash}`,
+          url: `${this.settings.superpaper.history.host}/projects/${this.historyId}/blobs/${this.blobHash}`,
           auth: {
-            user: this.settings.overleaf.history.user,
-            pass: this.settings.overleaf.history.pass,
+            user: this.settings.superpaper.history.user,
+            pass: this.settings.superpaper.history.pass,
             sendImmediately: true,
           },
         })
@@ -663,9 +663,9 @@ describe('HistoryStoreManager', function () {
         )
       })
 
-      it('should get the blob from the overleaf history service', function () {
+      it('should get the blob from the superpaper history service', function () {
         expect(this.FetchUtils.fetchStream).to.have.been.calledWithMatch(
-          `${this.settings.overleaf.history.host}/projects/${this.historyId}/blobs/${this.blobHash}`
+          `${this.settings.superpaper.history.host}/projects/${this.historyId}/blobs/${this.blobHash}`
         )
       })
 
@@ -695,17 +695,17 @@ describe('HistoryStoreManager', function () {
       it('should send the change to the history store', function () {
         expect(this.request).to.have.been.calledWithMatch({
           method: 'POST',
-          url: `${this.settings.overleaf.history.host}/projects`,
+          url: `${this.settings.superpaper.history.host}/projects`,
           auth: {
-            user: this.settings.overleaf.history.user,
-            pass: this.settings.overleaf.history.pass,
+            user: this.settings.superpaper.history.user,
+            pass: this.settings.superpaper.history.pass,
             sendImmediately: true,
           },
           json: { projectId: this.historyId },
         })
       })
 
-      it('should call the callback with the new overleaf id', function () {
+      it('should call the callback with the new superpaper id', function () {
         expect(this.callback).to.have.been.calledWith(null, this.historyId)
       })
     })
@@ -720,7 +720,7 @@ describe('HistoryStoreManager', function () {
     it('should ask the history store to delete the project', function () {
       expect(this.request).to.have.been.calledWithMatch({
         method: 'DELETE',
-        url: `${this.settings.overleaf.history.host}/projects/${this.historyId}`,
+        url: `${this.settings.superpaper.history.host}/projects/${this.historyId}`,
       })
     })
   })

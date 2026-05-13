@@ -1,4 +1,4 @@
-Conversion by Overleaf from Ace to CodeMirror 6.
+Conversion by superPaper from Ace to CodeMirror 6.
 
 Source: https://github.com/ajaxorg/ace/
 

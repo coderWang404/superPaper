@@ -1,5 +1,5 @@
 {
-  "name": "@overleaf/contacts",
+  "name": "@superpaper/contacts",
   "description": "An API for tracking contacts of a user",
   "private": true,
   "type": "module",
@@ -16,10 +16,10 @@
     "types:check": "tsc --noEmit"
   },
   "dependencies": {
-    "@overleaf/logger": "workspace:*",
-    "@overleaf/metrics": "workspace:*",
-    "@overleaf/mongo-utils": "workspace:*",
-    "@overleaf/settings": "workspace:*",
+    "@superpaper/logger": "workspace:*",
+    "@superpaper/metrics": "workspace:*",
+    "@superpaper/mongo-utils": "workspace:*",
+    "@superpaper/settings": "workspace:*",
     "async": "^3.2.5",
     "body-parser": "1.20.4",
     "bunyan": "^1.8.15",
@@ -29,7 +29,7 @@
     "underscore": "~1.13.1"
   },
   "devDependencies": {
-    "@overleaf/migrations": "workspace:*",
+    "@superpaper/migrations": "workspace:*",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "esmock": "^2.6.3",

@@ -75,7 +75,7 @@ index aaf51103b9b8..89c8e6b841d0 100644
 +      }
 +    default:
 +      throw new Error(
-+        `invalid OVERLEAF_FILESTORE_MIGRATION_LEVEL=${Settings.filestoreMigrationLevel}, expected 0, 1 or 2`
++        `invalid SUPERPAPER_FILESTORE_MIGRATION_LEVEL=${Settings.filestoreMigrationLevel}, expected 0, 1 or 2`
 +      )
 +  }
 +}
@@ -109,7 +109,7 @@ index bd0730d5d00c..4df63ebd7c6c 100644
    ),
 
 +  filestoreMigrationLevel:
-+    parseInt(process.env.OVERLEAF_FILESTORE_MIGRATION_LEVEL, 10) || 0,
++    parseInt(process.env.SUPERPAPER_FILESTORE_MIGRATION_LEVEL, 10) || 0,
 +
    // i18n
    // ------
@@ -165,7 +165,7 @@ index 89c8e6b841d0..6147e70e0faf 100644
 +  validateSettings() {
 +    if (![0, 1, 2].includes(Settings.filestoreMigrationLevel)) {
        throw new Error(
-         `invalid OVERLEAF_FILESTORE_MIGRATION_LEVEL=${Settings.filestoreMigrationLevel}, expected 0, 1 or 2`
+         `invalid SUPERPAPER_FILESTORE_MIGRATION_LEVEL=${Settings.filestoreMigrationLevel}, expected 0, 1 or 2`
        )
 -  }
 -}

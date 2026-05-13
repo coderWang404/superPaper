@@ -30,11 +30,11 @@ import { UserFeaturesProvider } from '@/shared/context/user-features-context'
 import { UserSettingsProvider } from '@/shared/context/user-settings-context'
 import { CommandRegistryProvider } from './command-registry-context'
 import { EditorSelectionProvider } from '@/shared/context/editor-selection-context'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import { TutorialProvider } from '@/shared/context/tutorial-context'
 import { TabsProvider } from './tabs-context'
 
-const rootContextProviders = importOverleafModules('rootContextProviders') as {
+const rootContextProviders = importSuperPaperModules('rootContextProviders') as {
   import: { default: ElementType }
   path: string
 }[]

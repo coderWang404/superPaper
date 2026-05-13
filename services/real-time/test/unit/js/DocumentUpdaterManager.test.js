@@ -43,17 +43,17 @@ describe('DocumentUpdaterManager', function () {
       }
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
-    vi.doMock('@overleaf/fetch-utils', () => ({
+    vi.doMock('@superpaper/fetch-utils', () => ({
       fetchJson: ctx.fetchJson,
       fetchNothing: ctx.fetchNothing,
       RequestFailedError: ctx.RequestFailedError,
     }))
 
-    vi.doMock('@overleaf/redis-wrapper', () => ({
+    vi.doMock('@superpaper/redis-wrapper', () => ({
       default: { createClient: () => ctx.rclient },
     }))
 
@@ -61,7 +61,7 @@ describe('DocumentUpdaterManager', function () {
       done() {}
     }
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.Metrics = {
         summary: sinon.stub(),
         Timer,

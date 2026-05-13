@@ -1,6 +1,6 @@
 const AbstractPersistor = require('./AbstractPersistor')
-const Logger = require('@overleaf/logger')
-const Metrics = require('@overleaf/metrics')
+const Logger = require('@superpaper/logger')
+const Metrics = require('@superpaper/metrics')
 const Stream = require('node:stream')
 const { pipeline } = require('node:stream/promises')
 const { NotFoundError, WriteError } = require('./Errors')

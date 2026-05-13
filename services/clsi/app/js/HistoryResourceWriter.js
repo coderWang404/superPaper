@@ -1,7 +1,7 @@
 // @ts-check
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import zlib from 'node:zlib'
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import Path from 'node:path'
 import fs from 'node:fs'
 import CLSICacheHandler from './CLSICacheHandler.js'
@@ -14,15 +14,15 @@ import {
   File,
   MoveFileOperation,
   Snapshot,
-} from 'overleaf-editor-core'
-import { fetchString, RequestFailedError } from '@overleaf/fetch-utils'
+} from 'superpaper-editor-core'
+import { fetchString, RequestFailedError } from '@superpaper/fetch-utils'
 import { setTimeout } from 'node:timers/promises'
 import ResourceWriter from './ResourceWriter.js'
 import UrlCache from './UrlCache.js'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import ClsiMetrics from './Metrics.js'
-import { promiseMapSettledWithLimit } from '@overleaf/promise-utils'
-import Metrics from '@overleaf/metrics'
+import { promiseMapSettledWithLimit } from '@superpaper/promise-utils'
+import Metrics from '@superpaper/metrics'
 import TikzManager from './TikzManager.js'
 import DraftModeManager from './DraftModeManager.js'
 
@@ -78,7 +78,7 @@ function isENOENT(err) {
  * @param {string} userId
  * @param {number} remoteBaseVersion
  * @param {boolean} populateClsiCache
- * @return {Promise<{rawSnapshot: import('overleaf-editor-core/lib/types.js').RawSnapshot, globalBlobs: string[], fullSync: boolean,localBaseVersion: number, dirty: string[]}>}
+ * @return {Promise<{rawSnapshot: import('superpaper-editor-core/lib/types.js').RawSnapshot, globalBlobs: string[], fullSync: boolean,localBaseVersion: number, dirty: string[]}>}
  */
 async function loadSnapshot(
   projectId,
@@ -136,7 +136,7 @@ async function loadSnapshot(
  * @param {string} projectId
  * @param {string} userId
  * @param {number} remoteBaseVersion
- * @return {Promise<{rawSnapshot: import('overleaf-editor-core/lib/types.js').RawSnapshot, globalBlobs: string[], fullSync: boolean,localBaseVersion: number, dirty: string[]}>}
+ * @return {Promise<{rawSnapshot: import('superpaper-editor-core/lib/types.js').RawSnapshot, globalBlobs: string[], fullSync: boolean,localBaseVersion: number, dirty: string[]}>}
  */
 async function loadSnapshotFromClsiCache(projectId, userId, remoteBaseVersion) {
   const { dir, resyncPath } = snapshotPath(projectId, userId)
@@ -162,7 +162,7 @@ async function loadSnapshotFromClsiCache(projectId, userId, remoteBaseVersion) {
  * @param {string} path
  * @param {number} remoteBaseVersion
  * @param {boolean} fullSync
- * @return {Promise<{rawSnapshot: import('overleaf-editor-core/lib/types.js').RawSnapshot, globalBlobs: string[], localBaseVersion: number, fullSync: boolean, dirty: string[]}>}
+ * @return {Promise<{rawSnapshot: import('superpaper-editor-core/lib/types.js').RawSnapshot, globalBlobs: string[], localBaseVersion: number, fullSync: boolean, dirty: string[]}>}
  */
 async function loadSnapshotFromFile(path, remoteBaseVersion, fullSync) {
   let blob = await fs.promises.readFile(path)
@@ -345,7 +345,7 @@ async function ensureHasParentFolder(compileDir, path, entriesDepthFirst) {
 }
 
 /**
- * @param {import('overleaf-editor-core/lib/types.js').RawOperation[][]} raw
+ * @param {import('superpaper-editor-core/lib/types.js').RawOperation[][]} raw
  * @return {Change[]}
  */
 function changesFromRawChangeOperations(raw) {

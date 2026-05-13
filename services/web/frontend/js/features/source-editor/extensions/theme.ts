@@ -308,9 +308,9 @@ const loadSelectedTheme = async (editorTheme: string) => {
 
     // We store these in a cache, so we'll reuse after the first load
     const extension = [
-      // eslint-disable-next-line @overleaf/no-generated-editor-themes
+      // eslint-disable-next-line @superpaper/no-generated-editor-themes
       EditorView.theme(theme, { dark }),
-      // eslint-disable-next-line @overleaf/no-generated-editor-themes
+      // eslint-disable-next-line @superpaper/no-generated-editor-themes
       EditorView.theme(highlightStyle, { dark }),
     ]
 

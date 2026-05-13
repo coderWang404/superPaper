@@ -1,7 +1,7 @@
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
 import _ from 'lodash'
-import { callbackifyAll } from '@overleaf/promise-utils'
+import { callbackifyAll } from '@superpaper/promise-utils'
 import UserSessionsRedis from './UserSessionsRedis.mjs'
 const rclient = UserSessionsRedis.client()
 

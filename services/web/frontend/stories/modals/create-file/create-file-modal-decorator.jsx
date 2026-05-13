@@ -6,13 +6,6 @@ import { useFileTreeActionable } from '../../../js/features/file-tree/contexts/f
 import PropTypes from 'prop-types'
 
 const defaultFileTreeContextProps = {
-  refProviders: { mendeley: false, zotero: false },
-  setRefProviderEnabled: provider => {
-    console.log(`ref provider ${provider} enabled`)
-  },
-  setStartedFreeTrial: () => {
-    console.log('started free trial')
-  },
   initialSelectedEntityId: 'entity-1',
   onSelect: () => {
     console.log('selected')
@@ -30,30 +23,6 @@ export const mockCreateFileModalFetch = fetchMock =>
         {
           _id: 'project-2',
           name: 'Project Two',
-        },
-      ],
-    })
-    .get('path:/mendeley/groups', {
-      groups: [
-        {
-          id: 'group-1',
-          name: 'Group One',
-        },
-        {
-          id: 'group-2',
-          name: 'Group Two',
-        },
-      ],
-    })
-    .get('path:/zotero/groups', {
-      groups: [
-        {
-          id: 'group-1',
-          name: 'Group One',
-        },
-        {
-          id: 'group-2',
-          name: 'Group Two',
         },
       ],
     })

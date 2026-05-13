@@ -9,7 +9,7 @@ describe('EventLogger', function () {
     ctx.start = Date.now()
     tk.freeze(new Date(ctx.start))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.metrics = { inc: sinon.stub() }),
     }))
 

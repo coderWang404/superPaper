@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import HttpErrorHandler from '../../Features/Errors/HttpErrorHandler.mjs'
 import mongodb from 'mongodb-legacy'
 import CollaboratorsHandler from './CollaboratorsHandler.mjs'
@@ -8,12 +8,11 @@ import SessionManager from '../Authentication/SessionManager.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
 import TagsHandler from '../Tags/TagsHandler.mjs'
 import Errors from '../Errors/Errors.js'
-import logger from '@overleaf/logger'
-import { expressify } from '@overleaf/promise-utils'
+import logger from '@superpaper/logger'
+import { expressify } from '@superpaper/promise-utils'
 import AdminAuthorizationHelper from '../Helpers/AdminAuthorizationHelper.mjs'
 import TokenAccessHandler from '../TokenAccess/TokenAccessHandler.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
-import LimitationsManager from '../Subscription/LimitationsManager.mjs'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
 import { z, zz, parseReq } from '../../infrastructure/Validation.mjs'
 import Features from '../../infrastructure/Features.mjs'
@@ -109,20 +108,6 @@ async function setCollaboratorInfo(req, res, next) {
     const projectId = params.Project_id
     const userId = params.user_id
     const { privilegeLevel } = body
-
-    const allowed =
-      await LimitationsManager.promises.canChangeCollaboratorPrivilegeLevel(
-        projectId,
-        userId,
-        privilegeLevel
-      )
-    if (!allowed) {
-      return HttpErrorHandler.forbidden(
-        req,
-        res,
-        'edit collaborator limit reached'
-      )
-    }
 
     const auditInfo = {
       ipAddress: req.ip,

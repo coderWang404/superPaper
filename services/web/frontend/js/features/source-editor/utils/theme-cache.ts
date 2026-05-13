@@ -10,7 +10,7 @@ export class ThemeCache {
     if (existing) {
       return existing
     }
-    // eslint-disable-next-line @overleaf/no-generated-editor-themes
+    // eslint-disable-next-line @superpaper/no-generated-editor-themes
     const theme = EditorView.theme(styleMod, options)
     this.cache.set(key, theme)
     return theme

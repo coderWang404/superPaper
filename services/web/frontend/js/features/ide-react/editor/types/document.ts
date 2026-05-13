@@ -1,6 +1,6 @@
-import { StringFileData } from 'overleaf-editor-core'
+import { StringFileData } from 'superpaper-editor-core'
 import { AnyOperation } from '../../../../../../types/change'
-import { RawEditOperation } from 'overleaf-editor-core/lib/types'
+import { RawEditOperation } from 'superpaper-editor-core/lib/types'
 
 export type Version = number
 

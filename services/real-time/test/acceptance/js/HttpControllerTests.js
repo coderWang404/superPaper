@@ -10,7 +10,7 @@ import {
   fetchJson,
   fetchNothing,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import { expect } from 'chai'
 import RealTimeClient from './helpers/RealTimeClient.js'
 import FixturesManager from './helpers/FixturesManager.js'

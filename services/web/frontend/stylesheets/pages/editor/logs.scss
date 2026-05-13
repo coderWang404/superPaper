@@ -350,15 +350,6 @@
   }
 }
 
-// As part of compile time paywall redesign, we are only migrating the necessary classes needed for the split test
-// Other classes should be migrated too as a part of website redesign project later on.
-
-.timeout-upgrade-paywall-prompt {
-  display: flex;
-  flex-direction: column;
-  gap: 10px; // adding this value to match existing spacing in logs pane, there is no variable for 10px
-}
-
 .website-redesign {
   .log-entry-header {
     @include heading-sm;

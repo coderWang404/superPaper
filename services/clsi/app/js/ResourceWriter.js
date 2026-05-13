@@ -19,9 +19,9 @@ import fs from 'node:fs'
 import async from 'async'
 import OutputFileFinder from './OutputFileFinder.js'
 import ResourceStateManager from './ResourceStateManager.js'
-import Metrics from '@overleaf/metrics'
-import logger from '@overleaf/logger'
-import settings from '@overleaf/settings'
+import Metrics from '@superpaper/metrics'
+import logger from '@superpaper/logger'
+import settings from '@superpaper/settings'
 import ClsiMetrics from './Metrics.js'
 
 const { shouldSkipMetrics } = ClsiMetrics

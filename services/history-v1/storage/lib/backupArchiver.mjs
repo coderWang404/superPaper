@@ -1,13 +1,13 @@
 // @ts-check
 import path from 'node:path'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import {
   chunksBucket,
   backupPersistor,
   projectBlobsBucket,
   globalBlobsBucket as backupGlobalBlobsBucket,
 } from './backupPersistor.mjs'
-import core, { Chunk, History } from 'overleaf-editor-core'
+import core, { Chunk, History } from 'superpaper-editor-core'
 import {
   GLOBAL_BLOBS,
   makeProjectKey,
@@ -15,17 +15,17 @@ import {
   makeGlobalKey,
 } from './blob_store/index.js'
 import streams from './streams.js'
-import objectPersistor from '@overleaf/object-persistor'
-import OError from '@overleaf/o-error'
+import objectPersistor from '@superpaper/object-persistor'
+import OError from '@superpaper/o-error'
 import chunkStore from './chunk_store/index.js'
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 import fs from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import withTmpDir from '../../api/controllers/with_tmp_dir.js'
 import { loadChunk } from './backupVerifier.mjs'
 import globalBlobPersistor from './persistor.js'
 import config from 'config'
-import { NoKEKMatchedError } from '@overleaf/object-persistor/src/Errors.js'
+import { NoKEKMatchedError } from '@superpaper/object-persistor/src/Errors.js'
 
 const globalBlobsBucket = config.get('blobStore.globalBucket')
 
@@ -181,7 +181,7 @@ class BackupBlobStore {
 }
 
 /**
- * @typedef {(import('@overleaf/object-persistor/src/PerProjectEncryptedS3Persistor.js').CachedPerProjectEncryptedS3Persistor)} CachedPerProjectEncryptedS3Persistor
+ * @typedef {(import('@superpaper/object-persistor/src/PerProjectEncryptedS3Persistor.js').CachedPerProjectEncryptedS3Persistor)} CachedPerProjectEncryptedS3Persistor
  */
 
 /**
@@ -189,7 +189,7 @@ class BackupBlobStore {
  */
 
 /**
- * @typedef {(import('overleaf-editor-core').FileMap)} FileMap
+ * @typedef {(import('superpaper-editor-core').FileMap)} FileMap
  */
 
 /**

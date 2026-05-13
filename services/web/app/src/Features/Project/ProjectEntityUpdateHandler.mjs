@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import OError from '@overleaf/o-error'
-import logger from '@overleaf/logger'
-import Settings from '@overleaf/settings'
+import OError from '@superpaper/o-error'
+import logger from '@superpaper/logger'
+import Settings from '@superpaper/settings'
 import Path from 'node:path'
 import fs from 'node:fs'
 import { Doc } from '../../models/Doc.mjs'
@@ -21,7 +21,7 @@ import SafePath from './SafePath.mjs'
 import TpdsUpdateSender from '../ThirdPartyDataStore/TpdsUpdateSender.mjs'
 import FileWriter from '../../infrastructure/FileWriter.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
-import { callbackifyMultiResult, callbackify } from '@overleaf/promise-utils'
+import { callbackifyMultiResult, callbackify } from '@superpaper/promise-utils'
 import { iterablePaths } from './IterablePath.mjs'
 
 const LOCK_NAMESPACE = 'sequentialProjectStructureUpdateLock'
@@ -298,7 +298,7 @@ const addDocWithRanges = wrapWithLock({
         userId
       )
     const docPath = result?.path?.fileSystem
-    const projectHistoryId = project?.overleaf?.history?.id
+    const projectHistoryId = project?.superpaper?.history?.id
     const newDocs = [
       {
         doc,
@@ -364,7 +364,7 @@ const addFile = wrapWithLock({
         fileRef,
         userId
       )
-    const projectHistoryId = project.overleaf?.history?.id
+    const projectHistoryId = project.superpaper?.history?.id
     const newFiles = [
       {
         createdBlob,
@@ -439,9 +439,9 @@ const upsertDoc = wrapWithLock(
       })
 
       const projectHistoryId =
-        project.overleaf &&
-        project.overleaf.history &&
-        project.overleaf.history.id
+        project.superpaper &&
+        project.superpaper.history &&
+        project.superpaper.history.id
       const newDocs = [
         {
           doc,
@@ -609,7 +609,7 @@ const upsertFile = wrapWithLock({
           fileRef,
           userId
         )
-      const projectHistoryId = project.overleaf?.history?.id
+      const projectHistoryId = project.superpaper?.history?.id
       await TpdsUpdateSender.promises.addFile({
         projectId: project._id,
         historyId: projectHistoryId,
@@ -923,7 +923,7 @@ const moveEntity = wrapWithLock(
         userId
       )
 
-    const projectHistoryId = project.overleaf?.history?.id
+    const projectHistoryId = project.superpaper?.history?.id
     try {
       await TpdsUpdateSender.promises.moveEntity({
         projectId,
@@ -983,7 +983,7 @@ const renameEntity = wrapWithLock(
         userId
       )
 
-    const projectHistoryId = project.overleaf?.history?.id
+    const projectHistoryId = project.superpaper?.history?.id
     try {
       await TpdsUpdateSender.promises.moveEntity({
         projectId,
@@ -1014,9 +1014,9 @@ const resyncProjectHistory = wrapWithLock(
   async (projectId, opts) => {
     const project = await ProjectGetter.promises.getProject(projectId, {
       rootFolder: true,
-      overleaf: true,
+      superpaper: true,
     })
-    const projectHistoryId = project.overleaf?.history?.id
+    const projectHistoryId = project.superpaper?.history?.id
     if (projectHistoryId == null) {
       throw new Errors.ProjectHistoryDisabledError(
         `project history not enabled for ${projectId}`
@@ -1105,7 +1105,7 @@ const convertDocToFile = wrapWithLock({
         fileRef,
         userId
       )
-    const projectHistoryId = project.overleaf?.history?.id
+    const projectHistoryId = project.superpaper?.history?.id
     await DocumentUpdaterHandler.promises.updateProjectStructure(
       projectId,
       projectHistoryId,
@@ -1337,7 +1337,7 @@ const ProjectEntityUpdateHandler = {
       })
     }
 
-    const historyId = project?.overleaf?.history?.id
+    const historyId = project?.superpaper?.history?.id
     if (!historyId) {
       throw new OError('project does not have a history id', { projectId })
     }
@@ -1389,7 +1389,7 @@ const ProjectEntityUpdateHandler = {
         path: path.fileSystem,
       },
     ]
-    const projectHistoryId = project.overleaf?.history?.id
+    const projectHistoryId = project.superpaper?.history?.id
     await TpdsUpdateSender.promises.addFile({
       projectId: project._id,
       historyId: projectHistoryId,
@@ -1629,9 +1629,9 @@ const ProjectEntityUpdateHandler = {
     changes.newProject = newProject
     const projectId = project._id.toString()
     const projectHistoryId =
-      project.overleaf &&
-      project.overleaf.history &&
-      project.overleaf.history.id
+      project.superpaper &&
+      project.superpaper.history &&
+      project.superpaper.history.id
     return await DocumentUpdaterHandler.promises.updateProjectStructure(
       projectId,
       projectHistoryId,

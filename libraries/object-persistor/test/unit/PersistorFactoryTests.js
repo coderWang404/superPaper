@@ -34,7 +34,7 @@ describe('PersistorManager', function () {
       './GcsPersistor': GcsPersistor,
       './S3Persistor': { S3Persistor },
       './FSPersistor': FSPersistor,
-      '@overleaf/logger': {
+      '@superpaper/logger': {
         info() {},
         err() {},
       },

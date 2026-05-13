@@ -1,7 +1,7 @@
 import csurf from 'csurf'
-import Settings from '@overleaf/settings'
-import logger from '@overleaf/logger'
-import { callbackify } from '@overleaf/promise-utils'
+import Settings from '@superpaper/settings'
+import logger from '@superpaper/logger'
+import { callbackify } from '@superpaper/promise-utils'
 
 const csrf = csurf()
 

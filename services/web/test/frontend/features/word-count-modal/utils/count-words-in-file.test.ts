@@ -5,7 +5,7 @@ import { WordCountData } from '@/features/word-count-modal/components/word-count
 import { createSegmenters } from '@/features/word-count-modal/utils/segmenters'
 import { expect } from 'chai'
 import { ProjectSnapshot } from '@/infrastructure/project-snapshot'
-import { Snapshot } from 'overleaf-editor-core'
+import { Snapshot } from 'superpaper-editor-core'
 
 describe('word-count', function () {
   beforeEach(async function () {

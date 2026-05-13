@@ -1,9 +1,9 @@
 // @ts-check
 
 import { callbackify } from 'node:util'
-import logger from '@overleaf/logger'
-import metrics from '@overleaf/metrics'
-import OError from '@overleaf/o-error'
+import logger from '@superpaper/logger'
+import metrics from '@superpaper/metrics'
+import OError from '@superpaper/o-error'
 import { db } from './mongodb.js'
 
 /**

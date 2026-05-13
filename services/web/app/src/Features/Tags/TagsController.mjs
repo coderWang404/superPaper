@@ -2,7 +2,7 @@ import TagsHandler from './TagsHandler.mjs'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import Errors from '../Errors/Errors.js'
 import { z, parseReq } from '../../infrastructure/Validation.mjs'
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 
 async function _getTags(userId, _req, res) {
   if (!userId) {

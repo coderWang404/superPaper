@@ -53,12 +53,12 @@ function CompileAndDownloadProjectPDFButton({
           isSmallDevice,
         })
 
-        const { isOverleaf } = getMeta('ol-ExposedSettings')
+        const { isSuperPaper } = getMeta('ol-ExposedSettings')
         ;(async () => {
-          if (isOverleaf) {
+          if (isSuperPaper) {
             try {
               const data = await getJSON(
-                `/project/${project.id}/output/cached/output.overleaf.json`,
+                `/project/${project.id}/output/cached/output.superpaper.json`,
                 { signal }
               )
               if (data.options.draft) throw new Error('options changed')

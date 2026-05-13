@@ -1,8 +1,8 @@
 // @ts-check
 
-const Metrics = require('@overleaf/metrics')
-const MongoUtils = require('@overleaf/mongo-utils')
-const Settings = require('@overleaf/settings')
+const Metrics = require('@superpaper/metrics')
+const MongoUtils = require('@superpaper/mongo-utils')
+const Settings = require('@superpaper/settings')
 const { MongoClient, ObjectId, ReadPreference } = require('mongodb-legacy')
 
 const READ_PREFERENCE_SECONDARY = Settings.mongo.hasSecondaries

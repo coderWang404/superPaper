@@ -1,5 +1,5 @@
 import minimist from 'minimist'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 import ProjectDetailsHandler from '../app/src/Features/Project/ProjectDetailsHandler.mjs'
 import mongodb from '../app/src/infrastructure/mongodb.mjs'
 import mongoose from '../app/src/infrastructure/Mongoose.mjs'
@@ -305,7 +305,7 @@ async function fetchBlob(projectId) {
 
 async function getHistoryId(projectId) {
   const project = await ProjectDetailsHandler.promises.getDetails(projectId)
-  const v1Id = project?.overleaf?.history?.id
+  const v1Id = project?.superpaper?.history?.id
   return v1Id
 }
 

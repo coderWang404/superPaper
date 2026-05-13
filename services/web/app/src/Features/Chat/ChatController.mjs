@@ -1,4 +1,4 @@
-import { expressify } from '@overleaf/promise-utils'
+import { expressify } from '@superpaper/promise-utils'
 import Modules from '../../infrastructure/Modules.mjs'
 import ChatApiHandler from './ChatApiHandler.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'

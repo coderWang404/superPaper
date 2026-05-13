@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { BookBookmark, Folder } from '@phosphor-icons/react'
-import { useActiveOverallTheme } from '@/shared/hooks/use-active-overall-theme'
-import overleafLogo from '@/shared/svgs/overleaf-a-ds-solution-mallard.svg'
-import overleafLogoDark from '@/shared/svgs/overleaf-a-ds-solution-mallard-dark.svg'
+import superPaperLogo from '@/shared/images/superpaper-icon.png'
 
 type ActivePage = 'library' | 'projects'
 
@@ -16,19 +14,16 @@ export function DsNavPageSwitcher({
   showLogo?: boolean
   onLibraryClick?: React.MouseEventHandler
   onProjectsClick?: React.MouseEventHandler
-}) {
+  }) {
   const { t } = useTranslation()
-  const activeOverallTheme = useActiveOverallTheme()
 
   return (
     <>
       {showLogo && (
         <div className="ds-nav-page-switcher-logo">
           <img
-            src={
-              activeOverallTheme === 'dark' ? overleafLogoDark : overleafLogo
-            }
-            alt="Overleaf, A Digital Science Solution"
+            src={superPaperLogo}
+            alt="superPaper"
             height="59"
             width="130"
           />

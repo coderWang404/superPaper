@@ -1,4 +1,4 @@
-const { Blob } = require('overleaf-editor-core')
+const { Blob } = require('superpaper-editor-core')
 const assert = require('../assert')
 const knex = require('../knex')
 

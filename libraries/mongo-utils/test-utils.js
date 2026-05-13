@@ -45,7 +45,7 @@ function ensureTestDatabase(mongoClient) {
   const dbName = mongoClient.db().databaseName
   const env = process.env.NODE_ENV
 
-  if (dbName !== 'test-overleaf' || env !== 'test') {
+  if (dbName !== 'test-superpaper' || env !== 'test') {
     throw new Error(
       `Refusing to clear database '${dbName}' in environment '${env}'`
     )

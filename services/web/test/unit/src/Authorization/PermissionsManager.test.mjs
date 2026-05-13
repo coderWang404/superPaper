@@ -40,11 +40,9 @@ describe('PermissionsManager', function () {
     ctx.openPolicyResponseSet = [
       [
         {
-          managedUsersEnabled: true,
           groupPolicy: { openPolicy: true },
         },
         {
-          managedUsersEnabled: true,
           groupPolicy: { openPolicy: true },
         },
       ],
@@ -52,11 +50,9 @@ describe('PermissionsManager', function () {
     ctx.restrictivePolicyResponseSet = [
       [
         {
-          managedUsersEnabled: true,
           groupPolicy: { openPolicy: true },
         },
         {
-          managedUsersEnabled: true,
           groupPolicy: { restrictivePolicy: true },
         },
       ],
@@ -380,8 +376,8 @@ describe('PermissionsManager', function () {
         'policy',
         {},
         {
-          validator: async ({ user, subscription }) => {
-            return user.prop === 'allowed' && subscription.prop === 'managed'
+          validator: async ({ user, policyContext }) => {
+            return user.prop === 'allowed' && policyContext.prop === 'managed'
           },
         }
       )
@@ -389,12 +385,12 @@ describe('PermissionsManager', function () {
         policy: true,
       }
       const user = { prop: 'allowed' }
-      const subscription = { prop: 'managed' }
+      const policyContext = { prop: 'managed' }
       const result =
         await ctx.PermissionsManager.promises.getUserValidationStatus({
           user,
           groupPolicy,
-          subscription,
+          policyContext,
         })
       expect(result).to.deep.equal(new Map([['policy', true]]))
     })
@@ -404,8 +400,8 @@ describe('PermissionsManager', function () {
         'policy',
         {},
         {
-          validator: async ({ user, subscription }) => {
-            return user.prop === 'allowed' && subscription.prop === 'managed'
+          validator: async ({ user, policyContext }) => {
+            return user.prop === 'allowed' && policyContext.prop === 'managed'
           },
         }
       )
@@ -413,12 +409,12 @@ describe('PermissionsManager', function () {
         policy: true,
       }
       const user = { prop: 'not allowed' }
-      const subscription = { prop: 'managed' }
+      const policyContext = { prop: 'managed' }
       const result =
         await ctx.PermissionsManager.promises.getUserValidationStatus({
           user,
           groupPolicy,
-          subscription,
+          policyContext,
         })
       expect(result).to.deep.equal(new Map([['policy', false]]))
     })
@@ -427,8 +423,8 @@ describe('PermissionsManager', function () {
         'policy1',
         {},
         {
-          validator: async ({ user, subscription }) => {
-            return user.prop === 'allowed' && subscription.prop === 'managed'
+          validator: async ({ user, policyContext }) => {
+            return user.prop === 'allowed' && policyContext.prop === 'managed'
           },
         }
       )
@@ -436,8 +432,8 @@ describe('PermissionsManager', function () {
         'policy2',
         {},
         {
-          validator: async ({ user, subscription }) => {
-            return user.prop === 'other' && subscription.prop === 'managed'
+          validator: async ({ user, policyContext }) => {
+            return user.prop === 'other' && policyContext.prop === 'managed'
           },
         }
       )
@@ -445,8 +441,8 @@ describe('PermissionsManager', function () {
         'policy3',
         {},
         {
-          validator: async ({ user, subscription }) => {
-            return user.prop === 'allowed' && subscription.prop === 'managed'
+          validator: async ({ user, policyContext }) => {
+            return user.prop === 'allowed' && policyContext.prop === 'managed'
           },
         }
       )
@@ -457,12 +453,12 @@ describe('PermissionsManager', function () {
         policy3: false, // this policy is not enforced
       }
       const user = { prop: 'allowed' }
-      const subscription = { prop: 'managed' }
+      const policyContext = { prop: 'managed' }
       const result =
         await ctx.PermissionsManager.promises.getUserValidationStatus({
           user,
           groupPolicy,
-          subscription,
+          policyContext,
         })
       expect(result).to.deep.equal(
         new Map([
@@ -474,7 +470,7 @@ describe('PermissionsManager', function () {
   })
   describe('assertUserPermissions', function () {
     describe('allowed', function () {
-      it('should not error when managedUsersEnabled is not enabled for user', async function (ctx) {
+      it('should not error when no managed-user policy is enabled', async function (ctx) {
         const result =
           await ctx.PermissionsManager.promises.assertUserPermissions(
             { _id: 'user123' },
@@ -490,7 +486,6 @@ describe('PermissionsManager', function () {
         ctx.hooksFire.resolves([
           [
             {
-              managedUsersEnabled: true,
               groupPolicy: {},
             },
           ],
@@ -513,7 +508,6 @@ describe('PermissionsManager', function () {
         ctx.hooksFire.resolves([
           [
             {
-              managedUsersEnabled: true,
               groupPolicy: {
                 userCanDoSomePolicy: true,
               },
@@ -530,8 +524,8 @@ describe('PermissionsManager', function () {
     })
 
     describe('not allowed', function () {
-      it('should return error when managedUsersEnabled is enabled for user but there is no group policy', async function (ctx) {
-        ctx.hooksFire.resolves([[{ managedUsersEnabled: true }]])
+      it('should return error when there is no group policy', async function (ctx) {
+        ctx.hooksFire.resolves([[{}]])
         await expect(
           ctx.PermissionsManager.promises.assertUserPermissions(
             { _id: 'user123' },
@@ -547,7 +541,6 @@ describe('PermissionsManager', function () {
         ctx.hooksFire.resolves([
           [
             {
-              managedUsersEnabled: true,
               groupPolicy: {},
             },
           ],
@@ -572,7 +565,6 @@ describe('PermissionsManager', function () {
         ctx.hooksFire.resolves([
           [
             {
-              managedUsersEnabled: true,
               groupPolicy: { userCannotDoSomePolicy: true },
             },
           ],

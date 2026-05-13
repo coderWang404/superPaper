@@ -13,7 +13,7 @@
 import { promisify } from 'node:util'
 import fs from 'node:fs'
 import crypto from 'node:crypto'
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { pipeline } from 'node:stream'
 
 export function _getBlobHashFromString(string) {

@@ -27,11 +27,11 @@ const indexes = [
   {
     unique: true,
     key: {
-      'overleaf.history.id': 1,
+      'superpaper.history.id': 1,
     },
-    name: 'overleaf.history.id_1',
+    name: 'superpaper.history.id_1',
     partialFilterExpression: {
-      'overleaf.history.id': {
+      'superpaper.history.id': {
         $exists: true,
       },
     },
@@ -81,11 +81,11 @@ const indexes = [
   {
     unique: true,
     key: {
-      'overleaf.id': 1,
+      'superpaper.id': 1,
     },
-    name: 'overleaf.id_1',
+    name: 'superpaper.id_1',
     partialFilterExpression: {
-      'overleaf.id': {
+      'superpaper.id': {
         $exists: true,
       },
     },

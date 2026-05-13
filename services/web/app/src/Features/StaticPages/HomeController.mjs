@@ -1,12 +1,10 @@
 import Features from '../../infrastructure/Features.mjs'
-import AnalyticsManager from '../Analytics/AnalyticsManager.mjs'
 import Path from 'node:path'
 import fs from 'node:fs'
 import ErrorController from '../Errors/ErrorController.mjs'
 import SessionManager from '../Authentication/SessionManager.mjs'
-import { expressify } from '@overleaf/promise-utils'
-import logger from '@overleaf/logger'
-import SplitTestHandler from '../SplitTests/SplitTestHandler.mjs'
+import { expressify } from '@superpaper/promise-utils'
+import logger from '@superpaper/logger'
 
 const __dirname = new URL('.', import.meta.url).pathname
 
@@ -26,28 +24,9 @@ async function index(req, res) {
   }
 }
 
-async function home(req, res) {
+async function home(_req, res) {
   if (Features.hasFeature('homepage') && homepageExists) {
-    const acceptLanguage = req.headers['accept-language'] || 'en' // returns in format => en-GB,en-US;q=0.9,en;q=0.8
-    const language = acceptLanguage.split(',')[0].split(';')[0].trim() // filters the first language
-    const host = req.headers.host
-    const domain = host?.split('.')[0]
-
-    AnalyticsManager.recordEventForSession(req.session, 'home-page-view', {
-      page: req.path,
-      language,
-      domain,
-    })
-
-    const hotjarAssignment = await SplitTestHandler.promises.getAssignment(
-      req,
-      res,
-      'hotjar-marketing'
-    )
-
-    res.render('external/home/index', {
-      shouldLoadHotjar: hotjarAssignment?.variant === 'enabled',
-    })
+    res.render('external/home/index')
   } else {
     res.redirect('/login')
   }

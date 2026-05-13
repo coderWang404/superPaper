@@ -1,8 +1,8 @@
 // @ts-check
 
-const RangesTracker = require('@overleaf/ranges-tracker')
-const logger = require('@overleaf/logger')
-const OError = require('@overleaf/o-error')
+const RangesTracker = require('@superpaper/ranges-tracker')
+const logger = require('@superpaper/logger')
+const OError = require('@superpaper/o-error')
 const Metrics = require('./Metrics')
 const _ = require('lodash')
 const { isInsert, isDelete, isComment, getDocLength } = require('./Utils')

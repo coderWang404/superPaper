@@ -1,4 +1,4 @@
-import OError from '@overleaf/o-error'
+import OError from '@superpaper/o-error'
 import { expect } from 'chai'
 import async from 'async'
 import User from './helpers/User.mjs'

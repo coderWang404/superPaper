@@ -107,13 +107,13 @@ index 56f0d4e30fe4..ab3bbd9d2b7f 100644
  import ProjectNotificationsSetting from '../components/settings/editor-settings/project-notifications-setting'
 +import getMeta from '@/utils/meta'
  
- const [referenceSearchSettingModule] = importOverleafModules(
+ const [referenceSearchSettingModule] = importsuperPaperModules(
    'referenceSearchSetting'
 @@ -82,6 +83,7 @@ export const SettingsModalProvider: FC<React.PropsWithChildren> = ({
    children,
  }) => {
    const { t } = useTranslation()
-+  const { isOverleaf } = getMeta('ol-ExposedSettings')
++  const { issuperPaper } = getMeta('ol-ExposedSettings')
    const { overallTheme } = useProjectSettingsContext()
  
    // TODO ide-redesign-cleanup: Rename this field and move it directly into this context
@@ -121,11 +121,11 @@ index 56f0d4e30fe4..ab3bbd9d2b7f 100644
          title: t('subscription'),
          icon: 'account_balance',
          href: '/user/subscription',
-+        hidden: !isOverleaf,
++        hidden: !issuperPaper,
        },
      ],
 -    [t, overallTheme, hasEmailNotifications, noNewEditorOptOut]
-+    [t, overallTheme, hasEmailNotifications, noNewEditorOptOut, isOverleaf]
++    [t, overallTheme, hasEmailNotifications, noNewEditorOptOut, issuperPaper]
    )
  
    const settingsTabs = useMemo(

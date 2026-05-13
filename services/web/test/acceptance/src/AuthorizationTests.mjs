@@ -1,10 +1,9 @@
 import { expect } from 'chai'
 import UserHelper from './helpers/User.mjs'
 import request from './helpers/request.js'
-import settings from '@overleaf/settings'
-import Features from '../../../app/src/infrastructure/Features.mjs'
+import settings from '@superpaper/settings'
 import expectErrorResponse from './helpers/expectErrorResponse.mjs'
-import { promisify } from '@overleaf/promise-utils'
+import { promisify } from '@superpaper/promise-utils'
 
 const User = UserHelper.promises
 
@@ -50,14 +49,6 @@ async function tryProjectAdminAccess(user, projectId, test) {
 async function tryAdminAccess(user, test) {
   const { response, body } = await user.doRequest('get', '/admin')
   test(response, body)
-
-  if (Features.hasFeature('saas')) {
-    const { response, body } = await user.doRequest(
-      'get',
-      `/admin/user/${user._id}`
-    )
-    test(response, body)
-  }
 }
 
 function tryContentAccessCb(user, projectId, test, callback) {
@@ -557,11 +548,6 @@ describe('Authorization', function () {
     })
 
     it('should allow an anonymous user chat messages access', async function () {
-      // chat access for anonymous users is a CE/SP-only feature, although currently broken
-      // https://github.com/overleaf/internal/issues/10944
-      if (Features.hasFeature('saas')) {
-        this.skip()
-      }
       await expectChatAccess(this.anon, this.projectId)
     })
 

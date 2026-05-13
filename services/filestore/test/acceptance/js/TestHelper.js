@@ -1,6 +1,6 @@
 import streamifier from 'streamifier'
 import fetch from 'node-fetch'
-import ObjectPersistor from '@overleaf/object-persistor'
+import ObjectPersistor from '@superpaper/object-persistor'
 import { expect } from 'chai'
 
 export default {

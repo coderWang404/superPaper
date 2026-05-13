@@ -5,7 +5,7 @@ Tokens:
 https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode#common-tokens
 
 Highlight Rules:
-https://github.com/overleaf/ace/blob/overleaf/lib/ace/mode/latex_highlight_rules.js
+https://github.com/superpaper/ace/blob/superpaper/lib/ace/mode/latex_highlight_rules.js
 
 Conversion of TextMate themes to Ace:
 https://github.com/ajaxorg/ace/wiki/Importing-.tmtheme-and-.tmlanguage-Files-into-Ace
@@ -19,7 +19,7 @@ const path = require('path')
 const overrides = require('./overrides.json')
 const { merge } = require('lodash')
 
-// CSS files from https://github.com/overleaf/ace/tree/overleaf/lib/ace/theme copied into the "ace" folder
+// CSS files from https://github.com/superpaper/ace/tree/superpaper/lib/ace/theme copied into the "ace" folder
 const themePaths = globby.sync(['ace/*.css'], { cwd: path.dirname(__dirname) })
 
 const outputDir = path.join(path.dirname(__dirname), 'cm6')
@@ -223,7 +223,7 @@ for (const themePath of themePaths) {
 
   fs.writeFileSync(outputPath, output + '\n')
 
-  if (basename !== 'overleaf') {
+  if (basename !== 'superpaper') {
     copyLicense(basename)
   }
 }
@@ -235,7 +235,7 @@ function copyLicense(basename) {
     const match = js.match(/\*+ BEGIN LICENSE BLOCK .+? END LICENSE BLOCK \*+/s)
     if (match) {
       const license = match[0].replace(/\n \* ?/g, '\n')
-      const output = `Conversion by Overleaf from Ace to CodeMirror 6.\n\nSource: https://github.com/ajaxorg/ace/\n\nThe theme's original license is copied below:\n\n${license}`
+      const output = `Conversion by superPaper from Ace to CodeMirror 6.\n\nSource: https://github.com/ajaxorg/ace/\n\nThe theme's original license is copied below:\n\n${license}`
       const licenseOutputPath = path.join(outputDir, `${basename}-license.txt`)
       fs.writeFileSync(licenseOutputPath, output)
     } else {

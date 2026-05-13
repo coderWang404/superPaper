@@ -39,7 +39,6 @@ function AddCollaboratorsSelect({
 }: AddCollaboratorsSelectProps) {
   const isSharingUpdatesEnabled = useFeatureFlag('sharing-updates')
   const { t } = useTranslation()
-  const { features } = useProjectContext()
   const [privileges, setPrivileges] = useState<PermissionsLevel>('readAndWrite')
 
   const isMounted = useIsMounted()
@@ -63,16 +62,12 @@ function AddCollaboratorsSelect({
       },
     ]
 
-    if (features.trackChangesVisible) {
-      options.push({
-        key: 'review',
-        label: t('reviewer'),
-        description: !features.trackChanges
-          ? t('comment_only_upgrade_for_track_changes')
-          : null,
-        icon: 'mode_comment',
-      })
-    }
+    options.push({
+      key: 'review',
+      label: t('reviewer'),
+      description: null,
+      icon: 'mode_comment',
+    })
 
     options.push({
       key: 'readOnly',
@@ -81,7 +76,7 @@ function AddCollaboratorsSelect({
     })
 
     return options
-  }, [features.trackChanges, features.trackChangesVisible, t])
+  }, [t])
 
   const { reset, selectedItems } = multipleSelectionProps
 
@@ -149,7 +144,7 @@ function AddCollaboratorsSelect({
 
         sendMB('collaborator-invited', {
           project_id: projectId,
-          // invitation is only populated on successful invite, meaning that for paywall and other cases this will be null
+          // invitation is only populated on successful invite, meaning that on error cases this will be null
           successful_invite: !!data.invite,
           users_updated: !!(data.users || data.user),
           current_collaborators_amount: members?.length || 0,
@@ -209,7 +204,7 @@ function AddCollaboratorsSelect({
         })
       }
 
-      // wait for a short time, so canAddCollaborators has time to update with new collaborator information
+      // wait briefly so the newly added collaborator is reflected in local state
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 

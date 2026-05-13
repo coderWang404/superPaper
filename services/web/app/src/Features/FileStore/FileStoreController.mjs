@@ -1,9 +1,9 @@
 // @ts-check
 
 import { pipeline } from 'node:stream/promises'
-import logger from '@overleaf/logger'
-import { expressify } from '@overleaf/promise-utils'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import { expressify } from '@superpaper/promise-utils'
+import Metrics from '@superpaper/metrics'
 import ProjectLocator from '../Project/ProjectLocator.mjs'
 import HistoryManager from '../History/HistoryManager.mjs'
 import Errors from '../Errors/Errors.js'

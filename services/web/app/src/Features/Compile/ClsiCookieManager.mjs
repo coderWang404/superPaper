@@ -1,15 +1,15 @@
 import { URL, URLSearchParams } from 'node:url'
-import OError from '@overleaf/o-error'
-import Settings from '@overleaf/settings'
+import OError from '@superpaper/o-error'
+import Settings from '@superpaper/settings'
 import {
   fetchNothing,
   fetchStringWithResponse,
   RequestFailedError,
-} from '@overleaf/fetch-utils'
+} from '@superpaper/fetch-utils'
 import RedisWrapper from '../../infrastructure/RedisWrapper.mjs'
 import Cookie from 'cookie'
-import logger from '@overleaf/logger'
-import Metrics from '@overleaf/metrics'
+import logger from '@superpaper/logger'
+import Metrics from '@superpaper/metrics'
 
 const clsiCookiesEnabled = (Settings.clsiCookie?.key ?? '') !== ''
 

@@ -1,7 +1,5 @@
 import React from 'react'
 import LanguagePicker from '../../../../frontend/js/shared/components/language-picker'
-import getMeta from '@/utils/meta'
-import exposedSettings from '../../../../modules/admin-panel/test/frontend/js/features/user/data/exposedSettings'
 
 describe('LanguagePicker', function () {
   beforeEach(function () {
@@ -16,13 +14,11 @@ describe('LanguagePicker', function () {
         es: 'Español',
       },
       subdomainLang: {
-        en: { lngCode: 'en', url: 'overleaf.com' },
-        fr: { lngCode: 'fr', url: 'fr.overleaf.com' },
-        es: { lngCode: 'es', url: 'es.overleaf.com' },
+        en: { lngCode: 'en', url: 'superpaper.com' },
+        fr: { lngCode: 'fr', url: 'fr.superpaper.com' },
+        es: { lngCode: 'es', url: 'es.superpaper.com' },
       },
     })
-
-    Object.assign(getMeta('ol-ExposedSettings'), exposedSettings)
   })
 
   it('renders the language picker with the current language', function () {
@@ -45,6 +41,6 @@ describe('LanguagePicker', function () {
     cy.mount(<LanguagePicker showHeader />)
     cy.get('#language-picker-toggle').should('exist').click()
     cy.contains('Français').click()
-    cy.url().should('include', 'fr.overleaf.com')
+    cy.url().should('include', 'fr.superpaper.com')
   })
 })

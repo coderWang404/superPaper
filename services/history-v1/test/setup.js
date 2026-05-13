@@ -5,7 +5,7 @@ const fetch = require('node-fetch')
 const { knex, redis } = require('../storage')
 const { exec } = require('node:child_process')
 const { promisify } = require('node:util')
-const testLogRecorder = require('@overleaf/logger/test-log-recorder')
+const testLogRecorder = require('@superpaper/logger/test-log-recorder')
 
 // ensure every ObjectId has the id string as a property for correct comparisons
 require('mongodb').ObjectId.cacheHexString = true

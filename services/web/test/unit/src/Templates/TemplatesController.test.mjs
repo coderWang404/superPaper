@@ -35,7 +35,7 @@ describe('TemplatesController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: (ctx.SplitTestHandler = {
           promises: {
@@ -49,7 +49,6 @@ describe('TemplatesController', function () {
     ctx.next = sinon.stub()
     ctx.req = {
       body: {
-        brandVariationId: 'brand-variation-id',
         compiler: 'compiler',
         mainFile: 'main-file',
         templateId: 'template-id',
@@ -82,7 +81,6 @@ describe('TemplatesController', function () {
 
       it('should call TemplatesManager', function (ctx) {
         return ctx.TemplatesManager.promises.createProjectFromV1Template.should.have.been.calledWithMatch(
-          'brand-variation-id',
           'compiler',
           'main-file',
           'template-id',

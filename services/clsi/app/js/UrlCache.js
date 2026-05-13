@@ -12,11 +12,11 @@
  */
 import UrlFetcher from './UrlFetcher.js'
 
-import Settings from '@overleaf/settings'
+import Settings from '@superpaper/settings'
 import fs from 'node:fs'
 import Path from 'node:path'
 import { callbackify } from 'node:util'
-import Metrics from '@overleaf/metrics'
+import Metrics from '@superpaper/metrics'
 
 const PENDING_DOWNLOADS = new Map()
 

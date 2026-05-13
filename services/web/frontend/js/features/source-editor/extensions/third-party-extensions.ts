@@ -29,7 +29,7 @@ Listen for the UNSTABLE_editor:extensions event to add your CodeMirror 6
 extension(s) to the extensions array. Use the exported objects to avoid
 instanceof comparison errors.
 
-Open an issue on http://github.com/overleaf/overleaf if you think more
+Open an issue on http://github.com/superpaper/superpaper if you think more
 should be exported.
 
 This API is **unsupported** and subject to change without warning.

@@ -17,7 +17,7 @@ import Stream from 'node:stream'
 import * as zlib from 'node:zlib'
 import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
-import { NotFoundError } from '@overleaf/object-persistor/src/Errors.js'
+import { NotFoundError } from '@superpaper/object-persistor/src/Errors.js'
 import { chunkStore } from '../../../../storage/index.js'
 import {
   Change,
@@ -26,15 +26,15 @@ import {
   Snapshot,
   History,
   Chunk,
-} from 'overleaf-editor-core'
+} from 'superpaper-editor-core'
 import Crypto from 'node:crypto'
 import path from 'node:path'
-import projectKey from '@overleaf/object-persistor/src/ProjectKey.js'
+import projectKey from '@superpaper/object-persistor/src/ProjectKey.js'
 import { historyStore } from '../../../../storage/lib/history_store.js'
 
 /**
  * @typedef {import("node-fetch").Response} Response
- * @typedef {import("overleaf-editor-core").Blob} Blob
+ * @typedef {import("superpaper-editor-core").Blob} Blob
  */
 
 // Timeout for script execution, increased to avoid flaky tests

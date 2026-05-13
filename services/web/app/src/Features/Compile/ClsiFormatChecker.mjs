@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import settings from '@overleaf/settings'
+import settings from '@superpaper/settings'
 
 const ClsiFormatChecker = {
   checkRecoursesForProblems(resources) {

@@ -2,12 +2,23 @@ import { useCallback, useEffect, useState } from 'react'
 import { useProjectContext } from '@/shared/context/project-context'
 import { getJSON, postJSON } from '@/infrastructure/fetch-json'
 import { debugConsole } from '@/utils/debugging'
-import type {
-  GlobalNotificationPreferencesSchema,
-  NotificationPreferencesSchema,
-} from '../../../../../modules/notifications/app/src/types.js'
 import { sendMB } from '@/infrastructure/event-tracking'
 import { useIdeReactContext } from '@/features/ide-react/context/ide-react-context'
+
+type NotificationPreferencesSchema = {
+  trackedChangesOnOwnProject: boolean
+  trackedChangesOnInvitedProject: boolean
+  commentOnOwnProject: boolean
+  commentOnInvitedProject: boolean
+  repliesOnOwnProject: boolean
+  repliesOnInvitedProject: boolean
+  repliesOnAuthoredThread: boolean
+  repliesOnParticipatingThread: boolean
+}
+
+type GlobalNotificationPreferencesSchema = NotificationPreferencesSchema & {
+  muteAllNotifications: boolean
+}
 
 export type SettableNotificationLevel = 'all' | 'replies' | 'off'
 export type NotificationLevel = SettableNotificationLevel | 'global-off'

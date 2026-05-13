@@ -6,7 +6,6 @@ import sinon from 'sinon'
 const modalProps = {
   show: true,
   handleHide: sinon.stub(),
-  trackChangesVisible: false,
 }
 
 describe('<HotkeysModal />', function () {
@@ -32,17 +31,6 @@ describe('<HotkeysModal />', function () {
       '[data-test-selector="hotkey"]'
     )
     expect(hotkeys).to.have.length(19)
-  })
-
-  it('adds extra hotkey descriptions when Track Changes is enabled', function () {
-    const { baseElement } = render(
-      <HotkeysModal {...modalProps} trackChangesVisible />
-    )
-
-    const hotkeys = baseElement.querySelectorAll(
-      '[data-test-selector="hotkey"]'
-    )
-    expect(hotkeys).to.have.length(22)
   })
 
   it('uses Ctrl for non-macOS', function () {

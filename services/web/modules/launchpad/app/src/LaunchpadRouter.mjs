@@ -1,4 +1,4 @@
-import logger from '@overleaf/logger'
+import logger from '@superpaper/logger'
 
 import LaunchpadController from './LaunchpadController.mjs'
 import AuthenticationController from '../../../../app/src/Features/Authentication/AuthenticationController.mjs'
@@ -14,14 +14,6 @@ export default {
       LaunchpadController.registerAdmin
     )
     webRouter.post(
-      '/launchpad/register_ldap_admin',
-      LaunchpadController.registerExternalAuthAdmin('ldap')
-    )
-    webRouter.post(
-      '/launchpad/register_saml_admin',
-      LaunchpadController.registerExternalAuthAdmin('saml')
-    )
-    webRouter.post(
       '/launchpad/send_test_email',
       AuthorizationMiddleware.ensureUserIsSiteAdmin,
       LaunchpadController.sendTestEmail
@@ -31,12 +23,6 @@ export default {
       AuthenticationController.addEndpointToLoginWhitelist('/launchpad')
       AuthenticationController.addEndpointToLoginWhitelist(
         '/launchpad/register_admin'
-      )
-      AuthenticationController.addEndpointToLoginWhitelist(
-        '/launchpad/register_ldap_admin'
-      )
-      AuthenticationController.addEndpointToLoginWhitelist(
-        '/launchpad/register_saml_admin'
       )
     }
   },

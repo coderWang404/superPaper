@@ -1,7 +1,6 @@
 import { CookieJar } from 'tough-cookie'
 import AuthenticationManager from '../../../../app/src/Features/Authentication/AuthenticationManager.mjs'
-import Settings from '@overleaf/settings'
-import InstitutionsAPI from '../../../../app/src/Features/Institutions/InstitutionsAPI.mjs'
+import Settings from '@superpaper/settings'
 import UserCreator from '../../../../app/src/Features/User/UserCreator.mjs'
 import UserGetter from '../../../../app/src/Features/User/UserGetter.mjs'
 import UserUpdater from '../../../../app/src/Features/User/UserUpdater.mjs'
@@ -158,15 +157,6 @@ class UserHelper {
     const response = await this.fetch('/dev/session')
     const body = await response.text()
     await throwIfErrorResponse(response)
-    return JSON.parse(body)
-  }
-
-  async getSplitTestAssignment(splitTestName) {
-    const response = await this.fetch(
-      `/dev/split_test/get_assignment?splitTestName=${splitTestName}`
-    )
-    await throwIfErrorResponse(response)
-    const body = await response.text()
     return JSON.parse(body)
   }
 
@@ -391,12 +381,6 @@ class UserHelper {
     if (body.message && body.message.type === 'error') {
       throw new Error(`register api error: ${body.message.text}`)
     }
-    if (body.redir === '/sso-login') {
-      throw new Error(
-        `cannot register intitutional email: ${options.json.email}`
-      )
-    }
-
     const code = await userHelper.getEmailConfirmationCode(
       'pendingUserRegistration'
     )
@@ -465,9 +449,6 @@ class UserHelper {
       },
     }
     await UserUpdater.promises.updateUser(query, update)
-    await InstitutionsAPI.promises.addAffiliation(userId, email, {
-      confirmedAt: date,
-    })
   }
 
   async changeConfirmedToNotificationPeriod(

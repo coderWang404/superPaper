@@ -11,11 +11,11 @@ describe('<HotkeysModalBottomText />', function () {
     )
 
     const link = screen.getByRole('link', {
-      name: /this Overleaf project template/,
+      name: /this superPaper project template/,
     })
 
     expect(link.getAttribute('href')).to.equal(
-      `https://www.overleaf.com/articles/overleaf-keyboard-shortcuts/qykqfvmxdnjf`
+      `https://www.superpaper.com/articles/superpaper-keyboard-shortcuts/qykqfvmxdnjf`
     )
   })
 })

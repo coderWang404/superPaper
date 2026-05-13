@@ -3,8 +3,8 @@ import crypto from 'node:crypto'
 import path from 'node:path'
 import Stream from 'node:stream'
 import { callbackify, promisify } from 'node:util'
-import metrics from '@overleaf/metrics'
-import Settings from '@overleaf/settings'
+import metrics from '@superpaper/metrics'
+import Settings from '@superpaper/settings'
 import Errors from './Errors.js'
 
 const { WriteError } = Errors

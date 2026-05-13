@@ -25,21 +25,11 @@ import {
 import { emitShortcutEvent } from '@/features/source-editor/extensions/toolbar/utils/analytics'
 import { sendMB } from '@/infrastructure/event-tracking'
 
-const toggleReviewPanel = () => {
-  window.dispatchEvent(new Event('ui.toggle-review-panel'))
-  return true
-}
-
 const addNewCommentFromKbdShortcut = () => {
   sendMB('add-comment', {
     location: 'shortcut',
   })
   window.dispatchEvent(new Event('add-new-review-comment'))
-  return true
-}
-
-const toggleTrackChangesFromKbdShortcut = () => {
-  window.dispatchEvent(new Event('toggle-track-changes'))
   return true
 }
 
@@ -114,19 +104,9 @@ export const shortcuts = Prec.high(
       },
     },
     {
-      key: 'Mod-j',
-      preventDefault: true,
-      run: toggleReviewPanel,
-    },
-    {
       key: 'Mod-Shift-c',
       preventDefault: true,
       run: addNewCommentFromKbdShortcut,
-    },
-    {
-      key: 'Mod-Shift-a',
-      preventDefault: true,
-      run: toggleTrackChangesFromKbdShortcut,
     },
     {
       key: 'Cmd-Alt-ArrowUp',

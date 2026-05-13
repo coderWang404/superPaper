@@ -11,13 +11,13 @@ import {
   RequireAcceptData,
   RequireAcceptScreen,
 } from '@/features/token-access/components/require-accept-screen'
-import importOverleafModules from '../../../../macros/import-overleaf-module.macro'
+import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 import MaterialIcon from '@/shared/components/material-icon'
 import { useFeatureFlag } from '@/shared/context/split-test-context'
 
 type Mode = 'access-attempt' | 'v1Import' | 'requireAccept'
 
-const [v1ImportDataScreenModule] = importOverleafModules(
+const [v1ImportDataScreenModule] = importSuperPaperModules(
   'v1ImportDataScreen'
 ) as {
   import: { default: ElementType }

@@ -18,7 +18,7 @@ describe('DocumentUpdaterController', function () {
     ctx.rclient = []
     ctx.RoomEvents = { on: sinon.stub() }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: (ctx.settings = {
         redis: {
           documentupdater: {
@@ -61,7 +61,7 @@ describe('DocumentUpdaterController', function () {
       default: { check: sinon.stub() },
     }))
 
-    vi.doMock('@overleaf/metrics', () => ({
+    vi.doMock('@superpaper/metrics', () => ({
       default: (ctx.metrics = {
         inc: sinon.stub(),
         histogram: sinon.stub(),

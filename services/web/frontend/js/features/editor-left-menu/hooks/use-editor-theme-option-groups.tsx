@@ -2,7 +2,7 @@ import getMeta from '@/utils/meta'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-const overrides = new Map([['overleaf', 'overleaf light']])
+const overrides = new Map([['superpaper', 'superpaper light']])
 function getThemeName(theme: string): string {
   return (overrides.get(theme) ?? theme).replace(/_/g, ' ')
 }

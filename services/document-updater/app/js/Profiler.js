@@ -1,4 +1,4 @@
-const logger = require('@overleaf/logger')
+const logger = require('@superpaper/logger')
 
 function deltaMs(ta, tb) {
   const nanoSeconds = (ta[0] - tb[0]) * 1e9 + (ta[1] - tb[1])

@@ -17,29 +17,19 @@ describe('UserPagesController', function () {
         },
       },
     }
-    ctx.user = {
-      _id: (ctx.user_id = 'kwjewkl'),
-      features: {},
-      email: 'joe@example.com',
-      ip_address: '1.1.1.1',
+      ctx.user = {
+        _id: (ctx.user_id = 'kwjewkl'),
+        features: {},
+        email: 'joe@example.com',
+        ip_address: '1.1.1.1',
       session_created: 'timestamp',
-      thirdPartyIdentifiers: [
-        {
-          providerId: 'google',
-          externalUserId: 'testId',
-        },
-      ],
-      refProviders: {
-        mendeley: { encrypted: 'aaaa' },
-        zotero: { encrypted: 'bbbb' },
-        papers: { encrypted: 'cccc' },
-      },
-    }
-    ctx.adminEmail = 'group-admin-email@overleaf.com'
-    ctx.subscriptionViewModel = {
-      memberGroupSubscriptions: [],
-    }
-
+        thirdPartyIdentifiers: [
+          {
+            providerId: 'google',
+            externalUserId: 'testId',
+          },
+        ],
+      }
     ctx.UserGetter = {
       getUser: sinon.stub(),
       promises: { getUser: sinon.stub() },
@@ -61,12 +51,6 @@ describe('UserPagesController', function () {
     ctx.PersonalAccessTokenManager = {
       listTokens: sinon.stub().returns([]),
     }
-    ctx.SubscriptionLocator = {
-      promises: {
-        getAdminEmail: sinon.stub().returns(ctx.adminEmail),
-        getMemberSubscriptions: sinon.stub().resolves(),
-      },
-    }
     ctx.SplitTestHandler = {
       promises: {
         getAssignment: sinon.stub().returns('default'),
@@ -80,7 +64,7 @@ describe('UserPagesController', function () {
       },
     }
 
-    vi.doMock('@overleaf/settings', () => ({
+    vi.doMock('@superpaper/settings', () => ({
       default: ctx.settings,
     }))
 
@@ -103,13 +87,6 @@ describe('UserPagesController', function () {
       })
     )
 
-    vi.doMock(
-      '../../../../app/src/Features/Subscription/SubscriptionLocator',
-      () => ({
-        default: ctx.SubscriptionLocator,
-      })
-    )
-
     vi.doMock('../../../../app/src/infrastructure/Features', () => ({
       default: ctx.Features,
     }))
@@ -129,7 +106,7 @@ describe('UserPagesController', function () {
     )
 
     vi.doMock(
-      '../../../../app/src/Features/SplitTests/SplitTestHandler',
+      '../../../../app/src/Features/FeatureRollouts/FeatureRolloutHandler',
       () => ({
         default: ctx.SplitTestHandler,
       })
@@ -391,185 +368,5 @@ describe('UserPagesController', function () {
       })
     })
 
-    it('should restructure thirdPartyIdentifiers data for template use', async function (ctx) {
-      const expectedResult = {
-        google: 'testId',
-      }
-      await new Promise((resolve, reject) => {
-        ctx.res.callback = () => {
-          expect(ctx.res.renderedVariables.thirdPartyIds).to.include(
-            expectedResult
-          )
-          resolve()
-        }
-        ctx.UserPagesController.settingsPage(
-          ctx.req,
-          ctx.res,
-          ctx.rejectOnError(reject)
-        )
-      })
-    })
-
-    it("should set and clear 'projectSyncSuccessMessage'", async function (ctx) {
-      ctx.req.session.projectSyncSuccessMessage = 'Some Sync Success'
-      await new Promise((resolve, reject) => {
-        ctx.res.callback = () => {
-          ctx.res.renderedVariables.projectSyncSuccessMessage.should.equal(
-            'Some Sync Success'
-          )
-          expect(ctx.req.session.projectSyncSuccessMessage).to.not.exist
-          resolve()
-        }
-        ctx.UserPagesController.settingsPage(
-          ctx.req,
-          ctx.res,
-          ctx.rejectOnError(reject)
-        )
-      })
-    })
-
-    it('should cast refProviders to booleans', async function (ctx) {
-      await new Promise((resolve, reject) => {
-        ctx.res.callback = () => {
-          expect(ctx.res.renderedVariables.user.refProviders).to.deep.equal({
-            mendeley: true,
-            papers: true,
-            zotero: true,
-          })
-          resolve()
-        }
-        ctx.UserPagesController.settingsPage(
-          ctx.req,
-          ctx.res,
-          ctx.rejectOnError(reject)
-        )
-      })
-    })
-
-    it('should send the correct managed user admin email', async function (ctx) {
-      await new Promise((resolve, reject) => {
-        ctx.res.callback = () => {
-          expect(
-            ctx.res.renderedVariables.currentManagedUserAdminEmail
-          ).to.equal(ctx.adminEmail)
-          resolve()
-        }
-        ctx.UserPagesController.settingsPage(
-          ctx.req,
-          ctx.res,
-          ctx.rejectOnError(reject)
-        )
-      })
-    })
-
-    it('should send info for groups with SSO enabled', async function (ctx) {
-      ctx.user.enrollment = {
-        sso: [
-          {
-            groupId: 'abc123abc123',
-            primary: true,
-            linkedAt: new Date(),
-          },
-        ],
-      }
-      const group1 = {
-        _id: 'abc123abc123',
-        teamName: 'Group SSO Rulz',
-        admin_id: {
-          email: 'admin.email@ssolove.com',
-        },
-        linked: true,
-      }
-      const group2 = {
-        _id: 'def456def456',
-        admin_id: {
-          email: 'someone.else@noname.co.uk',
-        },
-        linked: false,
-      }
-
-      ctx.Modules.promises.hooks.fire
-        .withArgs('getUserGroupsSSOEnrollmentStatus')
-        .resolves([[group1, group2]])
-      await new Promise((resolve, reject) => {
-        ctx.res.callback = () => {
-          expect(
-            ctx.res.renderedVariables.memberOfSSOEnabledGroups
-          ).to.deep.equal([
-            {
-              groupId: 'abc123abc123',
-              groupName: 'Group SSO Rulz',
-              adminEmail: 'admin.email@ssolove.com',
-              linked: true,
-            },
-            {
-              groupId: 'def456def456',
-              groupName: undefined,
-              adminEmail: 'someone.else@noname.co.uk',
-              linked: false,
-            },
-          ])
-          resolve()
-        }
-
-        ctx.UserPagesController.settingsPage(
-          ctx.req,
-          ctx.res,
-          ctx.rejectOnError(reject)
-        )
-      })
-    })
-
-    describe('when ldap.updateUserDetailsOnLogin is true', function () {
-      beforeEach(function (ctx) {
-        ctx.settings.ldap = { updateUserDetailsOnLogin: true }
-      })
-
-      afterEach(function (ctx) {
-        delete ctx.settings.ldap
-      })
-
-      it('should set "shouldAllowEditingDetails" to false', async function (ctx) {
-        await new Promise((resolve, reject) => {
-          ctx.res.callback = () => {
-            ctx.res.renderedVariables.shouldAllowEditingDetails.should.equal(
-              false
-            )
-            resolve()
-          }
-          ctx.UserPagesController.settingsPage(
-            ctx.req,
-            ctx.res,
-            ctx.rejectOnError(reject)
-          )
-        })
-      })
-    })
-
-    describe('when saml.updateUserDetailsOnLogin is true', function () {
-      beforeEach(function (ctx) {
-        ctx.settings.saml = { updateUserDetailsOnLogin: true }
-      })
-
-      afterEach(function (ctx) {
-        delete ctx.settings.saml
-      })
-
-      it('should set "shouldAllowEditingDetails" to false', async function (ctx) {
-        await new Promise((resolve, reject) => {
-          ctx.res.callback = () => {
-            ctx.res.renderedVariables.shouldAllowEditingDetails.should.equal(
-              false
-            )
-            resolve()
-          }
-          ctx.UserPagesController.settingsPage(
-            ctx.req,
-            ctx.res,
-            ctx.rejectOnError(reject)
-          )
-        })
-      })
-    })
   })
 })

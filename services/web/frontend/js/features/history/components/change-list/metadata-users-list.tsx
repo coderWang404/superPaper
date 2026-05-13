@@ -32,7 +32,7 @@ function MetadataUsersList({
           />
           {origin?.kind === 'history-resync' ||
           origin?.kind === 'history-migration'
-            ? t('overleaf_history_system')
+            ? t('superpaper_history_system')
             : t('anonymous')}
         </li>
       )}
