@@ -58,6 +58,18 @@ describe('AiProviderClient', function () {
     ).to.be.rejectedWith('AI provider model sync failed with status 401')
   })
 
+  it('wraps model sync network failures in a provider error', async function (ctx) {
+    const fetchImpl = sinon.stub().rejects(new TypeError('fetch failed'))
+
+    await expect(
+      ctx.Client.syncOpenAICompatibleModels({
+        baseURL: 'https://example.invalid',
+        apiKey: 'test-key',
+        fetchImpl,
+      })
+    ).to.be.rejectedWith(ctx.Client.AiProviderError)
+  })
+
   it('creates OpenAI-compatible chat completions', async function (ctx) {
     const fetchImpl = sinon.stub().resolves({
       ok: true,
@@ -96,5 +108,19 @@ describe('AiProviderClient', function () {
       })
     )
     expect(answer).to.equal('AI answer')
+  })
+
+  it('wraps chat completion network failures in a provider error', async function (ctx) {
+    const fetchImpl = sinon.stub().rejects(new TypeError('fetch failed'))
+
+    await expect(
+      ctx.Client.createOpenAICompatibleChatCompletion({
+        baseURL: 'https://example.invalid/v1',
+        apiKey: 'test-key',
+        model: 'gpt-4.1',
+        messages: [{ role: 'user', content: 'Hello' }],
+        fetchImpl,
+      })
+    ).to.be.rejectedWith(ctx.Client.AiProviderError)
   })
 })

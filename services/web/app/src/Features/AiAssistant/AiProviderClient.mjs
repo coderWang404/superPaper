@@ -18,6 +18,13 @@ export class AiProviderError extends Error {
   }
 }
 
+function toProviderError(err, fallbackMessage) {
+  if (err instanceof AiProviderError) {
+    return err
+  }
+  return new AiProviderError(fallbackMessage, { cause: err })
+}
+
 export async function syncOpenAICompatibleModels({
   baseURL,
   apiKey,
@@ -44,6 +51,8 @@ export async function syncOpenAICompatibleModels({
     }
 
     return parseOpenAIModelsResponse(await response.json())
+  } catch (err) {
+    throw toProviderError(err, 'AI provider model sync failed')
   } finally {
     clearTimeout(timeout)
   }
@@ -85,6 +94,8 @@ export async function createOpenAICompatibleChatCompletion({
       throw new AiProviderError('AI provider chat completion response is invalid')
     }
     return answer
+  } catch (err) {
+    throw toProviderError(err, 'AI provider chat completion failed')
   } finally {
     clearTimeout(timeout)
   }
