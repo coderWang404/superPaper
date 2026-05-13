@@ -5,6 +5,20 @@ const fs = require('node:fs')
 const isPreEmptible = process.env.PREEMPTIBLE === 'TRUE'
 const CLSI_SERVER_ID = os.hostname().replace('-ctr', '')
 
+function getDownloadHost() {
+  const downloadHost = process.env.DOWNLOAD_HOST
+
+  if (!downloadHost) {
+    return 'http://localhost:8080'
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(downloadHost)) {
+    return downloadHost
+  }
+
+  return `http://${downloadHost}:8080`
+}
+
 module.exports = {
   compileSizeLimit: process.env.COMPILE_SIZE_LIMIT || '7mb',
 
@@ -57,7 +71,7 @@ module.exports = {
       outputUrlPrefix: `${process.env.ZONE ? `/zone/${process.env.ZONE}` : ''}`,
       clsiServerId: process.env.CLSI_SERVER_ID || CLSI_SERVER_ID,
 
-      downloadHost: process.env.DOWNLOAD_HOST || 'http://localhost:8080',
+      downloadHost: getDownloadHost(),
     },
     clsiPerf: {
       host: `${process.env.CLSI_PERF_HOST || '127.0.0.1'}:${
