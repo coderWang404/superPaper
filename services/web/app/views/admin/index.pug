@@ -107,34 +107,9 @@ block content
 
 									.tab-pane(role='tabpanel' id='ai-providers')
 										h3 AI Providers
-										p Configure providers through the admin JSON API. API keys are accepted only in request bodies and are never returned in responses.
-										table.table.table-striped
-											thead
-												tr
-													th Method
-													th Endpoint
-													th Purpose
-											tbody
-												tr
-													td GET
-													td /admin/ai/providers
-													td List configured providers.
-												tr
-													td POST
-													td /admin/ai/providers
-													td Create an OpenAI-compatible provider.
-												tr
-													td PATCH
-													td /admin/ai/providers/:providerId
-													td Update provider metadata or replace its API key.
-												tr
-													td POST
-													td /admin/ai/providers/:providerId/sync-models
-													td Pull model IDs from the provider.
-												tr
-													td POST
-													td /admin/ai/providers/:providerId/test
-													td Test provider connectivity.
+										p Configure OpenAI-compatible AI providers for project chat and future editor actions. API keys are accepted only from password fields and are never returned by the server.
+										#ai-provider-admin(data-csrf-token=csrfToken)
+											p.text-muted Loading AI providers...
 
 									.tab-pane(role='tabpanel' id='tpds')
 										h3 Flush project to TPDS

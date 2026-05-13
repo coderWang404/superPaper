@@ -11,3 +11,12 @@ import './features/cookie-banner'
 import './features/autoplay-video'
 import './features/mathjax'
 import './features/contact-form'
+import { initAiProviderAdmin } from './features/ai-provider-admin/ai-provider-admin'
+
+const aiProviderAdminRoot = document.querySelector<HTMLElement>(
+  '#ai-provider-admin'
+)
+
+if (aiProviderAdminRoot) {
+  initAiProviderAdmin(aiProviderAdminRoot)
+}
