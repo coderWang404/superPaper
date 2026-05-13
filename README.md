@@ -1,70 +1,111 @@
-<h1 align="center">
-  <br>
-  <a href="https://www.superpaper.com"><img src="doc/logo.png" alt="superPaper" width="300"></a>
-</h1>
+# superPaper
 
-<h4 align="center">An open-source online real-time collaborative LaTeX editor.</h4>
+superPaper 是一套面向论文写作、协作编辑和 AI 辅助创作的在线文档平台。
+它保留了实时协作、编译预览、历史记录、Git 工作流和管理后台，
+并在此基础上加入了可配置的 AI Provider、项目级问答和编辑器内 AI 助手。
 
-<p align="center">
-  <a href="https://github.com/superpaper/superpaper/wiki">Wiki</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#authors">Authors</a> •
-  <a href="#license">License</a>
-</p>
+## 产品功能
 
-<img src="doc/screenshot.png" alt="A screenshot of a project being edited in superPaper Community Edition">
-<p align="center">
-  Figure 1: A screenshot of a project being edited in superPaper Community Edition.
-</p>
+### 编辑与协作
 
-## Community Edition
+- 多人实时协作编辑
+- 文件树、文件上传、文件夹管理
+- 自动编译与右侧 PDF 预览
+- 历史版本与回溯
+- 评论、共享、链接分享
+- 全文搜索与项目级检索
+- Git 相关导入与同步工作流
 
-[superPaper](https://www.superpaper.com) is an open-source online real-time collaborative LaTeX editor. We run a hosted version at [www.superpaper.com](https://www.superpaper.com), but you can also run your own local version, and contribute to the development of superPaper.
+### AI 功能
 
-> [!CAUTION]
-> superPaper Community Edition is intended for use in environments where **all** users are trusted. Community Edition is **not** appropriate for scenarios where isolation of users is required due to Sandbox Compiles not being available. When not using Sandboxed Compiles, users have full read and write access to the `sharelatex` container resources (filesystem, network, environment variables) when running LaTeX compiles.
+- 管理员可配置多个 AI Provider
+- 支持自定义 `Base URL` 和 `API Key`
+- 支持模型拉取、同步、测试和启用/禁用
+- 编辑器侧栏 AI Assistant
+- 基于全文上下文的项目问答
+- 额外叠加当前选中文本作为上下文
+- 流式输出
+- `Chat` 模式已可用
+- `Agent` 模式前端骨架已预留，后续可扩展为文件级操作
+- 管理后台支持中文和英文切换
 
-For more information on Sandbox Compiles check out our [documentation](https://docs.superpaper.com/on-premises/configuration/superpaper-toolkit/server-pro-only-configuration/sandboxed-compiles).
+## 快速部署
 
-## Installation
+### 1. 准备环境
 
-We have detailed installation instructions in the [superPaper Toolkit](https://github.com/superpaper/toolkit/).
+- Docker
+- Docker Compose
+- Git
 
-## Upgrading
+### 2. 启动服务
 
-If you are upgrading from a previous version of superPaper, please see the [Release Notes section on the Wiki](https://github.com/superpaper/superpaper/wiki#release-notes) for all of the versions between your current version and the version you are upgrading to.
+```bash
+cd develop
+docker compose up -d --build
+```
 
-## superPaper Docker Image
+### 3. 打开系统
 
-This repo contains two dockerfiles, [`Dockerfile-base`](server-ce/Dockerfile-base), which builds the
-`sharelatex/sharelatex-base` image, and [`Dockerfile`](server-ce/Dockerfile) which builds the
-`sharelatex/sharelatex` (or "community") image.
+浏览器访问：
 
-The Base image generally contains the basic dependencies like `wget`, plus `texlive`.
-We split this out because it's a pretty heavy set of
-dependencies, and it's nice to not have to rebuild all of that every time.
+```text
+http://127.0.0.1:23000
+```
 
-The `sharelatex/sharelatex` image extends the base image and adds the actual superPaper code
-and services.
+### 4. 创建第一个管理员
 
-Use `make build-base` and `make build-community` from `server-ce/` to build these images.
+首次启动后，打开：
 
-We use the [Phusion base-image](https://github.com/phusion/baseimage-docker)
-(which is extended by our `base` image) to provide us with a VM-like container
-in which to run the superPaper services. Baseimage uses the `runit` service
-manager to manage services, and we add our init-scripts from the `server-ce/runit`
-folder.
+```text
+http://127.0.0.1:23000/launchpad
+```
 
-## Contributing
+在页面里创建第一个管理员账号。
 
-Please see the [CONTRIBUTING](CONTRIBUTING.md) file for information on contributing to the development of superPaper.
+## AI Provider 配置
 
-## Authors
+管理员登录后，打开：
 
-[The superPaper Team](https://www.superpaper.com/about)
+```text
+http://127.0.0.1:23000/admin#ai-providers
+```
 
-## License
+在这里可以：
 
-The code in this repository is released under the GNU AFFERO GENERAL PUBLIC LICENSE, version 3. A copy can be found in the [`LICENSE`](LICENSE) file.
+- 新增 AI Provider
+- 填写 `Base URL`
+- 填写 `API Key`
+- 同步模型列表
+- 选择默认模型
+- 测试连通性
+- 启用或禁用 Provider
 
-Copyright (c) superPaper, 2014-2025.
+配置完成后，进入任意项目的编辑器，打开右侧 `AI Assistant` 即可使用。
+
+## 常用运维命令
+
+```bash
+cd develop
+docker compose ps
+docker compose logs -f web webpack
+docker compose restart web webpack
+docker compose down
+```
+
+如果机器内存较小，可以在 `develop/.env` 中设置：
+
+```text
+COMPOSE_PARALLEL_LIMIT=1
+```
+
+## 开发说明
+
+- 前端入口由 `webpack` 容器提供
+- 后端主服务由 `web` 容器提供
+- 编译链路依赖 `clsi`
+- 项目历史与文件存储由独立服务处理
+- 本地修改后，通常只需要重建 `web` 和 `webpack`
+
+## 许可证
+
+本仓库代码采用 AGPL-3.0 许可证。
