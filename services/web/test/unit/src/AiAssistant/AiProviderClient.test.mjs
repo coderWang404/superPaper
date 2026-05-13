@@ -57,4 +57,44 @@ describe('AiProviderClient', function () {
       })
     ).to.be.rejectedWith('AI provider model sync failed with status 401')
   })
+
+  it('creates OpenAI-compatible chat completions', async function (ctx) {
+    const fetchImpl = sinon.stub().resolves({
+      ok: true,
+      status: 200,
+      json: sinon.stub().resolves({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'AI answer',
+            },
+          },
+        ],
+      }),
+    })
+
+    const answer = await ctx.Client.createOpenAICompatibleChatCompletion({
+      baseURL: 'https://example.invalid/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      fetchImpl,
+    })
+
+    expect(fetchImpl.firstCall.args[0]).to.equal(
+      'https://example.invalid/v1/chat/completions'
+    )
+    expect(fetchImpl.firstCall.args[1].headers.Authorization).to.equal(
+      'Bearer test-key'
+    )
+    expect(fetchImpl.firstCall.args[1].body).to.equal(
+      JSON.stringify({
+        model: 'gpt-4.1',
+        messages: [{ role: 'user', content: 'Hello' }],
+        temperature: 0.2,
+      })
+    )
+    expect(answer).to.equal('AI answer')
+  })
 })
