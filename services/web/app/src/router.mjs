@@ -1,5 +1,6 @@
 import AdminController from './Features/ServerAdmin/AdminController.mjs'
 import AiProviderAdminController from './Features/AiAssistant/AiProviderAdminController.mjs'
+import AiProjectChatController from './Features/AiAssistant/AiProjectChatController.mjs'
 import ErrorController from './Features/Errors/ErrorController.mjs'
 import Features from './infrastructure/Features.mjs'
 import ProjectController from './Features/Project/ProjectController.mjs'
@@ -520,6 +521,18 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     AuthenticationController.requireLogin(),
     AuthorizationMiddleware.ensureUserCanReadProject,
     ProjectController.projectEntitiesJson
+  )
+  webRouter.get(
+    '/project/:Project_id/ai/config',
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiProjectChatController.config
+  )
+  webRouter.post(
+    '/project/:Project_id/ai/chat',
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiProjectChatController.chat
   )
 
   webRouter.get(
