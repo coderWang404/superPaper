@@ -1,4 +1,5 @@
 import AdminController from './Features/ServerAdmin/AdminController.mjs'
+import AiProviderAdminController from './Features/AiAssistant/AiProviderAdminController.mjs'
 import ErrorController from './Features/Errors/ErrorController.mjs'
 import Features from './infrastructure/Features.mjs'
 import ProjectController from './Features/Project/ProjectController.mjs'
@@ -1105,6 +1106,37 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     '/admin/messages/clear',
     AuthorizationMiddleware.ensureUserIsSiteAdmin,
     AdminController.clearMessages
+  )
+
+  webRouter.get(
+    '/admin/ai/providers',
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiProviderAdminController.list
+  )
+  webRouter.post(
+    '/admin/ai/providers',
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiProviderAdminController.create
+  )
+  webRouter.patch(
+    '/admin/ai/providers/:providerId',
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiProviderAdminController.update
+  )
+  webRouter.delete(
+    '/admin/ai/providers/:providerId',
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiProviderAdminController.delete
+  )
+  webRouter.post(
+    '/admin/ai/providers/:providerId/sync-models',
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiProviderAdminController.syncModels
+  )
+  webRouter.post(
+    '/admin/ai/providers/:providerId/test',
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiProviderAdminController.testProvider
   )
 
   privateApiRouter.get('/perfTest', (req, res) => {
