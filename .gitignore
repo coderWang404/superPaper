@@ -12,3 +12,4 @@ coverage/
 .cache/
 tmp/
 temp/
+develop/output/
