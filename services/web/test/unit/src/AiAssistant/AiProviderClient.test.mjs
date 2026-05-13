@@ -123,4 +123,50 @@ describe('AiProviderClient', function () {
       })
     ).to.be.rejectedWith(ctx.Client.AiProviderError)
   })
+
+  it('streams OpenAI-compatible chat completion deltas', async function (ctx) {
+    const encoder = new TextEncoder()
+    const fetchImpl = sinon.stub().resolves({
+      ok: true,
+      status: 200,
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              'data: {"choices":[{"delta":{"content":"Hello "}}]}\n\n'
+            )
+          )
+          controller.enqueue(
+            encoder.encode(
+              'data: {"choices":[{"delta":{"content":"world"}}]}\n\n'
+            )
+          )
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        },
+      }),
+    })
+
+    const chunks = []
+    for await (const chunk of ctx.Client.streamOpenAICompatibleChatCompletion({
+      baseURL: 'https://example.invalid/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      fetchImpl,
+    })) {
+      chunks.push(chunk)
+    }
+
+    expect(fetchImpl.firstCall.args[0]).to.equal(
+      'https://example.invalid/v1/chat/completions'
+    )
+    expect(JSON.parse(fetchImpl.firstCall.args[1].body)).to.deep.equal({
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      temperature: 0.2,
+      stream: true,
+    })
+    expect(chunks).to.deep.equal(['Hello ', 'world'])
+  })
 })

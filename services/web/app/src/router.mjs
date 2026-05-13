@@ -546,6 +546,16 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
   );
 
   webRouter.post(
+    "/project/:Project_id/ai/chat/stream",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiProjectChatController.chatStream,
+  );
+
+  webRouter.post(
     "/project/:Project_id/compile",
     RateLimiterMiddleware.rateLimit(rateLimiters.compileProjectHttp, {
       params: ["Project_id"],

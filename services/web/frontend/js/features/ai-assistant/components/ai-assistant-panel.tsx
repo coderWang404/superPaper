@@ -12,8 +12,10 @@ import {
   ProjectAiChatResponse,
   ProjectAiConfig,
   ProjectAiProvider,
-  sendProjectAiChat,
+  sendProjectAiChatStream,
 } from '@/features/ai-assistant/api'
+
+type AssistantMode = 'chat' | 'agent'
 
 export default function AiAssistantPanel() {
   const { projectId } = useProjectContext()
@@ -28,8 +30,10 @@ export default function AiAssistantPanel() {
   )
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [answer, setAnswer] = useState<ProjectAiChatResponse | null>(null)
+  const [streamedAnswer, setStreamedAnswer] = useState('')
   const [chatError, setChatError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [mode, setMode] = useState<AssistantMode>('chat')
 
   useEffect(() => {
     let cancelled = false
@@ -100,14 +104,22 @@ export default function AiAssistantPanel() {
 
     setSubmitting(true)
     setChatError(null)
+    setAnswer(null)
+    setStreamedAnswer('')
 
     try {
-      const response = await sendProjectAiChat(projectId, {
-        prompt: trimmedPrompt,
-        providerId: selectedProvider.id,
-        model: selectedModel,
-        selection,
-      })
+      const response = await sendProjectAiChatStream(
+        projectId,
+        {
+          prompt: trimmedPrompt,
+          providerId: selectedProvider.id,
+          model: selectedModel,
+          selection,
+        },
+        delta => {
+          setStreamedAnswer(currentAnswer => currentAnswer + delta)
+        }
+      )
       setAnswer(response)
     } catch (error) {
       setChatError(getErrorMessage(error))
@@ -148,8 +160,6 @@ export default function AiAssistantPanel() {
             <ProviderSelector
               providers={config?.providers ?? []}
               selectedProvider={selectedProvider}
-              selectedModel={selectedModel}
-              enabledModels={enabledModels}
               onProviderChange={providerId => {
                 const nextProvider = config?.providers.find(
                   provider => provider.id === providerId
@@ -157,14 +167,59 @@ export default function AiAssistantPanel() {
                 setSelectedProviderId(providerId)
                 setSelectedModel(getDefaultModel(nextProvider))
               }}
-              onModelChange={setSelectedModel}
             />
+
+            <div className="ai-assistant-mode-switch" aria-label="AI mode">
+              <button
+                type="button"
+                className={mode === 'chat' ? 'active' : ''}
+                aria-pressed={mode === 'chat'}
+                onClick={() => setMode('chat')}
+              >
+                Chat
+              </button>
+              <button
+                type="button"
+                className={mode === 'agent' ? 'active' : ''}
+                aria-pressed={mode === 'agent'}
+                onClick={() => setMode('agent')}
+              >
+                Agent
+              </button>
+            </div>
 
             <div className="ai-assistant-context-strip">
               {selection ? 'Using current selection' : 'Using project context'}
             </div>
 
-            <form className="ai-assistant-form" onSubmit={handleSubmit}>
+            {mode === 'agent' && (
+              <div className="ai-assistant-agent-placeholder">
+                <h5>Agent mode</h5>
+                <p>
+                  File-editing tools will appear here in the next development
+                  phase. Chat mode is active today.
+                </p>
+              </div>
+            )}
+
+            <div className="ai-assistant-transcript" aria-live="polite">
+              {(streamedAnswer || answer) && (
+                <div className="ai-assistant-message ai-assistant-message-assistant">
+                  <div className="ai-assistant-message-meta">
+                    superPaper AI
+                  </div>
+                  <div className="ai-assistant-answer-text">
+                    {streamedAnswer || answer?.answer}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <form
+              className="ai-assistant-composer"
+              data-testid="ai-assistant-composer"
+              onSubmit={handleSubmit}
+            >
               <label htmlFor="ai-assistant-prompt">
                 Ask about this project
               </label>
@@ -173,16 +228,24 @@ export default function AiAssistantPanel() {
                 value={prompt}
                 onChange={event => setPrompt(event.target.value)}
                 placeholder="Ask a question about the project, current file, or selected text."
-                rows={5}
+                rows={4}
+                disabled={mode !== 'chat'}
               />
-              <OLButton
-                type="submit"
-                variant="primary"
-                disabled={!prompt.trim() || submitting}
-                isLoading={submitting}
-              >
-                Ask
-              </OLButton>
+              <div className="ai-assistant-composer-footer">
+                <ComposerModelSelector
+                  selectedModel={selectedModel}
+                  enabledModels={enabledModels}
+                  onModelChange={setSelectedModel}
+                />
+                <OLButton
+                  type="submit"
+                  variant="primary"
+                  disabled={!prompt.trim() || submitting || mode !== 'chat'}
+                  isLoading={submitting}
+                >
+                  Send
+                </OLButton>
+              </div>
             </form>
 
             {chatError && (
@@ -194,8 +257,6 @@ export default function AiAssistantPanel() {
 
             {answer && (
               <div className="ai-assistant-answer">
-                <h5>Answer</h5>
-                <div className="ai-assistant-answer-text">{answer.answer}</div>
                 {answer.context.includedFiles.length > 0 && (
                   <div className="ai-assistant-context-files">
                     <h5>Context used</h5>
@@ -218,22 +279,12 @@ export default function AiAssistantPanel() {
 function ProviderSelector({
   providers,
   selectedProvider,
-  selectedModel,
-  enabledModels,
   onProviderChange,
-  onModelChange,
 }: {
   providers: ProjectAiProvider[]
   selectedProvider: ProjectAiProvider
-  selectedModel: string
-  enabledModels: ProjectAiProvider['models']
   onProviderChange: (providerId: string) => void
-  onModelChange: (model: string) => void
 }) {
-  const selectedModelDisplayName =
-    enabledModels.find(model => model.id === selectedModel)?.displayName ??
-    selectedModel
-
   return (
     <div className="ai-assistant-provider">
       {providers.length > 1 ? (
@@ -256,28 +307,33 @@ function ProviderSelector({
           <span>{selectedProvider.name}</span>
         </div>
       )}
-
-      {enabledModels.length > 1 ? (
-        <label>
-          Model
-          <OLFormSelect
-            value={selectedModel}
-            onChange={event => onModelChange(event.target.value)}
-          >
-            {enabledModels.map(model => (
-              <option value={model.id} key={model.id}>
-                {model.displayName}
-              </option>
-            ))}
-          </OLFormSelect>
-        </label>
-      ) : (
-        <div>
-          <span className="ai-assistant-label">Model</span>
-          <span>{selectedModelDisplayName}</span>
-        </div>
-      )}
     </div>
+  )
+}
+
+function ComposerModelSelector({
+  selectedModel,
+  enabledModels,
+  onModelChange,
+}: {
+  selectedModel: string
+  enabledModels: ProjectAiProvider['models']
+  onModelChange: (model: string) => void
+}) {
+  return (
+    <label className="ai-assistant-model-select">
+      <span>Model</span>
+      <OLFormSelect
+        value={selectedModel}
+        onChange={event => onModelChange(event.target.value)}
+      >
+        {enabledModels.map(model => (
+          <option value={model.id} key={model.id}>
+            {model.displayName}
+          </option>
+        ))}
+      </OLFormSelect>
+    </label>
   )
 }
 

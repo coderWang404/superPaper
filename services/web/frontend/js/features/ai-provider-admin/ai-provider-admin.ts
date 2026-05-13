@@ -20,8 +20,9 @@ type AiProvider = {
 type ProviderState = {
   providers: AiProvider[]
   loading: boolean
-  statusMessage: string | null
-  errorMessage: string | null
+  language: AdminLanguage
+  statusMessage: TranslationKey | null
+  errorMessage: TranslationKey | null
 }
 
 type ProviderListResponse = {
@@ -32,6 +33,137 @@ type ProviderResponse = {
   provider: AiProvider
 }
 
+type AdminLanguage = 'en' | 'zh'
+
+type TranslationKey =
+  | 'actions'
+  | 'addProvider'
+  | 'addProviderForm'
+  | 'apiKey'
+  | 'apiKeyReplaced'
+  | 'apiKeyStored'
+  | 'baseURL'
+  | 'confirmDelete'
+  | 'default'
+  | 'defaultModel'
+  | 'delete'
+  | 'disabled'
+  | 'disable'
+  | 'enabled'
+  | 'enable'
+  | 'health'
+  | 'loading'
+  | 'modelIds'
+  | 'models'
+  | 'modelsSynced'
+  | 'name'
+  | 'newApiKey'
+  | 'newApiKeyFor'
+  | 'noApiKeyStored'
+  | 'noProviders'
+  | 'noModels'
+  | 'none'
+  | 'providerAdded'
+  | 'providerDeleted'
+  | 'providerDisabled'
+  | 'providerEnabled'
+  | 'providerName'
+  | 'providerTestFailed'
+  | 'providerTestPassed'
+  | 'replaceKey'
+  | 'replaceKeyFor'
+  | 'requestFailed'
+  | 'syncModels'
+  | 'test'
+  | 'unknown'
+
+const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
+  en: {
+    actions: 'Actions',
+    addProvider: 'Add provider',
+    addProviderForm: 'Add AI provider',
+    apiKey: 'API key',
+    apiKeyReplaced: 'API key replaced',
+    apiKeyStored: 'API key stored',
+    baseURL: 'Base URL',
+    confirmDelete: 'Delete AI provider',
+    default: 'Default',
+    defaultModel: 'Default model',
+    delete: 'Delete',
+    disabled: 'Disabled',
+    disable: 'Disable',
+    enabled: 'Enabled',
+    enable: 'Enable',
+    health: 'Health',
+    loading: 'Loading AI providers...',
+    modelIds: 'Model IDs',
+    models: 'Models',
+    modelsSynced: 'Models synced',
+    name: 'Name',
+    newApiKey: 'New API key',
+    newApiKeyFor: 'New API key for',
+    noApiKeyStored: 'No API key stored',
+    noProviders: 'No AI providers configured',
+    noModels: 'No models',
+    none: 'None',
+    providerAdded: 'Provider added',
+    providerDeleted: 'Provider deleted',
+    providerDisabled: 'Provider disabled',
+    providerEnabled: 'Provider enabled',
+    providerName: 'Provider name',
+    providerTestFailed: 'Provider test failed',
+    providerTestPassed: 'Provider test passed',
+    replaceKey: 'Replace key',
+    replaceKeyFor: 'Replace',
+    requestFailed: 'AI provider request failed',
+    syncModels: 'Sync models',
+    test: 'Test',
+    unknown: 'unknown',
+  },
+  zh: {
+    actions: '操作',
+    addProvider: '添加供应商',
+    addProviderForm: '添加 AI 供应商',
+    apiKey: 'API 密钥',
+    apiKeyReplaced: 'API 密钥已替换',
+    apiKeyStored: 'API 密钥已保存',
+    baseURL: 'Base URL',
+    confirmDelete: '删除 AI 供应商',
+    default: '默认',
+    defaultModel: '默认模型',
+    delete: '删除',
+    disabled: '已禁用',
+    disable: '禁用',
+    enabled: '已启用',
+    enable: '启用',
+    health: '健康状态',
+    loading: '正在加载 AI 供应商...',
+    modelIds: '模型 ID',
+    models: '模型',
+    modelsSynced: '模型已同步',
+    name: '名称',
+    newApiKey: '新 API 密钥',
+    newApiKeyFor: '新的 API 密钥：',
+    noApiKeyStored: '未保存 API 密钥',
+    noProviders: '尚未配置 AI 供应商',
+    noModels: '无模型',
+    none: '无',
+    providerAdded: '供应商已添加',
+    providerDeleted: '供应商已删除',
+    providerDisabled: '供应商已禁用',
+    providerEnabled: '供应商已启用',
+    providerName: '供应商名称',
+    providerTestFailed: '供应商测试失败',
+    providerTestPassed: '供应商测试通过',
+    replaceKey: '替换密钥',
+    replaceKeyFor: '替换',
+    requestFailed: 'AI 供应商请求失败',
+    syncModels: '同步模型',
+    test: '测试',
+    unknown: '未知',
+  },
+}
+
 const SAFE_ERROR_MESSAGE = 'AI provider request failed'
 
 export function initAiProviderAdmin(root: HTMLElement): void {
@@ -39,8 +171,13 @@ export function initAiProviderAdmin(root: HTMLElement): void {
   const state: ProviderState = {
     providers: [],
     loading: true,
+    language: 'en',
     statusMessage: null,
     errorMessage: null,
+  }
+
+  function t(key: TranslationKey) {
+    return TRANSLATIONS[state.language][key]
   }
 
   async function loadProviders() {
@@ -76,7 +213,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         }
       )
       state.providers = [response.provider, ...state.providers]
-      state.statusMessage = 'Provider added'
+      state.statusMessage = 'providerAdded'
       state.errorMessage = null
       form.reset()
       getFormInput(form, 'enabled').checked = true
@@ -95,7 +232,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         { method: 'POST' }
       )
       replaceProvider(response.provider)
-      state.statusMessage = 'Models synced'
+      state.statusMessage = 'modelsSynced'
       state.errorMessage = null
       render()
     } catch (error) {
@@ -112,8 +249,8 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       )
       replaceProvider(response.provider)
       state.statusMessage = response.ok
-        ? 'Provider test passed'
-        : 'Provider test failed'
+        ? 'providerTestPassed'
+        : 'providerTestFailed'
       state.errorMessage = null
       render()
     } catch (error) {
@@ -133,8 +270,8 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       )
       replaceProvider(response.provider)
       state.statusMessage = response.provider.enabled
-        ? 'Provider enabled'
-        : 'Provider disabled'
+        ? 'providerEnabled'
+        : 'providerDisabled'
       state.errorMessage = null
       render()
     } catch (error) {
@@ -157,7 +294,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         }
       )
       replaceProvider(response.provider)
-      state.statusMessage = 'API key replaced'
+      state.statusMessage = 'apiKeyReplaced'
       state.errorMessage = null
       apiKeyInput.value = ''
       render()
@@ -167,7 +304,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
   }
 
   async function handleDeleteProvider(provider: AiProvider) {
-    if (!window.confirm(`Delete AI provider ${provider.name}?`)) {
+    if (!window.confirm(`${t('confirmDelete')} ${provider.name}?`)) {
       return
     }
 
@@ -180,7 +317,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       state.providers = state.providers.filter(
         existingProvider => existingProvider.id !== provider.id
       )
-      state.statusMessage = 'Provider deleted'
+      state.statusMessage = 'providerDeleted'
       state.errorMessage = null
       render()
     } catch (error) {
@@ -196,7 +333,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
 
   function showSafeError() {
     state.loading = false
-    state.errorMessage = SAFE_ERROR_MESSAGE
+    state.errorMessage = 'requestFailed'
     state.statusMessage = null
     render()
   }
@@ -204,22 +341,42 @@ export function initAiProviderAdmin(root: HTMLElement): void {
   function render() {
     root.innerHTML = `
       <div class="ai-provider-admin">
+        <div class="ai-provider-admin-toolbar">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            data-ai-provider-language-toggle
+          >
+            ${state.language === 'en' ? '中文' : 'English'}
+          </button>
+        </div>
         <div class="ai-provider-admin-feedback">
           <div class="text-muted" role="status">${escapeHtml(
-            state.loading ? 'Loading AI providers...' : state.statusMessage || ''
+            state.loading
+              ? t('loading')
+              : state.statusMessage
+                ? t(state.statusMessage)
+                : ''
           )}</div>
           ${
             state.errorMessage
               ? `<div class="alert alert-danger" role="alert">${escapeHtml(
-                  state.errorMessage
+                  t(state.errorMessage)
                 )}</div>`
               : ''
           }
         </div>
-        ${renderProviderTable(state.providers, state.loading)}
-        ${renderCreateForm()}
+        ${renderProviderTable(state.providers, state.loading, t)}
+        ${renderCreateForm(t)}
       </div>
     `
+
+    root
+      .querySelector<HTMLButtonElement>('[data-ai-provider-language-toggle]')
+      ?.addEventListener('click', () => {
+        state.language = state.language === 'en' ? 'zh' : 'en'
+        render()
+      })
 
     root
       .querySelector<HTMLFormElement>('[data-ai-provider-create-form]')
@@ -306,37 +463,45 @@ async function requestJSON<T>(
   return response.json()
 }
 
-function renderProviderTable(providers: AiProvider[], loading: boolean) {
+function renderProviderTable(
+  providers: AiProvider[],
+  loading: boolean,
+  t: (key: TranslationKey) => string
+) {
   if (loading) {
     return ''
   }
 
   if (providers.length === 0) {
-    return '<p class="text-muted">No AI providers configured</p>'
+    return `<p class="text-muted">${escapeHtml(t('noProviders'))}</p>`
   }
 
   return `
     <table class="table table-striped">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Base URL</th>
-          <th>Models</th>
-          <th>Default</th>
-          <th>Health</th>
-          <th>Enabled</th>
-          <th>Actions</th>
+          <th>${escapeHtml(t('name'))}</th>
+          <th>${escapeHtml(t('baseURL'))}</th>
+          <th>${escapeHtml(t('models'))}</th>
+          <th>${escapeHtml(t('default'))}</th>
+          <th>${escapeHtml(t('health'))}</th>
+          <th>${escapeHtml(t('enabled'))}</th>
+          <th>${escapeHtml(t('actions'))}</th>
         </tr>
       </thead>
       <tbody>
-        ${providers.map(renderProviderRow).join('')}
+        ${providers.map(provider => renderProviderRow(provider, t)).join('')}
       </tbody>
     </table>
   `
 }
 
-function renderProviderRow(provider: AiProvider) {
-  const models = provider.models.map(model => model.id).join(', ') || 'No models'
+function renderProviderRow(
+  provider: AiProvider,
+  t: (key: TranslationKey) => string
+) {
+  const models =
+    provider.models.map(model => model.id).join(', ') || t('noModels')
   const escapedProviderId = escapeHtml(provider.id)
   const escapedProviderName = escapeHtml(provider.name)
   return `
@@ -344,16 +509,16 @@ function renderProviderRow(provider: AiProvider) {
       <td>
         <strong>${escapedProviderName}</strong>
         <div class="small text-muted">${
-          provider.hasApiKey ? 'API key stored' : 'No API key stored'
+          provider.hasApiKey ? t('apiKeyStored') : t('noApiKeyStored')
         }</div>
         <form
           class="ai-provider-admin-replace-key"
-          aria-label="Replace ${escapedProviderName} key"
+          aria-label="${escapeHtml(t('replaceKeyFor'))} ${escapedProviderName} key"
           data-ai-provider-replace-key-form
           data-provider-id="${escapedProviderId}"
         >
           <label class="sr-only" for="ai-provider-replacement-key-${escapedProviderId}">
-            New API key for ${escapedProviderName}
+            ${escapeHtml(t('newApiKeyFor'))} ${escapedProviderName}
           </label>
           <input
             class="form-control input-sm"
@@ -361,16 +526,18 @@ function renderProviderRow(provider: AiProvider) {
             name="replacementApiKey"
             type="password"
             autocomplete="off"
-            placeholder="New API key"
+            placeholder="${escapeHtml(t('newApiKey'))}"
           >
-          <button class="btn btn-secondary btn-xs" type="submit">Replace key</button>
+          <button class="btn btn-secondary btn-xs" type="submit">${escapeHtml(
+            t('replaceKey')
+          )}</button>
         </form>
       </td>
       <td>${escapeHtml(provider.baseURL)}</td>
       <td>${escapeHtml(models)}</td>
-      <td>${escapeHtml(provider.defaultModel || 'None')}</td>
-      <td>${escapeHtml(provider.healthStatus || 'unknown')}</td>
-      <td>${provider.enabled ? 'Enabled' : 'Disabled'}</td>
+      <td>${escapeHtml(provider.defaultModel || t('none'))}</td>
+      <td>${escapeHtml(healthLabel(provider.healthStatus, t))}</td>
+      <td>${provider.enabled ? t('enabled') : t('disabled')}</td>
       <td>
         <button
           type="button"
@@ -378,7 +545,7 @@ function renderProviderRow(provider: AiProvider) {
           data-ai-provider-sync-models
           data-provider-id="${escapedProviderId}"
         >
-          Sync models
+          ${escapeHtml(t('syncModels'))}
         </button>
         <button
           type="button"
@@ -386,7 +553,7 @@ function renderProviderRow(provider: AiProvider) {
           data-ai-provider-test
           data-provider-id="${escapedProviderId}"
         >
-          Test
+          ${escapeHtml(t('test'))}
         </button>
         <button
           type="button"
@@ -394,7 +561,7 @@ function renderProviderRow(provider: AiProvider) {
           data-ai-provider-toggle
           data-provider-id="${escapedProviderId}"
         >
-          ${provider.enabled ? 'Disable' : 'Enable'}
+          ${provider.enabled ? t('disable') : t('enable')}
         </button>
         <button
           type="button"
@@ -402,47 +569,69 @@ function renderProviderRow(provider: AiProvider) {
           data-ai-provider-delete
           data-provider-id="${escapedProviderId}"
         >
-          Delete
+          ${escapeHtml(t('delete'))}
         </button>
       </td>
     </tr>
   `
 }
 
-function renderCreateForm() {
+function renderCreateForm(t: (key: TranslationKey) => string) {
   return `
     <hr>
-    <h4>Add provider</h4>
-    <form aria-label="Add AI provider" data-ai-provider-create-form>
+    <h4>${escapeHtml(t('addProvider'))}</h4>
+    <form aria-label="${escapeHtml(t('addProviderForm'))}" data-ai-provider-create-form>
       <div class="form-group">
-        <label class="form-label" for="ai-provider-name">Provider name</label>
+        <label class="form-label" for="ai-provider-name">${escapeHtml(
+          t('providerName')
+        )}</label>
         <input class="form-control" id="ai-provider-name" name="name" type="text" required>
       </div>
       <div class="form-group">
-        <label class="form-label" for="ai-provider-base-url">Base URL</label>
+        <label class="form-label" for="ai-provider-base-url">${escapeHtml(
+          t('baseURL')
+        )}</label>
         <input class="form-control" id="ai-provider-base-url" name="baseURL" type="url" required>
       </div>
       <div class="form-group">
-        <label class="form-label" for="ai-provider-api-key">API key</label>
+        <label class="form-label" for="ai-provider-api-key">${escapeHtml(
+          t('apiKey')
+        )}</label>
         <input class="form-control" id="ai-provider-api-key" name="apiKey" type="password" required autocomplete="off">
       </div>
       <div class="checkbox">
         <label for="ai-provider-enabled">
           <input id="ai-provider-enabled" name="enabled" type="checkbox" checked>
-          Enabled
+          ${escapeHtml(t('enabled'))}
         </label>
       </div>
       <div class="form-group">
-        <label class="form-label" for="ai-provider-model-ids">Model IDs</label>
+        <label class="form-label" for="ai-provider-model-ids">${escapeHtml(
+          t('modelIds')
+        )}</label>
         <input class="form-control" id="ai-provider-model-ids" name="modelIds" type="text" placeholder="gpt-4.1, deepseek-chat">
       </div>
       <div class="form-group">
-        <label class="form-label" for="ai-provider-default-model">Default model</label>
+        <label class="form-label" for="ai-provider-default-model">${escapeHtml(
+          t('defaultModel')
+        )}</label>
         <input class="form-control" id="ai-provider-default-model" name="defaultModel" type="text">
       </div>
-      <button class="btn btn-primary" type="submit">Add provider</button>
+      <button class="btn btn-primary" type="submit">${escapeHtml(
+        t('addProvider')
+      )}</button>
     </form>
   `
+}
+
+function healthLabel(
+  healthStatus: AiProvider['healthStatus'],
+  t: (key: TranslationKey) => string
+) {
+  if (healthStatus === 'unknown') {
+    return t('unknown')
+  }
+  return healthStatus
 }
 
 function providerInputFromForm(form: HTMLFormElement) {

@@ -245,6 +245,30 @@ describe('ai-provider-admin', function () {
     await screen.findByRole('alert')
     screen.getByText('AI provider request failed')
   })
+
+  it('switches the admin provider interface between English and Chinese', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(screen.getByRole('button', { name: '中文' }))
+
+    screen.getByRole('heading', { name: '添加供应商' })
+    screen.getByText('供应商名称')
+    screen.getByText('模型')
+    screen.getByText('API 密钥已保存')
+    screen.getByRole('button', { name: 'English' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+
+    screen.getByRole('heading', { name: 'Add provider' })
+    screen.getByText('Provider name')
+    screen.getByText('Models')
+    screen.getByText('API key stored')
+  })
 })
 
 function renderRoot() {

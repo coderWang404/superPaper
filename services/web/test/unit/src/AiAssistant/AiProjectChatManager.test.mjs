@@ -10,7 +10,7 @@ describe('AiProjectChatManager', function () {
       _id: 'provider-id',
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       encryptedApiKey: 'encrypted-key',
       enabled: true,
       defaultModel: 'gpt-4.1',
@@ -39,6 +39,12 @@ describe('AiProjectChatManager', function () {
     ctx.createOpenAICompatibleChatCompletion = sinon
       .stub()
       .resolves('AI answer')
+    ctx.streamOpenAICompatibleChatCompletion = sinon.stub().returns(
+      (async function* () {
+        yield 'AI '
+        yield 'answer'
+      })()
+    )
 
     vi.doMock('../../../../app/src/models/AiProvider', () => ({
       AiProvider: ctx.AiProvider,
@@ -60,6 +66,8 @@ describe('AiProjectChatManager', function () {
       () => ({
         createOpenAICompatibleChatCompletion:
           ctx.createOpenAICompatibleChatCompletion,
+        streamOpenAICompatibleChatCompletion:
+          ctx.streamOpenAICompatibleChatCompletion,
       })
     )
 
@@ -96,7 +104,7 @@ describe('AiProjectChatManager', function () {
     })
     const chatArgs = ctx.createOpenAICompatibleChatCompletion.firstCall.args[0]
     expect(chatArgs).to.include({
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       apiKey: 'test-key',
       model: 'gpt-4.1',
     })
@@ -114,6 +122,38 @@ describe('AiProjectChatManager', function () {
         selectionIncluded: true,
         truncated: false,
       },
+    })
+  })
+
+  it('streams answers with project context metadata', async function (ctx) {
+    const result = await ctx.Manager.chatStream({
+      projectId: 'project-id',
+      prompt: 'Explain this project',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      selection: { path: '/main.tex', text: 'Hello' },
+    })
+
+    const chunks = []
+    for await (const chunk of result.stream) {
+      chunks.push(chunk)
+    }
+
+    expect(ctx.streamOpenAICompatibleChatCompletion).to.have.been.calledOnce
+    const streamArgs = ctx.streamOpenAICompatibleChatCompletion.firstCall.args[0]
+    expect(streamArgs).to.include({
+      baseURL: 'https://ai.example.test',
+      apiKey: 'test-key',
+      model: 'gpt-4.1',
+    })
+    expect(streamArgs.messages[0]).to.include({ role: 'system' })
+    expect(chunks).to.deep.equal(['AI ', 'answer'])
+    expect(result.model).to.equal('gpt-4.1')
+    expect(result.providerId).to.equal('provider-id')
+    expect(result.context).to.deep.equal({
+      includedFiles: ['/main.tex'],
+      selectionIncluded: true,
+      truncated: false,
     })
   })
 })

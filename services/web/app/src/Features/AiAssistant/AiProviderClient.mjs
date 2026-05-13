@@ -100,3 +100,124 @@ export async function createOpenAICompatibleChatCompletion({
     clearTimeout(timeout)
   }
 }
+
+export async function* streamOpenAICompatibleChatCompletion({
+  baseURL,
+  apiKey,
+  model,
+  messages,
+  fetchImpl = fetch,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  temperature = 0.2,
+}) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetchImpl(buildChatCompletionsURL(baseURL), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: 'text/event-stream, application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model, messages, temperature, stream: true }),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new AiProviderError(
+        `AI provider chat completion failed with status ${response.status}`,
+        { status: response.status }
+      )
+    }
+    if (!response.body) {
+      throw new AiProviderError('AI provider chat completion stream is empty')
+    }
+
+    yield* parseOpenAICompatibleSSE(response.body)
+  } catch (err) {
+    throw toProviderError(err, 'AI provider chat completion failed')
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+async function* parseOpenAICompatibleSSE(body) {
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  for await (const chunk of streamBodyChunks(body)) {
+    buffer += decoder.decode(chunk, { stream: true })
+    let newlineIndex = buffer.indexOf('\n')
+
+    while (newlineIndex !== -1) {
+      const line = buffer.slice(0, newlineIndex).trim()
+      buffer = buffer.slice(newlineIndex + 1)
+      newlineIndex = buffer.indexOf('\n')
+
+      if (!line.startsWith('data:')) {
+        continue
+      }
+
+      const data = line.slice('data:'.length).trim()
+      if (!data || data === '[DONE]') {
+        if (data === '[DONE]') {
+          return
+        }
+        continue
+      }
+
+      const delta = parseOpenAICompatibleStreamDelta(data)
+      if (delta) {
+        yield delta
+      }
+    }
+  }
+
+  const tail = buffer.trim()
+  if (tail.startsWith('data:')) {
+    const data = tail.slice('data:'.length).trim()
+    if (data && data !== '[DONE]') {
+      const delta = parseOpenAICompatibleStreamDelta(data)
+      if (delta) {
+        yield delta
+      }
+    }
+  }
+}
+
+async function* streamBodyChunks(body) {
+  if (typeof body.getReader === 'function') {
+    const reader = body.getReader()
+    try {
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) {
+          return
+        }
+        if (value) {
+          yield value
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+    return
+  }
+
+  yield* body
+}
+
+function parseOpenAICompatibleStreamDelta(data) {
+  let event
+  try {
+    event = JSON.parse(data)
+  } catch (err) {
+    throw new AiProviderError('AI provider chat completion stream is invalid', {
+      cause: err,
+    })
+  }
+
+  const content = event?.choices?.[0]?.delta?.content
+  return typeof content === 'string' ? content : ''
+}

@@ -16,6 +16,7 @@ declare module 'express' {
   // eslint-disable-next-line no-unused-vars
   interface Request {
     session: SessionData
+    user?: any
     userRestrictions?: Set
     oauth_user?: OAuth2Server.User
     logger: RequestLogger

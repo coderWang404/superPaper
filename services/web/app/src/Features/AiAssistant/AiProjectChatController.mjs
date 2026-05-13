@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   AiProjectChatError,
+  chatStream as projectChatStream,
   chat as projectChat,
   getProjectAiConfig,
 } from './AiProjectChatManager.mjs'
@@ -38,6 +39,15 @@ function sendProviderMissingError(res) {
   })
 }
 
+function sendProviderRequestError(res) {
+  res.status(502).json({
+    error: {
+      code: 'AI_PROVIDER_REQUEST_FAILED',
+      message: 'AI provider request failed',
+    },
+  })
+}
+
 function handleControllerError(err, res, next) {
   if (err instanceof z.ZodError || err.name === 'ZodError') {
     return sendValidationError(res)
@@ -47,6 +57,9 @@ function handleControllerError(err, res, next) {
     err.code === 'AI_PROVIDER_NOT_CONFIGURED'
   ) {
     return sendProviderMissingError(res)
+  }
+  if (err.name === 'AiProviderError') {
+    return sendProviderRequestError(res)
   }
   return next(err)
 }
@@ -76,7 +89,52 @@ async function chat(req, res, next) {
   }
 }
 
+async function chatStream(req, res, next) {
+  let streamStarted = false
+  try {
+    const body = ChatRequestSchema.parse(req.body)
+    const result = await projectChatStream({
+      projectId: req.params.Project_id,
+      prompt: body.prompt,
+      providerId: body.providerId,
+      model: body.model,
+      selection: body.selection,
+    })
+
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8')
+    res.setHeader('Cache-Control', 'no-cache, no-transform')
+    res.setHeader('X-Accel-Buffering', 'no')
+    streamStarted = true
+
+    for await (const delta of result.stream) {
+      res.write(JSON.stringify({ type: 'delta', delta }) + '\n')
+    }
+    res.write(
+      JSON.stringify({
+        type: 'done',
+        model: result.model,
+        providerId: result.providerId,
+        context: result.context,
+      }) + '\n'
+    )
+    res.end()
+  } catch (err) {
+    if (streamStarted) {
+      res.write(
+        JSON.stringify({
+          type: 'error',
+          message: 'AI provider request failed',
+        }) + '\n'
+      )
+      res.end()
+      return
+    }
+    handleControllerError(err, res, next)
+  }
+}
+
 export default {
   config,
   chat,
+  chatStream,
 }

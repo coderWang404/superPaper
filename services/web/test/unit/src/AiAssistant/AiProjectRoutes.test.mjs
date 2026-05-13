@@ -126,4 +126,18 @@ describe('AiProject routes', function () {
     )
     expect(route.handlers).to.include('AiProjectChatController.chat')
   })
+
+  it('mounts the project AI chat stream endpoint behind login, rate limit, and project read access', function () {
+    const route = findRoute('post', '/project/:Project_id/ai/chat/stream')
+
+    expect(route).to.exist
+    expect(route.handlers).to.include('AuthenticationController.requireLogin()')
+    expect(route.handlers).to.include(
+      "RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat,{params:['Project_id']})"
+    )
+    expect(route.handlers).to.include(
+      'AuthorizationMiddleware.ensureUserCanReadProject'
+    )
+    expect(route.handlers).to.include('AiProjectChatController.chatStream')
+  })
 })

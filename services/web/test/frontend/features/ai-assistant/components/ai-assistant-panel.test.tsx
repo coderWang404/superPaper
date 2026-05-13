@@ -4,6 +4,7 @@ import {
   screen,
   waitFor,
   waitForElementToBeRemoved,
+  within,
 } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
 import { type FC, type PropsWithChildren, useMemo, useState } from 'react'
@@ -39,6 +40,9 @@ describe('<AiAssistantPanel />', function () {
     screen.getByText('Provider One')
     screen.getByText('Model One')
     screen.getByText('Using project context')
+    screen.getByRole('button', { name: 'Chat' })
+    screen.getByRole('button', { name: 'Agent' })
+    within(screen.getByTestId('ai-assistant-composer')).getByLabelText('Model')
   })
 
   it('shows an empty provider state when no provider is configured', async function () {
@@ -52,7 +56,7 @@ describe('<AiAssistantPanel />', function () {
 
   it('sends prompt and current selection to the project chat endpoint', async function () {
     mockConfig()
-    mockChat()
+    mockChatStream()
 
     renderWithEditorContext(<AiAssistantPanel />, {
       scope: {
@@ -83,11 +87,13 @@ describe('<AiAssistantPanel />', function () {
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'How should I cite this?' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
     await screen.findByText('Use \\\\cite{} here.')
 
-    const call = fetchMock.callHistory.calls('/project/project123/ai/chat')[0]
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/chat/stream'
+    )[0]
     expect(JSON.parse(call.options.body as string)).to.deep.equal({
       prompt: 'How should I cite this?',
       providerId: 'provider-one',
@@ -102,7 +108,7 @@ describe('<AiAssistantPanel />', function () {
 
   it('renders included context files returned by the backend', async function () {
     mockConfig()
-    mockChat({
+    mockChatStream({
       context: {
         includedFiles: ['main.tex', 'refs.bib'],
         selectionIncluded: false,
@@ -116,7 +122,7 @@ describe('<AiAssistantPanel />', function () {
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Summarize the bibliography.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
     await screen.findByText('Context used')
     screen.getByText('main.tex')
@@ -125,7 +131,7 @@ describe('<AiAssistantPanel />', function () {
 
   it('renders a user-facing error when chat fails', async function () {
     mockConfig()
-    fetchMock.post('/project/project123/ai/chat', 503)
+    fetchMock.post('/project/project123/ai/chat/stream', 503)
 
     renderWithEditorContext(<AiAssistantPanel />)
 
@@ -133,9 +139,43 @@ describe('<AiAssistantPanel />', function () {
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Explain the current draft.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Ask' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
     await screen.findByText('AI request failed')
+  })
+
+  it('shows the streamed answer while the request is still active', async function () {
+    mockConfig()
+    fetchMock.post('/project/project123/ai/chat/stream', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        JSON.stringify({ type: 'delta', delta: 'Streaming ' }) +
+        '\n' +
+        JSON.stringify({ type: 'delta', delta: 'answer' }) +
+        '\n' +
+        JSON.stringify({
+          type: 'done',
+          providerId: 'provider-one',
+          model: 'model-one',
+          context: {
+            includedFiles: ['main.tex'],
+            selectionIncluded: false,
+            truncated: false,
+          },
+        }) +
+        '\n',
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Stream the answer.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findByText('Streaming answer')
   })
 })
 
@@ -152,9 +192,8 @@ function mockConfig() {
   })
 }
 
-function mockChat(overrides = {}) {
-  fetchMock.post('/project/project123/ai/chat', {
-    answer: 'Use \\\\cite{} here.',
+function mockChatStream(overrides = {}) {
+  const response = {
     providerId: 'provider-one',
     model: 'model-one',
     context: {
@@ -163,6 +202,26 @@ function mockChat(overrides = {}) {
       truncated: false,
     },
     ...overrides,
+  } as {
+    providerId: string
+    model: string
+    context: {
+      includedFiles: string[]
+      selectionIncluded: boolean
+      truncated: boolean
+    }
+  }
+
+  fetchMock.post('/project/project123/ai/chat/stream', {
+    status: 200,
+    headers: { 'Content-Type': 'application/x-ndjson' },
+    body:
+      JSON.stringify({ type: 'delta', delta: 'Use ' }) +
+      '\n' +
+      JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
+      '\n' +
+      JSON.stringify({ type: 'done', ...response }) +
+      '\n',
   })
 }
 

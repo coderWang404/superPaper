@@ -32,9 +32,23 @@ describe('AiProjectChatController', function () {
         truncated: false,
       },
     }
+    ctx.chatStreamResult = {
+      stream: (async function* () {
+        yield 'AI '
+        yield 'answer'
+      })(),
+      model: 'gpt-4.1',
+      providerId: 'provider-id',
+      context: {
+        includedFiles: ['/main.tex'],
+        selectionIncluded: true,
+        truncated: false,
+      },
+    }
     ctx.Manager = {
       getProjectAiConfig: sinon.stub().resolves(ctx.config),
       chat: sinon.stub().resolves(ctx.chatResult),
+      chatStream: sinon.stub().resolves(ctx.chatStreamResult),
       AiProjectChatError: class AiProjectChatError extends Error {
         constructor(code, message) {
           super(message)
@@ -118,5 +132,68 @@ describe('AiProjectChatController', function () {
         message: 'AI provider is not configured',
       },
     })
+  })
+
+  it('returns a safe JSON error when the upstream provider request fails', async function (ctx) {
+    const err = new Error('upstream leaked detail')
+    err.name = 'AiProviderError'
+    ctx.Manager.chat.rejects(err)
+    ctx.req.body = {
+      prompt: 'Explain this',
+    }
+
+    await ctx.Controller.chat(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.res.statusCode).to.equal(502)
+    expect(ctx.next).not.to.have.been.called
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      error: {
+        code: 'AI_PROVIDER_REQUEST_FAILED',
+        message: 'AI provider request failed',
+      },
+    })
+  })
+
+  it('streams project chat deltas as ndjson', async function (ctx) {
+    ctx.res.write = sinon.stub()
+    ctx.res.end = sinon.stub()
+    ctx.req.body = {
+      prompt: 'Explain this',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      selection: { path: '/main.tex', text: 'Hello' },
+    }
+
+    await ctx.Controller.chatStream(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Manager.chatStream).to.have.been.calledWith({
+      projectId: 'project-id',
+      prompt: 'Explain this',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      selection: { path: '/main.tex', text: 'Hello' },
+    })
+    expect(ctx.res.headers['Content-Type']).to.equal(
+      'application/x-ndjson; charset=utf-8'
+    )
+    expect(ctx.res.write.firstCall.args[0]).to.equal(
+      JSON.stringify({ type: 'delta', delta: 'AI ' }) + '\n'
+    )
+    expect(ctx.res.write.secondCall.args[0]).to.equal(
+      JSON.stringify({ type: 'delta', delta: 'answer' }) + '\n'
+    )
+    expect(ctx.res.write.thirdCall.args[0]).to.equal(
+      JSON.stringify({
+        type: 'done',
+        model: 'gpt-4.1',
+        providerId: 'provider-id',
+        context: {
+          includedFiles: ['/main.tex'],
+          selectionIncluded: true,
+          truncated: false,
+        },
+      }) + '\n'
+    )
+    expect(ctx.res.end).to.have.been.calledOnce
   })
 })

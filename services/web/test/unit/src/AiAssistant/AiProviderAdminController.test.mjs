@@ -16,7 +16,7 @@ describe('AiProviderAdminController', function () {
       id: 'provider-id',
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       enabled: true,
       hasApiKey: true,
       models: [],
@@ -57,7 +57,7 @@ describe('AiProviderAdminController', function () {
     ctx.req.body = {
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       apiKey: 'test-key',
     }
 

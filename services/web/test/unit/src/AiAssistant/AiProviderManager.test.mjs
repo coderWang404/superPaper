@@ -10,7 +10,7 @@ describe('AiProviderManager', function () {
       _id: 'provider-id',
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       encryptedApiKey: 'encrypted-key',
       enabled: true,
       models: [],
@@ -80,7 +80,7 @@ describe('AiProviderManager', function () {
     const provider = await ctx.Manager.createProvider({
       name: '  Claude Hub  ',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud/',
+      baseURL: 'https://ai.example.test/',
       apiKey: 'test-key',
       enabled: true,
     })
@@ -89,7 +89,7 @@ describe('AiProviderManager', function () {
     expect(ctx.providerData).to.include({
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       encryptedApiKey: 'encrypted-key',
       enabled: true,
     })

@@ -12,7 +12,7 @@ describe('AiProviderValidation', function () {
     const input = ctx.Validation.parseCreateProviderInput({
       name: '  Claude Hub  ',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud/',
+      baseURL: 'https://ai.example.test/',
       apiKey: 'test-key',
       enabled: true,
     })
@@ -20,7 +20,7 @@ describe('AiProviderValidation', function () {
     expect(input).to.deep.equal({
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       apiKey: 'test-key',
       enabled: true,
       defaultModel: null,

@@ -27,7 +27,7 @@ describe('AiProviderSecrets', function () {
       _id: 'provider-id',
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       encryptedApiKey: 'encrypted',
       models: [],
       enabled: true,
@@ -37,7 +37,7 @@ describe('AiProviderSecrets', function () {
       id: 'provider-id',
       name: 'Claude Hub',
       providerType: 'openai-compatible',
-      baseURL: 'https://claudeaihub.cloud',
+      baseURL: 'https://ai.example.test',
       hasApiKey: true,
       enabled: true,
     })
