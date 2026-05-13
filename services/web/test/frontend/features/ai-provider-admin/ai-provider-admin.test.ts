@@ -130,6 +130,111 @@ describe('ai-provider-admin', function () {
     })
   })
 
+  it('tests provider connectivity using the test endpoint', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture({ healthStatus: 'unknown' })],
+    })
+    fetchMock.post('/admin/ai/providers/provider-one/test', {
+      ok: true,
+      provider: providerFixture({ healthStatus: 'ok' }),
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(screen.getByRole('button', { name: 'Test' }))
+
+    await screen.findByText('Provider test passed')
+    screen.getByText('ok')
+
+    const call = fetchMock.callHistory.calls(
+      '/admin/ai/providers/provider-one/test'
+    )[0]
+    expect(call.options.method).to.equal('post')
+  })
+
+  it('toggles a provider enabled state', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture({ enabled: true })],
+    })
+    fetchMock.patch('/admin/ai/providers/provider-one', {
+      provider: providerFixture({ enabled: false }),
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(screen.getByRole('button', { name: 'Disable' }))
+
+    await screen.findByText('Provider disabled')
+    screen.getByText('Disabled')
+
+    const call = fetchMock.callHistory.calls(
+      '/admin/ai/providers/provider-one'
+    )[0]
+    expect(call.options.method).to.equal('patch')
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      enabled: false,
+    })
+  })
+
+  it('replaces a provider API key and clears the replacement field', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+    fetchMock.patch('/admin/ai/providers/provider-one', {
+      provider: providerFixture(),
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.input(screen.getByLabelText('New API key for Provider One'), {
+      target: { value: fakeProviderKey },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: 'Replace Provider One key' }))
+
+    await screen.findByText('API key replaced')
+
+    const call = fetchMock.callHistory.calls(
+      '/admin/ai/providers/provider-one'
+    )[0]
+    expect(call.options.method).to.equal('patch')
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      apiKey: fakeProviderKey,
+    })
+    expect(
+      (screen.getByLabelText('New API key for Provider One') as HTMLInputElement)
+        .value
+    ).to.equal('')
+  })
+
+  it('deletes a provider after confirmation', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+    fetchMock.delete('/admin/ai/providers/provider-one', 204)
+    const confirm = window.confirm
+    window.confirm = () => true
+
+    try {
+      initAiProviderAdmin(renderRoot())
+
+      await screen.findByText('Provider One')
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+      await screen.findByText('Provider deleted')
+      screen.getByText('No AI providers configured')
+
+      const call = fetchMock.callHistory.calls(
+        '/admin/ai/providers/provider-one'
+      )[0]
+      expect(call.options.method).to.equal('delete')
+    } finally {
+      window.confirm = confirm
+    }
+  })
+
   it('shows a safe error message when the API fails', async function () {
     fetchMock.get('/admin/ai/providers', 500)
 

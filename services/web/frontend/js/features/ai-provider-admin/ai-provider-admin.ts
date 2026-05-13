@@ -103,6 +103,91 @@ export function initAiProviderAdmin(root: HTMLElement): void {
     }
   }
 
+  async function handleTestProvider(providerId: string) {
+    try {
+      const response = await requestJSON<ProviderResponse & { ok: boolean }>(
+        `/admin/ai/providers/${encodeURIComponent(providerId)}/test`,
+        csrfToken,
+        { method: 'POST' }
+      )
+      replaceProvider(response.provider)
+      state.statusMessage = response.ok
+        ? 'Provider test passed'
+        : 'Provider test failed'
+      state.errorMessage = null
+      render()
+    } catch (error) {
+      showSafeError()
+    }
+  }
+
+  async function handleToggleProvider(provider: AiProvider) {
+    try {
+      const response = await requestJSON<ProviderResponse>(
+        `/admin/ai/providers/${encodeURIComponent(provider.id)}`,
+        csrfToken,
+        {
+          method: 'PATCH',
+          body: { enabled: !provider.enabled },
+        }
+      )
+      replaceProvider(response.provider)
+      state.statusMessage = response.provider.enabled
+        ? 'Provider enabled'
+        : 'Provider disabled'
+      state.errorMessage = null
+      render()
+    } catch (error) {
+      showSafeError()
+    }
+  }
+
+  async function handleReplaceKey(event: Event, providerId: string) {
+    event.preventDefault()
+    const form = event.currentTarget as HTMLFormElement
+    const apiKeyInput = getFormInput(form, 'replacementApiKey')
+
+    try {
+      const response = await requestJSON<ProviderResponse>(
+        `/admin/ai/providers/${encodeURIComponent(providerId)}`,
+        csrfToken,
+        {
+          method: 'PATCH',
+          body: { apiKey: apiKeyInput.value },
+        }
+      )
+      replaceProvider(response.provider)
+      state.statusMessage = 'API key replaced'
+      state.errorMessage = null
+      apiKeyInput.value = ''
+      render()
+    } catch (error) {
+      showSafeError()
+    }
+  }
+
+  async function handleDeleteProvider(provider: AiProvider) {
+    if (!window.confirm(`Delete AI provider ${provider.name}?`)) {
+      return
+    }
+
+    try {
+      await requestJSON(
+        `/admin/ai/providers/${encodeURIComponent(provider.id)}`,
+        csrfToken,
+        { method: 'DELETE' }
+      )
+      state.providers = state.providers.filter(
+        existingProvider => existingProvider.id !== provider.id
+      )
+      state.statusMessage = 'Provider deleted'
+      state.errorMessage = null
+      render()
+    } catch (error) {
+      showSafeError()
+    }
+  }
+
   function replaceProvider(provider: AiProvider) {
     state.providers = state.providers.map(existingProvider =>
       existingProvider.id === provider.id ? provider : existingProvider
@@ -145,6 +230,44 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       .forEach(button => {
         button.addEventListener('click', () => {
           void handleSyncModels(button.dataset.providerId || '')
+        })
+      })
+
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-ai-provider-test]')
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          void handleTestProvider(button.dataset.providerId || '')
+        })
+      })
+
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-ai-provider-toggle]')
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          const provider = findProvider(state.providers, button.dataset.providerId)
+          if (provider) {
+            void handleToggleProvider(provider)
+          }
+        })
+      })
+
+    root
+      .querySelectorAll<HTMLFormElement>('[data-ai-provider-replace-key-form]')
+      .forEach(form => {
+        form.addEventListener('submit', event => {
+          void handleReplaceKey(event, form.dataset.providerId || '')
+        })
+      })
+
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-ai-provider-delete]')
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          const provider = findProvider(state.providers, button.dataset.providerId)
+          if (provider) {
+            void handleDeleteProvider(provider)
+          }
         })
       })
   }
@@ -214,13 +337,34 @@ function renderProviderTable(providers: AiProvider[], loading: boolean) {
 
 function renderProviderRow(provider: AiProvider) {
   const models = provider.models.map(model => model.id).join(', ') || 'No models'
+  const escapedProviderId = escapeHtml(provider.id)
+  const escapedProviderName = escapeHtml(provider.name)
   return `
     <tr>
       <td>
-        <strong>${escapeHtml(provider.name)}</strong>
+        <strong>${escapedProviderName}</strong>
         <div class="small text-muted">${
           provider.hasApiKey ? 'API key stored' : 'No API key stored'
         }</div>
+        <form
+          class="ai-provider-admin-replace-key"
+          aria-label="Replace ${escapedProviderName} key"
+          data-ai-provider-replace-key-form
+          data-provider-id="${escapedProviderId}"
+        >
+          <label class="sr-only" for="ai-provider-replacement-key-${escapedProviderId}">
+            New API key for ${escapedProviderName}
+          </label>
+          <input
+            class="form-control input-sm"
+            id="ai-provider-replacement-key-${escapedProviderId}"
+            name="replacementApiKey"
+            type="password"
+            autocomplete="off"
+            placeholder="New API key"
+          >
+          <button class="btn btn-secondary btn-xs" type="submit">Replace key</button>
+        </form>
       </td>
       <td>${escapeHtml(provider.baseURL)}</td>
       <td>${escapeHtml(models)}</td>
@@ -232,9 +376,33 @@ function renderProviderRow(provider: AiProvider) {
           type="button"
           class="btn btn-secondary btn-sm"
           data-ai-provider-sync-models
-          data-provider-id="${escapeHtml(provider.id)}"
+          data-provider-id="${escapedProviderId}"
         >
           Sync models
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-ai-provider-test
+          data-provider-id="${escapedProviderId}"
+        >
+          Test
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-ai-provider-toggle
+          data-provider-id="${escapedProviderId}"
+        >
+          ${provider.enabled ? 'Disable' : 'Enable'}
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger btn-sm"
+          data-ai-provider-delete
+          data-provider-id="${escapedProviderId}"
+        >
+          Delete
         </button>
       </td>
     </tr>
@@ -305,6 +473,10 @@ function getFormInput(form: HTMLFormElement, name: string) {
     throw new Error(`Missing input: ${name}`)
   }
   return input
+}
+
+function findProvider(providers: AiProvider[], providerId?: string) {
+  return providers.find(provider => provider.id === providerId)
 }
 
 function escapeHtml(value: string) {
