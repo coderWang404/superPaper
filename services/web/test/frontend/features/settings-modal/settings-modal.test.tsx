@@ -23,7 +23,6 @@ const TAB_SETTINGS = {
     'Code check',
     'Keybindings',
     'PDF Viewer',
-    'Reference search',
     'Spellcheck language',
     'Dictionary',
     'Breadcrumbs',
