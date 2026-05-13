@@ -9,6 +9,7 @@ import {
 import FileTreeOutlinePanel from '@/features/file-tree/components/file-tree-outline-panel'
 import ChatPane from '@/features/chat/components/chat-pane'
 import ChatIndicator from '@/features/chat/components/chat-indicator'
+import AiAssistantPanel from '@/features/ai-assistant/components/ai-assistant-panel'
 import getMeta from '@/utils/meta'
 import classNames from 'classnames'
 import IntegrationsPanel from '@/features/integrations-panel/integrations-panel'
@@ -121,6 +122,12 @@ export const RailLayout = () => {
         hide:
           !getMeta('ol-capabilities')?.includes('chat') ||
           isRestrictedTokenMember,
+      },
+      {
+        key: 'ai-assistant',
+        icon: 'auto_awesome',
+        title: 'AI Assistant',
+        component: <AiAssistantPanel />,
       },
       ...moduleRailEntries,
     ],
