@@ -28,6 +28,33 @@ export async function createProvider(input) {
   return redactProvider(await provider.save())
 }
 
+export async function updateProvider(providerId, input) {
+  const update = {}
+  for (const field of ['name', 'providerType', 'baseURL', 'enabled']) {
+    if (Object.hasOwn(input, field)) {
+      update[field] = input[field]
+    }
+  }
+  if (Object.hasOwn(input, 'apiKey') && input.apiKey) {
+    update.encryptedApiKey = await encryptApiKey(input.apiKey)
+  }
+  if (Object.hasOwn(input, 'models')) {
+    update.models = input.models
+  }
+  if (Object.hasOwn(input, 'defaultModel')) {
+    update.defaultModel = input.defaultModel || null
+  }
+  const provider = await AiProvider.findByIdAndUpdate(providerId, update, {
+    new: true,
+  }).exec()
+  return provider ? redactProvider(provider) : null
+}
+
+export async function deleteProvider(providerId) {
+  const result = await AiProvider.deleteOne({ _id: providerId }).exec()
+  return result.deletedCount > 0
+}
+
 export async function syncModels(providerId) {
   const provider = await AiProvider.findById(providerId).exec()
   if (!provider) {
