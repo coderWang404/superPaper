@@ -78,6 +78,10 @@ services:
       - filestore-public-files:/superpaper/services/filestore/public_files
       - filestore-template-files:/superpaper/services/filestore/template_files
       - filestore-uploads:/superpaper/services/filestore/uploads
+      - history-v1-buckets:/buckets
+    environment:
+      SUPERPAPER_EDITOR_BLOBS_BUCKET: "/buckets/blobs"
+      SUPERPAPER_EDITOR_PROJECT_BLOBS_BUCKET: "/buckets/project_blobs"
 
   history-v1:
     build:

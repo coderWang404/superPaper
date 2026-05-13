@@ -58,12 +58,14 @@ describe('ai-provider-admin', function () {
     const call = fetchMock.callHistory
       .calls('/admin/ai/providers')
       .find(call => call.options.method === 'post')
-    expect(call).to.exist
+    if (!call) {
+      throw new Error('expected AI provider create request')
+    }
     expect(call.options.headers).to.include({
       'content-type': 'application/json',
       'x-csrf-token': 'csrf-token',
     })
-    expect(JSON.parse(call!.options.body as string)).to.deep.equal({
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
       name: 'Provider One',
       providerType: 'openai-compatible',
       baseURL: 'https://provider-one.example/v1',

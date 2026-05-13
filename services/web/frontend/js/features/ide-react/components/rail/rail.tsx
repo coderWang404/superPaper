@@ -24,7 +24,10 @@ import { useCommandProvider } from '@/features/ide-react/hooks/use-command-provi
 import RailHelpDropdown from './rail-help-dropdown'
 import RailTab from './rail-tab'
 import RailActionElement, { RailAction } from './rail-action-element'
-import { RailElement } from '@/features/ide-react/util/rail-types'
+import {
+  type CustomRailTabIcon,
+  RailElement,
+} from '@/features/ide-react/util/rail-types'
 import RailPanel from './rail-panel'
 import RailResizeHandle from './rail-resize-handle'
 import RailModals from './rail-modals'
@@ -34,6 +37,15 @@ import importSuperPaperModules from '../../../../../macros/import-superpaper-mod
 import { shouldIncludeElement } from '@/features/ide-react/util/rail-utils'
 import { useEditorContext } from '@/shared/context/editor-context'
 import useEventListener from '@/shared/hooks/use-event-listener'
+import MaterialIcon from '@/shared/components/material-icon'
+
+const AiAssistantRailIcon: CustomRailTabIcon = ({ title }) => (
+  <MaterialIcon
+    type="auto_awesome"
+    className="ide-rail-tab-link-icon"
+    accessibilityLabel={title}
+  />
+)
 
 const moduleRailEntries = (
   importSuperPaperModules('railEntries') as {
@@ -125,7 +137,7 @@ export const RailLayout = () => {
       },
       {
         key: 'ai-assistant',
-        icon: 'auto_awesome',
+        icon: AiAssistantRailIcon,
         title: 'AI Assistant',
         component: <AiAssistantPanel />,
       },

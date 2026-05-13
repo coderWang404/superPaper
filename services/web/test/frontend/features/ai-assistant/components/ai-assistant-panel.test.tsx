@@ -168,7 +168,9 @@ function mockChat(overrides = {}) {
 
 function makeEditorSelectionProvider(editorSelection: EditorSelection) {
   const EditorSelectionProvider: FC<PropsWithChildren> = ({ children }) => {
-    const [selection, setSelection] = useState(editorSelection)
+    const [selection, setSelection] = useState<EditorSelection | undefined>(
+      editorSelection
+    )
     const value = useMemo<
       ReturnType<typeof useEditorSelectionContext>
     >(() => {
