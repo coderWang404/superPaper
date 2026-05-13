@@ -1,0 +1,120 @@
+.ai-assistant-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--content-primary-themed);
+  background-color: var(--bg-primary-themed);
+}
+
+.ai-assistant-panel-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--spacing-04);
+  min-height: 0;
+  overflow: auto;
+  padding: var(--spacing-04);
+}
+
+.ai-assistant-provider {
+  display: grid;
+  gap: var(--spacing-03);
+  font-size: var(--font-size-02);
+
+  label,
+  > div {
+    display: grid;
+    gap: var(--spacing-01);
+  }
+}
+
+.ai-assistant-label,
+.ai-assistant-provider label {
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-01);
+  font-weight: 700;
+}
+
+.ai-assistant-context-strip {
+  border: 1px solid var(--border-divider-themed);
+  border-radius: var(--border-radius-base);
+  background-color: var(--bg-secondary-themed);
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-01);
+  padding: var(--spacing-02) var(--spacing-03);
+}
+
+.ai-assistant-form {
+  display: grid;
+  gap: var(--spacing-03);
+
+  label {
+    color: var(--content-secondary-themed);
+    font-size: var(--font-size-01);
+    font-weight: 700;
+  }
+
+  textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid var(--border-divider-themed);
+    border-radius: var(--border-radius-base);
+    background-color: var(--bg-primary-themed);
+    color: var(--content-primary-themed);
+    padding: var(--spacing-03);
+  }
+}
+
+.ai-assistant-answer,
+.ai-assistant-empty,
+.ai-assistant-error {
+  display: grid;
+  gap: var(--spacing-02);
+  border: 1px solid var(--border-divider-themed);
+  border-radius: var(--border-radius-base);
+  background-color: var(--bg-secondary-themed);
+  padding: var(--spacing-03);
+
+  h5 {
+    margin: 0;
+    font-size: var(--font-size-02);
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    color: var(--content-secondary-themed);
+    font-size: var(--font-size-02);
+  }
+}
+
+.ai-assistant-error {
+  border-color: var(--border-danger);
+}
+
+.ai-assistant-answer-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-02);
+  line-height: var(--line-height-02);
+}
+
+.ai-assistant-context-files {
+  display: grid;
+  gap: var(--spacing-02);
+  margin-top: var(--spacing-03);
+
+  ul {
+    display: grid;
+    gap: var(--spacing-01);
+    margin: 0;
+    padding-left: var(--spacing-05);
+    color: var(--content-secondary-themed);
+    font-size: var(--font-size-01);
+  }
+}
+
+.ai-assistant-muted {
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-02);
+}
