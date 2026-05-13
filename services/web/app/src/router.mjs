@@ -1,5 +1,6 @@
 import AdminController from "./Features/ServerAdmin/AdminController.mjs";
 import AiProviderAdminController from "./Features/AiAssistant/AiProviderAdminController.mjs";
+import AiProjectChatController from "./Features/AiAssistant/AiProjectChatController.mjs";
 import ErrorController from "./Features/Errors/ErrorController.mjs";
 import Features from "./infrastructure/Features.mjs";
 import ProjectController from "./Features/Project/ProjectController.mjs";
@@ -139,6 +140,10 @@ const rateLimiters = {
       duration: 60,
     },
   ),
+  projectAiChat: new RateLimiter("project-ai-chat", {
+    points: 20,
+    duration: 60,
+  }),
   openDashboard: new RateLimiter("open-dashboard", {
     points: 30,
     duration: 60,
@@ -521,6 +526,23 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     AuthenticationController.requireLogin(),
     AuthorizationMiddleware.ensureUserCanAdminProject,
     ProjectController.updateProjectAdminSettings,
+  );
+
+  webRouter.get(
+    "/project/:Project_id/ai/config",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiProjectChatController.config,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/chat",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiProjectChatController.chat,
   );
 
   webRouter.post(
