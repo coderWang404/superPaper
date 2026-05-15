@@ -178,6 +178,6 @@ services:
     command:
       ["npx", "webpack", "serve", "--config", "webpack.config.dev-env.js"]
     ports:
-      - "127.0.0.1:23000:3808"
+      - "0.0.0.0:23000:3808"
     volumes:
       - ./webpack.config.dev-env.js:/superpaper/services/web/webpack.config.dev-env.js
