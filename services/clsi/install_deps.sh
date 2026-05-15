@@ -2,8 +2,8 @@
 set -euo pipefail
 
 switch_apt_sources() {
-  local mirror="${DEBIAN_MIRROR:-https://ftp.debian.org/debian}"
-  local security_mirror="${DEBIAN_SECURITY_MIRROR:-https://security.debian.org/debian-security}"
+  local mirror="${DEBIAN_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn/debian}"
+  local security_mirror="${DEBIAN_SECURITY_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn/debian-security}"
 
   if [[ -f /etc/apt/sources.list.d/debian.sources ]]; then
     sed -i \

@@ -45,8 +45,8 @@ COPY services/clsi/ /superpaper/services/clsi/
 
 FROM app AS with-texlive
 
-ARG DEBIAN_MIRROR=https://ftp.debian.org/debian
-ARG DEBIAN_SECURITY_MIRROR=https://security.debian.org/debian-security
+ARG DEBIAN_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/debian
+ARG DEBIAN_SECURITY_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/debian-security
 
 RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\n' > /etc/apt/apt.conf.d/80retry
 RUN set -eu; \

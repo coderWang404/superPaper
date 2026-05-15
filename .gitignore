@@ -6,6 +6,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+渠道.txt
 
 coverage/
 .nyc_output/
