@@ -124,6 +124,38 @@ describe('AiProviderClient', function () {
     ).to.be.rejectedWith(ctx.Client.AiProviderError)
   })
 
+  it('adds DeepSeek V4 thinking options for the official API', async function (ctx) {
+    const fetchImpl = sinon.stub().resolves({
+      ok: true,
+      status: 200,
+      json: sinon.stub().resolves({
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'AI answer',
+            },
+          },
+        ],
+      }),
+    })
+
+    await ctx.Client.createOpenAICompatibleChatCompletion({
+      baseURL: 'https://api.deepseek.com',
+      apiKey: 'test-key',
+      model: 'deepseek-v4-pro',
+      messages: [{ role: 'user', content: 'Hello' }],
+      fetchImpl,
+    })
+
+    expect(JSON.parse(fetchImpl.firstCall.args[1].body)).to.deep.equal({
+      model: 'deepseek-v4-pro',
+      messages: [{ role: 'user', content: 'Hello' }],
+      thinking: { type: 'enabled' },
+      reasoning_effort: 'high',
+    })
+  })
+
   it('streams OpenAI-compatible chat completion deltas', async function (ctx) {
     const encoder = new TextEncoder()
     const fetchImpl = sinon.stub().resolves({

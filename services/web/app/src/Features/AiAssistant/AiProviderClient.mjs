@@ -10,6 +10,42 @@ function buildChatCompletionsURL(baseURL) {
   return `${baseURL.replace(/\/+$/, '')}/chat/completions`
 }
 
+function isOfficialDeepSeekBaseURL(baseURL) {
+  try {
+    return new URL(baseURL).hostname === 'api.deepseek.com'
+  } catch {
+    return false
+  }
+}
+
+function shouldUseDeepSeekV4Options({ baseURL, model }) {
+  return (
+    isOfficialDeepSeekBaseURL(baseURL) &&
+    /^deepseek-v4-(?:pro|flash)$/.test(model)
+  )
+}
+
+function buildChatCompletionBody({ baseURL, model, messages, temperature, stream }) {
+  if (shouldUseDeepSeekV4Options({ baseURL, model })) {
+    const body = {
+      model,
+      messages,
+      thinking: { type: 'enabled' },
+      reasoning_effort: 'high',
+    }
+    if (stream) {
+      body.stream = true
+    }
+    return body
+  }
+
+  const body = { model, messages, temperature }
+  if (stream) {
+    body.stream = true
+  }
+  return body
+}
+
 export class AiProviderError extends Error {
   constructor(message, options = {}) {
     super(message)
@@ -77,7 +113,9 @@ export async function createOpenAICompatibleChatCompletion({
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model, messages, temperature }),
+      body: JSON.stringify(
+        buildChatCompletionBody({ baseURL, model, messages, temperature })
+      ),
       signal: controller.signal,
     })
 
@@ -120,7 +158,15 @@ export async function* streamOpenAICompatibleChatCompletion({
         Accept: 'text/event-stream, application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model, messages, temperature, stream: true }),
+      body: JSON.stringify(
+        buildChatCompletionBody({
+          baseURL,
+          model,
+          messages,
+          temperature,
+          stream: true,
+        })
+      ),
       signal: controller.signal,
     })
 
