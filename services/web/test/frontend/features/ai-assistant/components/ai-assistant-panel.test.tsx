@@ -177,6 +177,44 @@ describe('<AiAssistantPanel />', function () {
 
     await screen.findByText('Streaming answer')
   })
+
+  it('runs agent mode and renders streamed tool events', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStream()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('readonly-default')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Explain the project structure.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+
+    await screen.findByText('Tool call: project.read_file')
+    await screen.findByText('Agent answer')
+
+    const createCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/sessions'
+    )[0]
+    const turnCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/sessions/session-one/turns'
+    )[0]
+    expect(JSON.parse(createCall.options.body as string)).to.deep.equal({
+      task: 'Explain the project structure.',
+      providerId: 'provider-one',
+      model: 'model-one',
+    })
+    expect(JSON.parse(turnCall.options.body as string)).to.deep.equal({
+      prompt: 'Explain the project structure.',
+      providerId: 'provider-one',
+      model: 'model-one',
+    })
+  })
 })
 
 function mockConfig() {
@@ -221,6 +259,104 @@ function mockChatStream(overrides = {}) {
       JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
       '\n' +
       JSON.stringify({ type: 'done', ...response }) +
+      '\n',
+  })
+}
+
+function mockAgentConfig() {
+  fetchMock.get('/project/project123/ai/agent/config', {
+    permissionProfile: {
+      id: 'readonly-default',
+      writeToolsRequireApproval: true,
+      externalToolsEnabled: false,
+    },
+    tools: [
+      {
+        name: 'project.read_file',
+        description: 'Read file',
+        access: 'read',
+        requiresApproval: false,
+      },
+    ],
+    skills: [
+      {
+        id: 'latex-compile-debug',
+        name: 'latex-compile-debug',
+        displayName: 'LaTeX 编译错误诊断',
+        description: 'Analyze compile errors',
+        modelInvocable: true,
+        requiredTools: ['project.read_file'],
+      },
+    ],
+    plugins: [
+      {
+        id: 'latex-core',
+        name: 'latex-core',
+        version: '1.0.0',
+        displayName: 'LaTeX 核心 Agent 能力包',
+        description: 'Built-in LaTeX tools',
+        enabled: true,
+        skills: ['latex-compile-debug'],
+        toolPresets: ['latex-readonly'],
+      },
+    ],
+  })
+}
+
+function mockAgentSession() {
+  fetchMock.post('/project/project123/ai/agent/sessions', {
+    session: {
+      id: 'session-one',
+      projectId: 'project123',
+      userId: 'user-one',
+      status: 'planning',
+      mode: 'plan',
+      providerId: 'provider-one',
+      model: 'model-one',
+      task: 'Explain the project structure.',
+      instructionSources: [],
+      enabledSkillIds: [],
+      enabledPluginIds: [],
+      permissionProfileId: 'readonly-default',
+    },
+  })
+}
+
+function mockAgentTurnStream() {
+  fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+    status: 200,
+    headers: { 'Content-Type': 'application/x-ndjson' },
+    body:
+      JSON.stringify({
+        type: 'event',
+        event: {
+          id: 'event-one',
+          sessionId: 'session-one',
+          sequence: 1,
+          type: 'tool_call',
+          payload: { name: 'project.read_file' },
+          createdAt: null,
+        },
+      }) +
+      '\n' +
+      JSON.stringify({
+        type: 'done',
+        session: {
+          id: 'session-one',
+          projectId: 'project123',
+          userId: 'user-one',
+          status: 'completed',
+          mode: 'plan',
+          providerId: 'provider-one',
+          model: 'model-one',
+          task: 'Explain the project structure.',
+          instructionSources: [],
+          enabledSkillIds: ['latex-compile-debug'],
+          enabledPluginIds: [],
+          permissionProfileId: 'readonly-default',
+        },
+        answer: 'Agent answer',
+      }) +
       '\n',
   })
 }

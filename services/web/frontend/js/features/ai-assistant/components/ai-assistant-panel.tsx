@@ -14,6 +14,14 @@ import {
   ProjectAiProvider,
   sendProjectAiChatStream,
 } from '@/features/ai-assistant/api'
+import {
+  createProjectAiAgentSession,
+  getProjectAiAgentConfig,
+  ProjectAiAgentConfig,
+  ProjectAiAgentEvent,
+  ProjectAiAgentSession,
+  sendProjectAiAgentTurnStream,
+} from '@/features/ai-agent/api'
 
 type AssistantMode = 'chat' | 'agent'
 
@@ -31,6 +39,13 @@ export default function AiAssistantPanel() {
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [answer, setAnswer] = useState<ProjectAiChatResponse | null>(null)
   const [streamedAnswer, setStreamedAnswer] = useState('')
+  const [agentConfig, setAgentConfig] = useState<ProjectAiAgentConfig | null>(
+    null
+  )
+  const [agentSession, setAgentSession] =
+    useState<ProjectAiAgentSession | null>(null)
+  const [agentEvents, setAgentEvents] = useState<ProjectAiAgentEvent[]>([])
+  const [agentAnswer, setAgentAnswer] = useState('')
   const [chatError, setChatError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [mode, setMode] = useState<AssistantMode>('chat')
@@ -61,6 +76,29 @@ export default function AiAssistantPanel() {
       cancelled = true
     }
   }, [projectId])
+
+  useEffect(() => {
+    if (mode !== 'agent' || agentConfig || configError) {
+      return
+    }
+
+    let cancelled = false
+    getProjectAiAgentConfig(projectId)
+      .then(nextConfig => {
+        if (!cancelled) {
+          setAgentConfig(nextConfig)
+        }
+      })
+      .catch(error => {
+        if (!cancelled) {
+          setConfigError(getErrorMessage(error))
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [agentConfig, configError, mode, projectId])
 
   const selectedProvider = useMemo(() => {
     return (
@@ -106,26 +144,56 @@ export default function AiAssistantPanel() {
     setChatError(null)
     setAnswer(null)
     setStreamedAnswer('')
+    setAgentAnswer('')
 
     try {
-      const response = await sendProjectAiChatStream(
-        projectId,
-        {
-          prompt: trimmedPrompt,
-          providerId: selectedProvider.id,
-          model: selectedModel,
-          selection,
-        },
-        delta => {
-          setStreamedAnswer(currentAnswer => currentAnswer + delta)
-        }
-      )
-      setAnswer(response)
+      if (mode === 'agent') {
+        await runAgent(trimmedPrompt)
+      } else {
+        const response = await sendProjectAiChatStream(
+          projectId,
+          {
+            prompt: trimmedPrompt,
+            providerId: selectedProvider.id,
+            model: selectedModel,
+            selection,
+          },
+          delta => {
+            setStreamedAnswer(currentAnswer => currentAnswer + delta)
+          }
+        )
+        setAnswer(response)
+      }
     } catch (error) {
       setChatError(getErrorMessage(error))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function runAgent(trimmedPrompt: string) {
+    setAgentEvents([])
+    const sessionResponse = await createProjectAiAgentSession(projectId, {
+      task: trimmedPrompt,
+      providerId: selectedProvider?.id,
+      model: selectedModel ?? undefined,
+    })
+    setAgentSession(sessionResponse.session)
+    const response = await sendProjectAiAgentTurnStream(
+      projectId,
+      sessionResponse.session.id,
+      {
+        prompt: trimmedPrompt,
+        providerId: selectedProvider?.id,
+        model: selectedModel ?? undefined,
+        selection,
+      },
+      event => {
+        setAgentEvents(currentEvents => [...currentEvents, event])
+      }
+    )
+    setAgentSession(response.session)
+    setAgentAnswer(response.answer)
   }
 
   return (
@@ -192,18 +260,12 @@ export default function AiAssistantPanel() {
               {selection ? 'Using current selection' : 'Using project context'}
             </div>
 
-            {mode === 'agent' && (
-              <div className="ai-assistant-agent-placeholder">
-                <h5>Agent mode</h5>
-                <p>
-                  File-editing tools will appear here in the next development
-                  phase. Chat mode is active today.
-                </p>
-              </div>
+            {mode === 'agent' && agentConfig && (
+              <AgentConfigSummary config={agentConfig} session={agentSession} />
             )}
 
             <div className="ai-assistant-transcript" aria-live="polite">
-              {(streamedAnswer || answer) && (
+              {mode === 'chat' && (streamedAnswer || answer) && (
                 <div className="ai-assistant-message ai-assistant-message-assistant">
                   <div className="ai-assistant-message-meta">
                     superPaper AI
@@ -211,6 +273,17 @@ export default function AiAssistantPanel() {
                   <div className="ai-assistant-answer-text">
                     {streamedAnswer || answer?.answer}
                   </div>
+                </div>
+              )}
+              {mode === 'agent' && agentEvents.length > 0 && (
+                <AgentEventList events={agentEvents} />
+              )}
+              {mode === 'agent' && agentAnswer && (
+                <div className="ai-assistant-message ai-assistant-message-assistant">
+                  <div className="ai-assistant-message-meta">
+                    superPaper Agent
+                  </div>
+                  <div className="ai-assistant-answer-text">{agentAnswer}</div>
                 </div>
               )}
             </div>
@@ -229,7 +302,6 @@ export default function AiAssistantPanel() {
                 onChange={event => setPrompt(event.target.value)}
                 placeholder="Ask a question about the project, current file, or selected text."
                 rows={4}
-                disabled={mode !== 'chat'}
               />
               <div className="ai-assistant-composer-footer">
                 <ComposerModelSelector
@@ -240,10 +312,10 @@ export default function AiAssistantPanel() {
                 <OLButton
                   type="submit"
                   variant="primary"
-                  disabled={!prompt.trim() || submitting || mode !== 'chat'}
+                  disabled={!prompt.trim() || submitting}
                   isLoading={submitting}
                 >
-                  Send
+                  {mode === 'agent' ? 'Run' : 'Send'}
                 </OLButton>
               </div>
             </form>
@@ -274,6 +346,81 @@ export default function AiAssistantPanel() {
       </div>
     </div>
   )
+}
+
+function AgentConfigSummary({
+  config,
+  session,
+}: {
+  config: ProjectAiAgentConfig
+  session: ProjectAiAgentSession | null
+}) {
+  return (
+    <div className="ai-assistant-agent-summary">
+      <div>
+        <span className="ai-assistant-label">Permission</span>
+        <span>{config.permissionProfile.id}</span>
+      </div>
+      <div>
+        <span className="ai-assistant-label">Tools</span>
+        <span>{config.tools.length}</span>
+      </div>
+      <div>
+        <span className="ai-assistant-label">Skills</span>
+        <span>{config.skills.length}</span>
+      </div>
+      {session?.enabledSkillIds?.length ? (
+        <div>
+          <span className="ai-assistant-label">Active skills</span>
+          <span>{session.enabledSkillIds.join(', ')}</span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function AgentEventList({ events }: { events: ProjectAiAgentEvent[] }) {
+  return (
+    <div className="ai-assistant-agent-events">
+      {events.map(event => (
+        <div className="ai-assistant-agent-event" key={event.id}>
+          <div className="ai-assistant-message-meta">
+            {formatAgentEventTitle(event)}
+          </div>
+          <div className="ai-assistant-answer-text">
+            {formatAgentEventPayload(event)}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function formatAgentEventTitle(event: ProjectAiAgentEvent) {
+  if (event.type === 'tool_call') {
+    return `Tool call: ${String(event.payload.name ?? '')}`
+  }
+  if (event.type === 'tool_result') {
+    return `Tool result: ${String(event.payload.name ?? '')}`
+  }
+  if (event.type === 'error') {
+    return 'Agent error'
+  }
+  return 'Agent message'
+}
+
+function formatAgentEventPayload(event: ProjectAiAgentEvent) {
+  const payload = event.payload
+  if (typeof payload.content === 'string') {
+    return payload.content
+  }
+  if (Array.isArray(payload.enabledSkillIds)) {
+    return `Skills: ${payload.enabledSkillIds.join(', ') || 'none'}`
+  }
+  if (typeof payload.message === 'string') {
+    return payload.message
+  }
+  return JSON.stringify(payload, null, 2)
 }
 
 function ProviderSelector({
