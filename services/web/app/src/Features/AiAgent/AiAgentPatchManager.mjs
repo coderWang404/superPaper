@@ -77,7 +77,8 @@ export async function createPatch({
     baseRevision[operation.path] =
       operation.type === 'replace_text' ||
       operation.type === 'delete_doc' ||
-      operation.type === 'rename_entity'
+      operation.type === 'rename_entity' ||
+      operation.type === 'move_entity'
         ? {
             docId: operation.docId,
             sha256: operation.baseSha256,
@@ -157,6 +158,16 @@ export async function applyPatch({ projectId, userId, patchId }) {
       })
     } else if (operation.type === 'rename_entity') {
       await applyRenameEntityOperation({
+        operation,
+        projectId,
+        userId,
+        patch,
+        docs,
+        files,
+        appliedOperations,
+      })
+    } else if (operation.type === 'move_entity') {
+      await applyMoveEntityOperation({
         operation,
         projectId,
         userId,
@@ -285,9 +296,12 @@ function normalizeOperation(operation, { docs, files }) {
   if (operation?.type === 'rename_entity') {
     return normalizeRenameEntityOperation(operation, { docs, files })
   }
+  if (operation?.type === 'move_entity') {
+    return normalizeMoveEntityOperation(operation, { docs, files })
+  }
   throw new AiAgentPatchError(
     'AGENT_PATCH_UNSUPPORTED_OPERATION',
-    'Agent patch only supports replace_text, create_doc, delete_doc, and rename_entity operations'
+    'Agent patch only supports replace_text, create_doc, delete_doc, rename_entity, and move_entity operations'
   )
 }
 
@@ -431,6 +445,52 @@ function normalizeRenameEntityOperation(operation, { docs, files }) {
   }
 }
 
+function normalizeMoveEntityOperation(operation, { docs, files }) {
+  const projectPath = normalizeProjectPath(operation.path)
+  assertSafePath(projectPath)
+
+  const doc = docs[projectPath]
+  if (!doc) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_FILE_NOT_FOUND',
+      'Agent patch target document was not found'
+    )
+  }
+
+  const targetFolderPath = normalizeProjectPath(operation.targetFolderPath)
+  assertSafePath(targetFolderPath)
+  const newPath = path.posix.join(targetFolderPath, path.posix.basename(projectPath))
+  if (newPath === projectPath) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_NOOP',
+      'Agent patch move does not change the path'
+    )
+  }
+  if (docs[newPath] || files[newPath]) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_TARGET_EXISTS',
+      'Agent patch target path already exists'
+    )
+  }
+
+  const content = getDocText(doc)
+  return {
+    type: 'move_entity',
+    entityType: 'doc',
+    path: projectPath,
+    targetFolderPath,
+    newPath,
+    docId: doc._id?.toString?.() || doc._id,
+    baseSha256: sha256(content),
+    baseRev: doc.rev ?? null,
+    diff: buildSimpleLineDiff({
+      path: projectPath,
+      before: projectPath,
+      after: newPath,
+    }),
+  }
+}
+
 function publicOperation(operation) {
   return {
     type: operation.type,
@@ -438,6 +498,7 @@ function publicOperation(operation) {
     path: operation.path,
     newName: operation.newName,
     newPath: operation.newPath,
+    targetFolderPath: operation.targetFolderPath,
     docId: operation.docId,
     oldText: operation.oldText,
     newText: operation.newText,
@@ -453,7 +514,12 @@ function riskLevelForOperations(operations) {
   if (operations.some(operation => operation.type === 'delete_doc')) {
     return 'high'
   }
-  if (operations.some(operation => operation.type === 'rename_entity')) {
+  if (
+    operations.some(
+      operation =>
+        operation.type === 'rename_entity' || operation.type === 'move_entity'
+    )
+  ) {
     return 'medium'
   }
   return operations.length === 1 ? 'low' : 'medium'
@@ -627,6 +693,64 @@ async function applyRenameEntityOperation({
     entityType: 'doc',
     path: operation.path,
     newPath: operation.newPath,
+    docId: operation.docId,
+    baseSha256: operation.baseSha256,
+  })
+}
+
+async function applyMoveEntityOperation({
+  operation,
+  projectId,
+  userId,
+  patch,
+  docs,
+  files,
+  appliedOperations,
+}) {
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+  if (docs[operation.newPath] || files[operation.newPath]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+
+  const currentContent = getDocText(doc)
+  if (sha256(currentContent) !== operation.baseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+
+  const { lastFolder } = await EditorController.promises.mkdirp(
+    projectId,
+    operation.targetFolderPath,
+    userId
+  )
+  await EditorController.promises.moveEntity(
+    projectId,
+    operation.docId,
+    lastFolder._id,
+    'doc',
+    userId,
+    'agent'
+  )
+  appliedOperations.push({
+    type: operation.type,
+    entityType: 'doc',
+    path: operation.path,
+    newPath: operation.newPath,
+    targetFolderPath: operation.targetFolderPath,
     docId: operation.docId,
     baseSha256: operation.baseSha256,
   })

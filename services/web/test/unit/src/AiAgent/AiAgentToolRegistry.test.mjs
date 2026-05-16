@@ -82,7 +82,7 @@ describe('AiAgentToolRegistry', function () {
     expect(ctx.Registry.listToolDefinitions()).to.deep.include({
       name: 'patch.propose',
       description:
-        'Create a pending replace_text, create_doc, delete_doc, or rename_entity patch for user review. This does not edit files.',
+        'Create a pending replace_text, create_doc, delete_doc, rename_entity, or move_entity patch for user review. This does not edit files.',
       access: 'write',
       requiresApproval: true,
     })
@@ -298,6 +298,39 @@ describe('AiAgentToolRegistry', function () {
           type: 'rename_entity',
           path: '/main.tex',
           newName: 'paper.tex',
+        },
+      ],
+    })
+  })
+
+  it('accepts move_entity operations for pending patches', async function (ctx) {
+    await ctx.Registry.executeTool({
+      name: 'patch.propose',
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      input: {
+        summary: 'Move main',
+        operations: [
+          {
+            type: 'move_entity',
+            path: '/main.tex',
+            targetFolderPath: '/sections',
+          },
+        ],
+      },
+    })
+
+    expect(ctx.createPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      summary: 'Move main',
+      operations: [
+        {
+          type: 'move_entity',
+          path: '/main.tex',
+          targetFolderPath: '/sections',
         },
       ],
     })

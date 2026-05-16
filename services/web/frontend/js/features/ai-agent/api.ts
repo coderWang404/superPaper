@@ -144,11 +144,31 @@ export type ProjectAiAgentPatchRenameEntityOperation = {
   }
 }
 
+export type ProjectAiAgentPatchMoveEntityOperation = {
+  type: 'move_entity'
+  entityType: 'doc'
+  path: string
+  targetFolderPath: string
+  newPath: string
+  docId: string
+  baseSha256: string
+  baseRev: number | null
+  diff: {
+    path: string
+    oldStart: number
+    oldLines: number
+    newStart: number
+    newLines: number
+    lines: ProjectAiAgentPatchDiffLine[]
+  }
+}
+
 export type ProjectAiAgentPatchOperation =
   | ProjectAiAgentPatchReplaceTextOperation
   | ProjectAiAgentPatchCreateDocOperation
   | ProjectAiAgentPatchDeleteDocOperation
   | ProjectAiAgentPatchRenameEntityOperation
+  | ProjectAiAgentPatchMoveEntityOperation
 
 export type ProjectAiAgentPatch = {
   id: string
