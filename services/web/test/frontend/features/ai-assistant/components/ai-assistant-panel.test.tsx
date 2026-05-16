@@ -262,6 +262,39 @@ describe('<AiAssistantPanel />', function () {
     )[0]
     expect(JSON.parse(applyCall.options.body as string)).to.deep.equal({})
   })
+
+  it('rejects agent patches from the review panel', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStreamWithPatch()
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/reject', {
+      patch: {
+        ...mockPatch(),
+        status: 'rejected',
+      },
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('readonly-default')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Update wording.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+
+    await screen.findByText('Patch review')
+    fireEvent.click(screen.getByRole('button', { name: 'Reject' }))
+
+    await screen.findByText('rejected')
+    const rejectCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/reject'
+    )[0]
+    expect(JSON.parse(rejectCall.options.body as string)).to.deep.equal({})
+  })
 })
 
 function mockConfig() {

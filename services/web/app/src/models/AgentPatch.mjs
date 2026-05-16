@@ -9,6 +9,7 @@ export const AgentPatchSchema = new Schema(
     createdByUserId: { type: Schema.Types.ObjectId, required: true, index: true },
     approvedByUserId: { type: Schema.Types.ObjectId, default: null },
     appliedByUserId: { type: Schema.Types.ObjectId, default: null },
+    rejectedByUserId: { type: Schema.Types.ObjectId, default: null },
     status: {
       type: String,
       enum: ['pending', 'approved', 'applied', 'rejected', 'conflicted'],

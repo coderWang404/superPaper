@@ -594,6 +594,16 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
   );
 
   webRouter.post(
+    "/project/:Project_id/ai/agent/patches/:patchId/reject",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanWriteProjectContent,
+    AiAgentController.rejectPatch,
+  );
+
+  webRouter.post(
     "/project/:Project_id/compile",
     RateLimiterMiddleware.rateLimit(rateLimiters.compileProjectHttp, {
       params: ["Project_id"],

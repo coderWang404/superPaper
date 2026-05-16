@@ -194,6 +194,45 @@ export async function applyPatch({ projectId, userId, patchId }) {
   return publicAppliedPatch
 }
 
+export async function rejectPatch({ projectId, userId, patchId }) {
+  const patch = await AgentPatch.findOne({
+    _id: patchId,
+    projectId,
+  }).exec()
+
+  if (!patch) {
+    throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
+  }
+  if (patch.status !== 'pending' && patch.status !== 'approved') {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_NOT_PENDING',
+      'Agent patch is not pending approval'
+    )
+  }
+
+  patch.status = 'rejected'
+  patch.rejectedByUserId = userId
+  patch.rejectedAt = new Date()
+  await patch.save()
+
+  await recordPatchEvent({
+    sessionId: patch.sessionId,
+    projectId,
+    userId,
+    type: 'approval_response',
+    payload: {
+      patchId: patch._id?.toString?.() || patch.id,
+      status: 'rejected',
+    },
+  })
+  await AgentSession.updateOne(
+    { _id: patch.sessionId, projectId },
+    { $set: { status: 'completed', completedAt: new Date() } }
+  ).exec()
+
+  return publicPatch(patch)
+}
+
 export function publicPatch(patch) {
   return {
     id: patch._id?.toString?.() || patch.id,

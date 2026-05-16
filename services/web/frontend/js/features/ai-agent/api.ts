@@ -178,6 +178,13 @@ export function applyProjectAiAgentPatch(projectId: string, patchId: string) {
   )
 }
 
+export function rejectProjectAiAgentPatch(projectId: string, patchId: string) {
+  return postJSON<{ patch: ProjectAiAgentPatch }>(
+    `/project/${projectId}/ai/agent/patches/${patchId}/reject`,
+    { body: {} }
+  )
+}
+
 export async function sendProjectAiAgentTurnStream(
   projectId: string,
   sessionId: string,

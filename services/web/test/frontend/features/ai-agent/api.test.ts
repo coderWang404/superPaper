@@ -5,6 +5,7 @@ import {
   applyProjectAiAgentPatch,
   createProjectAiAgentSession,
   getProjectAiAgentConfig,
+  rejectProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
 } from '../../../../frontend/js/features/ai-agent/api'
 
@@ -72,6 +73,24 @@ describe('ai-agent api', function () {
     )[0]
     expect(JSON.parse(call.options.body as string)).to.deep.equal({})
     expect(response.patch.status).to.equal('applied')
+  })
+
+  it('rejects reviewed agent patches', async function () {
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/reject', {
+      patch: {
+        id: 'patch-one',
+        status: 'rejected',
+        operations: [],
+      },
+    })
+
+    const response = await rejectProjectAiAgentPatch('project123', 'patch-one')
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/reject'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({})
+    expect(response.patch.status).to.equal('rejected')
   })
 
   it('streams agent events and done payloads', async function () {

@@ -59,6 +59,10 @@ describe('AiAgentController', function () {
         id: 'patch-one',
         status: 'applied',
       }),
+      rejectPatch: sinon.stub().resolves({
+        id: 'patch-one',
+        status: 'rejected',
+      }),
       AiAgentPatchError: class AiAgentPatchError extends Error {
         constructor(code, message) {
           super(message)
@@ -194,6 +198,24 @@ describe('AiAgentController', function () {
       patch: {
         id: 'patch-one',
         status: 'applied',
+      },
+    })
+  })
+
+  it('rejects a reviewed patch for the logged in user', async function (ctx) {
+    ctx.req.params.patchId = 'patch-one'
+
+    await ctx.Controller.rejectPatch(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PatchManager.rejectPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      patchId: 'patch-one',
+    })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      patch: {
+        id: 'patch-one',
+        status: 'rejected',
       },
     })
   })

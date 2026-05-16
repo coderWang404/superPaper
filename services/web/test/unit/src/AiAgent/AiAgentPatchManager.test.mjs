@@ -308,4 +308,31 @@ describe('AiAgentPatchManager', function () {
     expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
       .called
   })
+
+  it('rejects pending patches without applying project changes', async function (ctx) {
+    const patch = await ctx.PatchManager.rejectPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.patchDocument.status).to.equal('rejected')
+    expect(ctx.patchDocument.rejectedByUserId).to.equal('reviewer-one')
+    expect(ctx.patchDocument.save).to.have.been.calledOnce
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'approval_response',
+        payload: {
+          patchId: 'patch-one',
+          status: 'rejected',
+        },
+      })
+    )
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(ctx.EditorController.promises.upsertDocWithPath).to.not.have.been
+      .called
+    expect(ctx.CompileManager.promises.compile).to.not.have.been.called
+    expect(patch.status).to.equal('rejected')
+  })
 })

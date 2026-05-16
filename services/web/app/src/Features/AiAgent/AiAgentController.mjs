@@ -9,6 +9,7 @@ import {
 import {
   AiAgentPatchError,
   applyPatch as applyAgentPatch,
+  rejectPatch as rejectAgentPatch,
 } from './AiAgentPatchManager.mjs'
 
 const SelectionSchema = z
@@ -110,6 +111,19 @@ async function applyPatch(req, res, next) {
   }
 }
 
+async function rejectPatch(req, res, next) {
+  try {
+    const patch = await rejectAgentPatch({
+      projectId: req.params.Project_id,
+      userId: SessionManager.getLoggedInUserId(req.session),
+      patchId: req.params.patchId,
+    })
+    res.json({ patch })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
 function handleControllerError(err, res, next) {
   if (err instanceof z.ZodError || err.name === 'ZodError') {
     res.status(422).json({
@@ -175,4 +189,5 @@ export default {
   createSession,
   turnStream,
   applyPatch,
+  rejectPatch,
 }

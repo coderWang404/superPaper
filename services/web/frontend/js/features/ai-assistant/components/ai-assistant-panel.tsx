@@ -23,6 +23,7 @@ import {
   ProjectAiAgentPatch,
   ProjectAiAgentPatchDiffLine,
   ProjectAiAgentSession,
+  rejectProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
 } from '@/features/ai-agent/api'
 
@@ -454,6 +455,7 @@ function AgentPatchReview({
 }) {
   const [patch, setPatch] = useState(initialPatch)
   const [applying, setApplying] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleApply() {
@@ -466,6 +468,19 @@ function AgentPatchReview({
       setError(getErrorMessage(applyError))
     } finally {
       setApplying(false)
+    }
+  }
+
+  async function handleReject() {
+    setRejecting(true)
+    setError(null)
+    try {
+      const response = await rejectProjectAiAgentPatch(projectId, patch.id)
+      setPatch(response.patch)
+    } catch (rejectError) {
+      setError(getErrorMessage(rejectError))
+    } finally {
+      setRejecting(false)
     }
   }
 
@@ -497,8 +512,18 @@ function AgentPatchReview({
         <OLButton
           type="button"
           size="sm"
+          variant="secondary"
+          disabled={patch.status !== 'pending' || rejecting || applying}
+          isLoading={rejecting}
+          onClick={handleReject}
+        >
+          Reject
+        </OLButton>
+        <OLButton
+          type="button"
+          size="sm"
           variant="primary"
-          disabled={patch.status !== 'pending' || applying}
+          disabled={patch.status !== 'pending' || applying || rejecting}
           isLoading={applying}
           onClick={handleApply}
         >
