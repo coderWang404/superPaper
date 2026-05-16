@@ -4,11 +4,21 @@ import { AgentEvent } from '../../models/AgentEvent.mjs'
 import { AgentPatch } from '../../models/AgentPatch.mjs'
 import { AgentSession } from '../../models/AgentSession.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
+import EditorController from '../Editor/EditorController.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 
 const MAX_OPERATIONS = 8
 const MAX_TEXT_CHARS = 50_000
 const DIFF_CONTEXT_LINES = 3
+const ALLOWED_CREATE_DOC_EXTENSIONS = new Set([
+  '.tex',
+  '.bib',
+  '.cls',
+  '.sty',
+  '.md',
+  '.txt',
+  '.ltx',
+])
 const SENSITIVE_PATH_PATTERNS = [
   /^\/?\.env(?:\.|$)/i,
   /^\/?secrets(?:\/|$)/i,
@@ -52,18 +62,29 @@ export async function createPatch({
     )
   }
 
-  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const [docs, files] = await Promise.all([
+    ProjectEntityHandler.promises.getAllDocs(projectId),
+    ProjectEntityHandler.promises.getAllFiles(projectId),
+  ])
+  assertUniqueOperationPaths(operations)
   const normalizedOperations = operations.map(operation =>
-    normalizeReplaceTextOperation(operation, docs)
+    normalizeOperation(operation, { docs, files })
   )
 
   const baseRevision = {}
   for (const operation of normalizedOperations) {
-    baseRevision[operation.path] = {
-      docId: operation.docId,
-      sha256: operation.baseSha256,
-      rev: operation.baseRev,
-    }
+    baseRevision[operation.path] =
+      operation.type === 'replace_text'
+        ? {
+            docId: operation.docId,
+            sha256: operation.baseSha256,
+            rev: operation.baseRev,
+          }
+        : {
+            docId: null,
+            sha256: null,
+            exists: false,
+          }
   }
 
   const patch = await AgentPatch.create({
@@ -96,55 +117,38 @@ export async function applyPatch({ projectId, userId, patchId }) {
     )
   }
 
-  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const [docs, files] = await Promise.all([
+    ProjectEntityHandler.promises.getAllDocs(projectId),
+    ProjectEntityHandler.promises.getAllFiles(projectId),
+  ])
   const appliedOperations = []
 
   for (const operation of patch.operations || []) {
-    if (operation.type !== 'replace_text') {
+    if (operation.type === 'replace_text') {
+      await applyReplaceTextOperation({
+        operation,
+        projectId,
+        userId,
+        patch,
+        docs,
+        appliedOperations,
+      })
+    } else if (operation.type === 'create_doc') {
+      await applyCreateDocOperation({
+        operation,
+        projectId,
+        userId,
+        patch,
+        docs,
+        files,
+        appliedOperations,
+      })
+    } else {
       throw new AiAgentPatchError(
         'AGENT_PATCH_UNSUPPORTED_OPERATION',
         'Agent patch operation is not supported'
       )
     }
-
-    const doc = docs[operation.path]
-    if (!doc) {
-      await markConflicted(patch)
-      throw new AiAgentPatchError(
-        'AGENT_PATCH_CONFLICT',
-        'Agent patch target document no longer exists'
-      )
-    }
-
-    const currentContent = getDocText(doc)
-    if (sha256(currentContent) !== operation.baseSha256) {
-      await markConflicted(patch)
-      throw new AiAgentPatchError(
-        'AGENT_PATCH_CONFLICT',
-        'Agent patch target document changed'
-      )
-    }
-
-    assertSingleOccurrence(currentContent, operation.oldText, operation.path)
-    const nextContent = currentContent.replace(
-      operation.oldText,
-      operation.newText
-    )
-
-    await DocumentUpdaterHandler.promises.setDocument(
-      projectId,
-      operation.docId,
-      userId,
-      splitDocText(nextContent),
-      'agent'
-    )
-    appliedOperations.push({
-      type: operation.type,
-      path: operation.path,
-      docId: operation.docId,
-      baseSha256: operation.baseSha256,
-      appliedSha256: sha256(nextContent),
-    })
   }
 
   patch.status = 'applied'
@@ -199,14 +203,20 @@ export function publicPatch(patch) {
   }
 }
 
-function normalizeReplaceTextOperation(operation, docs) {
-  if (operation?.type !== 'replace_text') {
-    throw new AiAgentPatchError(
-      'AGENT_PATCH_UNSUPPORTED_OPERATION',
-      'Agent patch only supports replace_text operations'
-    )
+function normalizeOperation(operation, { docs, files }) {
+  if (operation?.type === 'replace_text') {
+    return normalizeReplaceTextOperation(operation, docs)
   }
+  if (operation?.type === 'create_doc') {
+    return normalizeCreateDocOperation(operation, { docs, files })
+  }
+  throw new AiAgentPatchError(
+    'AGENT_PATCH_UNSUPPORTED_OPERATION',
+    'Agent patch only supports replace_text and create_doc operations'
+  )
+}
 
+function normalizeReplaceTextOperation(operation, docs) {
   const projectPath = normalizeProjectPath(operation.path)
   assertSafePath(projectPath)
 
@@ -243,6 +253,35 @@ function normalizeReplaceTextOperation(operation, docs) {
   }
 }
 
+function normalizeCreateDocOperation(operation, { docs, files }) {
+  const projectPath = normalizeProjectPath(operation.path)
+  assertSafePath(projectPath)
+  assertAllowedCreateDocExtension(projectPath)
+
+  if (docs[projectPath] || files[projectPath]) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_TARGET_EXISTS',
+      'Agent patch target path already exists'
+    )
+  }
+
+  const content = assertPatchText(operation.content || '', 'content', {
+    allowEmpty: true,
+  })
+
+  return {
+    type: 'create_doc',
+    path: projectPath,
+    content,
+    proposedSha256: sha256(content),
+    diff: buildSimpleLineDiff({
+      path: projectPath,
+      before: '',
+      after: content,
+    }),
+  }
+}
+
 function publicOperation(operation) {
   return {
     type: operation.type,
@@ -250,10 +289,118 @@ function publicOperation(operation) {
     docId: operation.docId,
     oldText: operation.oldText,
     newText: operation.newText,
+    content: operation.content,
     baseSha256: operation.baseSha256,
     proposedSha256: operation.proposedSha256,
     baseRev: operation.baseRev ?? null,
     diff: operation.diff,
+  }
+}
+
+async function applyReplaceTextOperation({
+  operation,
+  projectId,
+  userId,
+  patch,
+  docs,
+  appliedOperations,
+}) {
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+
+  const currentContent = getDocText(doc)
+  if (sha256(currentContent) !== operation.baseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+
+  assertSingleOccurrence(currentContent, operation.oldText, operation.path)
+  const nextContent = currentContent.replace(
+    operation.oldText,
+    operation.newText
+  )
+
+  await DocumentUpdaterHandler.promises.setDocument(
+    projectId,
+    operation.docId,
+    userId,
+    splitDocText(nextContent),
+    'agent'
+  )
+  appliedOperations.push({
+    type: operation.type,
+    path: operation.path,
+    docId: operation.docId,
+    baseSha256: operation.baseSha256,
+    appliedSha256: sha256(nextContent),
+  })
+}
+
+async function applyCreateDocOperation({
+  operation,
+  projectId,
+  userId,
+  patch,
+  docs,
+  files,
+  appliedOperations,
+}) {
+  if (docs[operation.path] || files[operation.path]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+
+  const { doc } = await EditorController.promises.upsertDocWithPath(
+    projectId,
+    operation.path,
+    splitDocText(operation.content || ''),
+    'agent',
+    userId
+  )
+  appliedOperations.push({
+    type: operation.type,
+    path: operation.path,
+    docId: doc?._id?.toString?.() || doc?._id || null,
+    appliedSha256: sha256(operation.content || ''),
+  })
+}
+
+function assertUniqueOperationPaths(operations) {
+  const paths = new Set()
+  for (const operation of operations) {
+    if (typeof operation?.path !== 'string') {
+      continue
+    }
+    const projectPath = normalizeProjectPath(operation.path)
+    if (paths.has(projectPath)) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_DUPLICATE_PATH',
+        'Agent patch includes duplicate paths'
+      )
+    }
+    paths.add(projectPath)
+  }
+}
+
+function assertAllowedCreateDocExtension(projectPath) {
+  const extension = path.posix.extname(projectPath).toLowerCase()
+  if (!ALLOWED_CREATE_DOC_EXTENSIONS.has(extension)) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_UNSUPPORTED_FILE_TYPE',
+      'Agent patch can only create text documents'
+    )
   }
 }
 
@@ -342,8 +489,8 @@ async function recordPatchEvent({ sessionId, projectId, userId, type, payload })
 }
 
 function buildSimpleLineDiff({ path: projectPath, before, after }) {
-  const beforeLines = before.split('\n')
-  const afterLines = after.split('\n')
+  const beforeLines = before.length ? before.split('\n') : []
+  const afterLines = after.length ? after.split('\n') : []
   let prefix = 0
   while (
     prefix < beforeLines.length &&

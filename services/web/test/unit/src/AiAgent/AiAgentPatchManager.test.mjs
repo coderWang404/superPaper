@@ -21,11 +21,20 @@ describe('AiAgentPatchManager', function () {
     ctx.ProjectEntityHandler = {
       promises: {
         getAllDocs: sinon.stub().resolves(ctx.docs),
+        getAllFiles: sinon.stub().resolves({}),
       },
     }
     ctx.DocumentUpdaterHandler = {
       promises: {
         setDocument: sinon.stub().resolves({ rev: 8, modified: true }),
+      },
+    }
+    ctx.EditorController = {
+      promises: {
+        upsertDocWithPath: sinon.stub().resolves({
+          doc: { _id: 'doc-created' },
+          folder: { _id: 'folder-one' },
+        }),
       },
     }
     ctx.AgentEvent = {
@@ -71,6 +80,9 @@ describe('AiAgentPatchManager', function () {
         default: ctx.DocumentUpdaterHandler,
       })
     )
+    vi.doMock('../../../../app/src/Features/Editor/EditorController', () => ({
+      default: ctx.EditorController,
+    }))
     vi.doMock('../../../../app/src/models/AgentPatch', () => ({
       AgentPatch: ctx.AgentPatch,
     }))
@@ -139,6 +151,37 @@ describe('AiAgentPatchManager', function () {
     ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
   })
 
+  it('creates pending create_doc patches for new text documents', async function (ctx) {
+    const patch = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Create methods section',
+      operations: [
+        {
+          type: 'create_doc',
+          path: 'sections/methods.tex',
+          content: '\\section{Methods}',
+        },
+      ],
+    })
+
+    expect(patch.operations[0]).to.include({
+      type: 'create_doc',
+      path: '/sections/methods.tex',
+      content: '\\section{Methods}',
+    })
+    expect(patch.baseRevision['/sections/methods.tex']).to.deep.equal({
+      docId: null,
+      sha256: null,
+      exists: false,
+    })
+    expect(patch.operations[0].diff.lines).to.deep.include({
+      type: 'add',
+      content: '\\section{Methods}',
+    })
+  })
+
   it('applies a pending patch through DocumentUpdaterHandler', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -176,6 +219,37 @@ describe('AiAgentPatchManager', function () {
     expect(ctx.patchDocument.save).to.have.been.calledOnce
     expect(patch.status).to.equal('applied')
     expect(ctx.AgentEvent.create).to.have.been.calledTwice
+  })
+
+  it('applies create_doc patches through EditorController', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Create methods section',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/sections/methods.tex',
+          content: '\\section{Methods}',
+        },
+      ],
+    })
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.upsertDocWithPath).to.have.been.calledWith(
+      'project-one',
+      '/sections/methods.tex',
+      ['\\section{Methods}'],
+      'agent',
+      'reviewer-one'
+    )
+    expect(patch.status).to.equal('applied')
   })
 
   it('marks a patch conflicted when the document changed', async function (ctx) {

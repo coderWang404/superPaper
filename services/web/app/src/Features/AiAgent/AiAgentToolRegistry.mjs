@@ -42,12 +42,19 @@ const PatchProposeInputSchema = z.object({
   summary: z.string().trim().max(1000).optional(),
   operations: z
     .array(
-      z.object({
-        type: z.literal('replace_text'),
-        path: z.string().trim().min(1).max(500),
-        oldText: z.string().min(1).max(50_000),
-        newText: z.string().max(50_000),
-      })
+      z.discriminatedUnion('type', [
+        z.object({
+          type: z.literal('replace_text'),
+          path: z.string().trim().min(1).max(500),
+          oldText: z.string().min(1).max(50_000),
+          newText: z.string().max(50_000),
+        }),
+        z.object({
+          type: z.literal('create_doc'),
+          path: z.string().trim().min(1).max(500),
+          content: z.string().max(50_000),
+        }),
+      ])
     )
     .min(1)
     .max(8),
@@ -105,7 +112,7 @@ const TOOL_DEFINITIONS = [
   {
     name: 'patch.propose',
     description:
-      'Create a pending replace_text patch for user review. This does not edit files.',
+      'Create a pending replace_text or create_doc patch for user review. This does not edit files.',
     inputSchema: PatchProposeInputSchema,
     access: 'write',
     requiresApproval: true,

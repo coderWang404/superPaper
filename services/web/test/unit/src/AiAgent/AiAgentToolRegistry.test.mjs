@@ -67,7 +67,7 @@ describe('AiAgentToolRegistry', function () {
     expect(ctx.Registry.listToolDefinitions()).to.deep.include({
       name: 'patch.propose',
       description:
-        'Create a pending replace_text patch for user review. This does not edit files.',
+        'Create a pending replace_text or create_doc patch for user review. This does not edit files.',
       access: 'write',
       requiresApproval: true,
     })
@@ -188,6 +188,39 @@ describe('AiAgentToolRegistry', function () {
         summary: 'Update wording',
         operations: [{ type: 'replace_text', path: '/main.tex' }],
       },
+    })
+  })
+
+  it('accepts create_doc operations for pending patches', async function (ctx) {
+    await ctx.Registry.executeTool({
+      name: 'patch.propose',
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      input: {
+        summary: 'Create methods',
+        operations: [
+          {
+            type: 'create_doc',
+            path: '/sections/methods.tex',
+            content: '\\section{Methods}',
+          },
+        ],
+      },
+    })
+
+    expect(ctx.createPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      summary: 'Create methods',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/sections/methods.tex',
+          content: '\\section{Methods}',
+        },
+      ],
     })
   })
 })

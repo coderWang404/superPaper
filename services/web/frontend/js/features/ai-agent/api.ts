@@ -75,7 +75,7 @@ export type ProjectAiAgentPatchDiffLine = {
   content: string
 }
 
-export type ProjectAiAgentPatchOperation = {
+export type ProjectAiAgentPatchReplaceTextOperation = {
   type: 'replace_text'
   path: string
   docId: string
@@ -93,6 +93,25 @@ export type ProjectAiAgentPatchOperation = {
     lines: ProjectAiAgentPatchDiffLine[]
   }
 }
+
+export type ProjectAiAgentPatchCreateDocOperation = {
+  type: 'create_doc'
+  path: string
+  content: string
+  proposedSha256: string
+  diff: {
+    path: string
+    oldStart: number
+    oldLines: number
+    newStart: number
+    newLines: number
+    lines: ProjectAiAgentPatchDiffLine[]
+  }
+}
+
+export type ProjectAiAgentPatchOperation =
+  | ProjectAiAgentPatchReplaceTextOperation
+  | ProjectAiAgentPatchCreateDocOperation
 
 export type ProjectAiAgentPatch = {
   id: string
