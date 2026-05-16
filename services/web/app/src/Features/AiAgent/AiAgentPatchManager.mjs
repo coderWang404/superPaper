@@ -75,7 +75,7 @@ export async function createPatch({
   const baseRevision = {}
   for (const operation of normalizedOperations) {
     baseRevision[operation.path] =
-      operation.type === 'replace_text'
+      operation.type === 'replace_text' || operation.type === 'delete_doc'
         ? {
             docId: operation.docId,
             sha256: operation.baseSha256,
@@ -96,7 +96,7 @@ export async function createPatch({
     baseRevision,
     operations: normalizedOperations,
     summary: String(summary || '').slice(0, 1000),
-    riskLevel: normalizedOperations.length === 1 ? 'low' : 'medium',
+    riskLevel: riskLevelForOperations(normalizedOperations),
   })
 
   return publicPatch(patch)
@@ -142,6 +142,15 @@ export async function applyPatch({ projectId, userId, patchId }) {
         patch,
         docs,
         files,
+        appliedOperations,
+      })
+    } else if (operation.type === 'delete_doc') {
+      await applyDeleteDocOperation({
+        operation,
+        projectId,
+        userId,
+        patch,
+        docs,
         appliedOperations,
       })
     } else {
@@ -258,9 +267,12 @@ function normalizeOperation(operation, { docs, files }) {
   if (operation?.type === 'create_doc') {
     return normalizeCreateDocOperation(operation, { docs, files })
   }
+  if (operation?.type === 'delete_doc') {
+    return normalizeDeleteDocOperation(operation, docs)
+  }
   throw new AiAgentPatchError(
     'AGENT_PATCH_UNSUPPORTED_OPERATION',
-    'Agent patch only supports replace_text and create_doc operations'
+    'Agent patch only supports replace_text, create_doc, and delete_doc operations'
   )
 }
 
@@ -330,6 +342,33 @@ function normalizeCreateDocOperation(operation, { docs, files }) {
   }
 }
 
+function normalizeDeleteDocOperation(operation, docs) {
+  const projectPath = normalizeProjectPath(operation.path)
+  assertSafePath(projectPath)
+
+  const doc = docs[projectPath]
+  if (!doc) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_FILE_NOT_FOUND',
+      'Agent patch target document was not found'
+    )
+  }
+
+  const content = getDocText(doc)
+  return {
+    type: 'delete_doc',
+    path: projectPath,
+    docId: doc._id?.toString?.() || doc._id,
+    baseSha256: sha256(content),
+    baseRev: doc.rev ?? null,
+    diff: buildSimpleLineDiff({
+      path: projectPath,
+      before: content,
+      after: '',
+    }),
+  }
+}
+
 function publicOperation(operation) {
   return {
     type: operation.type,
@@ -343,6 +382,13 @@ function publicOperation(operation) {
     baseRev: operation.baseRev ?? null,
     diff: operation.diff,
   }
+}
+
+function riskLevelForOperations(operations) {
+  if (operations.some(operation => operation.type === 'delete_doc')) {
+    return 'high'
+  }
+  return operations.length === 1 ? 'low' : 'medium'
 }
 
 async function applyReplaceTextOperation({
@@ -422,6 +468,47 @@ async function applyCreateDocOperation({
     path: operation.path,
     docId: doc?._id?.toString?.() || doc?._id || null,
     appliedSha256: sha256(operation.content || ''),
+  })
+}
+
+async function applyDeleteDocOperation({
+  operation,
+  projectId,
+  userId,
+  patch,
+  docs,
+  appliedOperations,
+}) {
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+
+  const currentContent = getDocText(doc)
+  if (sha256(currentContent) !== operation.baseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+
+  await EditorController.promises.deleteEntity(
+    projectId,
+    operation.docId,
+    'doc',
+    'agent',
+    userId
+  )
+  appliedOperations.push({
+    type: operation.type,
+    path: operation.path,
+    docId: operation.docId,
+    baseSha256: operation.baseSha256,
   })
 }
 

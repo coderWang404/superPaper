@@ -55,6 +55,10 @@ const PatchProposeInputSchema = z.object({
           path: z.string().trim().min(1).max(500),
           content: z.string().max(50_000),
         }),
+        z.object({
+          type: z.literal('delete_doc'),
+          path: z.string().trim().min(1).max(500),
+        }),
       ])
     )
     .min(1)
@@ -113,7 +117,7 @@ const TOOL_DEFINITIONS = [
   {
     name: 'patch.propose',
     description:
-      'Create a pending replace_text or create_doc patch for user review. This does not edit files.',
+      'Create a pending replace_text, create_doc, or delete_doc patch for user review. This does not edit files.',
     inputSchema: PatchProposeInputSchema,
     access: 'write',
     requiresApproval: true,

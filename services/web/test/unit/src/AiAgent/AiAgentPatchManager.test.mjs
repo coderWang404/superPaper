@@ -46,6 +46,7 @@ describe('AiAgentPatchManager', function () {
           doc: { _id: 'doc-created' },
           folder: { _id: 'folder-one' },
         }),
+        deleteEntity: sinon.stub().resolves(),
       },
     }
     ctx.AgentEvent = {
@@ -196,6 +197,37 @@ describe('AiAgentPatchManager', function () {
     })
   })
 
+  it('creates pending delete_doc patches with a removal diff', async function (ctx) {
+    const patch = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Remove obsolete note',
+      operations: [
+        {
+          type: 'delete_doc',
+          path: 'main.tex',
+        },
+      ],
+    })
+
+    expect(patch.riskLevel).to.equal('high')
+    expect(patch.operations[0]).to.include({
+      type: 'delete_doc',
+      path: '/main.tex',
+      docId: 'doc-main',
+      baseRev: 7,
+    })
+    expect(patch.baseRevision['/main.tex']).to.deep.include({
+      docId: 'doc-main',
+      rev: 7,
+    })
+    expect(patch.operations[0].baseSha256).to.match(/^[a-f0-9]{64}$/)
+    expect(patch.operations[0].diff.lines.map(line => line.type)).to.include(
+      'remove'
+    )
+  })
+
   it('applies a pending patch through DocumentUpdaterHandler', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -281,6 +313,39 @@ describe('AiAgentPatchManager', function () {
     expect(patch.compileResult.status).to.equal('success')
   })
 
+  it('applies delete_doc patches through EditorController', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Remove obsolete note',
+      operations: [
+        {
+          type: 'delete_doc',
+          path: '/main.tex',
+        },
+      ],
+    })
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.deleteEntity).to.have.been.calledWith(
+      'project-one',
+      'doc-main',
+      'doc',
+      'agent',
+      'reviewer-one'
+    )
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(patch.status).to.equal('applied')
+    expect(patch.compileResult.status).to.equal('success')
+  })
+
   it('marks a patch conflicted when the document changed', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -332,6 +397,7 @@ describe('AiAgentPatchManager', function () {
       .called
     expect(ctx.EditorController.promises.upsertDocWithPath).to.not.have.been
       .called
+    expect(ctx.EditorController.promises.deleteEntity).to.not.have.been.called
     expect(ctx.CompileManager.promises.compile).to.not.have.been.called
     expect(patch.status).to.equal('rejected')
   })

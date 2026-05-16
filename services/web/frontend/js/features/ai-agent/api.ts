@@ -109,9 +109,26 @@ export type ProjectAiAgentPatchCreateDocOperation = {
   }
 }
 
+export type ProjectAiAgentPatchDeleteDocOperation = {
+  type: 'delete_doc'
+  path: string
+  docId: string
+  baseSha256: string
+  baseRev: number | null
+  diff: {
+    path: string
+    oldStart: number
+    oldLines: number
+    newStart: number
+    newLines: number
+    lines: ProjectAiAgentPatchDiffLine[]
+  }
+}
+
 export type ProjectAiAgentPatchOperation =
   | ProjectAiAgentPatchReplaceTextOperation
   | ProjectAiAgentPatchCreateDocOperation
+  | ProjectAiAgentPatchDeleteDocOperation
 
 export type ProjectAiAgentPatch = {
   id: string
