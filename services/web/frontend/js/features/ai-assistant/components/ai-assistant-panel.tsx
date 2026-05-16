@@ -488,6 +488,11 @@ function AgentPatchReview({
         </div>
       ))}
       {error && <div className="ai-assistant-agent-patch-error">{error}</div>}
+      {patch.compileResult && (
+        <div className="ai-assistant-agent-compile-result">
+          Compile: {patch.compileResult.status}
+        </div>
+      )}
       <div className="ai-assistant-agent-patch-actions">
         <OLButton
           type="button"

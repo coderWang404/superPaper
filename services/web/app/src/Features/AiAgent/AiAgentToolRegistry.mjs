@@ -1,6 +1,7 @@
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { z } from 'zod'
+import { AgentEvent } from '../../models/AgentEvent.mjs'
 import { createPatch } from './AiAgentPatchManager.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 
@@ -293,11 +294,33 @@ async function getSelection({ selection }) {
   }
 }
 
-async function getLastCompileResult() {
+async function getLastCompileResult({ projectId, sessionId }) {
+  if (!sessionId) {
+    return {
+      available: false,
+      message: 'No agent session is attached to this tool call.',
+    }
+  }
+
+  const event = await AgentEvent.findOne({
+    projectId,
+    sessionId,
+    type: 'compile_result',
+  })
+    .sort({ sequence: -1 })
+    .exec()
+
+  if (!event) {
+    return {
+      available: false,
+      message: 'No compile result has been recorded for this agent session.',
+    }
+  }
+
   return {
-    available: false,
-    message:
-      'Last compile result is not attached to the read-only agent runtime yet.',
+    available: true,
+    patchId: event.payload?.patchId || null,
+    result: event.payload?.result || null,
   }
 }
 

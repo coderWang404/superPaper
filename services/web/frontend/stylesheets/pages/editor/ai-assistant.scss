@@ -256,6 +256,12 @@
   font-size: var(--font-size-01);
 }
 
+.ai-assistant-agent-compile-result {
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-01);
+  font-weight: 700;
+}
+
 .ai-assistant-context-files {
   display: grid;
   gap: var(--spacing-02);

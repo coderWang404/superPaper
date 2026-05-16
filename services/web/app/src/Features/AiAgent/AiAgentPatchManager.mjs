@@ -3,6 +3,7 @@ import path from 'node:path'
 import { AgentEvent } from '../../models/AgentEvent.mjs'
 import { AgentPatch } from '../../models/AgentPatch.mjs'
 import { AgentSession } from '../../models/AgentSession.mjs'
+import CompileManager from '../Compile/CompileManager.mjs'
 import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import EditorController from '../Editor/EditorController.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
@@ -157,6 +158,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
   patch.approvedAt = patch.approvedAt || new Date()
   patch.appliedAt = new Date()
   await patch.save()
+  const publicAppliedPatch = publicPatch(patch)
 
   await recordPatchEvent({
     sessionId: patch.sessionId,
@@ -178,12 +180,18 @@ export async function applyPatch({ projectId, userId, patchId }) {
       operations: appliedOperations,
     },
   })
+  publicAppliedPatch.compileResult = await compileAfterPatch({
+    sessionId: patch.sessionId,
+    projectId,
+    userId,
+    patchId: patch._id?.toString?.() || patch.id,
+  })
   await AgentSession.updateOne(
     { _id: patch.sessionId, projectId },
     { $set: { status: 'completed', completedAt: new Date() } }
   ).exec()
 
-  return publicPatch(patch)
+  return publicAppliedPatch
 }
 
 export function publicPatch(patch) {
@@ -200,6 +208,7 @@ export function publicPatch(patch) {
     riskLevel: patch.riskLevel || 'low',
     createdAt: patch.createdAt || null,
     appliedAt: patch.appliedAt || null,
+    compileResult: patch.compileResult || null,
   }
 }
 
@@ -486,6 +495,65 @@ async function recordPatchEvent({ sessionId, projectId, userId, type, payload })
     payload,
     redactionVersion: 1,
   })
+}
+
+async function compileAfterPatch({ sessionId, projectId, userId, patchId }) {
+  await recordPatchEvent({
+    sessionId,
+    projectId,
+    userId,
+    type: 'compile_started',
+    payload: { patchId },
+  })
+
+  let compileResult
+  try {
+    compileResult = publicCompileResult(
+      await CompileManager.promises.compile(projectId, userId, {
+        isAutoCompile: false,
+        fileLineErrors: true,
+        stopOnFirstError: false,
+      })
+    )
+  } catch (err) {
+    compileResult = {
+      ok: false,
+      status: 'failed',
+      message: 'Compile request failed',
+    }
+  }
+
+  await recordPatchEvent({
+    sessionId,
+    projectId,
+    userId,
+    type: 'compile_result',
+    payload: {
+      patchId,
+      result: compileResult,
+    },
+  })
+  return compileResult
+}
+
+function publicCompileResult(result) {
+  return {
+    ok: true,
+    status: result.status || 'unknown',
+    buildId: result.buildId || null,
+    clsiServerId: result.clsiServerId || null,
+    outputFiles: (result.outputFiles || [])
+      .slice(0, 50)
+      .map(file => ({
+        path: file.path,
+        type: file.type || null,
+        size: typeof file.size === 'number' ? file.size : null,
+      })),
+    validationProblems: Array.isArray(result.validationProblems)
+      ? result.validationProblems.slice(0, 25)
+      : result.validationProblems || null,
+    timings: result.timings || null,
+  }
 }
 
 function buildSimpleLineDiff({ path: projectPath, before, after }) {

@@ -29,6 +29,17 @@ describe('AiAgentPatchManager', function () {
         setDocument: sinon.stub().resolves({ rev: 8, modified: true }),
       },
     }
+    ctx.CompileManager = {
+      promises: {
+        compile: sinon.stub().resolves({
+          status: 'success',
+          buildId: 'build-one',
+          outputFiles: [{ path: 'output.pdf', type: 'pdf', size: 123 }],
+          validationProblems: [],
+          timings: { compileE2E: 42 },
+        }),
+      },
+    }
     ctx.EditorController = {
       promises: {
         upsertDocWithPath: sinon.stub().resolves({
@@ -80,6 +91,9 @@ describe('AiAgentPatchManager', function () {
         default: ctx.DocumentUpdaterHandler,
       })
     )
+    vi.doMock('../../../../app/src/Features/Compile/CompileManager', () => ({
+      default: ctx.CompileManager,
+    }))
     vi.doMock('../../../../app/src/Features/Editor/EditorController', () => ({
       default: ctx.EditorController,
     }))
@@ -218,7 +232,21 @@ describe('AiAgentPatchManager', function () {
     )
     expect(ctx.patchDocument.save).to.have.been.calledOnce
     expect(patch.status).to.equal('applied')
-    expect(ctx.AgentEvent.create).to.have.been.calledTwice
+    expect(ctx.CompileManager.promises.compile).to.have.been.calledWith(
+      'project-one',
+      'reviewer-one',
+      {
+        isAutoCompile: false,
+        fileLineErrors: true,
+        stopOnFirstError: false,
+      }
+    )
+    expect(patch.compileResult).to.include({
+      ok: true,
+      status: 'success',
+      buildId: 'build-one',
+    })
+    expect(ctx.AgentEvent.create).to.have.callCount(4)
   })
 
   it('applies create_doc patches through EditorController', async function (ctx) {
@@ -250,6 +278,7 @@ describe('AiAgentPatchManager', function () {
       'reviewer-one'
     )
     expect(patch.status).to.equal('applied')
+    expect(patch.compileResult.status).to.equal('success')
   })
 
   it('marks a patch conflicted when the document changed', async function (ctx) {

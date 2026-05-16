@@ -125,6 +125,13 @@ export type ProjectAiAgentPatch = {
   riskLevel: 'low' | 'medium' | 'high'
   createdAt: string | null
   appliedAt: string | null
+  compileResult?: {
+    ok: boolean
+    status: string
+    buildId?: string | null
+    outputFiles?: Array<{ path: string; type: string | null; size: number | null }>
+    validationProblems?: unknown
+  } | null
 }
 
 export type CreateProjectAiAgentSessionRequest = {

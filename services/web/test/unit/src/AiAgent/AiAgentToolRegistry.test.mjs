@@ -40,7 +40,22 @@ describe('AiAgentToolRegistry', function () {
       summary: 'Update wording',
       operations: [{ type: 'replace_text', path: '/main.tex' }],
     })
+    ctx.AgentEvent = {
+      findOne: sinon.stub().returns({
+        sort: sinon.stub().returns({
+          exec: sinon.stub().resolves({
+            payload: {
+              patchId: 'patch-one',
+              result: { ok: true, status: 'success' },
+            },
+          }),
+        }),
+      }),
+    }
 
+    vi.doMock('../../../../app/src/models/AgentEvent', () => ({
+      AgentEvent: ctx.AgentEvent,
+    }))
     vi.doMock(
       '../../../../app/src/Features/Project/ProjectEntityHandler',
       () => ({
@@ -221,6 +236,26 @@ describe('AiAgentToolRegistry', function () {
           content: '\\section{Methods}',
         },
       ],
+    })
+  })
+
+  it('returns the last compile result recorded on the agent session', async function (ctx) {
+    const result = await ctx.Registry.executeTool({
+      name: 'compile.get_last_result',
+      projectId: 'project-id',
+      sessionId: 'session-id',
+      input: {},
+    })
+
+    expect(ctx.AgentEvent.findOne).to.have.been.calledWith({
+      projectId: 'project-id',
+      sessionId: 'session-id',
+      type: 'compile_result',
+    })
+    expect(result).to.deep.equal({
+      available: true,
+      patchId: 'patch-one',
+      result: { ok: true, status: 'success' },
     })
   })
 })

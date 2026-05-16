@@ -226,6 +226,13 @@ describe('<AiAssistantPanel />', function () {
         ...mockPatch(),
         status: 'applied',
         appliedAt: '2026-05-16T00:00:00.000Z',
+        compileResult: {
+          ok: true,
+          status: 'success',
+          buildId: 'build-one',
+          outputFiles: [{ path: 'output.pdf', type: 'pdf', size: 123 }],
+          validationProblems: [],
+        },
       },
     })
 
@@ -249,6 +256,7 @@ describe('<AiAssistantPanel />', function () {
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 
     await screen.findByText('applied')
+    await screen.findByText('Compile: success')
     const applyCall = fetchMock.callHistory.calls(
       '/project/project123/ai/agent/patches/patch-one/apply'
     )[0]
