@@ -47,6 +47,7 @@ describe('AiAgentPatchManager', function () {
           folder: { _id: 'folder-one' },
         }),
         deleteEntity: sinon.stub().resolves(),
+        renameEntity: sinon.stub().resolves(),
       },
     }
     ctx.AgentEvent = {
@@ -228,6 +229,42 @@ describe('AiAgentPatchManager', function () {
     )
   })
 
+  it('creates pending rename_entity patches with a path diff', async function (ctx) {
+    const patch = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Rename main document',
+      operations: [
+        {
+          type: 'rename_entity',
+          path: 'main.tex',
+          newName: 'paper.tex',
+        },
+      ],
+    })
+
+    expect(patch.riskLevel).to.equal('medium')
+    expect(patch.operations[0]).to.include({
+      type: 'rename_entity',
+      entityType: 'doc',
+      path: '/main.tex',
+      newName: 'paper.tex',
+      newPath: '/paper.tex',
+      docId: 'doc-main',
+      baseRev: 7,
+    })
+    expect(patch.operations[0].baseSha256).to.match(/^[a-f0-9]{64}$/)
+    expect(patch.operations[0].diff.lines).to.deep.include({
+      type: 'remove',
+      content: '/main.tex',
+    })
+    expect(patch.operations[0].diff.lines).to.deep.include({
+      type: 'add',
+      content: '/paper.tex',
+    })
+  })
+
   it('applies a pending patch through DocumentUpdaterHandler', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -346,6 +383,41 @@ describe('AiAgentPatchManager', function () {
     expect(patch.compileResult.status).to.equal('success')
   })
 
+  it('applies rename_entity patches through EditorController', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Rename main document',
+      operations: [
+        {
+          type: 'rename_entity',
+          path: '/main.tex',
+          newName: 'paper.tex',
+        },
+      ],
+    })
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.renameEntity).to.have.been.calledWith(
+      'project-one',
+      'doc-main',
+      'doc',
+      'paper.tex',
+      'reviewer-one',
+      'agent'
+    )
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(patch.status).to.equal('applied')
+    expect(patch.compileResult.status).to.equal('success')
+  })
+
   it('marks a patch conflicted when the document changed', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -398,6 +470,7 @@ describe('AiAgentPatchManager', function () {
     expect(ctx.EditorController.promises.upsertDocWithPath).to.not.have.been
       .called
     expect(ctx.EditorController.promises.deleteEntity).to.not.have.been.called
+    expect(ctx.EditorController.promises.renameEntity).to.not.have.been.called
     expect(ctx.CompileManager.promises.compile).to.not.have.been.called
     expect(patch.status).to.equal('rejected')
   })

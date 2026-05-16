@@ -75,7 +75,9 @@ export async function createPatch({
   const baseRevision = {}
   for (const operation of normalizedOperations) {
     baseRevision[operation.path] =
-      operation.type === 'replace_text' || operation.type === 'delete_doc'
+      operation.type === 'replace_text' ||
+      operation.type === 'delete_doc' ||
+      operation.type === 'rename_entity'
         ? {
             docId: operation.docId,
             sha256: operation.baseSha256,
@@ -151,6 +153,16 @@ export async function applyPatch({ projectId, userId, patchId }) {
         userId,
         patch,
         docs,
+        appliedOperations,
+      })
+    } else if (operation.type === 'rename_entity') {
+      await applyRenameEntityOperation({
+        operation,
+        projectId,
+        userId,
+        patch,
+        docs,
+        files,
         appliedOperations,
       })
     } else {
@@ -270,9 +282,12 @@ function normalizeOperation(operation, { docs, files }) {
   if (operation?.type === 'delete_doc') {
     return normalizeDeleteDocOperation(operation, docs)
   }
+  if (operation?.type === 'rename_entity') {
+    return normalizeRenameEntityOperation(operation, { docs, files })
+  }
   throw new AiAgentPatchError(
     'AGENT_PATCH_UNSUPPORTED_OPERATION',
-    'Agent patch only supports replace_text, create_doc, and delete_doc operations'
+    'Agent patch only supports replace_text, create_doc, delete_doc, and rename_entity operations'
   )
 }
 
@@ -369,10 +384,60 @@ function normalizeDeleteDocOperation(operation, docs) {
   }
 }
 
+function normalizeRenameEntityOperation(operation, { docs, files }) {
+  const projectPath = normalizeProjectPath(operation.path)
+  assertSafePath(projectPath)
+
+  const doc = docs[projectPath]
+  if (!doc) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_FILE_NOT_FOUND',
+      'Agent patch target document was not found'
+    )
+  }
+
+  const newName = normalizeEntityName(operation.newName)
+  const newPath = path.posix.join(path.posix.dirname(projectPath), newName)
+  assertSafePath(newPath)
+  assertAllowedCreateDocExtension(newPath)
+  if (newPath === projectPath) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_NOOP',
+      'Agent patch rename does not change the path'
+    )
+  }
+  if (docs[newPath] || files[newPath]) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_TARGET_EXISTS',
+      'Agent patch target path already exists'
+    )
+  }
+
+  const content = getDocText(doc)
+  return {
+    type: 'rename_entity',
+    entityType: 'doc',
+    path: projectPath,
+    newName,
+    newPath,
+    docId: doc._id?.toString?.() || doc._id,
+    baseSha256: sha256(content),
+    baseRev: doc.rev ?? null,
+    diff: buildSimpleLineDiff({
+      path: projectPath,
+      before: projectPath,
+      after: newPath,
+    }),
+  }
+}
+
 function publicOperation(operation) {
   return {
     type: operation.type,
+    entityType: operation.entityType,
     path: operation.path,
+    newName: operation.newName,
+    newPath: operation.newPath,
     docId: operation.docId,
     oldText: operation.oldText,
     newText: operation.newText,
@@ -387,6 +452,9 @@ function publicOperation(operation) {
 function riskLevelForOperations(operations) {
   if (operations.some(operation => operation.type === 'delete_doc')) {
     return 'high'
+  }
+  if (operations.some(operation => operation.type === 'rename_entity')) {
+    return 'medium'
   }
   return operations.length === 1 ? 'low' : 'medium'
 }
@@ -512,6 +580,58 @@ async function applyDeleteDocOperation({
   })
 }
 
+async function applyRenameEntityOperation({
+  operation,
+  projectId,
+  userId,
+  patch,
+  docs,
+  files,
+  appliedOperations,
+}) {
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+  if (docs[operation.newPath] || files[operation.newPath]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+
+  const currentContent = getDocText(doc)
+  if (sha256(currentContent) !== operation.baseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+
+  await EditorController.promises.renameEntity(
+    projectId,
+    operation.docId,
+    'doc',
+    operation.newName,
+    userId,
+    'agent'
+  )
+  appliedOperations.push({
+    type: operation.type,
+    entityType: 'doc',
+    path: operation.path,
+    newPath: operation.newPath,
+    docId: operation.docId,
+    baseSha256: operation.baseSha256,
+  })
+}
+
 function assertUniqueOperationPaths(operations) {
   const paths = new Set()
   for (const operation of operations) {
@@ -527,6 +647,29 @@ function assertUniqueOperationPaths(operations) {
     }
     paths.add(projectPath)
   }
+}
+
+function normalizeEntityName(name) {
+  if (typeof name !== 'string') {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_INVALID_PATH',
+      'Agent patch path is invalid'
+    )
+  }
+  const trimmedName = name.trim()
+  if (
+    !trimmedName ||
+    trimmedName.includes('/') ||
+    trimmedName.includes('\\') ||
+    trimmedName === '.' ||
+    trimmedName === '..'
+  ) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_INVALID_PATH',
+      'Agent patch path is invalid'
+    )
+  }
+  return trimmedName
 }
 
 function assertAllowedCreateDocExtension(projectPath) {

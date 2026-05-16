@@ -59,6 +59,11 @@ const PatchProposeInputSchema = z.object({
           type: z.literal('delete_doc'),
           path: z.string().trim().min(1).max(500),
         }),
+        z.object({
+          type: z.literal('rename_entity'),
+          path: z.string().trim().min(1).max(500),
+          newName: z.string().trim().min(1).max(255),
+        }),
       ])
     )
     .min(1)
@@ -117,7 +122,7 @@ const TOOL_DEFINITIONS = [
   {
     name: 'patch.propose',
     description:
-      'Create a pending replace_text, create_doc, or delete_doc patch for user review. This does not edit files.',
+      'Create a pending replace_text, create_doc, delete_doc, or rename_entity patch for user review. This does not edit files.',
     inputSchema: PatchProposeInputSchema,
     access: 'write',
     requiresApproval: true,

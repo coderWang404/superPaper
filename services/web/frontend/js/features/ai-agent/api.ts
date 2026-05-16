@@ -125,10 +125,30 @@ export type ProjectAiAgentPatchDeleteDocOperation = {
   }
 }
 
+export type ProjectAiAgentPatchRenameEntityOperation = {
+  type: 'rename_entity'
+  entityType: 'doc'
+  path: string
+  newName: string
+  newPath: string
+  docId: string
+  baseSha256: string
+  baseRev: number | null
+  diff: {
+    path: string
+    oldStart: number
+    oldLines: number
+    newStart: number
+    newLines: number
+    lines: ProjectAiAgentPatchDiffLine[]
+  }
+}
+
 export type ProjectAiAgentPatchOperation =
   | ProjectAiAgentPatchReplaceTextOperation
   | ProjectAiAgentPatchCreateDocOperation
   | ProjectAiAgentPatchDeleteDocOperation
+  | ProjectAiAgentPatchRenameEntityOperation
 
 export type ProjectAiAgentPatch = {
   id: string
