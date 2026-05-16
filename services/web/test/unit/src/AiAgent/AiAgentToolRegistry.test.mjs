@@ -40,6 +40,17 @@ describe('AiAgentToolRegistry', function () {
       summary: 'Update wording',
       operations: [{ type: 'replace_text', path: '/main.tex' }],
     })
+    ctx.CompileManager = {
+      promises: {
+        compile: sinon.stub().resolves({
+          status: 'success',
+          buildId: 'build-one',
+          outputFiles: [{ path: 'output.pdf', type: 'pdf', size: 123 }],
+          validationProblems: [],
+          timings: { compileE2E: 42 },
+        }),
+      },
+    }
     ctx.AgentEvent = {
       findOne: sinon.stub().returns({
         sort: sinon.stub().returns({
@@ -68,6 +79,9 @@ describe('AiAgentToolRegistry', function () {
         createPatch: ctx.createPatch,
       })
     )
+    vi.doMock('../../../../app/src/Features/Compile/CompileManager', () => ({
+      default: ctx.CompileManager,
+    }))
 
     ctx.Registry = await import(modulePath)
   })
@@ -85,6 +99,12 @@ describe('AiAgentToolRegistry', function () {
         'Create a pending replace_text, create_doc, delete_doc, rename_entity, or move_entity patch for user review. This does not edit files.',
       access: 'write',
       requiresApproval: true,
+    })
+    expect(ctx.Registry.listToolDefinitions()).to.deep.include({
+      name: 'compile.run',
+      description: 'Run a controlled project compile and return a compact result.',
+      access: 'read',
+      requiresApproval: false,
     })
   })
 
@@ -354,5 +374,32 @@ describe('AiAgentToolRegistry', function () {
       patchId: 'patch-one',
       result: { ok: true, status: 'success' },
     })
+  })
+
+  it('runs a controlled project compile', async function (ctx) {
+    const result = await ctx.Registry.executeTool({
+      name: 'compile.run',
+      projectId: 'project-id',
+      userId: 'user-id',
+      input: { stopOnFirstError: true },
+    })
+
+    expect(ctx.CompileManager.promises.compile).to.have.been.calledWith(
+      'project-id',
+      'user-id',
+      {
+        isAutoCompile: false,
+        fileLineErrors: true,
+        stopOnFirstError: true,
+      }
+    )
+    expect(result).to.include({
+      ok: true,
+      status: 'success',
+      buildId: 'build-one',
+    })
+    expect(result.outputFiles).to.deep.equal([
+      { path: 'output.pdf', type: 'pdf', size: 123 },
+    ])
   })
 })

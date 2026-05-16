@@ -10,6 +10,7 @@ const BUILTIN_SKILLS = [
       'project.read_file',
       'project.search',
       'compile.get_last_result',
+      'compile.run',
       'patch.propose',
     ],
     content:

@@ -284,6 +284,65 @@ describe('AiAgentRuntime', function () {
     expect(result.session.status).to.equal('completed')
   })
 
+  it('records compile events around compile.run tool calls', async function (ctx) {
+    ctx.createOpenAICompatibleChatCompletion.reset()
+    ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
+      JSON.stringify({
+        toolCalls: [
+          {
+            name: 'compile.run',
+            input: { stopOnFirstError: true },
+          },
+        ],
+      })
+    )
+    ctx.createOpenAICompatibleChatCompletion.onSecondCall().resolves(
+      JSON.stringify({
+        final: 'Compile succeeded.',
+      })
+    )
+    ctx.executeTool.resolves({
+      ok: true,
+      status: 'success',
+      buildId: 'build-one',
+    })
+
+    const streamedEvents = []
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Compile the project',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      onEvent: event => streamedEvents.push(event),
+    })
+
+    expect(ctx.executeTool).to.have.been.calledWith({
+      name: 'compile.run',
+      input: { stopOnFirstError: true },
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      selection: undefined,
+    })
+    expect(streamedEvents.map(event => event.type)).to.deep.equal([
+      'message',
+      'message',
+      'tool_call',
+      'compile_started',
+      'compile_result',
+      'tool_result',
+      'message',
+    ])
+    expect(streamedEvents[4].payload.result).to.deep.equal({
+      ok: true,
+      status: 'success',
+      buildId: 'build-one',
+    })
+    expect(result.answer).to.equal('Compile succeeded.')
+  })
+
   it('keeps sessions waiting for approval when a patch is proposed', async function (ctx) {
     ctx.createOpenAICompatibleChatCompletion.reset()
     ctx.createOpenAICompatibleChatCompletion.resolves(

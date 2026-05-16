@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { AgentEvent } from '../../models/AgentEvent.mjs'
 import { createPatch } from './AiAgentPatchManager.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
+import CompileManager from '../Compile/CompileManager.mjs'
 
 const DEFAULT_READ_CHARS = 12_000
 const MAX_READ_CHARS = 50_000
@@ -39,6 +40,9 @@ const GetMapInputSchema = z.object({
 })
 
 const EmptyInputSchema = z.object({}).default({})
+const CompileRunInputSchema = z.object({
+  stopOnFirstError: z.boolean().optional(),
+})
 const PatchProposeInputSchema = z.object({
   summary: z.string().trim().max(1000).optional(),
   operations: z
@@ -123,6 +127,14 @@ const TOOL_DEFINITIONS = [
     access: 'read',
     requiresApproval: false,
     execute: getLastCompileResult,
+  },
+  {
+    name: 'compile.run',
+    description: 'Run a controlled project compile and return a compact result.',
+    inputSchema: CompileRunInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: runCompile,
   },
   {
     name: 'patch.propose',
@@ -338,6 +350,24 @@ async function getLastCompileResult({ projectId, sessionId }) {
   }
 }
 
+async function runCompile({ projectId, userId, input }) {
+  try {
+    return publicCompileResult(
+      await CompileManager.promises.compile(projectId, userId, {
+        isAutoCompile: false,
+        fileLineErrors: true,
+        stopOnFirstError: input.stopOnFirstError === true,
+      })
+    )
+  } catch {
+    return {
+      ok: false,
+      status: 'failed',
+      message: 'Compile request failed',
+    }
+  }
+}
+
 async function proposePatch({ projectId, userId, sessionId, input }) {
   const patch = await createPatch({
     projectId,
@@ -351,6 +381,26 @@ async function proposePatch({ projectId, userId, sessionId, input }) {
     patchId: patch.id,
     requiresApproval: true,
     patch,
+  }
+}
+
+function publicCompileResult(result) {
+  return {
+    ok: true,
+    status: result.status || 'unknown',
+    buildId: result.buildId || null,
+    clsiServerId: result.clsiServerId || null,
+    outputFiles: (result.outputFiles || [])
+      .slice(0, 50)
+      .map(file => ({
+        path: file.path,
+        type: file.type || null,
+        size: typeof file.size === 'number' ? file.size : null,
+      })),
+    validationProblems: Array.isArray(result.validationProblems)
+      ? result.validationProblems.slice(0, 25)
+      : result.validationProblems || null,
+    timings: result.timings || null,
   }
 }
 

@@ -248,6 +248,12 @@ async function runToolCall({
     input: toolCall.input || {},
   })
   try {
+    const isCompileRun = toolCall.name === 'compile.run'
+    if (isCompileRun) {
+      await eventRecorder.record('compile_started', {
+        source: 'agent_tool',
+      })
+    }
     const result = await executeTool({
       name: toolCall.name,
       input: toolCall.input || {},
@@ -261,6 +267,12 @@ async function runToolCall({
       name: toolCall.name,
       ok: true,
       result: toolObservationResult(result),
+    }
+    if (isCompileRun) {
+      await eventRecorder.record('compile_result', {
+        source: 'agent_tool',
+        result,
+      })
     }
     await eventRecorder.record('tool_result', observation)
     if (result?.patch) {
