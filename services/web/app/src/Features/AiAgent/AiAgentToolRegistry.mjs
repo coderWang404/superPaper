@@ -1,6 +1,7 @@
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { z } from 'zod'
+import { createPatch } from './AiAgentPatchManager.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 
 const DEFAULT_READ_CHARS = 12_000
@@ -37,6 +38,20 @@ const GetMapInputSchema = z.object({
 })
 
 const EmptyInputSchema = z.object({}).default({})
+const PatchProposeInputSchema = z.object({
+  summary: z.string().trim().max(1000).optional(),
+  operations: z
+    .array(
+      z.object({
+        type: z.literal('replace_text'),
+        path: z.string().trim().min(1).max(500),
+        oldText: z.string().min(1).max(50_000),
+        newText: z.string().max(50_000),
+      })
+    )
+    .min(1)
+    .max(8),
+})
 
 const TOOL_DEFINITIONS = [
   {
@@ -87,6 +102,15 @@ const TOOL_DEFINITIONS = [
     requiresApproval: false,
     execute: getLastCompileResult,
   },
+  {
+    name: 'patch.propose',
+    description:
+      'Create a pending replace_text patch for user review. This does not edit files.',
+    inputSchema: PatchProposeInputSchema,
+    access: 'write',
+    requiresApproval: true,
+    execute: proposePatch,
+  },
 ]
 
 const toolsByName = new Map(TOOL_DEFINITIONS.map(tool => [tool.name, tool]))
@@ -108,7 +132,14 @@ export function listToolDefinitions() {
   }))
 }
 
-export async function executeTool({ name, input = {}, projectId, selection }) {
+export async function executeTool({
+  name,
+  input = {},
+  projectId,
+  userId,
+  sessionId,
+  selection,
+}) {
   const tool = toolsByName.get(name)
   if (!tool) {
     throw new AiAgentToolError('AGENT_TOOL_NOT_FOUND', 'Agent tool not found')
@@ -116,6 +147,8 @@ export async function executeTool({ name, input = {}, projectId, selection }) {
   const parsedInput = tool.inputSchema.parse(input || {})
   return tool.execute({
     projectId,
+    userId,
+    sessionId,
     input: parsedInput,
     selection,
   })
@@ -258,6 +291,22 @@ async function getLastCompileResult() {
     available: false,
     message:
       'Last compile result is not attached to the read-only agent runtime yet.',
+  }
+}
+
+async function proposePatch({ projectId, userId, sessionId, input }) {
+  const patch = await createPatch({
+    projectId,
+    userId,
+    sessionId,
+    summary: input.summary,
+    operations: input.operations,
+  })
+
+  return {
+    patchId: patch.id,
+    requiresApproval: true,
+    patch,
   }
 }
 

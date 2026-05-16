@@ -215,6 +215,45 @@ describe('<AiAssistantPanel />', function () {
       model: 'model-one',
     })
   })
+
+  it('renders agent patch review and applies approved patches', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStreamWithPatch()
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/apply', {
+      patch: {
+        ...mockPatch(),
+        status: 'applied',
+        appliedAt: '2026-05-16T00:00:00.000Z',
+      },
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('readonly-default')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Update wording.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+
+    await screen.findByText('Patch review')
+    screen.getByText('Update wording')
+    screen.getByText('/main.tex')
+    screen.getByText('-Old sentence.')
+    screen.getByText('+New sentence.')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    await screen.findByText('applied')
+    const applyCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/apply'
+    )[0]
+    expect(JSON.parse(applyCall.options.body as string)).to.deep.equal({})
+  })
 })
 
 function mockConfig() {
@@ -359,6 +398,84 @@ function mockAgentTurnStream() {
       }) +
       '\n',
   })
+}
+
+function mockAgentTurnStreamWithPatch() {
+  fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+    status: 200,
+    headers: { 'Content-Type': 'application/x-ndjson' },
+    body:
+      JSON.stringify({
+        type: 'event',
+        event: {
+          id: 'event-one',
+          sessionId: 'session-one',
+          sequence: 1,
+          type: 'patch_created',
+          payload: { patch: mockPatch() },
+          createdAt: null,
+        },
+      }) +
+      '\n' +
+      JSON.stringify({
+        type: 'done',
+        session: {
+          id: 'session-one',
+          projectId: 'project123',
+          userId: 'user-one',
+          status: 'waiting_for_approval',
+          mode: 'plan',
+          providerId: 'provider-one',
+          model: 'model-one',
+          task: 'Update wording.',
+          instructionSources: [],
+          enabledSkillIds: ['latex-compile-debug'],
+          enabledPluginIds: [],
+          permissionProfileId: 'readonly-default',
+        },
+        answer: 'Patch ready for review.',
+      }) +
+      '\n',
+  })
+}
+
+function mockPatch() {
+  return {
+    id: 'patch-one',
+    sessionId: 'session-one',
+    projectId: 'project123',
+    createdByUserId: 'user-one',
+    status: 'pending',
+    baseRevision: {},
+    summary: 'Update wording',
+    riskLevel: 'low',
+    createdAt: null,
+    appliedAt: null,
+    operations: [
+      {
+        type: 'replace_text',
+        path: '/main.tex',
+        docId: 'doc-main',
+        oldText: 'Old sentence.',
+        newText: 'New sentence.',
+        baseSha256: 'a'.repeat(64),
+        proposedSha256: 'b'.repeat(64),
+        baseRev: 7,
+        diff: {
+          path: '/main.tex',
+          oldStart: 1,
+          oldLines: 2,
+          newStart: 1,
+          newLines: 2,
+          lines: [
+            { type: 'context', content: '\\begin{document}' },
+            { type: 'remove', content: 'Old sentence.' },
+            { type: 'add', content: 'New sentence.' },
+          ],
+        },
+      },
+    ],
+  }
 }
 
 function makeEditorSelectionProvider(editorSelection: EditorSelection) {

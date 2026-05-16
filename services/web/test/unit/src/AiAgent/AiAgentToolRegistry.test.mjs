@@ -34,11 +34,23 @@ describe('AiAgentToolRegistry', function () {
         }),
       },
     }
+    ctx.createPatch = sinon.stub().resolves({
+      id: 'patch-one',
+      status: 'pending',
+      summary: 'Update wording',
+      operations: [{ type: 'replace_text', path: '/main.tex' }],
+    })
 
     vi.doMock(
       '../../../../app/src/Features/Project/ProjectEntityHandler',
       () => ({
         default: ctx.ProjectEntityHandler,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPatchManager',
+      () => ({
+        createPatch: ctx.createPatch,
       })
     )
 
@@ -51,6 +63,13 @@ describe('AiAgentToolRegistry', function () {
       description: 'Read a text document from the current project.',
       access: 'read',
       requiresApproval: false,
+    })
+    expect(ctx.Registry.listToolDefinitions()).to.deep.include({
+      name: 'patch.propose',
+      description:
+        'Create a pending replace_text patch for user review. This does not edit files.',
+      access: 'write',
+      requiresApproval: true,
     })
   })
 
@@ -125,5 +144,50 @@ describe('AiAgentToolRegistry', function () {
     expect(main.labels).to.deep.equal(['sec:intro'])
     expect(main.citations).to.deep.equal(['paper-one'])
     expect(refs.bibKeys).to.deep.equal(['paper-one'])
+  })
+
+  it('creates pending patches instead of editing files directly', async function (ctx) {
+    const result = await ctx.Registry.executeTool({
+      name: 'patch.propose',
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      input: {
+        summary: 'Update wording',
+        operations: [
+          {
+            type: 'replace_text',
+            path: '/main.tex',
+            oldText: 'old',
+            newText: 'new',
+          },
+        ],
+      },
+    })
+
+    expect(ctx.createPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      summary: 'Update wording',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'old',
+          newText: 'new',
+        },
+      ],
+    })
+    expect(result).to.deep.equal({
+      patchId: 'patch-one',
+      requiresApproval: true,
+      patch: {
+        id: 'patch-one',
+        status: 'pending',
+        summary: 'Update wording',
+        operations: [{ type: 'replace_text', path: '/main.tex' }],
+      },
+    })
   })
 })

@@ -124,6 +124,7 @@ describe('AiAgentRuntime', function () {
         skills: ['latex-compile-debug'],
       },
     ])
+    ctx.AiAgentPatchError = class AiAgentPatchError extends Error {}
 
     vi.doMock('../../../../app/src/models/AgentSession', () => ({
       AgentSession: ctx.AgentSession,
@@ -173,6 +174,12 @@ describe('AiAgentRuntime', function () {
       '../../../../app/src/Features/AiAgent/AiAgentPluginManager',
       () => ({
         listBuiltinPlugins: ctx.listBuiltinPlugins,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPatchManager',
+      () => ({
+        AiAgentPatchError: ctx.AiAgentPatchError,
       })
     )
 
@@ -261,6 +268,8 @@ describe('AiAgentRuntime', function () {
       name: 'project.read_file',
       input: { path: '/main.tex' },
       projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
       selection: undefined,
     })
     expect(result.answer).to.equal('The project contains a main LaTeX document.')
@@ -273,5 +282,71 @@ describe('AiAgentRuntime', function () {
       'message',
     ])
     expect(result.session.status).to.equal('completed')
+  })
+
+  it('keeps sessions waiting for approval when a patch is proposed', async function (ctx) {
+    ctx.createOpenAICompatibleChatCompletion.reset()
+    ctx.createOpenAICompatibleChatCompletion.resolves(
+      JSON.stringify({
+        toolCalls: [
+          {
+            name: 'patch.propose',
+            input: {
+              summary: 'Update wording',
+              operations: [
+                {
+                  type: 'replace_text',
+                  path: '/main.tex',
+                  oldText: 'Old',
+                  newText: 'New',
+                },
+              ],
+            },
+          },
+        ],
+      })
+    )
+    ctx.executeTool.resolves({
+      patchId: 'patch-one',
+      requiresApproval: true,
+      patch: {
+        id: 'patch-one',
+        status: 'pending',
+        summary: 'Update wording',
+        operations: [{ type: 'replace_text', path: '/main.tex' }],
+      },
+    })
+
+    const streamedEvents = []
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update wording',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      onEvent: event => streamedEvents.push(event),
+    })
+
+    expect(ctx.executeTool).to.have.been.calledWith({
+      name: 'patch.propose',
+      input: {
+        summary: 'Update wording',
+        operations: [
+          {
+            type: 'replace_text',
+            path: '/main.tex',
+            oldText: 'Old',
+            newText: 'New',
+          },
+        ],
+      },
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      selection: undefined,
+    })
+    expect(streamedEvents.map(event => event.type)).to.include('patch_created')
+    expect(result.session.status).to.equal('waiting_for_approval')
   })
 })

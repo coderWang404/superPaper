@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import fetchMock from 'fetch-mock'
 
 import {
+  applyProjectAiAgentPatch,
   createProjectAiAgentSession,
   getProjectAiAgentConfig,
   sendProjectAiAgentTurnStream,
@@ -53,6 +54,24 @@ describe('ai-agent api', function () {
       model: 'model-one',
     })
     expect(response.session.id).to.equal('session-one')
+  })
+
+  it('applies reviewed agent patches', async function () {
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/apply', {
+      patch: {
+        id: 'patch-one',
+        status: 'applied',
+        operations: [],
+      },
+    })
+
+    const response = await applyProjectAiAgentPatch('project123', 'patch-one')
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/apply'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({})
+    expect(response.patch.status).to.equal('applied')
   })
 
   it('streams agent events and done payloads', async function () {

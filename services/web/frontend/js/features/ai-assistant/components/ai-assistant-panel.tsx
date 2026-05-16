@@ -15,10 +15,13 @@ import {
   sendProjectAiChatStream,
 } from '@/features/ai-assistant/api'
 import {
+  applyProjectAiAgentPatch,
   createProjectAiAgentSession,
   getProjectAiAgentConfig,
   ProjectAiAgentConfig,
   ProjectAiAgentEvent,
+  ProjectAiAgentPatch,
+  ProjectAiAgentPatchDiffLine,
   ProjectAiAgentSession,
   sendProjectAiAgentTurnStream,
 } from '@/features/ai-agent/api'
@@ -276,7 +279,7 @@ export default function AiAssistantPanel() {
                 </div>
               )}
               {mode === 'agent' && agentEvents.length > 0 && (
-                <AgentEventList events={agentEvents} />
+                <AgentEventList events={agentEvents} projectId={projectId} />
               )}
               {mode === 'agent' && agentAnswer && (
                 <div className="ai-assistant-message ai-assistant-message-assistant">
@@ -379,7 +382,13 @@ function AgentConfigSummary({
   )
 }
 
-function AgentEventList({ events }: { events: ProjectAiAgentEvent[] }) {
+function AgentEventList({
+  events,
+  projectId,
+}: {
+  events: ProjectAiAgentEvent[]
+  projectId: string
+}) {
   return (
     <div className="ai-assistant-agent-events">
       {events.map(event => (
@@ -387,9 +396,16 @@ function AgentEventList({ events }: { events: ProjectAiAgentEvent[] }) {
           <div className="ai-assistant-message-meta">
             {formatAgentEventTitle(event)}
           </div>
-          <div className="ai-assistant-answer-text">
-            {formatAgentEventPayload(event)}
-          </div>
+          {event.type === 'patch_created' && isAgentPatch(event.payload.patch) ? (
+            <AgentPatchReview
+              initialPatch={event.payload.patch}
+              projectId={projectId}
+            />
+          ) : (
+            <div className="ai-assistant-answer-text">
+              {formatAgentEventPayload(event)}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -397,6 +413,12 @@ function AgentEventList({ events }: { events: ProjectAiAgentEvent[] }) {
 }
 
 function formatAgentEventTitle(event: ProjectAiAgentEvent) {
+  if (event.type === 'patch_created') {
+    return 'Patch review'
+  }
+  if (event.type === 'patch_applied') {
+    return 'Patch applied'
+  }
   if (event.type === 'tool_call') {
     return `Tool call: ${String(event.payload.name ?? '')}`
   }
@@ -421,6 +443,88 @@ function formatAgentEventPayload(event: ProjectAiAgentEvent) {
     return payload.message
   }
   return JSON.stringify(payload, null, 2)
+}
+
+function AgentPatchReview({
+  initialPatch,
+  projectId,
+}: {
+  initialPatch: ProjectAiAgentPatch
+  projectId: string
+}) {
+  const [patch, setPatch] = useState(initialPatch)
+  const [applying, setApplying] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleApply() {
+    setApplying(true)
+    setError(null)
+    try {
+      const response = await applyProjectAiAgentPatch(projectId, patch.id)
+      setPatch(response.patch)
+    } catch (applyError) {
+      setError(getErrorMessage(applyError))
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  return (
+    <div className="ai-assistant-agent-patch">
+      <div className="ai-assistant-agent-patch-header">
+        <span>{patch.summary || 'Proposed edit'}</span>
+        <span className={`ai-assistant-agent-patch-status ${patch.status}`}>
+          {patch.status}
+        </span>
+      </div>
+      {patch.operations.map(operation => (
+        <div className="ai-assistant-agent-patch-file" key={operation.path}>
+          <div className="ai-assistant-agent-patch-path">{operation.path}</div>
+          <pre className="ai-assistant-agent-patch-diff">
+            {operation.diff.lines.map((line, index) => (
+              <DiffLine line={line} key={`${operation.path}-${index}`} />
+            ))}
+          </pre>
+        </div>
+      ))}
+      {error && <div className="ai-assistant-agent-patch-error">{error}</div>}
+      <div className="ai-assistant-agent-patch-actions">
+        <OLButton
+          type="button"
+          size="sm"
+          variant="primary"
+          disabled={patch.status !== 'pending' || applying}
+          isLoading={applying}
+          onClick={handleApply}
+        >
+          Apply
+        </OLButton>
+      </div>
+    </div>
+  )
+}
+
+function DiffLine({ line }: { line: ProjectAiAgentPatchDiffLine }) {
+  const prefix = line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' '
+  return (
+    <span className={`ai-assistant-agent-patch-line ${line.type}`}>
+      {prefix}
+      {line.content}
+      {'\n'}
+    </span>
+  )
+}
+
+function isAgentPatch(value: unknown): value is ProjectAiAgentPatch {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const patch = value as Partial<ProjectAiAgentPatch>
+  return (
+    typeof patch.id === 'string' &&
+    typeof patch.status === 'string' &&
+    Array.isArray(patch.operations)
+  )
 }
 
 function ProviderSelector({

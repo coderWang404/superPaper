@@ -6,6 +6,10 @@ import {
   getAgentConfig,
   runTurn,
 } from './AiAgentRuntime.mjs'
+import {
+  AiAgentPatchError,
+  applyPatch as applyAgentPatch,
+} from './AiAgentPatchManager.mjs'
 
 const SelectionSchema = z
   .object({
@@ -93,6 +97,19 @@ async function turnStream(req, res, next) {
   }
 }
 
+async function applyPatch(req, res, next) {
+  try {
+    const patch = await applyAgentPatch({
+      projectId: req.params.Project_id,
+      userId: SessionManager.getLoggedInUserId(req.session),
+      patchId: req.params.patchId,
+    })
+    res.json({ patch })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
 function handleControllerError(err, res, next) {
   if (err instanceof z.ZodError || err.name === 'ZodError') {
     res.status(422).json({
@@ -117,6 +134,16 @@ function handleControllerError(err, res, next) {
       error: {
         code: 'AI_PROVIDER_REQUEST_FAILED',
         message: 'AI provider request failed',
+      },
+    })
+    return
+  }
+  if (err instanceof AiAgentPatchError) {
+    const status = err.code === 'AGENT_PATCH_CONFLICT' ? 409 : 422
+    res.status(status).json({
+      error: {
+        code: err.code,
+        message: err.message,
       },
     })
     return
@@ -147,4 +174,5 @@ export default {
   config,
   createSession,
   turnStream,
+  applyPatch,
 }

@@ -166,6 +166,96 @@
   line-height: var(--line-height-02);
 }
 
+.ai-assistant-agent-patch {
+  display: grid;
+  gap: var(--spacing-02);
+}
+
+.ai-assistant-agent-patch-header,
+.ai-assistant-agent-patch-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-02);
+}
+
+.ai-assistant-agent-patch-header {
+  min-width: 0;
+  font-size: var(--font-size-02);
+  font-weight: 700;
+
+  > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.ai-assistant-agent-patch-status {
+  flex: 0 0 auto;
+  border: 1px solid var(--border-divider-themed);
+  border-radius: 4px;
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-01);
+  line-height: 1;
+  padding: 3px 6px;
+
+  &.applied {
+    border-color: var(--content-positive);
+    color: var(--content-positive);
+  }
+
+  &.conflicted,
+  &.rejected {
+    border-color: var(--border-danger);
+    color: var(--content-danger);
+  }
+}
+
+.ai-assistant-agent-patch-file {
+  display: grid;
+  gap: var(--spacing-01);
+}
+
+.ai-assistant-agent-patch-path {
+  overflow-wrap: anywhere;
+  color: var(--content-secondary-themed);
+  font-family: var(--font-family-monospace);
+  font-size: var(--font-size-01);
+}
+
+.ai-assistant-agent-patch-diff {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border-divider-themed);
+  border-radius: 4px;
+  background-color: var(--bg-secondary-themed);
+  color: var(--content-primary-themed);
+  font-family: var(--font-family-monospace);
+  font-size: var(--font-size-01);
+  line-height: 1.45;
+  margin: 0;
+  padding: var(--spacing-02);
+}
+
+.ai-assistant-agent-patch-line {
+  display: block;
+  min-width: max-content;
+  white-space: pre;
+
+  &.add {
+    color: var(--content-positive);
+  }
+
+  &.remove {
+    color: var(--content-danger);
+  }
+}
+
+.ai-assistant-agent-patch-error {
+  color: var(--content-danger);
+  font-size: var(--font-size-01);
+}
+
 .ai-assistant-context-files {
   display: grid;
   gap: var(--spacing-02);

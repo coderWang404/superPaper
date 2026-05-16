@@ -70,6 +70,44 @@ export type ProjectAiAgentEvent = {
   createdAt: string | null
 }
 
+export type ProjectAiAgentPatchDiffLine = {
+  type: 'context' | 'add' | 'remove'
+  content: string
+}
+
+export type ProjectAiAgentPatchOperation = {
+  type: 'replace_text'
+  path: string
+  docId: string
+  oldText: string
+  newText: string
+  baseSha256: string
+  proposedSha256: string
+  baseRev: number | null
+  diff: {
+    path: string
+    oldStart: number
+    oldLines: number
+    newStart: number
+    newLines: number
+    lines: ProjectAiAgentPatchDiffLine[]
+  }
+}
+
+export type ProjectAiAgentPatch = {
+  id: string
+  sessionId: string
+  projectId: string
+  createdByUserId: string
+  status: 'pending' | 'approved' | 'applied' | 'rejected' | 'conflicted'
+  baseRevision: Record<string, unknown>
+  operations: ProjectAiAgentPatchOperation[]
+  summary: string
+  riskLevel: 'low' | 'medium' | 'high'
+  createdAt: string | null
+  appliedAt: string | null
+}
+
 export type CreateProjectAiAgentSessionRequest = {
   task: string
   providerId?: string
@@ -104,6 +142,13 @@ export function createProjectAiAgentSession(
   return postJSON<{ session: ProjectAiAgentSession }>(
     `/project/${projectId}/ai/agent/sessions`,
     { body }
+  )
+}
+
+export function applyProjectAiAgentPatch(projectId: string, patchId: string) {
+  return postJSON<{ patch: ProjectAiAgentPatch }>(
+    `/project/${projectId}/ai/agent/patches/${patchId}/apply`,
+    { body: {} }
   )
 }
 

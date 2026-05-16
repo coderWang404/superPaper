@@ -54,6 +54,19 @@ describe('AiAgentController', function () {
         }
       },
     }
+    ctx.PatchManager = {
+      applyPatch: sinon.stub().resolves({
+        id: 'patch-one',
+        status: 'applied',
+      }),
+      AiAgentPatchError: class AiAgentPatchError extends Error {
+        constructor(code, message) {
+          super(message)
+          this.name = 'AiAgentPatchError'
+          this.code = code
+        }
+      },
+    }
     ctx.SessionManager = {
       getLoggedInUserId: sinon.stub().returns('user-id'),
     }
@@ -61,6 +74,10 @@ describe('AiAgentController', function () {
     vi.doMock(
       '../../../../app/src/Features/AiAgent/AiAgentRuntime',
       () => ctx.Runtime
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPatchManager',
+      () => ctx.PatchManager
     )
     vi.doMock(
       '../../../../app/src/Features/Authentication/SessionManager',
@@ -161,5 +178,23 @@ describe('AiAgentController', function () {
       }) + '\n'
     )
     expect(ctx.res.end).to.have.been.calledOnce
+  })
+
+  it('applies a reviewed patch for the logged in user', async function (ctx) {
+    ctx.req.params.patchId = 'patch-one'
+
+    await ctx.Controller.applyPatch(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PatchManager.applyPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      patchId: 'patch-one',
+    })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      patch: {
+        id: 'patch-one',
+        status: 'applied',
+      },
+    })
   })
 })
