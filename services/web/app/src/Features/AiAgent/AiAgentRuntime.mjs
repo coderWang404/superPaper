@@ -8,6 +8,13 @@ import {
   listToolDefinitions,
   AiAgentToolError,
 } from './AiAgentToolRegistry.mjs'
+import { loadAgentInstructions } from './AiAgentInstructionLoader.mjs'
+import {
+  formatSkillsForPrompt,
+  listBuiltinSkills,
+  selectSkillsForTask,
+} from './AiAgentSkillManager.mjs'
+import { listBuiltinPlugins } from './AiAgentPluginManager.mjs'
 
 const MAX_TOOL_ROUNDS = 4
 const SYSTEM_MESSAGE = `You are superPaper Agent, a project-scoped LaTeX editing assistant.
@@ -34,6 +41,8 @@ export function getAgentConfig() {
       externalToolsEnabled: false,
     },
     tools: listToolDefinitions(),
+    skills: listBuiltinSkills(),
+    plugins: listBuiltinPlugins(),
   }
 }
 
@@ -101,8 +110,34 @@ export async function runTurn({
       throw new AiAgentError('AI_MODEL_NOT_AVAILABLE', 'AI model is not available')
     }
 
+    const instructions = await loadAgentInstructions({
+      projectId,
+      currentPath: selection?.path,
+    })
+    const selectedSkills = selectSkillsForTask(prompt)
+    session.instructionSources = instructions.sources.map(source => ({
+      type: source.type,
+      path: source.path,
+      sha256: source.sha256,
+      bytes: source.bytes,
+    }))
+    session.enabledSkillIds = selectedSkills.map(skill => skill.id)
+    await persistSessionMetadata(session)
+
+    await eventRecorder.record('message', {
+      role: 'system',
+      kind: 'context',
+      instructionSources: session.instructionSources,
+      enabledSkillIds: session.enabledSkillIds,
+    })
+
     const apiKey = await decryptApiKey(provider.encryptedApiKey)
-    const messages = buildInitialMessages({ prompt, selection })
+    const messages = buildInitialMessages({
+      prompt,
+      selection,
+      instructions,
+      skills: selectedSkills,
+    })
     let finalAnswer = null
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
@@ -250,9 +285,25 @@ async function createEventRecorder({ session, projectId, userId, onEvent }) {
   }
 }
 
-function buildInitialMessages({ prompt, selection }) {
+function buildInitialMessages({ prompt, selection, instructions, skills }) {
   return [
     { role: 'system', content: SYSTEM_MESSAGE },
+    ...(instructions.sources.length
+      ? [
+          {
+            role: 'system',
+            content: formatInstructionSources(instructions),
+          },
+        ]
+      : []),
+    ...(skills.length
+      ? [
+          {
+            role: 'system',
+            content: formatSkillsForPrompt(skills),
+          },
+        ]
+      : []),
     {
       role: 'user',
       content: JSON.stringify({
@@ -268,6 +319,14 @@ function buildInitialMessages({ prompt, selection }) {
       }),
     },
   ]
+}
+
+function formatInstructionSources(instructions) {
+  return instructions.sources
+    .map(source => {
+      return `### Instruction source: ${source.path}\n${source.content}`
+    })
+    .join('\n\n')
 }
 
 function parseAgentOutput(response) {
@@ -379,6 +438,22 @@ async function updateSessionStatus(session, status) {
   ).exec()
 }
 
+async function persistSessionMetadata(session) {
+  if (typeof session.save === 'function') {
+    await session.save()
+    return
+  }
+  await AgentSession.updateOne(
+    { _id: session._id },
+    {
+      $set: {
+        instructionSources: session.instructionSources,
+        enabledSkillIds: session.enabledSkillIds,
+      },
+    }
+  ).exec()
+}
+
 function publicSession(session) {
   return {
     id: session._id?.toString?.() || session.id,
@@ -389,6 +464,9 @@ function publicSession(session) {
     providerId: session.providerId?.toString?.() || session.providerId || null,
     model: session.model || null,
     task: session.task,
+    instructionSources: session.instructionSources || [],
+    enabledSkillIds: session.enabledSkillIds || [],
+    enabledPluginIds: session.enabledPluginIds || [],
     permissionProfileId: session.permissionProfileId || 'readonly-default',
   }
 }

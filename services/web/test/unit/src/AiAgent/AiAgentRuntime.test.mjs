@@ -83,6 +83,47 @@ describe('AiAgentRuntime', function () {
         requiresApproval: false,
       },
     ])
+    ctx.loadAgentInstructions = sinon.stub().resolves({
+      sources: [
+        {
+          type: 'project-file',
+          path: '/AGENTS.md',
+          sha256: 'abc123',
+          bytes: 10,
+          content: 'Use concise answers.',
+        },
+      ],
+      truncated: false,
+    })
+    ctx.listBuiltinSkills = sinon.stub().returns([
+      {
+        id: 'latex-compile-debug',
+        name: 'latex-compile-debug',
+        displayName: 'LaTeX 编译错误诊断',
+        description: 'Analyze compile errors',
+        modelInvocable: true,
+        requiredTools: ['project.read_file'],
+      },
+    ])
+    ctx.selectSkillsForTask = sinon.stub().returns([
+      {
+        id: 'latex-compile-debug',
+        name: 'latex-compile-debug',
+        description: 'Analyze compile errors',
+        requiredTools: ['project.read_file'],
+        content: 'Debug compile errors.',
+      },
+    ])
+    ctx.formatSkillsForPrompt = sinon.stub().returns('### Skill: latex-compile-debug')
+    ctx.listBuiltinPlugins = sinon.stub().returns([
+      {
+        id: 'latex-core',
+        name: 'latex-core',
+        version: '1.0.0',
+        enabled: true,
+        skills: ['latex-compile-debug'],
+      },
+    ])
 
     vi.doMock('../../../../app/src/models/AgentSession', () => ({
       AgentSession: ctx.AgentSession,
@@ -114,6 +155,26 @@ describe('AiAgentRuntime', function () {
         AiAgentToolError: class AiAgentToolError extends Error {},
       })
     )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentInstructionLoader',
+      () => ({
+        loadAgentInstructions: ctx.loadAgentInstructions,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentSkillManager',
+      () => ({
+        listBuiltinSkills: ctx.listBuiltinSkills,
+        selectSkillsForTask: ctx.selectSkillsForTask,
+        formatSkillsForPrompt: ctx.formatSkillsForPrompt,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPluginManager',
+      () => ({
+        listBuiltinPlugins: ctx.listBuiltinPlugins,
+      })
+    )
 
     ctx.Runtime = await import(modulePath)
   })
@@ -131,6 +192,25 @@ describe('AiAgentRuntime', function () {
           description: 'Read file',
           access: 'read',
           requiresApproval: false,
+        },
+      ],
+      skills: [
+        {
+          id: 'latex-compile-debug',
+          name: 'latex-compile-debug',
+          displayName: 'LaTeX 编译错误诊断',
+          description: 'Analyze compile errors',
+          modelInvocable: true,
+          requiredTools: ['project.read_file'],
+        },
+      ],
+      plugins: [
+        {
+          id: 'latex-core',
+          name: 'latex-core',
+          version: '1.0.0',
+          enabled: true,
+          skills: ['latex-compile-debug'],
         },
       ],
     })
@@ -171,6 +251,11 @@ describe('AiAgentRuntime', function () {
     })
 
     expect(ctx.decryptApiKey).to.have.been.calledWith('encrypted-key')
+    expect(ctx.loadAgentInstructions).to.have.been.calledWith({
+      projectId: 'project-id',
+      currentPath: undefined,
+    })
+    expect(ctx.selectSkillsForTask).to.have.been.calledWith('Explain the project')
     expect(ctx.createOpenAICompatibleChatCompletion).to.have.been.calledTwice
     expect(ctx.executeTool).to.have.been.calledWith({
       name: 'project.read_file',
@@ -180,6 +265,7 @@ describe('AiAgentRuntime', function () {
     })
     expect(result.answer).to.equal('The project contains a main LaTeX document.')
     expect(streamedEvents.map(event => event.type)).to.deep.equal([
+      'message',
       'message',
       'message',
       'tool_call',
