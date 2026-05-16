@@ -3,6 +3,17 @@ import sinon from 'sinon'
 
 const modulePath = '../../../../app/src/Features/AiAgent/AiAgentRuntime.mjs'
 
+async function expectRejectsWithCode(promise, code) {
+  let error
+  try {
+    await promise
+  } catch (err) {
+    error = err
+  }
+  expect(error).to.exist
+  expect(error.code).to.equal(code)
+}
+
 describe('AiAgentRuntime', function () {
   beforeEach(async function (ctx) {
     ctx.session = {
@@ -14,7 +25,7 @@ describe('AiAgentRuntime', function () {
       providerId: 'provider-id',
       model: 'gpt-4.1',
       task: 'Explain the project',
-      permissionProfileId: 'readonly-default',
+      permissionProfileId: 'project-agent-default',
       save: sinon.stub().resolvesThis(),
     }
     ctx.provider = {
@@ -52,6 +63,11 @@ describe('AiAgentRuntime', function () {
         }),
       }),
     }
+    ctx.AuthorizationManager = {
+      promises: {
+        canUserWriteProjectContent: sinon.stub().resolves(true),
+      },
+    }
     ctx.decryptApiKey = sinon.stub().resolves('test-key')
     ctx.createOpenAICompatibleChatCompletion = sinon.stub()
     ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
@@ -81,6 +97,8 @@ describe('AiAgentRuntime', function () {
         description: 'Read file',
         access: 'read',
         requiresApproval: false,
+        category: 'project',
+        riskLevel: 'low',
       },
     ])
     ctx.loadAgentInstructions = sinon.stub().resolves({
@@ -95,17 +113,7 @@ describe('AiAgentRuntime', function () {
       ],
       truncated: false,
     })
-    ctx.listBuiltinSkills = sinon.stub().returns([
-      {
-        id: 'latex-compile-debug',
-        name: 'latex-compile-debug',
-        displayName: 'LaTeX 编译错误诊断',
-        description: 'Analyze compile errors',
-        modelInvocable: true,
-        requiredTools: ['project.read_file'],
-      },
-    ])
-    ctx.selectSkillsForTask = sinon.stub().returns([
+    ctx.selectedSkills = [
       {
         id: 'latex-compile-debug',
         name: 'latex-compile-debug',
@@ -113,9 +121,8 @@ describe('AiAgentRuntime', function () {
         requiredTools: ['project.read_file'],
         content: 'Debug compile errors.',
       },
-    ])
-    ctx.formatSkillsForPrompt = sinon.stub().returns('### Skill: latex-compile-debug')
-    ctx.listBuiltinPlugins = sinon.stub().returns([
+    ]
+    ctx.enabledPlugins = [
       {
         id: 'latex-core',
         name: 'latex-core',
@@ -123,8 +130,77 @@ describe('AiAgentRuntime', function () {
         enabled: true,
         skills: ['latex-compile-debug'],
       },
-    ])
+    ]
+    ctx.formatSkillsForPrompt = sinon.stub().returns('### Skill: latex-compile-debug')
+    ctx.SettingsManager = {
+      getAgentConfig: sinon.stub().resolves({
+        permissionProfile: {
+          id: 'project-agent-default',
+          writeToolsRequireApproval: true,
+          externalToolsEnabled: false,
+          actRequiredForWriteTools: true,
+        },
+        tools: [
+          {
+            name: 'project.read_file',
+            description: 'Read file',
+            access: 'read',
+            requiresApproval: false,
+            category: 'project',
+            riskLevel: 'low',
+          },
+        ],
+        skills: [
+          {
+            id: 'latex-compile-debug',
+            name: 'latex-compile-debug',
+            displayName: 'LaTeX 编译错误诊断',
+            description: 'Analyze compile errors',
+            modelInvocable: true,
+            requiredTools: ['project.read_file'],
+            enabled: true,
+            scope: 'builtin',
+            pluginId: 'latex-core',
+          },
+        ],
+        plugins: ctx.enabledPlugins,
+        enabledSkillIds: ['latex-compile-debug'],
+        enabledPluginIds: ['latex-core'],
+        instructionProfiles: [],
+        toolPolicies: [
+          {
+            name: 'patch.propose',
+            access: 'write',
+            requiresApproval: true,
+            category: 'patch',
+            riskLevel: 'medium',
+            allowedModes: ['act'],
+          },
+        ],
+      }),
+      getSelectedSkillsForTask: sinon.stub().resolves(ctx.selectedSkills),
+      listEnabledPluginDefinitions: sinon.stub().resolves(ctx.enabledPlugins),
+    }
     ctx.AiAgentPatchError = class AiAgentPatchError extends Error {}
+    ctx.PermissionManager = {
+      getDefaultPermissionProfile: sinon.stub().returns({
+        id: 'project-agent-default',
+        writeToolsRequireApproval: true,
+        externalToolsEnabled: false,
+        actRequiredForWriteTools: true,
+      }),
+      isToolAllowed: sinon.stub().returns({ allowed: true }),
+      listToolPolicyDefinitions: sinon.stub().returns([
+        {
+          name: 'patch.propose',
+          access: 'write',
+          requiresApproval: true,
+          category: 'patch',
+          riskLevel: 'medium',
+          allowedModes: ['act'],
+        },
+      ]),
+    }
 
     vi.doMock('../../../../app/src/models/AgentSession', () => ({
       AgentSession: ctx.AgentSession,
@@ -135,6 +211,12 @@ describe('AiAgentRuntime', function () {
     vi.doMock('../../../../app/src/models/AiProvider', () => ({
       AiProvider: ctx.AiProvider,
     }))
+    vi.doMock(
+      '../../../../app/src/Features/Authorization/AuthorizationManager',
+      () => ({
+        default: ctx.AuthorizationManager,
+      })
+    )
     vi.doMock(
       '../../../../app/src/Features/AiAssistant/AiProviderSecrets',
       () => ({
@@ -165,15 +247,7 @@ describe('AiAgentRuntime', function () {
     vi.doMock(
       '../../../../app/src/Features/AiAgent/AiAgentSkillManager',
       () => ({
-        listBuiltinSkills: ctx.listBuiltinSkills,
-        selectSkillsForTask: ctx.selectSkillsForTask,
         formatSkillsForPrompt: ctx.formatSkillsForPrompt,
-      })
-    )
-    vi.doMock(
-      '../../../../app/src/Features/AiAgent/AiAgentPluginManager',
-      () => ({
-        listBuiltinPlugins: ctx.listBuiltinPlugins,
       })
     )
     vi.doMock(
@@ -182,25 +256,38 @@ describe('AiAgentRuntime', function () {
         AiAgentPatchError: ctx.AiAgentPatchError,
       })
     )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPermissionManager',
+      () => ctx.PermissionManager
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentSettingsManager',
+      () => ctx.SettingsManager
+    )
 
     ctx.Runtime = await import(modulePath)
   })
 
-  it('returns the read-only agent config', function (ctx) {
-    expect(ctx.Runtime.getAgentConfig()).to.deep.equal({
+  it('returns the project agent config', async function (ctx) {
+    expect(
+      await ctx.Runtime.getAgentConfig({ projectId: 'project-id' })
+    ).to.deep.equal({
       permissionProfile: {
-        id: 'readonly-default',
+        id: 'project-agent-default',
         writeToolsRequireApproval: true,
         externalToolsEnabled: false,
+        actRequiredForWriteTools: true,
       },
       tools: [
         {
-          name: 'project.read_file',
-          description: 'Read file',
-          access: 'read',
-          requiresApproval: false,
-        },
-      ],
+            name: 'project.read_file',
+            description: 'Read file',
+            access: 'read',
+            requiresApproval: false,
+            category: 'project',
+            riskLevel: 'low',
+          },
+        ],
       skills: [
         {
           id: 'latex-compile-debug',
@@ -209,6 +296,9 @@ describe('AiAgentRuntime', function () {
           description: 'Analyze compile errors',
           modelInvocable: true,
           requiredTools: ['project.read_file'],
+          enabled: true,
+          scope: 'builtin',
+          pluginId: 'latex-core',
         },
       ],
       plugins: [
@@ -220,6 +310,22 @@ describe('AiAgentRuntime', function () {
           skills: ['latex-compile-debug'],
         },
       ],
+      enabledSkillIds: ['latex-compile-debug'],
+      enabledPluginIds: ['latex-core'],
+      instructionProfiles: [],
+      toolPolicies: [
+        {
+          name: 'patch.propose',
+          access: 'write',
+          requiresApproval: true,
+          category: 'patch',
+          riskLevel: 'medium',
+          allowedModes: ['act'],
+        },
+      ],
+    })
+    expect(ctx.SettingsManager.getAgentConfig).to.have.been.calledWith({
+      projectId: 'project-id',
     })
   })
 
@@ -240,7 +346,7 @@ describe('AiAgentRuntime', function () {
       model: 'gpt-4.1',
       status: 'planning',
       mode: 'plan',
-      permissionProfileId: 'readonly-default',
+      permissionProfileId: 'project-agent-default',
     })
     expect(session).to.not.have.property('encryptedApiKey')
   })
@@ -262,7 +368,10 @@ describe('AiAgentRuntime', function () {
       projectId: 'project-id',
       currentPath: undefined,
     })
-    expect(ctx.selectSkillsForTask).to.have.been.calledWith('Explain the project')
+    expect(ctx.SettingsManager.getSelectedSkillsForTask).to.have.been.calledWith(
+      'Explain the project',
+      { projectId: 'project-id' }
+    )
     expect(ctx.createOpenAICompatibleChatCompletion).to.have.been.calledTwice
     expect(ctx.executeTool).to.have.been.calledWith({
       name: 'project.read_file',
@@ -271,6 +380,10 @@ describe('AiAgentRuntime', function () {
       userId: 'user-id',
       sessionId: 'session-id',
       selection: undefined,
+    })
+    expect(ctx.PermissionManager.isToolAllowed).to.have.been.calledWith({
+      toolName: 'project.read_file',
+      mode: 'plan',
     })
     expect(result.answer).to.equal('The project contains a main LaTeX document.')
     expect(streamedEvents.map(event => event.type)).to.deep.equal([
@@ -281,7 +394,134 @@ describe('AiAgentRuntime', function () {
       'tool_result',
       'message',
     ])
-    expect(result.session.status).to.equal('completed')
+    expect(result.session.status).to.equal('waiting_for_act')
+    expect(result.session.enabledPluginIds).to.deep.equal(['latex-core'])
+  })
+
+  it('starts act mode for a planned session', async function (ctx) {
+    ctx.session.status = 'waiting_for_act'
+
+    const session = await ctx.Runtime.startAct({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+    })
+
+    expect(ctx.session.mode).to.equal('act')
+    expect(ctx.session.status).to.equal('ready_for_act')
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'mode_changed',
+        payload: {
+          from: 'plan',
+          to: 'act',
+        },
+      })
+    )
+    expect(session.mode).to.equal('act')
+  })
+
+  it('does not start act mode before a plan turn completes', async function (ctx) {
+    ctx.session.status = 'planning'
+
+    await expectRejectsWithCode(
+      ctx.Runtime.startAct({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+      }),
+      'AGENT_SESSION_NOT_READY_FOR_ACT'
+    )
+  })
+
+  it('does not run another turn while a patch is awaiting approval', async function (ctx) {
+    ctx.session.status = 'waiting_for_approval'
+
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Continue editing',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'AGENT_SESSION_NOT_RUNNABLE'
+    )
+    expect(ctx.decryptApiKey).to.not.have.been.called
+  })
+
+  it('requires project write access before running act turns', async function (ctx) {
+    ctx.session.mode = 'act'
+    ctx.session.status = 'ready_for_act'
+    ctx.AuthorizationManager.promises.canUserWriteProjectContent.resolves(false)
+
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update wording',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'AGENT_ACT_PERMISSION_DENIED'
+    )
+    expect(ctx.decryptApiKey).to.not.have.been.called
+  })
+
+  it('denies write tools in plan mode before execution', async function (ctx) {
+    ctx.PermissionManager.isToolAllowed
+      .withArgs({
+        toolName: 'patch.propose',
+        mode: 'plan',
+      })
+      .returns({
+        allowed: false,
+        reason: 'AGENT_MODE_NOT_ALLOWED',
+        message: 'Agent tool is not allowed in the current mode',
+      })
+    ctx.createOpenAICompatibleChatCompletion.reset()
+    ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
+      JSON.stringify({
+        toolCalls: [
+          {
+            name: 'patch.propose',
+            input: {
+              summary: 'Update wording',
+              operations: [
+                {
+                  type: 'replace_text',
+                  path: '/main.tex',
+                  oldText: 'Old',
+                  newText: 'New',
+                },
+              ],
+            },
+          },
+        ],
+      })
+    )
+    ctx.createOpenAICompatibleChatCompletion.onSecondCall().resolves(
+      JSON.stringify({ final: 'Need act mode.' })
+    )
+
+    const streamedEvents = []
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update wording',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      onEvent: event => streamedEvents.push(event),
+    })
+
+    expect(ctx.executeTool).to.not.have.been.called
+    expect(streamedEvents.map(event => event.type)).to.include(
+      'permission_denied'
+    )
+    expect(result.session.status).to.equal('waiting_for_act')
   })
 
   it('records compile events around compile.run tool calls', async function (ctx) {
@@ -344,6 +584,8 @@ describe('AiAgentRuntime', function () {
   })
 
   it('keeps sessions waiting for approval when a patch is proposed', async function (ctx) {
+    ctx.session.mode = 'act'
+    ctx.session.status = 'ready_for_act'
     ctx.createOpenAICompatibleChatCompletion.reset()
     ctx.createOpenAICompatibleChatCompletion.resolves(
       JSON.stringify({

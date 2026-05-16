@@ -10,6 +10,8 @@ export const AgentSessionSchema = new Schema(
       type: String,
       enum: [
         'planning',
+        'waiting_for_act',
+        'ready_for_act',
         'running',
         'waiting_for_approval',
         'completed',
@@ -30,7 +32,7 @@ export const AgentSessionSchema = new Schema(
     instructionSources: { type: Array, default: [] },
     enabledSkillIds: { type: Array, default: [] },
     enabledPluginIds: { type: Array, default: [] },
-    permissionProfileId: { type: String, default: 'readonly-default' },
+    permissionProfileId: { type: String, default: 'project-agent-default' },
     completedAt: { type: Date, default: null },
   },
   {

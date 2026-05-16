@@ -25,6 +25,7 @@ import {
   ProjectAiAgentSession,
   rejectProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
+  startProjectAiAgentAct,
 } from '@/features/ai-agent/api'
 
 type AssistantMode = 'chat' | 'agent'
@@ -52,6 +53,7 @@ export default function AiAssistantPanel() {
   const [agentAnswer, setAgentAnswer] = useState('')
   const [chatError, setChatError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [startingAct, setStartingAct] = useState(false)
   const [mode, setMode] = useState<AssistantMode>('chat')
 
   useEffect(() => {
@@ -176,16 +178,23 @@ export default function AiAssistantPanel() {
   }
 
   async function runAgent(trimmedPrompt: string) {
-    setAgentEvents([])
-    const sessionResponse = await createProjectAiAgentSession(projectId, {
-      task: trimmedPrompt,
-      providerId: selectedProvider?.id,
-      model: selectedModel ?? undefined,
-    })
-    setAgentSession(sessionResponse.session)
+    const session =
+      agentSession ??
+      (
+        await createProjectAiAgentSession(projectId, {
+          task: trimmedPrompt,
+          providerId: selectedProvider?.id,
+          model: selectedModel ?? undefined,
+        })
+      ).session
+
+    if (!agentSession) {
+      setAgentEvents([])
+    }
+    setAgentSession(session)
     const response = await sendProjectAiAgentTurnStream(
       projectId,
-      sessionResponse.session.id,
+      session.id,
       {
         prompt: trimmedPrompt,
         providerId: selectedProvider?.id,
@@ -198,6 +207,34 @@ export default function AiAssistantPanel() {
     )
     setAgentSession(response.session)
     setAgentAnswer(response.answer)
+  }
+
+  async function handleStartAct() {
+    if (!agentSession) {
+      return
+    }
+
+    setStartingAct(true)
+    setChatError(null)
+    try {
+      const response = await startProjectAiAgentAct(projectId, agentSession.id)
+      setAgentSession(response.session)
+      setAgentEvents(currentEvents => [
+        ...currentEvents,
+        {
+          id: `local-mode-${Date.now()}`,
+          sessionId: response.session.id,
+          sequence: Number.MAX_SAFE_INTEGER,
+          type: 'mode_changed',
+          payload: { from: 'plan', to: 'act' },
+          createdAt: null,
+        },
+      ])
+    } catch (error) {
+      setChatError(getErrorMessage(error))
+    } finally {
+      setStartingAct(false)
+    }
   }
 
   return (
@@ -265,7 +302,12 @@ export default function AiAssistantPanel() {
             </div>
 
             {mode === 'agent' && agentConfig && (
-              <AgentConfigSummary config={agentConfig} session={agentSession} />
+              <AgentConfigSummary
+                config={agentConfig}
+                session={agentSession}
+                onStartAct={handleStartAct}
+                startingAct={startingAct}
+              />
             )}
 
             <div className="ai-assistant-transcript" aria-live="polite">
@@ -280,7 +322,17 @@ export default function AiAssistantPanel() {
                 </div>
               )}
               {mode === 'agent' && agentEvents.length > 0 && (
-                <AgentEventList events={agentEvents} projectId={projectId} />
+                <AgentEventList
+                  events={agentEvents}
+                  projectId={projectId}
+                  onSessionStatusChange={status => {
+                    setAgentSession(currentSession =>
+                      currentSession
+                        ? { ...currentSession, status }
+                        : currentSession
+                    )
+                  }}
+                />
               )}
               {mode === 'agent' && agentAnswer && (
                 <div className="ai-assistant-message ai-assistant-message-assistant">
@@ -318,8 +370,9 @@ export default function AiAssistantPanel() {
                   variant="primary"
                   disabled={!prompt.trim() || submitting}
                   isLoading={submitting}
+                  loadingLabel="Sending"
                 >
-                  {mode === 'agent' ? 'Run' : 'Send'}
+                  {mode === 'agent' ? agentSubmitLabel(agentSession) : 'Send'}
                 </OLButton>
               </div>
             </form>
@@ -355,12 +408,46 @@ export default function AiAssistantPanel() {
 function AgentConfigSummary({
   config,
   session,
+  onStartAct,
+  startingAct,
 }: {
   config: ProjectAiAgentConfig
   session: ProjectAiAgentSession | null
+  onStartAct: () => void
+  startingAct: boolean
 }) {
+  const enabledSkills =
+    config.enabledSkillIds ??
+    config.skills
+      .filter(skill => skill.enabled !== false)
+      .map(skill => skill.id)
+  const enabledPlugins =
+    config.enabledPluginIds ??
+    config.plugins
+      .filter(plugin => plugin.enabled !== false)
+      .map(plugin => plugin.id)
+  const enabledSkillLabels = formatCatalogLabels(
+    enabledSkills,
+    config.skills,
+    skill => skill.id,
+    skill => skill.displayName || skill.name || skill.id
+  )
+  const enabledPluginLabels = formatCatalogLabels(
+    enabledPlugins,
+    config.plugins,
+    plugin => plugin.id,
+    plugin => plugin.displayName || plugin.name || plugin.id
+  )
+  const canStartAct =
+    session?.mode === 'plan' &&
+    ['waiting_for_act', 'completed'].includes(session.status)
+
   return (
     <div className="ai-assistant-agent-summary">
+      <div>
+        <span className="ai-assistant-label">Mode</span>
+        <span>{session ? formatAgentMode(session) : 'Plan'}</span>
+      </div>
       <div>
         <span className="ai-assistant-label">Permission</span>
         <span>{config.permissionProfile.id}</span>
@@ -369,9 +456,17 @@ function AgentConfigSummary({
         <span className="ai-assistant-label">Tools</span>
         <span>{config.tools.length}</span>
       </div>
+      <div className="ai-assistant-agent-summary-wide">
+        <span className="ai-assistant-label">Enabled skills</span>
+        <span>{enabledSkillLabels || 'None'}</span>
+      </div>
+      <div className="ai-assistant-agent-summary-wide">
+        <span className="ai-assistant-label">Enabled plugins</span>
+        <span>{enabledPluginLabels || 'None'}</span>
+      </div>
       <div>
-        <span className="ai-assistant-label">Skills</span>
-        <span>{config.skills.length}</span>
+        <span className="ai-assistant-label">Instructions</span>
+        <span>{config.instructionProfiles?.length ?? 0}</span>
       </div>
       {session?.enabledSkillIds?.length ? (
         <div>
@@ -379,6 +474,19 @@ function AgentConfigSummary({
           <span>{session.enabledSkillIds.join(', ')}</span>
         </div>
       ) : null}
+      <div className="ai-assistant-agent-summary-action">
+        <OLButton
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={!canStartAct || startingAct}
+          isLoading={startingAct}
+          loadingLabel="Starting"
+          onClick={onStartAct}
+        >
+          Start Act
+        </OLButton>
+      </div>
     </div>
   )
 }
@@ -386,9 +494,11 @@ function AgentConfigSummary({
 function AgentEventList({
   events,
   projectId,
+  onSessionStatusChange,
 }: {
   events: ProjectAiAgentEvent[]
   projectId: string
+  onSessionStatusChange: (status: ProjectAiAgentSession['status']) => void
 }) {
   return (
     <div className="ai-assistant-agent-events">
@@ -401,6 +511,7 @@ function AgentEventList({
             <AgentPatchReview
               initialPatch={event.payload.patch}
               projectId={projectId}
+              onSessionStatusChange={onSessionStatusChange}
             />
           ) : (
             <div className="ai-assistant-answer-text">
@@ -426,6 +537,12 @@ function formatAgentEventTitle(event: ProjectAiAgentEvent) {
   if (event.type === 'tool_result') {
     return `Tool result: ${String(event.payload.name ?? '')}`
   }
+  if (event.type === 'mode_changed') {
+    return 'Mode changed'
+  }
+  if (event.type === 'permission_denied') {
+    return `Permission denied: ${String(event.payload.name ?? '')}`
+  }
   if (event.type === 'error') {
     return 'Agent error'
   }
@@ -443,15 +560,23 @@ function formatAgentEventPayload(event: ProjectAiAgentEvent) {
   if (typeof payload.message === 'string') {
     return payload.message
   }
+  if (typeof payload.reason === 'string') {
+    return payload.reason
+  }
+  if (typeof payload.from === 'string' && typeof payload.to === 'string') {
+    return `${payload.from} -> ${payload.to}`
+  }
   return JSON.stringify(payload, null, 2)
 }
 
 function AgentPatchReview({
   initialPatch,
   projectId,
+  onSessionStatusChange,
 }: {
   initialPatch: ProjectAiAgentPatch
   projectId: string
+  onSessionStatusChange: (status: ProjectAiAgentSession['status']) => void
 }) {
   const [patch, setPatch] = useState(initialPatch)
   const [applying, setApplying] = useState(false)
@@ -464,6 +589,7 @@ function AgentPatchReview({
     try {
       const response = await applyProjectAiAgentPatch(projectId, patch.id)
       setPatch(response.patch)
+      onSessionStatusChange('completed')
     } catch (applyError) {
       setError(getErrorMessage(applyError))
     } finally {
@@ -477,6 +603,7 @@ function AgentPatchReview({
     try {
       const response = await rejectProjectAiAgentPatch(projectId, patch.id)
       setPatch(response.patch)
+      onSessionStatusChange('completed')
     } catch (rejectError) {
       setError(getErrorMessage(rejectError))
     } finally {
@@ -515,6 +642,7 @@ function AgentPatchReview({
           variant="secondary"
           disabled={patch.status !== 'pending' || rejecting || applying}
           isLoading={rejecting}
+          loadingLabel="Rejecting"
           onClick={handleReject}
         >
           Reject
@@ -525,6 +653,7 @@ function AgentPatchReview({
           variant="primary"
           disabled={patch.status !== 'pending' || applying || rejecting}
           isLoading={applying}
+          loadingLabel="Applying"
           onClick={handleApply}
         >
           Apply
@@ -569,9 +698,10 @@ function ProviderSelector({
   return (
     <div className="ai-assistant-provider">
       {providers.length > 1 ? (
-        <label>
-          Provider
+        <div>
+          <span className="ai-assistant-label">Provider</span>
           <OLFormSelect
+            aria-label="Provider"
             value={selectedProvider.id}
             onChange={event => onProviderChange(event.target.value)}
           >
@@ -581,7 +711,7 @@ function ProviderSelector({
               </option>
             ))}
           </OLFormSelect>
-        </label>
+        </div>
       ) : (
         <div>
           <span className="ai-assistant-label">Provider</span>
@@ -602,9 +732,9 @@ function ComposerModelSelector({
   onModelChange: (model: string) => void
 }) {
   return (
-    <label className="ai-assistant-model-select">
-      <span>Model</span>
+    <div className="ai-assistant-model-select">
       <OLFormSelect
+        aria-label="Model"
         value={selectedModel}
         onChange={event => onModelChange(event.target.value)}
       >
@@ -614,7 +744,7 @@ function ComposerModelSelector({
           </option>
         ))}
       </OLFormSelect>
-    </label>
+    </div>
   )
 }
 
@@ -630,6 +760,38 @@ function getDefaultModel(provider?: ProjectAiProvider | null) {
     provider.models[0]?.id ??
     null
   )
+}
+
+function agentSubmitLabel(session: ProjectAiAgentSession | null) {
+  if (!session) {
+    return 'Plan'
+  }
+  if (session.mode === 'act') {
+    return 'Run'
+  }
+  return 'Plan'
+}
+
+function formatAgentMode(session: ProjectAiAgentSession) {
+  if (session.mode === 'act') {
+    return session.status === 'waiting_for_approval'
+      ? 'Act: review'
+      : 'Act: ready'
+  }
+  if (session.status === 'waiting_for_act') {
+    return 'Plan: ready'
+  }
+  return 'Plan'
+}
+
+function formatCatalogLabels<T>(
+  ids: string[],
+  items: T[],
+  getId: (item: T) => string,
+  getLabel: (item: T) => string
+) {
+  const labelsById = new Map(items.map(item => [getId(item), getLabel(item)]))
+  return ids.map(id => labelsById.get(id) || id).join(', ')
 }
 
 function getErrorMessage(error: unknown) {

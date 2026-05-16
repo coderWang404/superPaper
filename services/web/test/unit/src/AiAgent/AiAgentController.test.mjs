@@ -13,9 +13,10 @@ describe('AiAgentController', function () {
   beforeEach(async function (ctx) {
     ctx.config = {
       permissionProfile: {
-        id: 'readonly-default',
+        id: 'project-agent-default',
         writeToolsRequireApproval: true,
         externalToolsEnabled: false,
+        actRequiredForWriteTools: true,
       },
       tools: [],
     }
@@ -28,11 +29,16 @@ describe('AiAgentController', function () {
       providerId: 'provider-id',
       model: 'gpt-4.1',
       task: 'Explain',
-      permissionProfileId: 'readonly-default',
+      permissionProfileId: 'project-agent-default',
     }
     ctx.Runtime = {
-      getAgentConfig: sinon.stub().returns(ctx.config),
+      getAgentConfig: sinon.stub().resolves(ctx.config),
       createSession: sinon.stub().resolves(ctx.session),
+      startAct: sinon.stub().resolves({
+        ...ctx.session,
+        mode: 'act',
+        status: 'ready_for_act',
+      }),
       runTurn: sinon.stub().callsFake(async ({ onEvent }) => {
         await onEvent({
           id: 'event-1',
@@ -97,9 +103,31 @@ describe('AiAgentController', function () {
     ctx.next = sinon.stub()
   })
 
-  it('returns agent config', function (ctx) {
-    ctx.Controller.config(ctx.req, ctx.res, ctx.next)
+  it('starts act mode for a planned session', async function (ctx) {
+    ctx.req.params.sessionId = 'session-id'
 
+    await ctx.Controller.startAct(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Runtime.startAct).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+    })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      session: {
+        ...ctx.session,
+        mode: 'act',
+        status: 'ready_for_act',
+      },
+    })
+  })
+
+  it('returns agent config', async function (ctx) {
+    await ctx.Controller.config(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Runtime.getAgentConfig).to.have.been.calledWith({
+      projectId: 'project-id',
+    })
     expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
   })
 

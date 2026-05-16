@@ -5,6 +5,7 @@ import {
   createSession as createAgentSession,
   getAgentConfig,
   runTurn,
+  startAct as startAgentAct,
 } from './AiAgentRuntime.mjs'
 import {
   AiAgentPatchError,
@@ -33,8 +34,16 @@ const TurnSchema = z.object({
   selection: SelectionSchema,
 })
 
-function config(req, res) {
-  res.json(getAgentConfig())
+async function config(req, res, next) {
+  try {
+    res.json(
+      await getAgentConfig({
+        projectId: req.params.Project_id,
+      })
+    )
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
 }
 
 async function createSession(req, res, next) {
@@ -46,6 +55,19 @@ async function createSession(req, res, next) {
       task: body.task,
       providerId: body.providerId,
       model: body.model,
+    })
+    res.json({ session })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function startAct(req, res, next) {
+  try {
+    const session = await startAgentAct({
+      projectId: req.params.Project_id,
+      userId: SessionManager.getLoggedInUserId(req.session),
+      sessionId: req.params.sessionId,
     })
     res.json({ session })
   } catch (err) {
@@ -143,6 +165,15 @@ function handleControllerError(err, res, next) {
     })
     return
   }
+  if (err instanceof AiAgentError) {
+    res.status(422).json({
+      error: {
+        code: err.code,
+        message: err.message,
+      },
+    })
+    return
+  }
   if (err.name === 'AiProviderError') {
     res.status(502).json({
       error: {
@@ -187,6 +218,7 @@ function safeControllerError(err) {
 export default {
   config,
   createSession,
+  startAct,
   turnStream,
   applyPatch,
   rejectPatch,

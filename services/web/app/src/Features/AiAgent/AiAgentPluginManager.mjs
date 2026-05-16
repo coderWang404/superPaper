@@ -17,6 +17,10 @@ const BUILTIN_PLUGINS = [
   },
 ]
 
+export function listBuiltinPluginDefinitions() {
+  return BUILTIN_PLUGINS.map(plugin => ({ ...plugin }))
+}
+
 export function listBuiltinPlugins() {
   return BUILTIN_PLUGINS.map(plugin => ({ ...plugin }))
 }

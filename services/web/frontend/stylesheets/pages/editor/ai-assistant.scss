@@ -116,6 +116,18 @@
   }
 }
 
+.ai-assistant-agent-summary-wide {
+  grid-column: span 2;
+}
+
+.ai-assistant-agent-summary-action {
+  grid-column: 1 / -1;
+
+  button {
+    width: 100%;
+  }
+}
+
 .ai-assistant-error {
   border-color: var(--border-danger);
 }

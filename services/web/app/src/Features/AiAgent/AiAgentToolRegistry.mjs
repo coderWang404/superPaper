@@ -86,6 +86,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: ListFilesInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'project',
+    riskLevel: 'low',
     execute: listFiles,
   },
   {
@@ -94,6 +96,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: ReadFileInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'project',
+    riskLevel: 'low',
     execute: readFile,
   },
   {
@@ -102,6 +106,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: SearchInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'project',
+    riskLevel: 'low',
     execute: searchProject,
   },
   {
@@ -110,6 +116,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: GetMapInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'project',
+    riskLevel: 'low',
     execute: getProjectMap,
   },
   {
@@ -118,6 +126,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: EmptyInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'editor',
+    riskLevel: 'low',
     execute: getSelection,
   },
   {
@@ -126,6 +136,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: EmptyInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'compile',
+    riskLevel: 'low',
     execute: getLastCompileResult,
   },
   {
@@ -134,6 +146,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: CompileRunInputSchema,
     access: 'read',
     requiresApproval: false,
+    category: 'compile',
+    riskLevel: 'medium',
     execute: runCompile,
   },
   {
@@ -143,6 +157,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: PatchProposeInputSchema,
     access: 'write',
     requiresApproval: true,
+    category: 'patch',
+    riskLevel: 'medium',
     execute: proposePatch,
   },
 ]
@@ -163,6 +179,8 @@ export function listToolDefinitions() {
     description: tool.description,
     access: tool.access,
     requiresApproval: tool.requiresApproval,
+    category: tool.category,
+    riskLevel: tool.riskLevel,
   }))
 }
 

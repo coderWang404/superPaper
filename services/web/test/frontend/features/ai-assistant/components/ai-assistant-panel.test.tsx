@@ -2,7 +2,6 @@ import { expect } from 'chai'
 import {
   fireEvent,
   screen,
-  waitFor,
   waitForElementToBeRemoved,
   within,
 } from '@testing-library/react'
@@ -188,12 +187,15 @@ describe('<AiAssistantPanel />', function () {
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
     fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
-    await screen.findByText('readonly-default')
+    await screen.findByText('project-agent-default')
+    screen.getByText('LaTeX 编译错误诊断')
+    screen.getByText('LaTeX 核心 Agent 能力包')
+    screen.getByRole('button', { name: 'Start Act' })
 
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Explain the project structure.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
 
     await screen.findByText('Tool call: project.read_file')
     await screen.findByText('Agent answer')
@@ -220,7 +222,8 @@ describe('<AiAssistantPanel />', function () {
     mockConfig()
     mockAgentConfig()
     mockAgentSession()
-    mockAgentTurnStreamWithPatch()
+    mockAgentPlanThenActTurnStreamWithPatch()
+    mockAgentStartAct()
     fetchMock.post('/project/project123/ai/agent/patches/patch-one/apply', {
       patch: {
         ...mockPatch(),
@@ -240,11 +243,15 @@ describe('<AiAssistantPanel />', function () {
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
     fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
-    await screen.findByText('readonly-default')
+    await screen.findByText('project-agent-default')
 
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Update wording.' },
     })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByText('Agent answer')
+    fireEvent.click(screen.getByRole('button', { name: 'Start Act' }))
+    await screen.findByText('Mode changed')
     fireEvent.click(screen.getByRole('button', { name: 'Run' }))
 
     await screen.findByText('Patch review')
@@ -257,6 +264,7 @@ describe('<AiAssistantPanel />', function () {
 
     await screen.findByText('applied')
     await screen.findByText('Compile: success')
+    await screen.findByText('Act: ready')
     const applyCall = fetchMock.callHistory.calls(
       '/project/project123/ai/agent/patches/patch-one/apply'
     )[0]
@@ -267,7 +275,8 @@ describe('<AiAssistantPanel />', function () {
     mockConfig()
     mockAgentConfig()
     mockAgentSession()
-    mockAgentTurnStreamWithPatch()
+    mockAgentPlanThenActTurnStreamWithPatch()
+    mockAgentStartAct()
     fetchMock.post('/project/project123/ai/agent/patches/patch-one/reject', {
       patch: {
         ...mockPatch(),
@@ -279,17 +288,22 @@ describe('<AiAssistantPanel />', function () {
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
     fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
-    await screen.findByText('readonly-default')
+    await screen.findByText('project-agent-default')
 
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Update wording.' },
     })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByText('Agent answer')
+    fireEvent.click(screen.getByRole('button', { name: 'Start Act' }))
+    await screen.findByText('Mode changed')
     fireEvent.click(screen.getByRole('button', { name: 'Run' }))
 
     await screen.findByText('Patch review')
     fireEvent.click(screen.getByRole('button', { name: 'Reject' }))
 
     await screen.findByText('rejected')
+    await screen.findByText('Act: ready')
     const rejectCall = fetchMock.callHistory.calls(
       '/project/project123/ai/agent/patches/patch-one/reject'
     )[0]
@@ -346,9 +360,10 @@ function mockChatStream(overrides = {}) {
 function mockAgentConfig() {
   fetchMock.get('/project/project123/ai/agent/config', {
     permissionProfile: {
-      id: 'readonly-default',
+      id: 'project-agent-default',
       writeToolsRequireApproval: true,
       externalToolsEnabled: false,
+      actRequiredForWriteTools: true,
     },
     tools: [
       {
@@ -356,6 +371,8 @@ function mockAgentConfig() {
         description: 'Read file',
         access: 'read',
         requiresApproval: false,
+        category: 'project',
+        riskLevel: 'low',
       },
     ],
     skills: [
@@ -366,6 +383,9 @@ function mockAgentConfig() {
         description: 'Analyze compile errors',
         modelInvocable: true,
         requiredTools: ['project.read_file'],
+        enabled: true,
+        scope: 'builtin',
+        pluginId: 'latex-core',
       },
     ],
     plugins: [
@@ -378,8 +398,12 @@ function mockAgentConfig() {
         enabled: true,
         skills: ['latex-compile-debug'],
         toolPresets: ['latex-readonly'],
+        scope: 'builtin',
       },
     ],
+    enabledSkillIds: ['latex-compile-debug'],
+    enabledPluginIds: ['latex-core'],
+    instructionProfiles: [],
   })
 }
 
@@ -397,12 +421,12 @@ function mockAgentSession() {
       instructionSources: [],
       enabledSkillIds: [],
       enabledPluginIds: [],
-      permissionProfileId: 'readonly-default',
+      permissionProfileId: 'project-agent-default',
     },
   })
 }
 
-function mockAgentTurnStream() {
+function mockAgentTurnStream(options: { repeat?: number } = {}) {
   fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
     status: 200,
     headers: { 'Content-Type': 'application/x-ndjson' },
@@ -425,24 +449,55 @@ function mockAgentTurnStream() {
           id: 'session-one',
           projectId: 'project123',
           userId: 'user-one',
-          status: 'completed',
+          status: 'waiting_for_act',
           mode: 'plan',
           providerId: 'provider-one',
           model: 'model-one',
           task: 'Explain the project structure.',
           instructionSources: [],
           enabledSkillIds: ['latex-compile-debug'],
-          enabledPluginIds: [],
-          permissionProfileId: 'readonly-default',
+          enabledPluginIds: ['latex-core'],
+          permissionProfileId: 'project-agent-default',
         },
         answer: 'Agent answer',
       }) +
       '\n',
+  }, { repeat: options.repeat ?? 1 })
+}
+
+function mockAgentStartAct() {
+  fetchMock.post('/project/project123/ai/agent/sessions/session-one/start-act', {
+    session: {
+      id: 'session-one',
+      projectId: 'project123',
+      userId: 'user-one',
+      status: 'ready_for_act',
+      mode: 'act',
+      providerId: 'provider-one',
+      model: 'model-one',
+      task: 'Update wording.',
+      instructionSources: [],
+      enabledSkillIds: ['latex-compile-debug'],
+      enabledPluginIds: ['latex-core'],
+      permissionProfileId: 'project-agent-default',
+    },
   })
 }
 
-function mockAgentTurnStreamWithPatch() {
-  fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+function mockAgentPlanThenActTurnStreamWithPatch() {
+  let callCount = 0
+  fetchMock.post(
+    '/project/project123/ai/agent/sessions/session-one/turns',
+    () => {
+      callCount += 1
+      return callCount === 1 ? mockAgentPlanResponse() : mockAgentPatchResponse()
+    },
+    { repeat: 2 }
+  )
+}
+
+function mockAgentPlanResponse() {
+  return {
     status: 200,
     headers: { 'Content-Type': 'application/x-ndjson' },
     body:
@@ -452,6 +507,45 @@ function mockAgentTurnStreamWithPatch() {
           id: 'event-one',
           sessionId: 'session-one',
           sequence: 1,
+          type: 'tool_call',
+          payload: { name: 'project.read_file' },
+          createdAt: null,
+        },
+      }) +
+      '\n' +
+      JSON.stringify({
+        type: 'done',
+        session: {
+          id: 'session-one',
+          projectId: 'project123',
+          userId: 'user-one',
+          status: 'waiting_for_act',
+          mode: 'plan',
+          providerId: 'provider-one',
+          model: 'model-one',
+          task: 'Update wording.',
+          instructionSources: [],
+          enabledSkillIds: ['latex-compile-debug'],
+          enabledPluginIds: ['latex-core'],
+          permissionProfileId: 'project-agent-default',
+        },
+        answer: 'Agent answer',
+      }) +
+      '\n',
+  }
+}
+
+function mockAgentPatchResponse() {
+  return {
+    status: 200,
+    headers: { 'Content-Type': 'application/x-ndjson' },
+    body:
+      JSON.stringify({
+        type: 'event',
+        event: {
+          id: 'event-two',
+          sessionId: 'session-one',
+          sequence: 2,
           type: 'patch_created',
           payload: { patch: mockPatch() },
           createdAt: null,
@@ -465,19 +559,19 @@ function mockAgentTurnStreamWithPatch() {
           projectId: 'project123',
           userId: 'user-one',
           status: 'waiting_for_approval',
-          mode: 'plan',
+          mode: 'act',
           providerId: 'provider-one',
           model: 'model-one',
           task: 'Update wording.',
           instructionSources: [],
           enabledSkillIds: ['latex-compile-debug'],
-          enabledPluginIds: [],
-          permissionProfileId: 'readonly-default',
+          enabledPluginIds: ['latex-core'],
+          permissionProfileId: 'project-agent-default',
         },
         answer: 'Patch ready for review.',
       }) +
       '\n',
-  })
+  }
 }
 
 function mockPatch() {

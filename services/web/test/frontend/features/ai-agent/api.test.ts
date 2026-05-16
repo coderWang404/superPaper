@@ -7,6 +7,7 @@ import {
   getProjectAiAgentConfig,
   rejectProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
+  startProjectAiAgentAct,
 } from '../../../../frontend/js/features/ai-agent/api'
 
 describe('ai-agent api', function () {
@@ -17,18 +18,41 @@ describe('ai-agent api', function () {
   it('loads project agent config', async function () {
     fetchMock.get('/project/project123/ai/agent/config', {
       permissionProfile: {
-        id: 'readonly-default',
+        id: 'project-agent-default',
         writeToolsRequireApproval: true,
         externalToolsEnabled: false,
+        actRequiredForWriteTools: true,
       },
-      tools: [{ name: 'project.read_file', access: 'read' }],
+      tools: [
+        {
+          name: 'project.read_file',
+          description: 'Read file',
+          access: 'read',
+          requiresApproval: false,
+          category: 'project',
+          riskLevel: 'low',
+        },
+      ],
+      toolPolicies: [
+        {
+          name: 'project.read_file',
+          access: 'read',
+          requiresApproval: false,
+          category: 'project',
+          riskLevel: 'low',
+          allowedModes: ['plan', 'act'],
+        },
+      ],
       skills: [{ id: 'latex-compile-debug' }],
       plugins: [{ id: 'latex-core' }],
+      enabledSkillIds: ['latex-compile-debug'],
+      enabledPluginIds: ['latex-core'],
+      instructionProfiles: [],
     })
 
     const config = await getProjectAiAgentConfig('project123')
 
-    expect(config.permissionProfile.id).to.equal('readonly-default')
+    expect(config.permissionProfile.id).to.equal('project-agent-default')
     expect(config.tools[0].name).to.equal('project.read_file')
   })
 
@@ -55,6 +79,27 @@ describe('ai-agent api', function () {
       model: 'model-one',
     })
     expect(response.session.id).to.equal('session-one')
+  })
+
+  it('starts act mode for project agent sessions', async function () {
+    fetchMock.post(
+      '/project/project123/ai/agent/sessions/session-one/start-act',
+      {
+        session: {
+          id: 'session-one',
+          status: 'ready_for_act',
+          mode: 'act',
+        },
+      }
+    )
+
+    const response = await startProjectAiAgentAct('project123', 'session-one')
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/sessions/session-one/start-act'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({})
+    expect(response.session.mode).to.equal('act')
   })
 
   it('applies reviewed agent patches', async function () {

@@ -5,6 +5,7 @@ const BUILTIN_SKILLS = [
     displayName: 'LaTeX 编译错误诊断',
     description: '分析 LaTeX 编译错误并提出最小修复步骤。',
     modelInvocable: true,
+    pluginId: 'latex-core',
     keywords: ['compile', 'error', 'latex', '编译', '报错', '错误'],
     requiredTools: [
       'project.read_file',
@@ -22,6 +23,7 @@ const BUILTIN_SKILLS = [
     displayName: '引用与参考文献修复',
     description: '检查 citation、bib key、label/ref 问题。',
     modelInvocable: true,
+    pluginId: 'latex-core',
     keywords: ['cite', 'citation', 'bib', 'reference', '引用', '参考文献'],
     requiredTools: ['project.get_map', 'project.search', 'project.read_file'],
     content:
@@ -33,6 +35,7 @@ const BUILTIN_SKILLS = [
     displayName: '学术英文润色',
     description: '润色当前选择或指定文件，保留 LaTeX 命令和数学表达。',
     modelInvocable: true,
+    pluginId: 'latex-core',
     keywords: ['polish', 'rewrite', 'english', '润色', '改写', '英文'],
     requiredTools: ['editor.get_selection', 'project.read_file'],
     content:
@@ -44,6 +47,7 @@ const BUILTIN_SKILLS = [
     displayName: '论文结构审阅',
     description: '检查摘要、引言、方法、实验、结论结构。',
     modelInvocable: true,
+    pluginId: 'latex-core',
     keywords: ['structure', 'abstract', 'introduction', '结构', '摘要', '引言'],
     requiredTools: ['project.get_map', 'project.read_file'],
     content:
@@ -55,6 +59,7 @@ const BUILTIN_SKILLS = [
     displayName: '项目清理检查',
     description: '查找未引用图片、孤立 bib 条目、重复 label 等问题。',
     modelInvocable: true,
+    pluginId: 'latex-core',
     keywords: ['cleanup', 'unused', 'duplicate', '清理', '未使用', '重复'],
     requiredTools: ['project.get_map', 'project.search', 'project.list_files'],
     content:
@@ -62,13 +67,24 @@ const BUILTIN_SKILLS = [
   },
 ]
 
+export function listBuiltinSkillDefinitions() {
+  return BUILTIN_SKILLS.map(skill => ({ ...skill }))
+}
+
 export function listBuiltinSkills() {
   return BUILTIN_SKILLS.map(publicSkill)
 }
 
-export function selectSkillsForTask(task, { maxSkills = 3 } = {}) {
+export function selectSkillsForTask(
+  task,
+  { maxSkills = 3, availableSkills = BUILTIN_SKILLS } = {}
+) {
   const normalizedTask = String(task || '').toLowerCase()
-  const scored = BUILTIN_SKILLS.map(skill => ({
+  const candidateSkills =
+    Array.isArray(availableSkills) && availableSkills.length > 0
+      ? availableSkills
+      : BUILTIN_SKILLS
+  const scored = candidateSkills.map(skill => ({
     skill,
     score: skill.keywords.reduce((score, keyword) => {
       return normalizedTask.includes(keyword.toLowerCase()) ? score + 1 : score
@@ -102,5 +118,8 @@ function publicSkill(skill) {
     description: skill.description,
     modelInvocable: skill.modelInvocable,
     requiredTools: skill.requiredTools,
+    enabled: skill.enabled !== false,
+    scope: skill.scope || 'builtin',
+    pluginId: skill.pluginId || null,
   }
 }

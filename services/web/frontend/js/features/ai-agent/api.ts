@@ -1,5 +1,4 @@
-import { postJSON, getJSON } from '@/infrastructure/fetch-json'
-import { FetchError } from '@/infrastructure/fetch-json'
+import { FetchError, getJSON, postJSON } from '@/infrastructure/fetch-json'
 import getMeta from '@/utils/meta'
 import type { ProjectAiSelection } from '@/features/ai-assistant/api'
 
@@ -8,6 +7,8 @@ export type AiAgentTool = {
   description: string
   access: 'read' | 'write' | string
   requiresApproval: boolean
+  category?: string
+  riskLevel?: 'low' | 'medium' | 'high' | string
 }
 
 export type AiAgentSkill = {
@@ -17,6 +18,9 @@ export type AiAgentSkill = {
   description: string
   modelInvocable: boolean
   requiredTools: string[]
+  enabled?: boolean
+  scope?: string
+  pluginId?: string | null
 }
 
 export type AiAgentPlugin = {
@@ -28,6 +32,26 @@ export type AiAgentPlugin = {
   enabled: boolean
   skills: string[]
   toolPresets: string[]
+  scope?: string
+}
+
+export type AiAgentToolPolicy = {
+  name: string
+  access: 'read' | 'write' | string
+  requiresApproval: boolean
+  category?: string
+  riskLevel?: 'low' | 'medium' | 'high' | string
+  allowedModes: Array<'plan' | 'act' | string>
+}
+
+export type AiAgentInstructionProfile = {
+  id: string
+  scope: 'global' | 'project'
+  projectId: string | null
+  name: string
+  enabled: boolean
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 export type ProjectAiAgentConfig = {
@@ -35,10 +59,15 @@ export type ProjectAiAgentConfig = {
     id: string
     writeToolsRequireApproval: boolean
     externalToolsEnabled: boolean
+    actRequiredForWriteTools?: boolean
   }
   tools: AiAgentTool[]
+  toolPolicies?: AiAgentToolPolicy[]
   skills: AiAgentSkill[]
   plugins: AiAgentPlugin[]
+  enabledSkillIds?: string[]
+  enabledPluginIds?: string[]
+  instructionProfiles?: AiAgentInstructionProfile[]
 }
 
 export type ProjectAiAgentSession = {
@@ -225,6 +254,13 @@ export function createProjectAiAgentSession(
   return postJSON<{ session: ProjectAiAgentSession }>(
     `/project/${projectId}/ai/agent/sessions`,
     { body }
+  )
+}
+
+export function startProjectAiAgentAct(projectId: string, sessionId: string) {
+  return postJSON<{ session: ProjectAiAgentSession }>(
+    `/project/${projectId}/ai/agent/sessions/${sessionId}/start-act`,
+    { body: {} }
   )
 }
 

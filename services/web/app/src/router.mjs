@@ -1,5 +1,6 @@
 import AdminController from "./Features/ServerAdmin/AdminController.mjs";
 import AiAgentController from "./Features/AiAgent/AiAgentController.mjs";
+import AiAgentSettingsController from "./Features/AiAgent/AiAgentSettingsController.mjs";
 import AiProviderAdminController from "./Features/AiAssistant/AiProviderAdminController.mjs";
 import AiProjectChatController from "./Features/AiAssistant/AiProjectChatController.mjs";
 import ErrorController from "./Features/Errors/ErrorController.mjs";
@@ -560,7 +561,14 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     "/project/:Project_id/ai/agent/config",
     AuthenticationController.requireLogin(),
     AuthorizationMiddleware.ensureUserCanReadProject,
-    AiAgentController.config,
+    AiAgentSettingsController.projectConfig,
+  );
+
+  webRouter.patch(
+    "/project/:Project_id/ai/agent/settings",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanAdminProject,
+    AiAgentSettingsController.updateProjectSettings,
   );
 
   webRouter.post(
@@ -581,6 +589,16 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     }),
     AuthorizationMiddleware.ensureUserCanReadProject,
     AiAgentController.turnStream,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/sessions/:sessionId/start-act",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanWriteProjectContent,
+    AiAgentController.startAct,
   );
 
   webRouter.post(
@@ -1132,6 +1150,16 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     "/admin/ai/providers/:providerId/test",
     AuthorizationMiddleware.ensureUserIsSiteAdmin,
     AiProviderAdminController.testProvider,
+  );
+  webRouter.get(
+    "/admin/ai/agent/config",
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiAgentSettingsController.globalConfig,
+  );
+  webRouter.patch(
+    "/admin/ai/agent/settings",
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiAgentSettingsController.updateGlobalSettings,
   );
 
   privateApiRouter.get("/perfTest", (req, res) => {

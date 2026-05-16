@@ -1,6 +1,7 @@
 import path from 'node:path'
 import crypto from 'node:crypto'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
+import { listEnabledInstructionProfiles } from './AiAgentSettingsManager.mjs'
 
 const DEFAULT_MAX_BYTES = 32 * 1024
 const INSTRUCTION_FILENAMES = ['AGENTS.md', 'SUPERPAPER_AGENTS.md']
@@ -10,11 +11,49 @@ export async function loadAgentInstructions({
   currentPath,
   maxBytes = DEFAULT_MAX_BYTES,
 } = {}) {
-  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const [docs, instructionProfiles] = await Promise.all([
+    ProjectEntityHandler.promises.getAllDocs(projectId),
+    listEnabledInstructionProfiles({ projectId }),
+  ])
   const candidates = instructionCandidatePaths(currentPath)
   const sources = []
   let remaining = maxBytes
   let truncated = false
+
+  for (const profile of instructionProfiles) {
+    const content = String(profile.content || '').trim()
+    if (!content) {
+      continue
+    }
+    const sourceTruncated = Buffer.byteLength(content, 'utf8') > remaining
+    const includedContent =
+      sourceTruncated ? trimToByteBudget(content, remaining) : content
+
+    sources.push({
+      type: 'instruction-profile',
+      scope: profile.scope,
+      path: profile.name,
+      sha256: sha256(content),
+      bytes: Buffer.byteLength(includedContent, 'utf8'),
+      content: includedContent,
+    })
+    remaining -= Buffer.byteLength(includedContent, 'utf8')
+    if (sourceTruncated) {
+      truncated = true
+      break
+    }
+    if (remaining <= 0) {
+      truncated = true
+      break
+    }
+  }
+
+  if (truncated) {
+    return {
+      sources,
+      truncated,
+    }
+  }
 
   for (const candidatePath of candidates) {
     const doc = docs[candidatePath]

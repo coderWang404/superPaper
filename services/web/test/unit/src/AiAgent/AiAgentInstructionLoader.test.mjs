@@ -24,12 +24,19 @@ describe('AiAgentInstructionLoader', function () {
         }),
       },
     }
+    ctx.SettingsManager = {
+      listEnabledInstructionProfiles: sinon.stub().resolves([]),
+    }
 
     vi.doMock(
       '../../../../app/src/Features/Project/ProjectEntityHandler',
       () => ({
         default: ctx.ProjectEntityHandler,
       })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentSettingsManager',
+      () => ctx.SettingsManager
     )
 
     ctx.Loader = await import(modulePath)
@@ -48,6 +55,32 @@ describe('AiAgentInstructionLoader', function () {
     ])
     expect(result.sources[0].sha256).to.match(/^[a-f0-9]{64}$/)
     expect(result.truncated).to.equal(false)
+  })
+
+  it('loads enabled instruction profiles before project instruction files', async function (ctx) {
+    ctx.SettingsManager.listEnabledInstructionProfiles.resolves([
+      {
+        scope: 'global',
+        name: 'Global Agent Rules',
+        content: 'Never expose secrets.',
+      },
+    ])
+
+    const result = await ctx.Loader.loadAgentInstructions({
+      projectId: 'project-id',
+      currentPath: '/chapters/intro.tex',
+    })
+
+    expect(result.sources.map(source => source.path)).to.deep.equal([
+      'Global Agent Rules',
+      '/AGENTS.md',
+      '/chapters/AGENTS.md',
+      '/chapters/SUPERPAPER_AGENTS.md',
+    ])
+    expect(result.sources[0]).to.include({
+      type: 'instruction-profile',
+      scope: 'global',
+    })
   })
 
   it('respects the instruction byte budget', async function (ctx) {

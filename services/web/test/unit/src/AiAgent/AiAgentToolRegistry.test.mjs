@@ -92,6 +92,8 @@ describe('AiAgentToolRegistry', function () {
       description: 'Read a text document from the current project.',
       access: 'read',
       requiresApproval: false,
+      category: 'project',
+      riskLevel: 'low',
     })
     expect(ctx.Registry.listToolDefinitions()).to.deep.include({
       name: 'patch.propose',
@@ -99,12 +101,16 @@ describe('AiAgentToolRegistry', function () {
         'Create a pending replace_text, create_doc, delete_doc, rename_entity, or move_entity patch for user review. This does not edit files.',
       access: 'write',
       requiresApproval: true,
+      category: 'patch',
+      riskLevel: 'medium',
     })
     expect(ctx.Registry.listToolDefinitions()).to.deep.include({
       name: 'compile.run',
       description: 'Run a controlled project compile and return a compact result.',
       access: 'read',
       requiresApproval: false,
+      category: 'compile',
+      riskLevel: 'medium',
     })
   })
 
