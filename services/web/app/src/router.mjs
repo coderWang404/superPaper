@@ -1,4 +1,5 @@
 import AdminController from "./Features/ServerAdmin/AdminController.mjs";
+import AiAgentController from "./Features/AiAgent/AiAgentController.mjs";
 import AiProviderAdminController from "./Features/AiAssistant/AiProviderAdminController.mjs";
 import AiProjectChatController from "./Features/AiAssistant/AiProjectChatController.mjs";
 import ErrorController from "./Features/Errors/ErrorController.mjs";
@@ -553,6 +554,33 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     }),
     AuthorizationMiddleware.ensureUserCanReadProject,
     AiProjectChatController.chatStream,
+  );
+
+  webRouter.get(
+    "/project/:Project_id/ai/agent/config",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiAgentController.config,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/sessions",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiAgentController.createSession,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/sessions/:sessionId/turns",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiAgentController.turnStream,
   );
 
   webRouter.post(

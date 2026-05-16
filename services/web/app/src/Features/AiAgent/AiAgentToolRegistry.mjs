@@ -1,0 +1,336 @@
+import path from 'node:path'
+import crypto from 'node:crypto'
+import { z } from 'zod'
+import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
+
+const DEFAULT_READ_CHARS = 12_000
+const MAX_READ_CHARS = 50_000
+const DEFAULT_SEARCH_RESULTS = 20
+const MAX_SEARCH_RESULTS = 50
+const SENSITIVE_PATH_PATTERNS = [
+  /^\/?\.env(?:\.|$)/i,
+  /^\/?secrets(?:\/|$)/i,
+  /^\/?credentials\./i,
+  /^\/?渠道\.txt$/i,
+  /\.pem$/i,
+  /\.key$/i,
+]
+
+const ListFilesInputSchema = z.object({
+  pathPrefix: z.string().trim().max(500).optional(),
+  extensions: z.array(z.string().trim().min(1).max(20)).max(20).optional(),
+})
+
+const ReadFileInputSchema = z.object({
+  path: z.string().trim().min(1).max(500),
+  maxChars: z.number().int().positive().max(MAX_READ_CHARS).optional(),
+})
+
+const SearchInputSchema = z.object({
+  query: z.string().trim().min(1).max(200),
+  extensions: z.array(z.string().trim().min(1).max(20)).max(20).optional(),
+  maxResults: z.number().int().positive().max(MAX_SEARCH_RESULTS).optional(),
+})
+
+const GetMapInputSchema = z.object({
+  maxFiles: z.number().int().positive().max(200).optional(),
+})
+
+const EmptyInputSchema = z.object({}).default({})
+
+const TOOL_DEFINITIONS = [
+  {
+    name: 'project.list_files',
+    description: 'List project docs and uploaded files with basic metadata.',
+    inputSchema: ListFilesInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: listFiles,
+  },
+  {
+    name: 'project.read_file',
+    description: 'Read a text document from the current project.',
+    inputSchema: ReadFileInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: readFile,
+  },
+  {
+    name: 'project.search',
+    description: 'Search project text documents by plain substring.',
+    inputSchema: SearchInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: searchProject,
+  },
+  {
+    name: 'project.get_map',
+    description: 'Build a compact LaTeX project map with labels and includes.',
+    inputSchema: GetMapInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: getProjectMap,
+  },
+  {
+    name: 'editor.get_selection',
+    description: 'Return the current editor selection supplied by the browser.',
+    inputSchema: EmptyInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: getSelection,
+  },
+  {
+    name: 'compile.get_last_result',
+    description: 'Return the last compile result when one is attached to the session.',
+    inputSchema: EmptyInputSchema,
+    access: 'read',
+    requiresApproval: false,
+    execute: getLastCompileResult,
+  },
+]
+
+const toolsByName = new Map(TOOL_DEFINITIONS.map(tool => [tool.name, tool]))
+
+export class AiAgentToolError extends Error {
+  constructor(code, message) {
+    super(message)
+    this.name = 'AiAgentToolError'
+    this.code = code
+  }
+}
+
+export function listToolDefinitions() {
+  return TOOL_DEFINITIONS.map(tool => ({
+    name: tool.name,
+    description: tool.description,
+    access: tool.access,
+    requiresApproval: tool.requiresApproval,
+  }))
+}
+
+export async function executeTool({ name, input = {}, projectId, selection }) {
+  const tool = toolsByName.get(name)
+  if (!tool) {
+    throw new AiAgentToolError('AGENT_TOOL_NOT_FOUND', 'Agent tool not found')
+  }
+  const parsedInput = tool.inputSchema.parse(input || {})
+  return tool.execute({
+    projectId,
+    input: parsedInput,
+    selection,
+  })
+}
+
+async function listFiles({ projectId, input }) {
+  const [docs, files] = await Promise.all([
+    ProjectEntityHandler.promises.getAllDocs(projectId),
+    ProjectEntityHandler.promises.getAllFiles(projectId),
+  ])
+  const pathPrefix = input.pathPrefix ? normalizeProjectPath(input.pathPrefix) : '/'
+  const extensions = normalizeExtensions(input.extensions)
+
+  return {
+    docs: Object.entries(docs)
+      .filter(([docPath]) => pathMatches(docPath, pathPrefix, extensions))
+      .map(([docPath, doc]) => ({
+        path: docPath,
+        type: 'doc',
+        chars: getDocText(doc).length,
+        lines: Array.isArray(doc.lines) ? doc.lines.length : 0,
+      }))
+      .sort(comparePathItems),
+    files: Object.keys(files)
+      .filter(filePath => pathMatches(filePath, pathPrefix, extensions))
+      .map(filePath => ({
+        path: filePath,
+        type: 'file',
+      }))
+      .sort(comparePathItems),
+  }
+}
+
+async function readFile({ projectId, input }) {
+  const requestedPath = normalizeProjectPath(input.path)
+  assertSafePath(requestedPath)
+
+  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const doc = docs[requestedPath]
+  if (!doc) {
+    throw new AiAgentToolError('AGENT_FILE_NOT_FOUND', 'Project file not found')
+  }
+
+  const maxChars = input.maxChars || DEFAULT_READ_CHARS
+  const content = getDocText(doc)
+  const truncated = content.length > maxChars
+  return {
+    path: requestedPath,
+    docId: doc._id?.toString?.() || null,
+    rev: doc.rev ?? null,
+    sha256: sha256(content),
+    content: truncated ? content.slice(0, maxChars) : content,
+    truncated,
+  }
+}
+
+async function searchProject({ projectId, input }) {
+  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const extensions = normalizeExtensions(input.extensions)
+  const query = input.query.toLowerCase()
+  const maxResults = input.maxResults || DEFAULT_SEARCH_RESULTS
+  const results = []
+
+  for (const [docPath, doc] of Object.entries(docs).sort(comparePathEntries)) {
+    if (!pathMatches(docPath, '/', extensions)) {
+      continue
+    }
+    const lines = Array.isArray(doc.lines) ? doc.lines : []
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = String(lines[index])
+      if (!line.toLowerCase().includes(query)) {
+        continue
+      }
+      results.push({
+        path: docPath,
+        line: index + 1,
+        preview: line.slice(0, 500),
+      })
+      if (results.length >= maxResults) {
+        return {
+          query: input.query,
+          results,
+          truncated: true,
+        }
+      }
+    }
+  }
+
+  return {
+    query: input.query,
+    results,
+    truncated: false,
+  }
+}
+
+async function getProjectMap({ projectId, input }) {
+  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const maxFiles = input.maxFiles || 100
+  const fileEntries = Object.entries(docs).sort(comparePathEntries).slice(0, maxFiles)
+  const files = fileEntries.map(([docPath, doc]) => {
+    const content = getDocText(doc)
+    return {
+      path: docPath,
+      chars: content.length,
+      includes: extractLatexCommands(content, ['input', 'include']),
+      bibliographies: extractLatexCommands(content, ['bibliography', 'addbibresource']),
+      labels: extractLatexCommands(content, ['label']).slice(0, 100),
+      refs: extractLatexCommands(content, ['ref', 'eqref', 'autoref', 'cref']).slice(0, 100),
+      citations: extractCitationKeys(content).slice(0, 100),
+      bibKeys: path.extname(docPath).toLowerCase() === '.bib'
+        ? extractBibKeys(content).slice(0, 200)
+        : [],
+    }
+  })
+
+  return {
+    rootDoc: docs['/main.tex'] ? '/main.tex' : files[0]?.path || null,
+    files,
+    truncated: Object.keys(docs).length > maxFiles,
+  }
+}
+
+async function getSelection({ selection }) {
+  if (!selection?.text?.trim()) {
+    return {
+      available: false,
+      message: 'No editor selection was supplied for this agent turn.',
+    }
+  }
+  return {
+    available: true,
+    docId: selection.docId || null,
+    path: selection.path || null,
+    text: selection.text,
+  }
+}
+
+async function getLastCompileResult() {
+  return {
+    available: false,
+    message:
+      'Last compile result is not attached to the read-only agent runtime yet.',
+  }
+}
+
+function normalizeProjectPath(projectPath) {
+  const normalized = path.posix.normalize(`/${projectPath}`.replaceAll('\\', '/'))
+  if (normalized.includes('..')) {
+    throw new AiAgentToolError('AGENT_INVALID_PATH', 'Invalid project path')
+  }
+  return normalized
+}
+
+function assertSafePath(projectPath) {
+  if (SENSITIVE_PATH_PATTERNS.some(pattern => pattern.test(projectPath))) {
+    throw new AiAgentToolError('AGENT_SENSITIVE_PATH', 'Sensitive path is blocked')
+  }
+}
+
+function normalizeExtensions(extensions) {
+  if (!extensions?.length) {
+    return null
+  }
+  return new Set(
+    extensions.map(extension =>
+      extension.startsWith('.') ? extension.toLowerCase() : `.${extension.toLowerCase()}`
+    )
+  )
+}
+
+function pathMatches(projectPath, pathPrefix, extensions) {
+  const normalized = normalizeProjectPath(projectPath)
+  if (!normalized.startsWith(pathPrefix)) {
+    return false
+  }
+  return !extensions || extensions.has(path.extname(normalized).toLowerCase())
+}
+
+function comparePathItems(left, right) {
+  return left.path.localeCompare(right.path)
+}
+
+function comparePathEntries([left], [right]) {
+  return left.localeCompare(right)
+}
+
+function getDocText(doc) {
+  return Array.isArray(doc.lines) ? doc.lines.join('\n') : ''
+}
+
+function sha256(content) {
+  return crypto.createHash('sha256').update(content).digest('hex')
+}
+
+function extractLatexCommands(content, commandNames) {
+  const names = commandNames.join('|')
+  const regex = new RegExp(`\\\\(?:${names})(?:\\[[^\\]]*\\])?\\{([^}]*)\\}`, 'g')
+  const values = []
+  let match
+  while ((match = regex.exec(content))) {
+    values.push(...match[1].split(',').map(value => value.trim()).filter(Boolean))
+  }
+  return [...new Set(values)]
+}
+
+function extractCitationKeys(content) {
+  return extractLatexCommands(content, ['cite', 'citep', 'citet', 'parencite', 'textcite'])
+}
+
+function extractBibKeys(content) {
+  const regex = /@\w+\s*\{\s*([^,\s]+)\s*,/g
+  const keys = []
+  let match
+  while ((match = regex.exec(content))) {
+    keys.push(match[1])
+  }
+  return [...new Set(keys)]
+}

@@ -1,0 +1,191 @@
+import { expect, vi } from 'vitest'
+import sinon from 'sinon'
+
+const modulePath = '../../../../app/src/Features/AiAgent/AiAgentRuntime.mjs'
+
+describe('AiAgentRuntime', function () {
+  beforeEach(async function (ctx) {
+    ctx.session = {
+      _id: 'session-id',
+      projectId: 'project-id',
+      userId: 'user-id',
+      status: 'planning',
+      mode: 'plan',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      task: 'Explain the project',
+      permissionProfileId: 'readonly-default',
+      save: sinon.stub().resolvesThis(),
+    }
+    ctx.provider = {
+      _id: 'provider-id',
+      name: 'Claude Hub',
+      baseURL: 'https://ai.example.test/v1',
+      encryptedApiKey: 'encrypted-key',
+      enabled: true,
+      defaultModel: 'gpt-4.1',
+      models: [{ id: 'gpt-4.1', displayName: 'gpt-4.1', enabled: true }],
+    }
+    ctx.AgentSession = {
+      create: sinon.stub().resolves(ctx.session),
+      findOne: sinon.stub().returns({
+        exec: sinon.stub().resolves(ctx.session),
+      }),
+    }
+    ctx.AgentEvent = {
+      countDocuments: sinon.stub().returns({
+        exec: sinon.stub().resolves(0),
+      }),
+      create: sinon.stub().callsFake(async event => ({
+        _id: `event-${event.sequence}`,
+        createdAt: new Date('2026-05-16T00:00:00Z'),
+        ...event,
+      })),
+    }
+    ctx.AiProvider = {
+      findById: sinon.stub().returns({
+        exec: sinon.stub().resolves(ctx.provider),
+      }),
+      find: sinon.stub().returns({
+        sort: sinon.stub().returns({
+          exec: sinon.stub().resolves([ctx.provider]),
+        }),
+      }),
+    }
+    ctx.decryptApiKey = sinon.stub().resolves('test-key')
+    ctx.createOpenAICompatibleChatCompletion = sinon.stub()
+    ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
+      JSON.stringify({
+        plan: ['Read the main file'],
+        toolCalls: [
+          {
+            name: 'project.read_file',
+            input: { path: '/main.tex' },
+          },
+        ],
+      })
+    )
+    ctx.createOpenAICompatibleChatCompletion.onSecondCall().resolves(
+      JSON.stringify({
+        final: 'The project contains a main LaTeX document.',
+      })
+    )
+    ctx.executeTool = sinon.stub().resolves({
+      path: '/main.tex',
+      content: '\\documentclass{article}',
+      truncated: false,
+    })
+    ctx.listToolDefinitions = sinon.stub().returns([
+      {
+        name: 'project.read_file',
+        description: 'Read file',
+        access: 'read',
+        requiresApproval: false,
+      },
+    ])
+
+    vi.doMock('../../../../app/src/models/AgentSession', () => ({
+      AgentSession: ctx.AgentSession,
+    }))
+    vi.doMock('../../../../app/src/models/AgentEvent', () => ({
+      AgentEvent: ctx.AgentEvent,
+    }))
+    vi.doMock('../../../../app/src/models/AiProvider', () => ({
+      AiProvider: ctx.AiProvider,
+    }))
+    vi.doMock(
+      '../../../../app/src/Features/AiAssistant/AiProviderSecrets',
+      () => ({
+        decryptApiKey: ctx.decryptApiKey,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAssistant/AiProviderClient',
+      () => ({
+        createOpenAICompatibleChatCompletion:
+          ctx.createOpenAICompatibleChatCompletion,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentToolRegistry',
+      () => ({
+        executeTool: ctx.executeTool,
+        listToolDefinitions: ctx.listToolDefinitions,
+        AiAgentToolError: class AiAgentToolError extends Error {},
+      })
+    )
+
+    ctx.Runtime = await import(modulePath)
+  })
+
+  it('returns the read-only agent config', function (ctx) {
+    expect(ctx.Runtime.getAgentConfig()).to.deep.equal({
+      permissionProfile: {
+        id: 'readonly-default',
+        writeToolsRequireApproval: true,
+        externalToolsEnabled: false,
+      },
+      tools: [
+        {
+          name: 'project.read_file',
+          description: 'Read file',
+          access: 'read',
+          requiresApproval: false,
+        },
+      ],
+    })
+  })
+
+  it('creates an agent session without provider secrets', async function (ctx) {
+    const session = await ctx.Runtime.createSession({
+      projectId: 'project-id',
+      userId: 'user-id',
+      task: 'Explain the project',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    expect(ctx.AgentSession.create).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      task: 'Explain the project',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      status: 'planning',
+      mode: 'plan',
+      permissionProfileId: 'readonly-default',
+    })
+    expect(session).to.not.have.property('encryptedApiKey')
+  })
+
+  it('runs a read-only tool loop and records events', async function (ctx) {
+    const streamedEvents = []
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Explain the project',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      onEvent: event => streamedEvents.push(event),
+    })
+
+    expect(ctx.decryptApiKey).to.have.been.calledWith('encrypted-key')
+    expect(ctx.createOpenAICompatibleChatCompletion).to.have.been.calledTwice
+    expect(ctx.executeTool).to.have.been.calledWith({
+      name: 'project.read_file',
+      input: { path: '/main.tex' },
+      projectId: 'project-id',
+      selection: undefined,
+    })
+    expect(result.answer).to.equal('The project contains a main LaTeX document.')
+    expect(streamedEvents.map(event => event.type)).to.deep.equal([
+      'message',
+      'message',
+      'tool_call',
+      'tool_result',
+      'message',
+    ])
+    expect(result.session.status).to.equal('completed')
+  })
+})
