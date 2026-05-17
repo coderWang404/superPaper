@@ -2,12 +2,14 @@ import { expect } from 'chai'
 import { fireEvent, screen } from '@testing-library/dom'
 import fetchMock from 'fetch-mock'
 
+import { resetMeta } from '../../helpers/reset-meta'
 import { initAiAgentPluginAdmin } from '../../../../frontend/js/features/ai-agent-plugin-admin/ai-agent-plugin-admin'
 
 describe('ai-agent-plugin-admin', function () {
   afterEach(function () {
     fetchMock.removeRoutes().clearHistory()
     document.body.innerHTML = ''
+    resetMeta()
   })
 
   it('loads installed plugins from the admin endpoint', async function () {
@@ -19,7 +21,7 @@ describe('ai-agent-plugin-admin', function () {
 
     await screen.findByText('LaTeX 投稿检查')
     screen.getByText('latex-submission-check')
-    screen.getByText('Enabled')
+    expect(screen.getAllByText('Enabled')).to.have.length(2)
     screen.getByText('abc123def456')
   })
 
@@ -120,6 +122,18 @@ describe('ai-agent-plugin-admin', function () {
 
     await screen.findByRole('alert')
     screen.getByText('Agent plugin request failed')
+  })
+
+  it('uses the system language for plugin administration copy', async function () {
+    window.metaAttributesCache.set('ol-i18n', { currentLangCode: 'zh-CN' })
+    fetchMock.get('/admin/ai/agent/plugins', { plugins: [] })
+
+    initAiAgentPluginAdmin(renderRoot())
+
+    await screen.findByText('尚未安装 Agent 插件')
+    screen.getByRole('heading', { name: 'Agent 插件' })
+    screen.getByRole('form', { name: '预览 Agent 插件' })
+    screen.getByLabelText('插件目录路径')
   })
 })
 

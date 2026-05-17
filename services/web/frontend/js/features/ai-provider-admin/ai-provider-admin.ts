@@ -1,3 +1,5 @@
+import getMeta from '@/utils/meta'
+
 type AiProviderModel = {
   id: string
   displayName: string
@@ -20,7 +22,6 @@ type AiProvider = {
 type ProviderState = {
   providers: AiProvider[]
   loading: boolean
-  language: AdminLanguage
   statusMessage: TranslationKey | null
   errorMessage: TranslationKey | null
 }
@@ -38,6 +39,7 @@ type AdminLanguage = 'en' | 'zh'
 type TranslationKey =
   | 'actions'
   | 'addProvider'
+  | 'addProviderDescription'
   | 'addProviderForm'
   | 'apiKey'
   | 'apiKeyReplaced'
@@ -63,15 +65,19 @@ type TranslationKey =
   | 'noProviders'
   | 'noModels'
   | 'none'
+  | 'providerConfigured'
   | 'providerAdded'
   | 'providerDeleted'
   | 'providerDisabled'
   | 'providerEnabled'
   | 'providerName'
+  | 'providers'
+  | 'providersDescription'
   | 'providerTestFailed'
   | 'providerTestPassed'
   | 'replaceKey'
   | 'replaceKeyFor'
+  | 'replaceProviderKeyFor'
   | 'requestFailed'
   | 'syncModels'
   | 'test'
@@ -81,6 +87,8 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
   en: {
     actions: 'Actions',
     addProvider: 'Add provider',
+    addProviderDescription:
+      'Register an OpenAI-compatible endpoint. Keys stay server-side and are never rendered back to the browser.',
     addProviderForm: 'Add AI provider',
     apiKey: 'API key',
     apiKeyReplaced: 'API key replaced',
@@ -106,15 +114,20 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     noProviders: 'No AI providers configured',
     noModels: 'No models',
     none: 'None',
+    providerConfigured: 'Providers configured',
     providerAdded: 'Provider added',
     providerDeleted: 'Provider deleted',
     providerDisabled: 'Provider disabled',
     providerEnabled: 'Provider enabled',
     providerName: 'Provider name',
+    providers: 'AI providers',
+    providersDescription:
+      'Manage model gateways used by project chat and Agent mode.',
     providerTestFailed: 'Provider test failed',
     providerTestPassed: 'Provider test passed',
     replaceKey: 'Replace key',
     replaceKeyFor: 'Replace',
+    replaceProviderKeyFor: 'Replace key for',
     requestFailed: 'AI provider request failed',
     syncModels: 'Sync models',
     test: 'Test',
@@ -123,6 +136,8 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
   zh: {
     actions: '操作',
     addProvider: '添加供应商',
+    addProviderDescription:
+      '注册 OpenAI 兼容接口。密钥只保存在服务端，不会回传到浏览器。',
     addProviderForm: '添加 AI 供应商',
     apiKey: 'API 密钥',
     apiKeyReplaced: 'API 密钥已替换',
@@ -148,15 +163,19 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     noProviders: '尚未配置 AI 供应商',
     noModels: '无模型',
     none: '无',
+    providerConfigured: '已配置供应商',
     providerAdded: '供应商已添加',
     providerDeleted: '供应商已删除',
     providerDisabled: '供应商已禁用',
     providerEnabled: '供应商已启用',
     providerName: '供应商名称',
+    providers: 'AI 供应商',
+    providersDescription: '管理项目聊天和 Agent 模式使用的模型网关。',
     providerTestFailed: '供应商测试失败',
     providerTestPassed: '供应商测试通过',
     replaceKey: '替换密钥',
     replaceKeyFor: '替换',
+    replaceProviderKeyFor: '替换密钥：',
     requestFailed: 'AI 供应商请求失败',
     syncModels: '同步模型',
     test: '测试',
@@ -168,16 +187,16 @@ const SAFE_ERROR_MESSAGE = 'AI provider request failed'
 
 export function initAiProviderAdmin(root: HTMLElement): void {
   const csrfToken = root.dataset.csrfToken || ''
+  const language = getAdminLanguage()
   const state: ProviderState = {
     providers: [],
     loading: true,
-    language: 'en',
     statusMessage: null,
     errorMessage: null,
   }
 
   function t(key: TranslationKey) {
-    return TRANSLATIONS[state.language][key]
+    return TRANSLATIONS[language][key]
   }
 
   async function loadProviders() {
@@ -341,15 +360,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
   function render() {
     root.innerHTML = `
       <div class="ai-provider-admin">
-        <div class="ai-provider-admin-toolbar">
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            data-ai-provider-language-toggle
-          >
-            ${state.language === 'en' ? '中文' : 'English'}
-          </button>
-        </div>
+        ${renderProviderOverview(state.providers, t)}
         <div class="ai-provider-admin-feedback">
           <div class="text-muted" role="status">${escapeHtml(
             state.loading
@@ -366,17 +377,26 @@ export function initAiProviderAdmin(root: HTMLElement): void {
               : ''
           }
         </div>
-        ${renderProviderTable(state.providers, state.loading, t)}
-        ${renderCreateForm(t)}
+        <div class="ai-admin-section">
+          <div class="ai-admin-section-header">
+            <div>
+              <h4>${escapeHtml(t('providers'))}</h4>
+              <p>${escapeHtml(t('providersDescription'))}</p>
+            </div>
+          </div>
+          ${renderProviderTable(state.providers, state.loading, t)}
+        </div>
+        <div class="ai-admin-section">
+          <div class="ai-admin-section-header">
+            <div>
+              <h4>${escapeHtml(t('addProvider'))}</h4>
+              <p>${escapeHtml(t('addProviderDescription'))}</p>
+            </div>
+          </div>
+          ${renderCreateForm(t)}
+        </div>
       </div>
     `
-
-    root
-      .querySelector<HTMLButtonElement>('[data-ai-provider-language-toggle]')
-      ?.addEventListener('click', () => {
-        state.language = state.language === 'en' ? 'zh' : 'en'
-        render()
-      })
 
     root
       .querySelector<HTMLFormElement>('[data-ai-provider-create-form]')
@@ -463,6 +483,39 @@ async function requestJSON<T>(
   return response.json()
 }
 
+function renderProviderOverview(
+  providers: AiProvider[],
+  t: (key: TranslationKey) => string
+) {
+  const enabledCount = providers.filter(provider => provider.enabled).length
+  const modelCount = providers.reduce(
+    (total, provider) => total + provider.models.length,
+    0
+  )
+  const okCount = providers.filter(provider => provider.healthStatus === 'ok')
+    .length
+
+  return `
+    <div class="ai-admin-overview" aria-label="${escapeHtml(
+      t('providers')
+    )}">
+      ${renderMetric(t('providerConfigured'), String(providers.length))}
+      ${renderMetric(t('enabled'), String(enabledCount))}
+      ${renderMetric(t('models'), String(modelCount))}
+      ${renderMetric(t('health'), `${okCount}/${providers.length || 0}`)}
+    </div>
+  `
+}
+
+function renderMetric(label: string, value: string) {
+  return `
+    <div class="ai-admin-metric">
+      <div class="ai-admin-metric-value">${escapeHtml(value)}</div>
+      <div class="ai-admin-metric-label">${escapeHtml(label)}</div>
+    </div>
+  `
+}
+
 function renderProviderTable(
   providers: AiProvider[],
   loading: boolean,
@@ -477,7 +530,8 @@ function renderProviderTable(
   }
 
   return `
-    <table class="table table-striped">
+    <div class="ai-admin-table-wrap">
+      <table class="table table-striped ai-admin-table">
       <thead>
         <tr>
           <th>${escapeHtml(t('name'))}</th>
@@ -492,7 +546,8 @@ function renderProviderTable(
       <tbody>
         ${providers.map(provider => renderProviderRow(provider, t)).join('')}
       </tbody>
-    </table>
+      </table>
+    </div>
   `
 }
 
@@ -508,12 +563,12 @@ function renderProviderRow(
     <tr>
       <td>
         <strong>${escapedProviderName}</strong>
-        <div class="small text-muted">${
+        <div class="ai-admin-row-subtitle">${escapeHtml(
           provider.hasApiKey ? t('apiKeyStored') : t('noApiKeyStored')
-        }</div>
+        )}</div>
         <form
           class="ai-provider-admin-replace-key"
-          aria-label="${escapeHtml(t('replaceKeyFor'))} ${escapedProviderName} key"
+          aria-label="${escapeHtml(t('replaceProviderKeyFor'))} ${escapedProviderName}"
           data-ai-provider-replace-key-form
           data-provider-id="${escapedProviderId}"
         >
@@ -536,9 +591,13 @@ function renderProviderRow(
       <td>${escapeHtml(provider.baseURL)}</td>
       <td>${escapeHtml(models)}</td>
       <td>${escapeHtml(provider.defaultModel || t('none'))}</td>
-      <td>${escapeHtml(healthLabel(provider.healthStatus, t))}</td>
-      <td>${provider.enabled ? t('enabled') : t('disabled')}</td>
+      <td>${renderStatusBadge(healthLabel(provider.healthStatus, t), provider.healthStatus)}</td>
+      <td>${renderStatusBadge(
+        provider.enabled ? t('enabled') : t('disabled'),
+        provider.enabled ? 'enabled' : 'disabled'
+      )}</td>
       <td>
+        <div class="ai-admin-actions">
         <button
           type="button"
           class="btn btn-secondary btn-sm"
@@ -571,6 +630,7 @@ function renderProviderRow(
         >
           ${escapeHtml(t('delete'))}
         </button>
+        </div>
       </td>
     </tr>
   `
@@ -578,9 +638,10 @@ function renderProviderRow(
 
 function renderCreateForm(t: (key: TranslationKey) => string) {
   return `
-    <hr>
-    <h4>${escapeHtml(t('addProvider'))}</h4>
-    <form aria-label="${escapeHtml(t('addProviderForm'))}" data-ai-provider-create-form>
+    <form class="ai-admin-form" aria-label="${escapeHtml(
+      t('addProviderForm')
+    )}" data-ai-provider-create-form>
+      <div class="ai-admin-form-grid">
       <div class="form-group">
         <label class="form-label" for="ai-provider-name">${escapeHtml(
           t('providerName')
@@ -599,12 +660,6 @@ function renderCreateForm(t: (key: TranslationKey) => string) {
         )}</label>
         <input class="form-control" id="ai-provider-api-key" name="apiKey" type="password" required autocomplete="off">
       </div>
-      <div class="checkbox">
-        <label for="ai-provider-enabled">
-          <input id="ai-provider-enabled" name="enabled" type="checkbox" checked>
-          ${escapeHtml(t('enabled'))}
-        </label>
-      </div>
       <div class="form-group">
         <label class="form-label" for="ai-provider-model-ids">${escapeHtml(
           t('modelIds')
@@ -617,9 +672,16 @@ function renderCreateForm(t: (key: TranslationKey) => string) {
         )}</label>
         <input class="form-control" id="ai-provider-default-model" name="defaultModel" type="text">
       </div>
+      </div>
+      <div class="ai-admin-form-footer">
+        <label class="ai-admin-checkbox" for="ai-provider-enabled">
+          <input id="ai-provider-enabled" name="enabled" type="checkbox" checked>
+          <span>${escapeHtml(t('enabled'))}</span>
+        </label>
       <button class="btn btn-primary" type="submit">${escapeHtml(
         t('addProvider')
       )}</button>
+      </div>
     </form>
   `
 }
@@ -668,6 +730,17 @@ function findProvider(providers: AiProvider[], providerId?: string) {
   return providers.find(provider => provider.id === providerId)
 }
 
+function renderStatusBadge(label: string, tone: string) {
+  return `<span class="ai-admin-status ai-admin-status-${escapeAttribute(
+    tone
+  )}">${escapeHtml(label)}</span>`
+}
+
+function getAdminLanguage(): AdminLanguage {
+  const language = getMeta('ol-i18n')?.currentLangCode || 'en'
+  return language.toLowerCase().startsWith('zh') ? 'zh' : 'en'
+}
+
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, character => {
     switch (character) {
@@ -685,4 +758,8 @@ function escapeHtml(value: string) {
         return character
     }
   })
+}
+
+function escapeAttribute(value: string) {
+  return value.replace(/[^a-z0-9_-]/gi, '-').toLowerCase()
 }

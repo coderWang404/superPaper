@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import { fireEvent, screen } from '@testing-library/dom'
 import fetchMock from 'fetch-mock'
 
+import { resetMeta } from '../../helpers/reset-meta'
 import { initAiProviderAdmin } from '../../../../frontend/js/features/ai-provider-admin/ai-provider-admin'
 
 describe('ai-provider-admin', function () {
@@ -10,6 +11,7 @@ describe('ai-provider-admin', function () {
   afterEach(function () {
     fetchMock.removeRoutes().clearHistory()
     document.body.innerHTML = ''
+    resetMeta()
   })
 
   it('loads providers from the admin endpoint and renders redacted providers', async function () {
@@ -194,7 +196,9 @@ describe('ai-provider-admin', function () {
     fireEvent.input(screen.getByLabelText('New API key for Provider One'), {
       target: { value: fakeProviderKey },
     })
-    fireEvent.submit(screen.getByRole('form', { name: 'Replace Provider One key' }))
+    fireEvent.submit(
+      screen.getByRole('form', { name: 'Replace key for Provider One' })
+    )
 
     await screen.findByText('API key replaced')
 
@@ -246,7 +250,8 @@ describe('ai-provider-admin', function () {
     screen.getByText('AI provider request failed')
   })
 
-  it('switches the admin provider interface between English and Chinese', async function () {
+  it('uses the system language for provider administration copy', async function () {
+    window.metaAttributesCache.set('ol-i18n', { currentLangCode: 'zh-CN' })
     fetchMock.get('/admin/ai/providers', {
       providers: [providerFixture()],
     })
@@ -254,20 +259,12 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: '中文' }))
-
     screen.getByRole('heading', { name: '添加供应商' })
     screen.getByText('供应商名称')
-    screen.getByText('模型')
+    expect(screen.getAllByText('模型')).to.have.length(2)
     screen.getByText('API 密钥已保存')
-    screen.getByRole('button', { name: 'English' })
-
-    fireEvent.click(screen.getByRole('button', { name: 'English' }))
-
-    screen.getByRole('heading', { name: 'Add provider' })
-    screen.getByText('Provider name')
-    screen.getByText('Models')
-    screen.getByText('API key stored')
+    expect(screen.queryByRole('button', { name: '中文' })).to.equal(null)
+    expect(screen.queryByRole('button', { name: 'English' })).to.equal(null)
   })
 })
 

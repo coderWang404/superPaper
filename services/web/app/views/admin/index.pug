@@ -2,6 +2,13 @@ extends ../layout-marketing
 include ../_mixins/bookmarkable_tabset
 
 block content
+	- const adminLang = (currentLngCode || 'en').toLowerCase()
+	- const isChineseAdmin = adminLang.startsWith('zh')
+	- const aiAdminTabLabel = isChineseAdmin ? 'AI 管理' : 'AI Administration'
+	- const aiAdminTitle = aiAdminTabLabel
+	- const aiAdminSubtitle = isChineseAdmin ? '模型渠道、Agent 插件与可复用技能的统一控制台。' : 'Unified controls for model gateways, Agent plugins, and reusable skills.'
+	- const aiProviderLoading = isChineseAdmin ? '正在加载 AI 供应商...' : 'Loading AI providers...'
+	- const agentPluginLoading = isChineseAdmin ? '正在加载 Agent 插件...' : 'Loading Agent plugins...'
 	#main-content.content.content-alt
 		.container
 			.row
@@ -17,7 +24,7 @@ block content
 										+bookmarkable-tabset-header('open-sockets', 'Open Sockets')
 										+bookmarkable-tabset-header('open-close-editor', 'Open/Close Editor')
 										+bookmarkable-tabset-header('privileges-matrix', 'Privileges Matrix')
-										+bookmarkable-tabset-header('ai-providers', 'AI Providers')
+										+bookmarkable-tabset-header('ai-providers', aiAdminTabLabel)
 										+bookmarkable-tabset-header('tpds', 'TPDS/Dropbox Management')
 										+bookmarkable-tabset-header('debug-projects', 'Debug Projects')
 
@@ -106,15 +113,14 @@ block content
 											p The privileges matrix is not available in this environment.
 
 									.tab-pane(role='tabpanel' id='ai-providers')
-										h3 AI Providers
-										p Configure OpenAI-compatible AI providers for project chat and future editor actions. API keys are accepted only from password fields and are never returned by the server.
-										#ai-provider-admin(data-csrf-token=csrfToken)
-											p.text-muted Loading AI providers...
-										hr
-										h3 Agent Plugins
-										p Install safe instruction-only Agent plugins. Hooks, scripts, shell commands, and MCP servers are rejected by the server until a sandboxed runtime is available.
-										#ai-agent-plugin-admin(data-csrf-token=csrfToken)
-											p.text-muted Loading Agent plugins...
+										.ai-admin-workspace
+											.ai-admin-page-header
+												h2= aiAdminTitle
+												p= aiAdminSubtitle
+											#ai-provider-admin(data-csrf-token=csrfToken)
+												p.text-muted= aiProviderLoading
+											#ai-agent-plugin-admin(data-csrf-token=csrfToken)
+												p.text-muted= agentPluginLoading
 
 									.tab-pane(role='tabpanel' id='tpds')
 										h3 Flush project to TPDS

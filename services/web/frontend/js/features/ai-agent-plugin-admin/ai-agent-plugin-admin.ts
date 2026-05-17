@@ -1,3 +1,5 @@
+import getMeta from '@/utils/meta'
+
 type AgentPluginSource =
   | {
       sourceType: 'local_directory'
@@ -75,10 +77,144 @@ type PluginState = {
   errorMessage: string | null
 }
 
+type AdminLanguage = 'en' | 'zh'
+
+type TranslationKey =
+  | 'actions'
+  | 'agentPlugins'
+  | 'agentPluginsDescription'
+  | 'disabled'
+  | 'disable'
+  | 'enabled'
+  | 'enable'
+  | 'enableAfterInstall'
+  | 'fileCount'
+  | 'files'
+  | 'integrity'
+  | 'installAgentPlugin'
+  | 'installPlugin'
+  | 'installed'
+  | 'loading'
+  | 'localDirectory'
+  | 'manifest'
+  | 'name'
+  | 'noPlugins'
+  | 'noRequiredTools'
+  | 'pluginDirectoryPath'
+  | 'pluginDisabled'
+  | 'pluginEnabled'
+  | 'pluginId'
+  | 'pluginInstalled'
+  | 'pluginPreviewReady'
+  | 'pluginRequestFailed'
+  | 'pluginZipUrl'
+  | 'previewAgentPlugin'
+  | 'previewingPlugin'
+  | 'previewPlugin'
+  | 'safeSubset'
+  | 'sha256'
+  | 'skills'
+  | 'source'
+  | 'sourceType'
+  | 'status'
+  | 'unknown'
+  | 'version'
+  | 'zipUrl'
+
+const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
+  en: {
+    actions: 'Actions',
+    agentPlugins: 'Agent plugins',
+    agentPluginsDescription:
+      'Install instruction-only packages that add reusable Agent skills. Executable capabilities are rejected server-side.',
+    disabled: 'Disabled',
+    disable: 'Disable',
+    enabled: 'Enabled',
+    enable: 'Enable',
+    enableAfterInstall: 'Enable after install',
+    fileCount: 'Files',
+    files: 'files',
+    integrity: 'Integrity',
+    installAgentPlugin: 'Install Agent plugin',
+    installPlugin: 'Install plugin',
+    installed: 'Installed',
+    loading: 'Loading Agent plugins...',
+    localDirectory: 'Local directory',
+    manifest: 'Manifest',
+    name: 'Name',
+    noPlugins: 'No Agent plugins installed',
+    noRequiredTools: 'No required tools',
+    pluginDirectoryPath: 'Plugin directory path',
+    pluginDisabled: 'Plugin disabled',
+    pluginEnabled: 'Plugin enabled',
+    pluginId: 'Plugin ID',
+    pluginInstalled: 'Plugin installed',
+    pluginPreviewReady: 'Plugin preview ready',
+    pluginRequestFailed: 'Agent plugin request failed',
+    pluginZipUrl: 'Plugin zip URL',
+    previewAgentPlugin: 'Preview Agent plugin',
+    previewingPlugin: 'Previewing plugin...',
+    previewPlugin: 'Preview plugin',
+    safeSubset: 'Safe subset',
+    sha256: 'SHA-256',
+    skills: 'Skills',
+    source: 'Source',
+    sourceType: 'Source type',
+    status: 'Status',
+    unknown: 'Unknown',
+    version: 'Version',
+    zipUrl: 'HTTPS zip URL',
+  },
+  zh: {
+    actions: '操作',
+    agentPlugins: 'Agent 插件',
+    agentPluginsDescription:
+      '安装只包含指令的能力包，为 Agent 增加可复用技能。可执行能力由服务端拒绝。',
+    disabled: '已禁用',
+    disable: '禁用',
+    enabled: '已启用',
+    enable: '启用',
+    enableAfterInstall: '安装后启用',
+    fileCount: '文件',
+    files: '个文件',
+    integrity: '完整性',
+    installAgentPlugin: '安装 Agent 插件',
+    installPlugin: '安装插件',
+    installed: '已安装',
+    loading: '正在加载 Agent 插件...',
+    localDirectory: '本地目录',
+    manifest: '清单',
+    name: '名称',
+    noPlugins: '尚未安装 Agent 插件',
+    noRequiredTools: '无工具依赖',
+    pluginDirectoryPath: '插件目录路径',
+    pluginDisabled: '插件已禁用',
+    pluginEnabled: '插件已启用',
+    pluginId: '插件 ID',
+    pluginInstalled: '插件已安装',
+    pluginPreviewReady: '插件预览已生成',
+    pluginRequestFailed: 'Agent 插件请求失败',
+    pluginZipUrl: '插件 zip 地址',
+    previewAgentPlugin: '预览 Agent 插件',
+    previewingPlugin: '正在预览插件...',
+    previewPlugin: '预览插件',
+    safeSubset: '安全子集',
+    sha256: 'SHA-256',
+    skills: '技能',
+    source: '来源',
+    sourceType: '来源类型',
+    status: '状态',
+    unknown: '未知',
+    version: '版本',
+    zipUrl: 'HTTPS zip 地址',
+  },
+}
+
 const SAFE_ERROR_MESSAGE = 'Agent plugin request failed'
 
 export function initAiAgentPluginAdmin(root: HTMLElement): void {
   const csrfToken = root.dataset.csrfToken || ''
+  const language = getAdminLanguage()
   const state: PluginState = {
     plugins: [],
     preview: null,
@@ -89,6 +225,10 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
     sourceValue: '',
     statusMessage: null,
     errorMessage: null,
+  }
+
+  function t(key: TranslationKey) {
+    return TRANSLATIONS[language][key]
   }
 
   async function loadPlugins() {
@@ -131,7 +271,7 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
       )
       state.preview = response.preview
       state.previewing = false
-      state.statusMessage = 'Plugin preview ready'
+      state.statusMessage = t('pluginPreviewReady')
       render()
     } catch {
       showSafeError()
@@ -163,7 +303,7 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
       upsertPlugin(response.plugin)
       state.preview = null
       state.installing = false
-      state.statusMessage = 'Plugin installed'
+      state.statusMessage = t('pluginInstalled')
       render()
     } catch {
       showSafeError()
@@ -184,8 +324,8 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
       )
       upsertPlugin(response.plugin)
       state.statusMessage = response.plugin.enabled
-        ? 'Plugin enabled'
-        : 'Plugin disabled'
+        ? t('pluginEnabled')
+        : t('pluginDisabled')
       state.errorMessage = null
       render()
     } catch {
@@ -211,18 +351,17 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
     state.previewing = false
     state.installing = false
     state.statusMessage = null
-    state.errorMessage = SAFE_ERROR_MESSAGE
+    state.errorMessage = t('pluginRequestFailed')
     render()
   }
 
   function render() {
     root.innerHTML = `
       <div class="ai-agent-plugin-admin">
+        ${renderPluginOverview(state.plugins, t)}
         <div class="ai-provider-admin-feedback">
           <div class="text-muted" role="status">${escapeHtml(
-            state.loading
-              ? 'Loading Agent plugins...'
-              : state.statusMessage || ''
+            state.loading ? t('loading') : state.statusMessage || ''
           )}</div>
           ${
             state.errorMessage
@@ -232,9 +371,25 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
               : ''
           }
         </div>
-        ${renderPluginTable(state.plugins, state.loading)}
-        ${renderSourceForm(state)}
-        ${renderPreview(state.preview, state.previewing, state.installing)}
+        <div class="ai-admin-section">
+          <div class="ai-admin-section-header">
+            <div>
+              <h4>${escapeHtml(t('agentPlugins'))}</h4>
+              <p>${escapeHtml(t('agentPluginsDescription'))}</p>
+            </div>
+          </div>
+          ${renderPluginTable(state.plugins, state.loading, t)}
+        </div>
+        <div class="ai-admin-section">
+          <div class="ai-admin-section-header">
+            <div>
+              <h4>${escapeHtml(t('installAgentPlugin'))}</h4>
+              <p>${escapeHtml(t('safeSubset'))}</p>
+            </div>
+          </div>
+          ${renderSourceForm(state, t)}
+          ${renderPreview(state.preview, state.previewing, state.installing, t)}
+        </div>
       </div>
     `
 
@@ -306,104 +461,159 @@ async function requestJSON<T>(
   return response.json()
 }
 
+function renderPluginOverview(
+  plugins: AgentPluginInstallation[],
+  t: (key: TranslationKey) => string
+) {
+  const enabledCount = plugins.filter(plugin => plugin.enabled).length
+  const skillCount = plugins.reduce(
+    (total, plugin) => total + plugin.skillIds.length,
+    0
+  )
+
+  return `
+    <div class="ai-admin-overview" aria-label="${escapeHtml(
+      t('agentPlugins')
+    )}">
+      ${renderMetric(t('installed'), String(plugins.length))}
+      ${renderMetric(t('enabled'), String(enabledCount))}
+      ${renderMetric(t('skills'), String(skillCount))}
+      ${renderMetric(t('safeSubset'), 'v1')}
+    </div>
+  `
+}
+
+function renderMetric(label: string, value: string) {
+  return `
+    <div class="ai-admin-metric">
+      <div class="ai-admin-metric-value">${escapeHtml(value)}</div>
+      <div class="ai-admin-metric-label">${escapeHtml(label)}</div>
+    </div>
+  `
+}
+
 function renderPluginTable(
   plugins: AgentPluginInstallation[],
-  loading: boolean
+  loading: boolean,
+  t: (key: TranslationKey) => string
 ) {
   if (loading) {
     return ''
   }
   if (plugins.length === 0) {
-    return '<p class="text-muted">No Agent plugins installed</p>'
+    return `<p class="text-muted">${escapeHtml(t('noPlugins'))}</p>`
   }
 
   return `
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Version</th>
-          <th>Skills</th>
-          <th>Source</th>
-          <th>Integrity</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${plugins.map(renderPluginRow).join('')}
-      </tbody>
-    </table>
+    <div class="ai-admin-table-wrap">
+      <table class="table table-striped ai-admin-table">
+        <thead>
+          <tr>
+            <th>${escapeHtml(t('name'))}</th>
+            <th>${escapeHtml(t('version'))}</th>
+            <th>${escapeHtml(t('skills'))}</th>
+            <th>${escapeHtml(t('source'))}</th>
+            <th>${escapeHtml(t('integrity'))}</th>
+            <th>${escapeHtml(t('status'))}</th>
+            <th>${escapeHtml(t('actions'))}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${plugins.map(plugin => renderPluginRow(plugin, t)).join('')}
+        </tbody>
+      </table>
+    </div>
   `
 }
 
-function renderPluginRow(plugin: AgentPluginInstallation) {
+function renderPluginRow(
+  plugin: AgentPluginInstallation,
+  t: (key: TranslationKey) => string
+) {
   const escapedPluginId = escapeHtml(plugin.pluginId)
   return `
     <tr>
       <td>
         <strong>${escapeHtml(plugin.displayName || plugin.name)}</strong>
-        <div class="small text-muted">${escapeHtml(plugin.pluginId)}</div>
+        <div class="ai-admin-row-subtitle">${escapeHtml(plugin.pluginId)}</div>
       </td>
       <td>${escapeHtml(plugin.version)}</td>
       <td>${plugin.skillIds.length}</td>
-      <td>${escapeHtml(sourceLabel(plugin.source))}</td>
+      <td>${escapeHtml(sourceLabel(plugin.source, t))}</td>
       <td><code>${escapeHtml(shortHash(plugin.integrity.sha256))}</code></td>
-      <td>${escapeHtml(plugin.enabled ? 'Enabled' : 'Disabled')}</td>
+      <td>${renderStatusBadge(
+        plugin.enabled ? t('enabled') : t('disabled'),
+        plugin.enabled ? 'enabled' : 'disabled'
+      )}</td>
       <td>
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm"
-          data-ai-agent-plugin-toggle
-          data-plugin-id="${escapedPluginId}"
-        >
-          ${plugin.enabled ? 'Disable' : 'Enable'}
-        </button>
+        <div class="ai-admin-actions">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            data-ai-agent-plugin-toggle
+            data-plugin-id="${escapedPluginId}"
+          >
+            ${plugin.enabled ? t('disable') : t('enable')}
+          </button>
+        </div>
       </td>
     </tr>
   `
 }
 
-function renderSourceForm(state: PluginState) {
+function renderSourceForm(
+  state: PluginState,
+  t: (key: TranslationKey) => string
+) {
   const isLocal = state.sourceType === 'local_directory'
   return `
-    <hr>
-    <h4>Install Agent plugin</h4>
-    <form aria-label="Preview Agent plugin" data-ai-agent-plugin-source-form>
-      <div class="form-group">
-        <label class="form-label" for="ai-agent-plugin-source-type">Source type</label>
-        <select
-          class="form-control"
-          id="ai-agent-plugin-source-type"
-          name="sourceType"
-          data-ai-agent-plugin-source-type
-        >
-          <option value="local_directory" ${isLocal ? 'selected' : ''}>Local directory</option>
-          <option value="zip_url" ${isLocal ? '' : 'selected'}>HTTPS zip URL</option>
-        </select>
+    <form class="ai-admin-form" aria-label="${escapeHtml(
+      t('previewAgentPlugin')
+    )}" data-ai-agent-plugin-source-form>
+      <div class="ai-admin-form-grid">
+        <div class="form-group">
+          <label class="form-label" for="ai-agent-plugin-source-type">${escapeHtml(
+            t('sourceType')
+          )}</label>
+          <select
+            class="form-control"
+            id="ai-agent-plugin-source-type"
+            name="sourceType"
+            data-ai-agent-plugin-source-type
+          >
+            <option value="local_directory" ${isLocal ? 'selected' : ''}>${escapeHtml(
+              t('localDirectory')
+            )}</option>
+            <option value="zip_url" ${isLocal ? '' : 'selected'}>${escapeHtml(
+              t('zipUrl')
+            )}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ai-agent-plugin-source-value">${
+            isLocal
+              ? escapeHtml(t('pluginDirectoryPath'))
+              : escapeHtml(t('pluginZipUrl'))
+          }</label>
+          <input
+            class="form-control"
+            id="ai-agent-plugin-source-value"
+            name="sourceValue"
+            type="${isLocal ? 'text' : 'url'}"
+            value="${escapeHtml(state.sourceValue)}"
+            required
+          >
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label" for="ai-agent-plugin-source-value">${
-          isLocal ? 'Plugin directory path' : 'Plugin zip URL'
-        }</label>
-        <input
-          class="form-control"
-          id="ai-agent-plugin-source-value"
-          name="sourceValue"
-          type="${isLocal ? 'text' : 'url'}"
-          value="${escapeHtml(state.sourceValue)}"
-          required
-        >
-      </div>
-      <div class="checkbox">
-        <label for="ai-agent-plugin-enabled">
+      <div class="ai-admin-form-footer">
+        <label class="ai-admin-checkbox" for="ai-agent-plugin-enabled">
           <input id="ai-agent-plugin-enabled" name="enabled" type="checkbox" checked>
-          Enable after install
+          <span>${escapeHtml(t('enableAfterInstall'))}</span>
         </label>
+        <button class="btn btn-secondary" type="submit" ${
+          state.previewing ? 'disabled' : ''
+        }>${escapeHtml(t('previewPlugin'))}</button>
       </div>
-      <button class="btn btn-secondary" type="submit" ${
-        state.previewing ? 'disabled' : ''
-      }>Preview plugin</button>
     </form>
   `
 }
@@ -411,33 +621,39 @@ function renderSourceForm(state: PluginState) {
 function renderPreview(
   preview: AgentPluginPreview | null,
   previewing: boolean,
-  installing: boolean
+  installing: boolean,
+  t: (key: TranslationKey) => string
 ) {
   if (previewing) {
-    return '<p class="text-muted">Previewing plugin...</p>'
+    return `<p class="text-muted">${escapeHtml(t('previewingPlugin'))}</p>`
   }
   if (!preview) {
     return ''
   }
 
   return `
-    <div class="well ai-agent-plugin-preview">
-      <h4>${escapeHtml(preview.plugin.displayName || preview.plugin.name)}</h4>
-      <dl class="dl-horizontal">
-        <dt>Plugin ID</dt>
+    <div class="ai-agent-plugin-preview">
+      <div class="ai-agent-plugin-preview-header">
+        <h4>${escapeHtml(preview.plugin.displayName || preview.plugin.name)}</h4>
+        ${renderStatusBadge(t('safeSubset'), 'enabled')}
+      </div>
+      <dl class="ai-admin-definition-list">
+        <dt>${escapeHtml(t('pluginId'))}</dt>
         <dd>${escapeHtml(preview.plugin.id)}</dd>
-        <dt>Version</dt>
+        <dt>${escapeHtml(t('version'))}</dt>
         <dd>${escapeHtml(preview.plugin.version)}</dd>
-        <dt>Manifest</dt>
+        <dt>${escapeHtml(t('manifest'))}</dt>
         <dd>${escapeHtml(preview.plugin.manifestFormat)}</dd>
-        <dt>Files</dt>
-        <dd>${preview.fileCount} files, ${formatBytes(preview.packageBytes)}</dd>
-        <dt>SHA-256</dt>
+        <dt>${escapeHtml(t('fileCount'))}</dt>
+        <dd>${preview.fileCount} ${escapeHtml(t('files'))}, ${formatBytes(
+          preview.packageBytes
+        )}</dd>
+        <dt>${escapeHtml(t('sha256'))}</dt>
         <dd><code>${escapeHtml(preview.integrity.sha256 || '')}</code></dd>
       </dl>
-      <h5>Skills</h5>
-      <ul>
-        ${preview.skills.map(renderPreviewSkill).join('')}
+      <h5>${escapeHtml(t('skills'))}</h5>
+      <ul class="ai-agent-plugin-skill-list">
+        ${preview.skills.map(skill => renderPreviewSkill(skill, t)).join('')}
       </ul>
       <button
         type="button"
@@ -445,20 +661,23 @@ function renderPreview(
         data-ai-agent-plugin-install
         ${installing ? 'disabled' : ''}
       >
-        Install plugin
+        ${escapeHtml(t('installPlugin'))}
       </button>
     </div>
   `
 }
 
-function renderPreviewSkill(skill: AgentPluginPreviewSkill) {
+function renderPreviewSkill(
+  skill: AgentPluginPreviewSkill,
+  t: (key: TranslationKey) => string
+) {
   return `
     <li>
       <strong>${escapeHtml(skill.displayName || skill.id)}</strong>
-      <div class="small text-muted">${escapeHtml(skill.id)}</div>
+      <div class="ai-admin-row-subtitle">${escapeHtml(skill.id)}</div>
       <div>${escapeHtml(skill.description)}</div>
-      <div class="small text-muted">
-        ${escapeHtml(skill.requiredTools.join(', ') || 'No required tools')} ·
+      <div class="ai-admin-row-subtitle">
+        ${escapeHtml(skill.requiredTools.join(', ') || t('noRequiredTools'))} ·
         ${formatBytes(skill.contentBytes)}
       </div>
     </li>
@@ -496,14 +715,17 @@ function getCheckboxInput(form: HTMLFormElement, name: string) {
   return input
 }
 
-function sourceLabel(source: AgentPluginInstallation['source']) {
+function sourceLabel(
+  source: AgentPluginInstallation['source'],
+  t: (key: TranslationKey) => string
+) {
   if (source.type === 'zip_url') {
-    return source.url || 'HTTPS zip URL'
+    return source.url || t('zipUrl')
   }
   if (source.type === 'local_directory') {
-    return 'Local directory'
+    return t('localDirectory')
   }
-  return 'Unknown'
+  return t('unknown')
 }
 
 function shortHash(hash?: string) {
@@ -518,6 +740,17 @@ function formatBytes(bytes: number) {
     return `${Math.round(bytes / 1024)} KB`
   }
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function renderStatusBadge(label: string, tone: string) {
+  return `<span class="ai-admin-status ai-admin-status-${escapeAttribute(
+    tone
+  )}">${escapeHtml(label)}</span>`
+}
+
+function getAdminLanguage(): AdminLanguage {
+  const language = getMeta('ol-i18n')?.currentLangCode || 'en'
+  return language.toLowerCase().startsWith('zh') ? 'zh' : 'en'
 }
 
 function escapeHtml(value: string) {
@@ -537,4 +770,8 @@ function escapeHtml(value: string) {
         return character
     }
   })
+}
+
+function escapeAttribute(value: string) {
+  return value.replace(/[^a-z0-9_-]/gi, '-').toLowerCase()
 }
