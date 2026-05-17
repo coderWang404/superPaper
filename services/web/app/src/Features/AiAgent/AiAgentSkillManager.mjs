@@ -80,18 +80,28 @@ export function selectSkillsForTask(
   { maxSkills = 3, availableSkills = BUILTIN_SKILLS } = {}
 ) {
   const normalizedTask = String(task || '').toLowerCase()
+  const explicitSkillRefs = extractExplicitSkillRefs(task)
+  const explicitPluginRefs = extractExplicitPluginRefs(task)
   const candidateSkills =
     Array.isArray(availableSkills) && availableSkills.length > 0
       ? availableSkills
       : BUILTIN_SKILLS
   const scored = candidateSkills.map(skill => ({
     skill,
-    score: skill.keywords.reduce((score, keyword) => {
-      return normalizedTask.includes(keyword.toLowerCase()) ? score + 1 : score
-    }, 0),
+    score: scoreSkillForTask({
+      skill,
+      normalizedTask,
+      explicitSkillRefs,
+      explicitPluginRefs,
+    }),
   }))
     .filter(item => item.score > 0)
-    .sort((left, right) => right.score - left.score)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score
+      }
+      return left.skill.id.localeCompare(right.skill.id)
+    })
     .slice(0, maxSkills)
 
   return scored.map(item => item.skill)
@@ -122,4 +132,60 @@ function publicSkill(skill) {
     scope: skill.scope || 'builtin',
     pluginId: skill.pluginId || null,
   }
+}
+
+function scoreSkillForTask({
+  skill,
+  normalizedTask,
+  explicitSkillRefs,
+  explicitPluginRefs,
+}) {
+  let score = 0
+  const skillRefs = new Set(
+    [skill.id, skill.name, skill.displayName]
+      .filter(Boolean)
+      .map(normalizeReference)
+  )
+  if ([...skillRefs].some(ref => explicitSkillRefs.has(ref))) {
+    score += 100
+  }
+  if (skill.pluginId && explicitPluginRefs.has(normalizeReference(skill.pluginId))) {
+    score += 80
+  }
+
+  for (const keyword of skill.keywords || []) {
+    if (normalizedTask.includes(String(keyword).toLowerCase())) {
+      score += 3
+    }
+  }
+  for (const field of [skill.name, skill.displayName, skill.description]) {
+    const text = String(field || '').toLowerCase()
+    if (text && normalizedTask.includes(text)) {
+      score += 2
+    }
+  }
+  return score
+}
+
+function extractExplicitSkillRefs(task) {
+  return extractRefs(task, /\$([A-Za-z0-9][A-Za-z0-9_/-]{0,160})/g)
+}
+
+function extractExplicitPluginRefs(task) {
+  return extractRefs(task, /@([A-Za-z0-9][A-Za-z0-9_/-]{0,160})/g)
+}
+
+function extractRefs(task, pattern) {
+  const refs = new Set()
+  for (const match of String(task || '').matchAll(pattern)) {
+    refs.add(normalizeReference(match[1]))
+  }
+  return refs
+}
+
+function normalizeReference(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replaceAll('_', '-')
 }

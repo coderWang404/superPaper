@@ -24,6 +24,42 @@ describe('AiAgentSkillManager', function () {
     ])
   })
 
+  it('prioritizes explicitly invoked skills and plugins', function () {
+    const availableSkills = [
+      {
+        id: 'plugin-one/style-guide',
+        name: 'style-guide',
+        displayName: 'Style Guide',
+        description: 'Apply style',
+        keywords: [],
+        requiredTools: [],
+        pluginId: 'plugin-one',
+        content: 'Apply style.',
+      },
+      {
+        id: 'plugin-two/compile-debug',
+        name: 'compile-debug',
+        displayName: 'Compile Debug',
+        description: 'Fix compile',
+        keywords: ['compile'],
+        requiredTools: [],
+        pluginId: 'plugin-two',
+        content: 'Fix compile.',
+      },
+    ]
+
+    expect(
+      selectSkillsForTask('Use $style-guide to polish this section', {
+        availableSkills,
+      }).map(skill => skill.id)
+    ).to.deep.equal(['plugin-one/style-guide'])
+    expect(
+      selectSkillsForTask('Use @plugin-two for this task', {
+        availableSkills,
+      }).map(skill => skill.id)
+    ).to.deep.equal(['plugin-two/compile-debug'])
+  })
+
   it('formats selected skills for model context', function () {
     const [skill] = selectSkillsForTask('polish academic english')
     const prompt = formatSkillsForPrompt([skill])
