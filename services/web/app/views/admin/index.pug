@@ -110,6 +110,11 @@ block content
 										p Configure OpenAI-compatible AI providers for project chat and future editor actions. API keys are accepted only from password fields and are never returned by the server.
 										#ai-provider-admin(data-csrf-token=csrfToken)
 											p.text-muted Loading AI providers...
+										hr
+										h3 Agent Plugins
+										p Install safe instruction-only Agent plugins. Hooks, scripts, shell commands, and MCP servers are rejected by the server until a sandboxed runtime is available.
+										#ai-agent-plugin-admin(data-csrf-token=csrfToken)
+											p.text-muted Loading Agent plugins...
 
 									.tab-pane(role='tabpanel' id='tpds')
 										h3 Flush project to TPDS
