@@ -129,6 +129,10 @@ describe('AiAgent routes', function () {
   it('mounts global agent settings endpoints behind site admin access', function () {
     const configRoute = findRoute('get', '/admin/ai/agent/config')
     const settingsRoute = findRoute('patch', '/admin/ai/agent/settings')
+    const pluginsRoute = findRoute('get', '/admin/ai/agent/plugins')
+    const previewRoute = findRoute('post', '/admin/ai/agent/plugins/preview')
+    const installRoute = findRoute('post', '/admin/ai/agent/plugins/install')
+    const toggleRoute = findRoute('patch', '/admin/ai/agent/plugins/:pluginId')
 
     expect(configRoute).to.exist
     expect(configRoute.handlers).to.include(
@@ -143,6 +147,29 @@ describe('AiAgent routes', function () {
     )
     expect(settingsRoute.handlers).to.include(
       'AiAgentSettingsController.updateGlobalSettings'
+    )
+    for (const route of [
+      pluginsRoute,
+      previewRoute,
+      installRoute,
+      toggleRoute,
+    ]) {
+      expect(route).to.exist
+      expect(route.handlers).to.include(
+        'AuthorizationMiddleware.ensureUserIsSiteAdmin'
+      )
+    }
+    expect(pluginsRoute.handlers).to.include(
+      'AiAgentSettingsController.listGlobalPlugins'
+    )
+    expect(previewRoute.handlers).to.include(
+      'AiAgentSettingsController.previewGlobalPlugin'
+    )
+    expect(installRoute.handlers).to.include(
+      'AiAgentSettingsController.installGlobalPlugin'
+    )
+    expect(toggleRoute.handlers).to.include(
+      'AiAgentSettingsController.setGlobalPluginEnabled'
     )
   })
 

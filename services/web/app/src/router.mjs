@@ -1156,6 +1156,26 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     AuthorizationMiddleware.ensureUserIsSiteAdmin,
     AiAgentSettingsController.globalConfig,
   );
+  webRouter.get(
+    "/admin/ai/agent/plugins",
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiAgentSettingsController.listGlobalPlugins,
+  );
+  webRouter.post(
+    "/admin/ai/agent/plugins/preview",
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiAgentSettingsController.previewGlobalPlugin,
+  );
+  webRouter.post(
+    "/admin/ai/agent/plugins/install",
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiAgentSettingsController.installGlobalPlugin,
+  );
+  webRouter.patch(
+    "/admin/ai/agent/plugins/:pluginId",
+    AuthorizationMiddleware.ensureUserIsSiteAdmin,
+    AiAgentSettingsController.setGlobalPluginEnabled,
+  );
   webRouter.patch(
     "/admin/ai/agent/settings",
     AuthorizationMiddleware.ensureUserIsSiteAdmin,

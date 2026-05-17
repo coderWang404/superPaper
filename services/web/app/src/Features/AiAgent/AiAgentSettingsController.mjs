@@ -1,11 +1,21 @@
 import { z } from 'zod'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
+import UserAuditLogHandler from '../User/UserAuditLogHandler.mjs'
 import {
   AgentSettingsValidationError,
   getAgentConfig,
   updateAgentSettings,
 } from './AiAgentSettingsManager.mjs'
+import {
+  AgentPluginInstallationError,
+  installAgentPluginPackage,
+  listInstalledAgentPlugins,
+  previewAgentPluginPackage,
+  setInstalledAgentPluginEnabled,
+  summarizePluginInstallation,
+} from './AiAgentPluginInstallationManager.mjs'
+import { AgentPluginPackageValidationError } from './AiAgentPluginPackageManager.mjs'
 
 const SettingIdSchema = z.string().trim().min(1).max(120)
 const RequiredToolsSchema = z.array(SettingIdSchema).max(20).optional()
@@ -49,6 +59,27 @@ const SettingsUpdateSchema = z.object({
     .max(20)
     .optional()
     .default([]),
+})
+
+const PluginSourceSchema = z.discriminatedUnion('sourceType', [
+  z.object({
+    sourceType: z.literal('local_directory'),
+    path: z.string().trim().min(1).max(1000),
+  }),
+  z.object({
+    sourceType: z.literal('zip_url'),
+    url: z.string().trim().url().max(2000),
+  }),
+])
+
+const PluginInstallSchema = PluginSourceSchema.and(
+  z.object({
+    enabled: z.boolean().optional().default(true),
+  })
+)
+
+const PluginEnabledSchema = z.object({
+  enabled: z.boolean(),
 })
 
 async function projectConfig(req, res, next) {
@@ -104,6 +135,73 @@ async function updateGlobalSettings(req, res, next) {
   }
 }
 
+async function listGlobalPlugins(req, res, next) {
+  try {
+    res.json({ plugins: await listInstalledAgentPlugins() })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function previewGlobalPlugin(req, res, next) {
+  try {
+    const source = PluginSourceSchema.parse(req.body)
+    res.json({ preview: await previewAgentPluginPackage(source) })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function installGlobalPlugin(req, res, next) {
+  try {
+    const body = PluginInstallSchema.parse(req.body)
+    const userId = SessionManager.getLoggedInUserId(req.session)
+    const installation = await installAgentPluginPackage({
+      source: body,
+      userId,
+      enabled: body.enabled,
+    })
+    UserAuditLogHandler.addEntryInBackground(
+      userId,
+      'agent-plugin-installed',
+      userId,
+      req.ip,
+      summarizePluginInstallation(installation)
+    )
+    res.json({
+      plugin: installation,
+      config: await getAgentConfig(),
+    })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function setGlobalPluginEnabled(req, res, next) {
+  try {
+    const body = PluginEnabledSchema.parse(req.body)
+    const userId = SessionManager.getLoggedInUserId(req.session)
+    const plugin = await setInstalledAgentPluginEnabled({
+      pluginId: req.params.pluginId,
+      enabled: body.enabled,
+      userId,
+    })
+    UserAuditLogHandler.addEntryInBackground(
+      userId,
+      'agent-plugin-enabled-changed',
+      userId,
+      req.ip,
+      summarizePluginInstallation(plugin)
+    )
+    res.json({
+      plugin,
+      config: await getAgentConfig(),
+    })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
 function summarizeSettingsChange(body) {
   return {
     skills: body.skills.map(skill => ({
@@ -134,11 +232,23 @@ function handleControllerError(err, res, next) {
   }
   if (
     err instanceof AgentSettingsValidationError ||
-    err.name === 'AgentSettingsValidationError'
+    err.name === 'AgentSettingsValidationError' ||
+    err instanceof AgentPluginPackageValidationError ||
+    err.name === 'AgentPluginPackageValidationError'
   ) {
     res.status(422).json({
       error: {
         code: 'VALIDATION_ERROR',
+        message: err.message,
+      },
+    })
+    return
+  }
+  if (err instanceof AgentPluginInstallationError) {
+    const status = err.code === 'AGENT_PLUGIN_NOT_FOUND' ? 404 : 422
+    res.status(status).json({
+      error: {
+        code: err.code,
         message: err.message,
       },
     })
@@ -152,4 +262,8 @@ export default {
   globalConfig,
   updateProjectSettings,
   updateGlobalSettings,
+  listGlobalPlugins,
+  previewGlobalPlugin,
+  installGlobalPlugin,
+  setGlobalPluginEnabled,
 }

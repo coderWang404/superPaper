@@ -30,16 +30,88 @@ describe('AiAgentSettingsController', function () {
       getAgentConfig: sinon.stub().resolves(ctx.config),
       updateAgentSettings: sinon.stub().resolves(ctx.config),
     }
+    ctx.PluginInstallationManager = {
+      AgentPluginInstallationError: class AgentPluginInstallationError extends Error {
+        constructor(code, message) {
+          super(message)
+          this.name = 'AgentPluginInstallationError'
+          this.code = code
+        }
+      },
+      installAgentPluginPackage: sinon.stub().resolves({
+        pluginId: 'latex-submission-check',
+        name: 'latex-submission-check',
+        version: '1.0.0',
+        enabled: true,
+        status: 'installed',
+        skillIds: ['latex-submission-check/compile-debug'],
+        source: { type: 'zip_url', url: 'https://example.test/plugin.zip' },
+        integrity: { sha256: 'abc123' },
+      }),
+      listInstalledAgentPlugins: sinon.stub().resolves([
+        {
+          pluginId: 'latex-submission-check',
+          version: '1.0.0',
+          enabled: true,
+        },
+      ]),
+      previewAgentPluginPackage: sinon.stub().resolves({
+        plugin: {
+          id: 'latex-submission-check',
+          version: '1.0.0',
+        },
+        skills: [],
+      }),
+      setInstalledAgentPluginEnabled: sinon.stub().resolves({
+        pluginId: 'latex-submission-check',
+        name: 'latex-submission-check',
+        version: '1.0.0',
+        enabled: false,
+        status: 'disabled',
+        skillIds: ['latex-submission-check/compile-debug'],
+        source: { type: 'zip_url', url: 'https://example.test/plugin.zip' },
+        integrity: { sha256: 'abc123' },
+      }),
+      summarizePluginInstallation: plugin => ({
+        pluginId: plugin.pluginId,
+        version: plugin.version,
+        enabled: plugin.enabled,
+        status: plugin.status,
+        skillCount: plugin.skillIds?.length || 0,
+        sourceType: plugin.source?.type || null,
+        integrity: plugin.integrity?.sha256 || null,
+      }),
+    }
+    ctx.PluginPackageManager = {
+      AgentPluginPackageValidationError:
+        class AgentPluginPackageValidationError extends Error {
+          constructor(message) {
+            super(message)
+            this.name = 'AgentPluginPackageValidationError'
+          }
+        },
+    }
     ctx.SessionManager = {
       getLoggedInUserId: sinon.stub().returns('user-one'),
     }
     ctx.ProjectAuditLogHandler = {
       addEntryInBackground: sinon.stub(),
     }
+    ctx.UserAuditLogHandler = {
+      addEntryInBackground: sinon.stub(),
+    }
 
     vi.doMock(
       '../../../../app/src/Features/AiAgent/AiAgentSettingsManager',
       () => ctx.SettingsManager
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPluginInstallationManager',
+      () => ctx.PluginInstallationManager
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentPluginPackageManager',
+      () => ctx.PluginPackageManager
     )
     vi.doMock(
       '../../../../app/src/Features/Authentication/SessionManager',
@@ -53,6 +125,9 @@ describe('AiAgentSettingsController', function () {
         default: ctx.ProjectAuditLogHandler,
       })
     )
+    vi.doMock('../../../../app/src/Features/User/UserAuditLogHandler', () => ({
+      default: ctx.UserAuditLogHandler,
+    }))
 
     ctx.Controller = (await import(modulePath)).default
     ctx.req = new MockRequest(vi)
@@ -143,6 +218,137 @@ describe('AiAgentSettingsController', function () {
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Agent plugin manifest contains executable capability: hooks',
+      },
+    })
+  })
+
+  it('lists globally installed plugins', async function (ctx) {
+    await ctx.Controller.listGlobalPlugins(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.listInstalledAgentPlugins).to.have.been
+      .called
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      plugins: [
+        {
+          pluginId: 'latex-submission-check',
+          version: '1.0.0',
+          enabled: true,
+        },
+      ],
+    })
+  })
+
+  it('previews an external plugin source', async function (ctx) {
+    ctx.req.body = {
+      sourceType: 'zip_url',
+      url: 'https://example.test/plugin.zip',
+    }
+
+    await ctx.Controller.previewGlobalPlugin(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.previewAgentPluginPackage).to.have.been
+      .calledWith({
+        sourceType: 'zip_url',
+        url: 'https://example.test/plugin.zip',
+      })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      preview: {
+        plugin: {
+          id: 'latex-submission-check',
+          version: '1.0.0',
+        },
+        skills: [],
+      },
+    })
+  })
+
+  it('installs an external plugin and records a user audit summary', async function (ctx) {
+    ctx.req.body = {
+      sourceType: 'zip_url',
+      url: 'https://example.test/plugin.zip',
+      enabled: true,
+    }
+
+    await ctx.Controller.installGlobalPlugin(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.installAgentPluginPackage).to.have.been
+      .calledWith({
+        source: {
+          sourceType: 'zip_url',
+          url: 'https://example.test/plugin.zip',
+          enabled: true,
+        },
+        userId: 'user-one',
+        enabled: true,
+      })
+    expect(ctx.UserAuditLogHandler.addEntryInBackground).to.have.been.calledWith(
+      'user-one',
+      'agent-plugin-installed',
+      'user-one',
+      '127.0.0.1',
+      {
+        pluginId: 'latex-submission-check',
+        version: '1.0.0',
+        enabled: true,
+        status: 'installed',
+        skillCount: 1,
+        sourceType: 'zip_url',
+        integrity: 'abc123',
+      }
+    )
+    expect(jsonBody(ctx.res).config).to.deep.equal(ctx.config)
+  })
+
+  it('updates an installed plugin enabled state', async function (ctx) {
+    ctx.req.params.pluginId = 'latex-submission-check'
+    ctx.req.body = {
+      enabled: false,
+    }
+
+    await ctx.Controller.setGlobalPluginEnabled(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.setInstalledAgentPluginEnabled).to.have
+      .been.calledWith({
+        pluginId: 'latex-submission-check',
+        enabled: false,
+        userId: 'user-one',
+      })
+    expect(ctx.UserAuditLogHandler.addEntryInBackground).to.have.been.calledWith(
+      'user-one',
+      'agent-plugin-enabled-changed',
+      'user-one',
+      '127.0.0.1',
+      {
+        pluginId: 'latex-submission-check',
+        version: '1.0.0',
+        enabled: false,
+        status: 'disabled',
+        skillCount: 1,
+        sourceType: 'zip_url',
+        integrity: 'abc123',
+      }
+    )
+    expect(jsonBody(ctx.res).plugin.enabled).to.equal(false)
+  })
+
+  it('returns validation errors from plugin package preview', async function (ctx) {
+    ctx.PluginInstallationManager.previewAgentPluginPackage.rejects(
+      new ctx.PluginPackageManager.AgentPluginPackageValidationError(
+        'Plugin package contains executable capability path: scripts/run.sh'
+      )
+    )
+    ctx.req.body = {
+      sourceType: 'local_directory',
+      path: '/srv/plugins/unsafe',
+    }
+
+    await ctx.Controller.previewGlobalPlugin(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.res.statusCode).to.equal(422)
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Plugin package contains executable capability path: scripts/run.sh',
       },
     })
   })
