@@ -1,3 +1,11 @@
+const path = require('path')
+const fs = require('fs')
+
+process.env.BABEL_CACHE_PATH ||= path.resolve(
+  '/tmp/superpaper-babel-register/frontend-test.json'
+)
+fs.mkdirSync(path.dirname(process.env.BABEL_CACHE_PATH), { recursive: true })
+
 // Run babel on tests to allow support for import/export statements in Node
 require('@babel/register')({
   extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
@@ -11,7 +19,6 @@ require('jsdom-global')(undefined, {
   url: 'https://www.test-superpaper.com/',
 })
 
-const path = require('path')
 process.env.SUPERPAPER_CONFIG = path.resolve(
   __dirname,
   '../../config/settings.webpack.js'
