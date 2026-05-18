@@ -36,6 +36,7 @@ describe('<AgentSettingsPanel />', function () {
     screen.getByDisplayValue('Use project-specific constraints.')
     screen.getByText('Project skill')
     screen.getByText('LaTeX 投稿检查')
+    screen.getByRole('button', { name: 'Choose file' })
     expect(screen.queryByText('Global Agent Rules')).to.equal(null)
   })
 
@@ -149,6 +150,37 @@ describe('<AgentSettingsPanel />', function () {
         files: [file],
         getData: () => '',
       },
+    })
+
+    await screen.findByText('Skill file recognized')
+    screen.getByDisplayValue('Literature Review')
+    expect(screen.getByLabelText('Skill content')).to.have.property(
+      'value',
+      skillContent
+    )
+  })
+
+  it('chooses a SKILL.md file from the explicit file picker', async function () {
+    mockConfig()
+    mockPlugins()
+
+    renderWithEditorContext(<AgentSettingsPanel />, {
+      permissionsLevel: 'owner',
+      mockCompileOnLoad: true,
+    })
+
+    await waitForElementToBeRemoved(() =>
+      screen.getByText('Loading Agent settings…')
+    )
+    const skillContent = '# Literature Review\n\nReview related work.'
+    const file = new File([skillContent], 'SKILL.md', {
+      type: 'text/markdown',
+    })
+    Object.defineProperty(file, 'text', {
+      value: async () => skillContent,
+    })
+    fireEvent.change(screen.getByLabelText('Choose file'), {
+      target: { files: [file] },
     })
 
     await screen.findByText('Skill file recognized')

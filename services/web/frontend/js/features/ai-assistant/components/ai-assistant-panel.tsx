@@ -1,4 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import RailPanelHeader from '@/features/ide-react/components/rail/rail-panel-header'
 import { useProjectContext } from '@/shared/context/project-context'
 import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
@@ -38,6 +40,7 @@ type ChatMessage = {
 }
 
 export default function AiAssistantPanel() {
+  const { t } = useTranslation()
   const { projectId } = useProjectContext()
   const { currentDocumentId, openDocName } = useEditorOpenDocContext()
   const { editorSelection } = useEditorSelectionContext()
@@ -299,28 +302,25 @@ export default function AiAssistantPanel() {
 
   return (
     <div className="ai-assistant-panel">
-      <RailPanelHeader title="AI Assistant" />
+      <RailPanelHeader title={t('ai_assistant')} />
       <div className="ai-assistant-panel-body">
         {!config && !configError && (
           <div className="ai-assistant-muted" role="status">
-            Loading AI…
+            {t('ai_assistant_loading')}
           </div>
         )}
 
         {configError && (
           <div className="ai-assistant-empty">
-            <h5>AI configuration unavailable</h5>
+            <h5>{t('ai_assistant_config_unavailable')}</h5>
             <p>{configError}</p>
           </div>
         )}
 
         {config?.providers.length === 0 && (
           <div className="ai-assistant-empty">
-            <h5>No AI provider configured</h5>
-            <p>
-              A site admin needs to add an AI provider before project questions
-              can be answered.
-            </p>
+            <h5>{t('ai_assistant_no_provider_configured')}</h5>
+            <p>{t('ai_assistant_no_provider_description')}</p>
           </div>
         )}
 
@@ -329,6 +329,7 @@ export default function AiAssistantPanel() {
             <ProviderSelector
               providers={config?.providers ?? []}
               selectedProvider={selectedProvider}
+              t={t}
               onProviderChange={providerId => {
                 const nextProvider = config?.providers.find(
                   provider => provider.id === providerId
@@ -338,14 +339,17 @@ export default function AiAssistantPanel() {
               }}
             />
 
-            <div className="ai-assistant-mode-switch" aria-label="AI mode">
+            <div
+              className="ai-assistant-mode-switch"
+              aria-label={t('ai_assistant_mode')}
+            >
               <button
                 type="button"
                 className={mode === 'chat' ? 'active' : ''}
                 aria-pressed={mode === 'chat'}
                 onClick={() => setMode('chat')}
               >
-                Chat
+                {t('chat')}
               </button>
               <button
                 type="button"
@@ -353,17 +357,20 @@ export default function AiAssistantPanel() {
                 aria-pressed={mode === 'agent'}
                 onClick={() => setMode('agent')}
               >
-                Agent
+                {t('ai_assistant_agent_mode')}
               </button>
             </div>
 
             <div className="ai-assistant-context-strip">
-              {selection ? 'Using current selection' : 'Using project context'}
+              {selection
+                ? t('ai_assistant_using_current_selection')
+                : t('ai_assistant_using_project_context')}
             </div>
 
             {mode === 'agent' && agentConfig && (
               <AgentRunControls
                 session={agentSession}
+                t={t}
                 onStartAct={handleStartAct}
                 startingAct={startingAct}
               />
@@ -374,13 +381,17 @@ export default function AiAssistantPanel() {
                 chatMessages.map((message, index) => (
                   <ChatTranscriptMessage
                     message={message}
+                    t={t}
                     key={`${message.role}-${index}`}
                   />
                 ))}
               {mode === 'chat' && streamedAnswer && (
                 <div className="ai-assistant-message ai-assistant-message-assistant">
                   <div className="ai-assistant-message-meta">
-                    superPaper AI · {selectedProvider.name} · {selectedModel}
+                    {t('ai_assistant_response_meta', {
+                      provider: selectedProvider.name,
+                      model: selectedModel,
+                    })}
                   </div>
                   <div className="ai-assistant-answer-text">
                     {streamedAnswer}
@@ -391,6 +402,7 @@ export default function AiAssistantPanel() {
                 <AgentEventList
                   events={agentEvents}
                   projectId={projectId}
+                  t={t}
                   onSessionStatusChange={status => {
                     setAgentSession(currentSession =>
                       currentSession
@@ -403,7 +415,7 @@ export default function AiAssistantPanel() {
               {mode === 'agent' && agentAnswer && (
                 <div className="ai-assistant-message ai-assistant-message-assistant">
                   <div className="ai-assistant-message-meta">
-                    superPaper Agent
+                    {t('ai_assistant_agent_name')}
                   </div>
                   <div className="ai-assistant-answer-text">{agentAnswer}</div>
                 </div>
@@ -416,19 +428,20 @@ export default function AiAssistantPanel() {
               onSubmit={handleSubmit}
             >
               <label htmlFor="ai-assistant-prompt">
-                Ask about this project
+                {t('ai_assistant_prompt_label')}
               </label>
               <textarea
                 id="ai-assistant-prompt"
                 value={prompt}
                 onChange={event => setPrompt(event.target.value)}
-                placeholder="Ask a question about the project, current file, or selected text."
+                placeholder={t('ai_assistant_prompt_placeholder')}
                 rows={4}
               />
               <div className="ai-assistant-composer-footer">
                 <ComposerModelSelector
                   selectedModel={selectedModel}
                   enabledModels={enabledModels}
+                  t={t}
                   onModelChange={setSelectedModel}
                 />
                 <OLButton
@@ -436,16 +449,18 @@ export default function AiAssistantPanel() {
                   variant="primary"
                   disabled={!prompt.trim() || submitting}
                   isLoading={submitting}
-                  loadingLabel="Sending"
+                  loadingLabel={t('ai_assistant_sending')}
                 >
-                  {mode === 'agent' ? agentSubmitLabel(agentSession) : 'Send'}
+                  {mode === 'agent'
+                    ? agentSubmitLabel(agentSession, t)
+                    : t('send')}
                 </OLButton>
               </div>
             </form>
 
             {chatError && (
               <div className="ai-assistant-error">
-                <h5>AI request failed</h5>
+                <h5>{t('ai_assistant_request_failed')}</h5>
                 <p>{chatError}</p>
               </div>
             )}
@@ -454,7 +469,7 @@ export default function AiAssistantPanel() {
               <div className="ai-assistant-answer">
                 {answer.context.includedFiles.length > 0 && (
                   <div className="ai-assistant-context-files">
-                    <h5>Context used</h5>
+                    <h5>{t('ai_assistant_context_used')}</h5>
                     <ul>
                       {answer.context.includedFiles.map(file => (
                         <li key={file}>{file}</li>
@@ -471,17 +486,24 @@ export default function AiAssistantPanel() {
   )
 }
 
-function ChatTranscriptMessage({ message }: { message: ChatMessage }) {
+function ChatTranscriptMessage({
+  message,
+  t,
+}: {
+  message: ChatMessage
+  t: TFunction
+}) {
   return (
     <div
       className={`ai-assistant-message ai-assistant-message-${message.role}`}
     >
       <div className="ai-assistant-message-meta">
         {message.role === 'user'
-          ? 'You'
-          : `superPaper AI · ${message.providerName || ''} · ${
-              message.model || ''
-            }`}
+          ? t('you')
+          : t('ai_assistant_response_meta', {
+              provider: message.providerName || '',
+              model: message.model || '',
+            })}
       </div>
       <div className="ai-assistant-answer-text">{message.content}</div>
     </div>
@@ -490,10 +512,12 @@ function ChatTranscriptMessage({ message }: { message: ChatMessage }) {
 
 function AgentRunControls({
   session,
+  t,
   onStartAct,
   startingAct,
 }: {
   session: ProjectAiAgentSession | null
+  t: TFunction
   onStartAct: () => void
   startingAct: boolean
 }) {
@@ -503,17 +527,17 @@ function AgentRunControls({
 
   return (
     <div className="ai-assistant-agent-controls">
-      <span>{session ? formatAgentMode(session) : 'Plan'}</span>
+      <span>{session ? formatAgentMode(session, t) : t('ai_assistant_plan')}</span>
       <OLButton
         type="button"
         size="sm"
         variant="secondary"
         disabled={!canStartAct || startingAct}
         isLoading={startingAct}
-        loadingLabel="Starting"
+        loadingLabel={t('ai_assistant_starting')}
         onClick={onStartAct}
       >
-        Start Act
+        {t('ai_assistant_start_act')}
       </OLButton>
     </div>
   )
@@ -522,10 +546,12 @@ function AgentRunControls({
 function AgentEventList({
   events,
   projectId,
+  t,
   onSessionStatusChange,
 }: {
   events: ProjectAiAgentEvent[]
   projectId: string
+  t: TFunction
   onSessionStatusChange: (status: ProjectAiAgentSession['status']) => void
 }) {
   return (
@@ -536,17 +562,18 @@ function AgentEventList({
           key={`${event.id}-${event.sequence}-${index}`}
         >
           <div className="ai-assistant-message-meta">
-            {formatAgentEventTitle(event)}
+            {formatAgentEventTitle(event, t)}
           </div>
           {event.type === 'patch_created' && isAgentPatch(event.payload.patch) ? (
             <AgentPatchReview
               initialPatch={event.payload.patch}
               projectId={projectId}
+              t={t}
               onSessionStatusChange={onSessionStatusChange}
             />
           ) : (
             <div className="ai-assistant-answer-text">
-              {formatAgentEventPayload(event)}
+              {formatAgentEventPayload(event, t)}
             </div>
           )}
         </div>
@@ -555,38 +582,46 @@ function AgentEventList({
   )
 }
 
-function formatAgentEventTitle(event: ProjectAiAgentEvent) {
+function formatAgentEventTitle(event: ProjectAiAgentEvent, t: TFunction) {
   if (event.type === 'patch_created') {
-    return 'Patch review'
+    return t('ai_assistant_patch_review')
   }
   if (event.type === 'patch_applied') {
-    return 'Patch applied'
+    return t('ai_assistant_patch_applied')
   }
   if (event.type === 'tool_call') {
-    return `Tool call: ${String(event.payload.name ?? '')}`
+    return t('ai_assistant_tool_call', {
+      name: String(event.payload.name ?? ''),
+    })
   }
   if (event.type === 'tool_result') {
-    return `Tool result: ${String(event.payload.name ?? '')}`
+    return t('ai_assistant_tool_result', {
+      name: String(event.payload.name ?? ''),
+    })
   }
   if (event.type === 'mode_changed') {
-    return 'Mode changed'
+    return t('ai_assistant_mode_changed')
   }
   if (event.type === 'permission_denied') {
-    return `Permission denied: ${String(event.payload.name ?? '')}`
+    return t('ai_assistant_permission_denied', {
+      name: String(event.payload.name ?? ''),
+    })
   }
   if (event.type === 'error') {
-    return 'Agent error'
+    return t('ai_assistant_agent_error')
   }
-  return 'Agent message'
+  return t('ai_assistant_agent_message')
 }
 
-function formatAgentEventPayload(event: ProjectAiAgentEvent) {
+function formatAgentEventPayload(event: ProjectAiAgentEvent, t: TFunction) {
   const payload = event.payload
   if (typeof payload.content === 'string') {
     return payload.content
   }
   if (Array.isArray(payload.enabledSkillIds)) {
-    return `Skills: ${payload.enabledSkillIds.join(', ') || 'none'}`
+    return t('ai_assistant_skills_summary', {
+      skills: payload.enabledSkillIds.join(', ') || t('ai_assistant_none'),
+    })
   }
   if (typeof payload.message === 'string') {
     return payload.message
@@ -603,10 +638,12 @@ function formatAgentEventPayload(event: ProjectAiAgentEvent) {
 function AgentPatchReview({
   initialPatch,
   projectId,
+  t,
   onSessionStatusChange,
 }: {
   initialPatch: ProjectAiAgentPatch
   projectId: string
+  t: TFunction
   onSessionStatusChange: (status: ProjectAiAgentSession['status']) => void
 }) {
   const [patch, setPatch] = useState(initialPatch)
@@ -645,7 +682,7 @@ function AgentPatchReview({
   return (
     <div className="ai-assistant-agent-patch">
       <div className="ai-assistant-agent-patch-header">
-        <span>{patch.summary || 'Proposed edit'}</span>
+        <span>{patch.summary || t('ai_assistant_proposed_edit')}</span>
         <span className={`ai-assistant-agent-patch-status ${patch.status}`}>
           {patch.status}
         </span>
@@ -663,7 +700,9 @@ function AgentPatchReview({
       {error && <div className="ai-assistant-agent-patch-error">{error}</div>}
       {patch.compileResult && (
         <div className="ai-assistant-agent-compile-result">
-          Compile: {patch.compileResult.status}
+          {t('ai_assistant_compile_status', {
+            status: patch.compileResult.status,
+          })}
         </div>
       )}
       <div className="ai-assistant-agent-patch-actions">
@@ -673,10 +712,10 @@ function AgentPatchReview({
           variant="secondary"
           disabled={patch.status !== 'pending' || rejecting || applying}
           isLoading={rejecting}
-          loadingLabel="Rejecting"
+          loadingLabel={t('ai_assistant_rejecting')}
           onClick={handleReject}
         >
-          Reject
+          {t('reject')}
         </OLButton>
         <OLButton
           type="button"
@@ -684,10 +723,10 @@ function AgentPatchReview({
           variant="primary"
           disabled={patch.status !== 'pending' || applying || rejecting}
           isLoading={applying}
-          loadingLabel="Applying"
+          loadingLabel={t('ai_assistant_applying')}
           onClick={handleApply}
         >
-          Apply
+          {t('ai_assistant_apply_patch')}
         </OLButton>
       </div>
     </div>
@@ -720,19 +759,21 @@ function isAgentPatch(value: unknown): value is ProjectAiAgentPatch {
 function ProviderSelector({
   providers,
   selectedProvider,
+  t,
   onProviderChange,
 }: {
   providers: ProjectAiProvider[]
   selectedProvider: ProjectAiProvider
+  t: TFunction
   onProviderChange: (providerId: string) => void
 }) {
   return (
     <div className="ai-assistant-provider">
       {providers.length > 1 ? (
         <div>
-          <span className="ai-assistant-label">Provider</span>
+          <span className="ai-assistant-label">{t('ai_assistant_provider')}</span>
           <OLFormSelect
-            aria-label="Provider"
+            aria-label={t('ai_assistant_provider')}
             value={selectedProvider.id}
             onChange={event => onProviderChange(event.target.value)}
           >
@@ -745,7 +786,7 @@ function ProviderSelector({
         </div>
       ) : (
         <div>
-          <span className="ai-assistant-label">Provider</span>
+          <span className="ai-assistant-label">{t('ai_assistant_provider')}</span>
           <span>{selectedProvider.name}</span>
         </div>
       )}
@@ -756,16 +797,18 @@ function ProviderSelector({
 function ComposerModelSelector({
   selectedModel,
   enabledModels,
+  t,
   onModelChange,
 }: {
   selectedModel: string
   enabledModels: ProjectAiProvider['models']
+  t: TFunction
   onModelChange: (model: string) => void
 }) {
   return (
     <div className="ai-assistant-model-select">
       <OLFormSelect
-        aria-label="Model"
+        aria-label={t('ai_assistant_model')}
         value={selectedModel}
         onChange={event => onModelChange(event.target.value)}
       >
@@ -793,26 +836,26 @@ function getDefaultModel(provider?: ProjectAiProvider | null) {
   )
 }
 
-function agentSubmitLabel(session: ProjectAiAgentSession | null) {
+function agentSubmitLabel(session: ProjectAiAgentSession | null, t: TFunction) {
   if (!session) {
-    return 'Plan'
+    return t('ai_assistant_plan')
   }
   if (session.mode === 'act') {
-    return 'Run'
+    return t('ai_assistant_run')
   }
-  return 'Plan'
+  return t('ai_assistant_plan')
 }
 
-function formatAgentMode(session: ProjectAiAgentSession) {
+function formatAgentMode(session: ProjectAiAgentSession, t: TFunction) {
   if (session.mode === 'act') {
     return session.status === 'waiting_for_approval'
-      ? 'Act: review'
-      : 'Act: ready'
+      ? t('ai_assistant_act_review')
+      : t('ai_assistant_act_ready')
   }
   if (session.status === 'waiting_for_act') {
-    return 'Plan: ready'
+    return t('ai_assistant_plan_ready')
   }
-  return 'Plan'
+  return t('ai_assistant_plan')
 }
 
 function getErrorMessage(error: unknown) {

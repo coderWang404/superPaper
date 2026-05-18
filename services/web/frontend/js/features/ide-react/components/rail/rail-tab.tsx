@@ -29,6 +29,8 @@ const RailTab = forwardRef<
           'open-rail': open,
         })}
         as="button"
+        aria-label={title}
+        title={title}
       >
         <RailTabIcon icon={icon} title={title} open={open} />
         {indicator}

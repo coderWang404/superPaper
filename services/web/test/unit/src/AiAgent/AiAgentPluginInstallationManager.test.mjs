@@ -79,7 +79,10 @@ describe('AiAgentPluginInstallationManager', function () {
       rm: sinon.stub().resolves(),
       cp: sinon.stub().resolves(),
       mkdtemp: sinon.stub().resolves('/tmp/agent-plugin-one'),
-      open: sinon.stub(),
+      open: sinon.stub().resolves({
+        write: sinon.stub().resolves(),
+        close: sinon.stub().resolves(),
+      }),
       rename: sinon.stub().resolves(),
       stat: sinon.stub().resolves({ isFile: () => true }),
     }

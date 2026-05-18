@@ -109,8 +109,18 @@ describe('AiAgentSettingsManager', function () {
     expect(config.permissionProfile.id).to.equal('project-agent-default')
     expect(config.enabledSkillIds).to.include('custom-style-guide')
     expect(config.enabledPluginIds).to.not.include('latex-core')
-    expect(config.enabledSkillIds).to.include('latex-compile-debug')
-    expect(config.instructionProfiles).to.deep.equal([])
+    expect(config.enabledSkillIds).to.not.include('latex-compile-debug')
+    expect(config.instructionProfiles).to.deep.equal([
+      {
+        id: 'instruction-one',
+        scope: 'global',
+        projectId: null,
+        name: 'Global Agent Rules',
+        enabled: true,
+        createdAt: null,
+        updatedAt: null,
+      },
+    ])
     expect(ctx.AgentSkillSetting.find).to.have.been.calledWith({
       scope: 'project',
       projectId: 'project-one',
@@ -156,7 +166,9 @@ describe('AiAgentSettingsManager', function () {
     expect(selectedSkills.map(skill => skill.id)).to.include(
       'custom-style-guide'
     )
-    expect(selectedSkills.map(skill => skill.id)).to.include('latex-compile-debug')
+    expect(selectedSkills.map(skill => skill.id)).to.not.include(
+      'latex-compile-debug'
+    )
     expect(
       selectedSkills.find(skill => skill.id === 'custom-style-guide').content
     ).to.equal('Follow the project style guide.')

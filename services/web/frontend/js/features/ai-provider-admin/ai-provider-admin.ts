@@ -77,11 +77,14 @@ type TranslationKey =
   | 'providerTestFailed'
   | 'providerTestPassed'
   | 'replaceKey'
+  | 'replaceKeyBusy'
   | 'replaceKeyFor'
   | 'replaceProviderKeyFor'
   | 'requestFailed'
+  | 'syncingModels'
   | 'syncModels'
   | 'test'
+  | 'testingProvider'
   | 'unknown'
 
 const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
@@ -127,11 +130,14 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     providerTestFailed: 'Provider test failed',
     providerTestPassed: 'Provider test passed',
     replaceKey: 'Replace key',
+    replaceKeyBusy: 'Replacing...',
     replaceKeyFor: 'Replace',
     replaceProviderKeyFor: 'Replace key for',
     requestFailed: 'AI provider request failed',
+    syncingModels: 'Syncing...',
     syncModels: 'Sync models',
     test: 'Test',
+    testingProvider: 'Testing...',
     unknown: 'unknown',
   },
   zh: {
@@ -175,11 +181,14 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     providerTestFailed: '供应商测试失败',
     providerTestPassed: '供应商测试通过',
     replaceKey: '替换密钥',
+    replaceKeyBusy: '正在替换...',
     replaceKeyFor: '替换',
     replaceProviderKeyFor: '替换密钥：',
     requestFailed: 'AI 供应商请求失败',
+    syncingModels: '正在同步...',
     syncModels: '同步模型',
     test: '测试',
+    testingProvider: '正在测试...',
     unknown: '未知',
   },
 }
@@ -325,6 +334,10 @@ export function initAiProviderAdmin(root: HTMLElement): void {
     event.preventDefault()
     const form = event.currentTarget as HTMLFormElement
     const apiKeyInput = getFormInput(form, 'replacementApiKey')
+    state.activeAction = `replace-key:${providerId}`
+    state.statusMessage = null
+    state.errorMessage = null
+    render()
 
     try {
       const response = await requestJSON<ProviderResponse>(
@@ -342,6 +355,9 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       render()
     } catch (error) {
       showSafeError()
+    } finally {
+      state.activeAction = null
+      render()
     }
   }
 
@@ -430,7 +446,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       .querySelectorAll<HTMLButtonElement>('[data-ai-provider-sync-models]')
       .forEach(button => {
         button.addEventListener('click', () => {
-          void handleSyncModels(button.dataset.providerId || '')
+          handleSyncModels(button.dataset.providerId || '').catch(() => {})
         })
       })
 
@@ -438,7 +454,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       .querySelectorAll<HTMLButtonElement>('[data-ai-provider-test]')
       .forEach(button => {
         button.addEventListener('click', () => {
-          void handleTestProvider(button.dataset.providerId || '')
+          handleTestProvider(button.dataset.providerId || '').catch(() => {})
         })
       })
 
@@ -448,7 +464,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         button.addEventListener('click', () => {
           const provider = findProvider(state.providers, button.dataset.providerId)
           if (provider) {
-            void handleToggleProvider(provider)
+            handleToggleProvider(provider).catch(() => {})
           }
         })
       })
@@ -457,7 +473,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       .querySelectorAll<HTMLFormElement>('[data-ai-provider-replace-key-form]')
       .forEach(form => {
         form.addEventListener('submit', event => {
-          void handleReplaceKey(event, form.dataset.providerId || '')
+          handleReplaceKey(event, form.dataset.providerId || '').catch(() => {})
         })
       })
 
@@ -467,14 +483,14 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         button.addEventListener('click', () => {
           const provider = findProvider(state.providers, button.dataset.providerId)
           if (provider) {
-            void handleDeleteProvider(provider)
+            handleDeleteProvider(provider).catch(() => {})
           }
         })
       })
   }
 
   render()
-  void loadProviders()
+  loadProviders().catch(() => {})
 }
 
 async function requestJSON<T>(
@@ -585,6 +601,9 @@ function renderProviderRow(
     provider.models.map(model => model.id).join(', ') || t('noModels')
   const escapedProviderId = escapeHtml(provider.id)
   const escapedProviderName = escapeHtml(provider.name)
+  const isSyncing = activeAction === `sync:${provider.id}`
+  const isTesting = activeAction === `test:${provider.id}`
+  const isReplacingKey = activeAction === `replace-key:${provider.id}`
   return `
     <tr>
       <td>
@@ -609,9 +628,13 @@ function renderProviderRow(
             autocomplete="off"
             placeholder="${escapeHtml(t('newApiKey'))}"
           >
-          <button class="btn btn-secondary btn-xs" type="submit">${escapeHtml(
-            t('replaceKey')
-          )}</button>
+          <button
+            class="btn btn-secondary btn-xs"
+            type="submit"
+            ${activeAction ? 'disabled' : ''}
+          >
+            ${escapeHtml(t(isReplacingKey ? 'replaceKeyBusy' : 'replaceKey'))}
+          </button>
         </form>
       </td>
       <td>${escapeHtml(provider.baseURL)}</td>
@@ -631,7 +654,7 @@ function renderProviderRow(
           data-provider-id="${escapedProviderId}"
           ${activeAction ? 'disabled' : ''}
         >
-          ${escapeHtml(t('syncModels'))}
+          ${escapeHtml(t(isSyncing ? 'syncingModels' : 'syncModels'))}
         </button>
         <button
           type="button"
@@ -640,7 +663,7 @@ function renderProviderRow(
           data-provider-id="${escapedProviderId}"
           ${activeAction ? 'disabled' : ''}
         >
-          ${escapeHtml(t('test'))}
+          ${escapeHtml(t(isTesting ? 'testingProvider' : 'test'))}
         </button>
         <button
           type="button"
@@ -656,6 +679,7 @@ function renderProviderRow(
           class="btn btn-danger btn-sm"
           data-ai-provider-delete
           data-provider-id="${escapedProviderId}"
+          aria-label="${escapeHtml(t('delete'))} ${escapedProviderName}"
           ${activeAction ? 'disabled' : ''}
         >
           ${escapeHtml(t('delete'))}

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { fireEvent, screen } from '@testing-library/dom'
+import { fireEvent, screen } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
 
 import { resetMeta } from '../../helpers/reset-meta'
@@ -115,13 +115,16 @@ describe('ai-provider-admin', function () {
           },
         ],
       }),
+    }, {
+      delay: 100,
     })
 
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
     fireEvent.click(screen.getByRole('button', { name: 'Sync models' }))
-    expect(screen.getByRole('button', { name: 'Sync models' })).to.have.property(
+    await screen.findByRole('button', { name: 'Syncing...' })
+    expect(screen.getByRole('button', { name: 'Syncing...' })).to.have.property(
       'disabled',
       true
     )
@@ -145,13 +148,16 @@ describe('ai-provider-admin', function () {
     fetchMock.post('/admin/ai/providers/provider-one/test', {
       ok: true,
       provider: providerFixture({ healthStatus: 'ok' }),
+    }, {
+      delay: 100,
     })
 
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
     fireEvent.click(screen.getByRole('button', { name: 'Test' }))
-    expect(screen.getByRole('button', { name: 'Test' })).to.have.property(
+    await screen.findByRole('button', { name: 'Testing...' })
+    expect(screen.getByRole('button', { name: 'Testing...' })).to.have.property(
       'disabled',
       true
     )
@@ -207,6 +213,7 @@ describe('ai-provider-admin', function () {
     fireEvent.submit(
       screen.getByRole('form', { name: 'Replace key for Provider One' })
     )
+    await screen.findByRole('button', { name: 'Replacing...' })
 
     await screen.findByText('API key replaced')
 
@@ -235,7 +242,9 @@ describe('ai-provider-admin', function () {
       initAiProviderAdmin(renderRoot())
 
       await screen.findByText('Provider One')
-      fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Delete Provider One' })
+      )
 
       await screen.findByText('Provider deleted')
       screen.getByText('No AI providers configured')

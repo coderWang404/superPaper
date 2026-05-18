@@ -1,9 +1,12 @@
 import {
+  ChangeEvent,
   DragEvent,
   FormEvent,
+  RefObject,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { Alert, Form } from 'react-bootstrap'
@@ -88,6 +91,7 @@ export default function AgentSettingsPanel() {
   const [dragActive, setDragActive] = useState(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -314,6 +318,15 @@ export default function AgentSettingsPanel() {
     }
   }
 
+  async function handleFileInput(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0]
+    event.currentTarget.value = ''
+    if (!file || !canAdminProject) {
+      return
+    }
+    await handleDroppedFile(file)
+  }
+
   async function previewSource(source: AiAgentPluginSource) {
     setPluginBusy(true)
     setStatusMessage(null)
@@ -370,7 +383,13 @@ export default function AgentSettingsPanel() {
                 {errorMessage}
               </Alert>
             )}
-            <DropZone active={dragActive} t={t} />
+            <DropZone
+              active={dragActive}
+              disabled={!canAdminProject || pluginBusy}
+              fileInputRef={fileInputRef}
+              t={t}
+              onFileInput={handleFileInput}
+            />
             <RulesSection
               t={t}
               form={instructionForm}
@@ -414,10 +433,16 @@ export default function AgentSettingsPanel() {
 
 function DropZone({
   active,
+  disabled,
+  fileInputRef,
   t,
+  onFileInput,
 }: {
   active: boolean
+  disabled: boolean
+  fileInputRef: RefObject<HTMLInputElement>
   t: ReturnType<typeof useTranslation>['t']
+  onFileInput: (event: ChangeEvent<HTMLInputElement>) => void
 }) {
   return (
     <div className={`agent-settings-dropzone ${active ? 'active' : ''}`}>
@@ -426,6 +451,24 @@ function DropZone({
         <strong>{t('agent_settings_dropzone_title')}</strong>
         <span>{t('agent_settings_dropzone_description')}</span>
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="visually-hidden"
+        accept=".md,.markdown,.zip,application/zip,text/markdown,text/plain"
+        disabled={disabled}
+        onChange={onFileInput}
+        aria-label={t('agent_settings_choose_file')}
+      />
+      <OLButton
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={disabled}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {t('agent_settings_choose_file')}
+      </OLButton>
     </div>
   )
 }
