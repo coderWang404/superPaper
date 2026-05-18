@@ -9,26 +9,33 @@ import OLFormSelect from '@/shared/components/ol/ol-form-select'
 import { FetchError } from '@/infrastructure/fetch-json'
 import {
   getProjectAiConfig,
-  ProjectAiChatResponse,
-  ProjectAiConfig,
-  ProjectAiProvider,
   sendProjectAiChatStream,
+  type ProjectAiChatResponse,
+  type ProjectAiConfig,
+  type ProjectAiProvider,
 } from '@/features/ai-assistant/api'
 import {
   applyProjectAiAgentPatch,
   createProjectAiAgentSession,
   getProjectAiAgentConfig,
-  ProjectAiAgentConfig,
-  ProjectAiAgentEvent,
-  ProjectAiAgentPatch,
-  ProjectAiAgentPatchDiffLine,
-  ProjectAiAgentSession,
   rejectProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
   startProjectAiAgentAct,
+  type ProjectAiAgentConfig,
+  type ProjectAiAgentEvent,
+  type ProjectAiAgentPatch,
+  type ProjectAiAgentPatchDiffLine,
+  type ProjectAiAgentSession,
 } from '@/features/ai-agent/api'
 
 type AssistantMode = 'chat' | 'agent'
+
+type ChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+  providerName?: string
+  model?: string
+}
 
 export default function AiAssistantPanel() {
   const { projectId } = useProjectContext()
@@ -44,6 +51,7 @@ export default function AiAssistantPanel() {
   const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [answer, setAnswer] = useState<ProjectAiChatResponse | null>(null)
   const [streamedAnswer, setStreamedAnswer] = useState('')
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [agentConfig, setAgentConfig] = useState<ProjectAiAgentConfig | null>(
     null
   )
@@ -151,11 +159,24 @@ export default function AiAssistantPanel() {
     setAnswer(null)
     setStreamedAnswer('')
     setAgentAnswer('')
+    if (mode === 'chat') {
+      const history = chatMessages.map(message => ({
+        role: message.role,
+        content: message.content,
+      }))
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content: trimmedPrompt,
+        providerName: selectedProvider.name,
+        model: selectedModel,
+      }
+      setChatMessages(currentMessages => [
+        ...currentMessages,
+        userMessage,
+      ])
 
-    try {
-      if (mode === 'agent') {
-        await runAgent(trimmedPrompt)
-      } else {
+      try {
+        let streamedText = ''
         const response = await sendProjectAiChatStream(
           projectId,
           {
@@ -163,13 +184,36 @@ export default function AiAssistantPanel() {
             providerId: selectedProvider.id,
             model: selectedModel,
             selection,
+            history,
           },
           delta => {
+            streamedText += delta
             setStreamedAnswer(currentAnswer => currentAnswer + delta)
           }
         )
         setAnswer(response)
+        setChatMessages(currentMessages => [
+          ...currentMessages,
+          {
+            role: 'assistant',
+            content: response.answer || streamedText,
+            providerName: selectedProvider.name,
+            model: response.model,
+          },
+        ])
+        setStreamedAnswer('')
+      } catch (error) {
+        setChatMessages(currentMessages =>
+          currentMessages.filter(message => message !== userMessage)
+        )
+        setChatError(getErrorMessage(error))
       }
+      setSubmitting(false)
+      return
+    }
+
+    try {
+      await runAgent(trimmedPrompt)
     } catch (error) {
       setChatError(getErrorMessage(error))
     } finally {
@@ -302,8 +346,7 @@ export default function AiAssistantPanel() {
             </div>
 
             {mode === 'agent' && agentConfig && (
-              <AgentConfigSummary
-                config={agentConfig}
+              <AgentRunControls
                 session={agentSession}
                 onStartAct={handleStartAct}
                 startingAct={startingAct}
@@ -311,13 +354,20 @@ export default function AiAssistantPanel() {
             )}
 
             <div className="ai-assistant-transcript" aria-live="polite">
-              {mode === 'chat' && (streamedAnswer || answer) && (
+              {mode === 'chat' &&
+                chatMessages.map((message, index) => (
+                  <ChatTranscriptMessage
+                    message={message}
+                    key={`${message.role}-${index}`}
+                  />
+                ))}
+              {mode === 'chat' && streamedAnswer && (
                 <div className="ai-assistant-message ai-assistant-message-assistant">
                   <div className="ai-assistant-message-meta">
-                    superPaper AI
+                    superPaper AI · {selectedProvider.name} · {selectedModel}
                   </div>
                   <div className="ai-assistant-answer-text">
-                    {streamedAnswer || answer?.answer}
+                    {streamedAnswer}
                   </div>
                 </div>
               )}
@@ -405,88 +455,50 @@ export default function AiAssistantPanel() {
   )
 }
 
-function AgentConfigSummary({
-  config,
+function ChatTranscriptMessage({ message }: { message: ChatMessage }) {
+  return (
+    <div
+      className={`ai-assistant-message ai-assistant-message-${message.role}`}
+    >
+      <div className="ai-assistant-message-meta">
+        {message.role === 'user'
+          ? 'You'
+          : `superPaper AI · ${message.providerName || ''} · ${
+              message.model || ''
+            }`}
+      </div>
+      <div className="ai-assistant-answer-text">{message.content}</div>
+    </div>
+  )
+}
+
+function AgentRunControls({
   session,
   onStartAct,
   startingAct,
 }: {
-  config: ProjectAiAgentConfig
   session: ProjectAiAgentSession | null
   onStartAct: () => void
   startingAct: boolean
 }) {
-  const enabledSkills =
-    config.enabledSkillIds ??
-    config.skills
-      .filter(skill => skill.enabled !== false)
-      .map(skill => skill.id)
-  const enabledPlugins =
-    config.enabledPluginIds ??
-    config.plugins
-      .filter(plugin => plugin.enabled !== false)
-      .map(plugin => plugin.id)
-  const enabledSkillLabels = formatCatalogLabels(
-    enabledSkills,
-    config.skills,
-    skill => skill.id,
-    skill => skill.displayName || skill.name || skill.id
-  )
-  const enabledPluginLabels = formatCatalogLabels(
-    enabledPlugins,
-    config.plugins,
-    plugin => plugin.id,
-    plugin => plugin.displayName || plugin.name || plugin.id
-  )
   const canStartAct =
     session?.mode === 'plan' &&
     ['waiting_for_act', 'completed'].includes(session.status)
 
   return (
-    <div className="ai-assistant-agent-summary">
-      <div>
-        <span className="ai-assistant-label">Mode</span>
-        <span>{session ? formatAgentMode(session) : 'Plan'}</span>
-      </div>
-      <div>
-        <span className="ai-assistant-label">Permission</span>
-        <span>{config.permissionProfile.id}</span>
-      </div>
-      <div>
-        <span className="ai-assistant-label">Tools</span>
-        <span>{config.tools.length}</span>
-      </div>
-      <div className="ai-assistant-agent-summary-wide">
-        <span className="ai-assistant-label">Enabled skills</span>
-        <span>{enabledSkillLabels || 'None'}</span>
-      </div>
-      <div className="ai-assistant-agent-summary-wide">
-        <span className="ai-assistant-label">Enabled plugins</span>
-        <span>{enabledPluginLabels || 'None'}</span>
-      </div>
-      <div>
-        <span className="ai-assistant-label">Instructions</span>
-        <span>{config.instructionProfiles?.length ?? 0}</span>
-      </div>
-      {session?.enabledSkillIds?.length ? (
-        <div>
-          <span className="ai-assistant-label">Active skills</span>
-          <span>{session.enabledSkillIds.join(', ')}</span>
-        </div>
-      ) : null}
-      <div className="ai-assistant-agent-summary-action">
-        <OLButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={!canStartAct || startingAct}
-          isLoading={startingAct}
-          loadingLabel="Starting"
-          onClick={onStartAct}
-        >
-          Start Act
-        </OLButton>
-      </div>
+    <div className="ai-assistant-agent-controls">
+      <span>{session ? formatAgentMode(session) : 'Plan'}</span>
+      <OLButton
+        type="button"
+        size="sm"
+        variant="secondary"
+        disabled={!canStartAct || startingAct}
+        isLoading={startingAct}
+        loadingLabel="Starting"
+        onClick={onStartAct}
+      >
+        Start Act
+      </OLButton>
     </div>
   )
 }
@@ -502,8 +514,11 @@ function AgentEventList({
 }) {
   return (
     <div className="ai-assistant-agent-events">
-      {events.map(event => (
-        <div className="ai-assistant-agent-event" key={event.id}>
+      {events.map((event, index) => (
+        <div
+          className="ai-assistant-agent-event"
+          key={`${event.id}-${event.sequence}-${index}`}
+        >
           <div className="ai-assistant-message-meta">
             {formatAgentEventTitle(event)}
           </div>
@@ -782,16 +797,6 @@ function formatAgentMode(session: ProjectAiAgentSession) {
     return 'Plan: ready'
   }
   return 'Plan'
-}
-
-function formatCatalogLabels<T>(
-  ids: string[],
-  items: T[],
-  getId: (item: T) => string,
-  getLabel: (item: T) => string
-) {
-  const labelsById = new Map(items.map(item => [getId(item), getLabel(item)]))
-  return ids.map(id => labelsById.get(id) || id).join(', ')
 }
 
 function getErrorMessage(error: unknown) {

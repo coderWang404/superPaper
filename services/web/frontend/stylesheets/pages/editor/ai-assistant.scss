@@ -77,7 +77,7 @@
   padding: var(--spacing-02) var(--spacing-03);
 }
 
-.ai-assistant-agent-summary,
+.ai-assistant-agent-controls,
 .ai-assistant-answer,
 .ai-assistant-empty,
 .ai-assistant-error {
@@ -101,30 +101,16 @@
   }
 }
 
-.ai-assistant-agent-summary {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.ai-assistant-agent-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-03);
   font-size: var(--font-size-01);
+  font-weight: 700;
 
-  > div {
-    display: grid;
-    min-width: 0;
-    gap: 2px;
-  }
-
-  span:last-child {
-    overflow-wrap: anywhere;
-  }
-}
-
-.ai-assistant-agent-summary-wide {
-  grid-column: span 2;
-}
-
-.ai-assistant-agent-summary-action {
-  grid-column: 1 / -1;
-
-  button {
-    width: 100%;
+  > span {
+    color: var(--content-secondary-themed);
   }
 }
 

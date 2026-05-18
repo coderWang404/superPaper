@@ -102,6 +102,43 @@ describe('<AiAssistantPanel />', function () {
         path: 'main.tex',
         text: 'selected text',
       },
+      history: [],
+    })
+  })
+
+  it('keeps chat context when switching providers', async function () {
+    mockConfigWithTwoProviders()
+    mockChatStream({ repeat: 2 })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'First question.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('Use \\\\cite{} here.')
+
+    fireEvent.change(screen.getByLabelText('Provider'), {
+      target: { value: 'provider-two' },
+    })
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Continue with another provider.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findAllByText('Use \\\\cite{} here.')
+    const secondCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/chat/stream'
+    )[1]
+    expect(JSON.parse(secondCall.options.body as string)).to.deep.equal({
+      prompt: 'Continue with another provider.',
+      providerId: 'provider-two',
+      model: 'model-two',
+      history: [
+        { role: 'user', content: 'First question.' },
+        { role: 'assistant', content: 'Use \\\\cite{} here.' },
+      ],
     })
   })
 
@@ -187,9 +224,10 @@ describe('<AiAssistantPanel />', function () {
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
     fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
-    await screen.findByText('project-agent-default')
-    screen.getByText('LaTeX 编译错误诊断')
-    screen.getByText('LaTeX 核心 Agent 能力包')
+    await screen.findByText('Plan')
+    expect(screen.queryByText('project-agent-default')).to.equal(null)
+    expect(screen.queryByText('LaTeX 编译错误诊断')).to.equal(null)
+    expect(screen.queryByText('LaTeX 核心 Agent 能力包')).to.equal(null)
     screen.getByRole('button', { name: 'Start Act' })
 
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
@@ -218,6 +256,43 @@ describe('<AiAssistantPanel />', function () {
     })
   })
 
+  it('continues the same agent session after switching providers', async function () {
+    mockConfigWithTwoProviders()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStream({ repeat: 2 })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Plan the task.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByText('Agent answer')
+
+    fireEvent.change(screen.getByLabelText('Provider'), {
+      target: { value: 'provider-two' },
+    })
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Continue on provider two.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+
+    const secondTurnCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/sessions/session-one/turns'
+    )[1]
+    expect(JSON.parse(secondTurnCall.options.body as string)).to.deep.equal({
+      prompt: 'Continue on provider two.',
+      providerId: 'provider-two',
+      model: 'model-two',
+    })
+    expect(fetchMock.callHistory.calls('/project/project123/ai/agent/sessions')).to
+      .have.length(1)
+  })
+
   it('renders agent patch review and applies approved patches', async function () {
     mockConfig()
     mockAgentConfig()
@@ -243,7 +318,7 @@ describe('<AiAssistantPanel />', function () {
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
     fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
-    await screen.findByText('project-agent-default')
+    await screen.findByText('Plan')
 
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Update wording.' },
@@ -288,7 +363,7 @@ describe('<AiAssistantPanel />', function () {
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
     fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
-    await screen.findByText('project-agent-default')
+    await screen.findByText('Plan')
 
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Update wording.' },
@@ -324,7 +399,28 @@ function mockConfig() {
   })
 }
 
-function mockChatStream(overrides = {}) {
+function mockConfigWithTwoProviders() {
+  fetchMock.get('/project/project123/ai/config', {
+    providers: [
+      {
+        id: 'provider-one',
+        name: 'Provider One',
+        models: [{ id: 'model-one', displayName: 'Model One', enabled: true }],
+        defaultModel: 'model-one',
+      },
+      {
+        id: 'provider-two',
+        name: 'Provider Two',
+        models: [{ id: 'model-two', displayName: 'Model Two', enabled: true }],
+        defaultModel: 'model-two',
+      },
+    ],
+  })
+}
+
+function mockChatStream(
+  overrides: { repeat?: number } & Record<string, unknown> = {}
+) {
   const response = {
     providerId: 'provider-one',
     model: 'model-one',
@@ -343,18 +439,23 @@ function mockChatStream(overrides = {}) {
       truncated: boolean
     }
   }
+  const { repeat } = overrides
 
-  fetchMock.post('/project/project123/ai/chat/stream', {
-    status: 200,
-    headers: { 'Content-Type': 'application/x-ndjson' },
-    body:
-      JSON.stringify({ type: 'delta', delta: 'Use ' }) +
-      '\n' +
-      JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
-      '\n' +
-      JSON.stringify({ type: 'done', ...response }) +
-      '\n',
-  })
+  fetchMock.post(
+    '/project/project123/ai/chat/stream',
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        JSON.stringify({ type: 'delta', delta: 'Use ' }) +
+        '\n' +
+        JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
+        '\n' +
+        JSON.stringify({ type: 'done', ...response }) +
+        '\n',
+    },
+    { repeat: repeat ?? 1 }
+  )
 }
 
 function mockAgentConfig() {
