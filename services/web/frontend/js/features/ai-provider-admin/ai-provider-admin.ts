@@ -22,6 +22,7 @@ type AiProvider = {
 type ProviderState = {
   providers: AiProvider[]
   loading: boolean
+  activeAction: string | null
   statusMessage: TranslationKey | null
   errorMessage: TranslationKey | null
 }
@@ -191,6 +192,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
   const state: ProviderState = {
     providers: [],
     loading: true,
+    activeAction: null,
     statusMessage: null,
     errorMessage: null,
   }
@@ -244,6 +246,11 @@ export function initAiProviderAdmin(root: HTMLElement): void {
   }
 
   async function handleSyncModels(providerId: string) {
+    state.activeAction = `sync:${providerId}`
+    state.statusMessage = null
+    state.errorMessage = null
+    render()
+
     try {
       const response = await requestJSON<ProviderResponse>(
         `/admin/ai/providers/${encodeURIComponent(providerId)}/sync-models`,
@@ -253,13 +260,20 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       replaceProvider(response.provider)
       state.statusMessage = 'modelsSynced'
       state.errorMessage = null
-      render()
     } catch (error) {
       showSafeError()
+    } finally {
+      state.activeAction = null
+      render()
     }
   }
 
   async function handleTestProvider(providerId: string) {
+    state.activeAction = `test:${providerId}`
+    state.statusMessage = null
+    state.errorMessage = null
+    render()
+
     try {
       const response = await requestJSON<ProviderResponse & { ok: boolean }>(
         `/admin/ai/providers/${encodeURIComponent(providerId)}/test`,
@@ -271,13 +285,20 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         ? 'providerTestPassed'
         : 'providerTestFailed'
       state.errorMessage = null
-      render()
     } catch (error) {
       showSafeError()
+    } finally {
+      state.activeAction = null
+      render()
     }
   }
 
   async function handleToggleProvider(provider: AiProvider) {
+    state.activeAction = `toggle:${provider.id}`
+    state.statusMessage = null
+    state.errorMessage = null
+    render()
+
     try {
       const response = await requestJSON<ProviderResponse>(
         `/admin/ai/providers/${encodeURIComponent(provider.id)}`,
@@ -292,9 +313,11 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         ? 'providerEnabled'
         : 'providerDisabled'
       state.errorMessage = null
-      render()
     } catch (error) {
       showSafeError()
+    } finally {
+      state.activeAction = null
+      render()
     }
   }
 
@@ -352,6 +375,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
 
   function showSafeError() {
     state.loading = false
+    state.activeAction = null
     state.errorMessage = 'requestFailed'
     state.statusMessage = null
     render()
@@ -384,7 +408,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
               <p>${escapeHtml(t('providersDescription'))}</p>
             </div>
           </div>
-          ${renderProviderTable(state.providers, state.loading, t)}
+          ${renderProviderTable(state.providers, state.loading, state.activeAction, t)}
         </div>
         <div class="ai-admin-section">
           <div class="ai-admin-section-header">
@@ -519,6 +543,7 @@ function renderMetric(label: string, value: string) {
 function renderProviderTable(
   providers: AiProvider[],
   loading: boolean,
+  activeAction: string | null,
   t: (key: TranslationKey) => string
 ) {
   if (loading) {
@@ -544,7 +569,7 @@ function renderProviderTable(
         </tr>
       </thead>
       <tbody>
-        ${providers.map(provider => renderProviderRow(provider, t)).join('')}
+        ${providers.map(provider => renderProviderRow(provider, activeAction, t)).join('')}
       </tbody>
       </table>
     </div>
@@ -553,6 +578,7 @@ function renderProviderTable(
 
 function renderProviderRow(
   provider: AiProvider,
+  activeAction: string | null,
   t: (key: TranslationKey) => string
 ) {
   const models =
@@ -603,6 +629,7 @@ function renderProviderRow(
           class="btn btn-secondary btn-sm"
           data-ai-provider-sync-models
           data-provider-id="${escapedProviderId}"
+          ${activeAction ? 'disabled' : ''}
         >
           ${escapeHtml(t('syncModels'))}
         </button>
@@ -611,6 +638,7 @@ function renderProviderRow(
           class="btn btn-secondary btn-sm"
           data-ai-provider-test
           data-provider-id="${escapedProviderId}"
+          ${activeAction ? 'disabled' : ''}
         >
           ${escapeHtml(t('test'))}
         </button>
@@ -619,6 +647,7 @@ function renderProviderRow(
           class="btn btn-secondary btn-sm"
           data-ai-provider-toggle
           data-provider-id="${escapedProviderId}"
+          ${activeAction ? 'disabled' : ''}
         >
           ${provider.enabled ? t('disable') : t('enable')}
         </button>
@@ -627,6 +656,7 @@ function renderProviderRow(
           class="btn btn-danger btn-sm"
           data-ai-provider-delete
           data-provider-id="${escapedProviderId}"
+          ${activeAction ? 'disabled' : ''}
         >
           ${escapeHtml(t('delete'))}
         </button>

@@ -71,6 +71,7 @@ type PluginState = {
   loading: boolean
   previewing: boolean
   installing: boolean
+  activeAction: string | null
   sourceType: 'local_directory' | 'zip_url'
   sourceValue: string
   statusMessage: string | null
@@ -221,6 +222,7 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
     loading: true,
     previewing: false,
     installing: false,
+    activeAction: null,
     sourceType: 'local_directory',
     sourceValue: '',
     statusMessage: null,
@@ -304,6 +306,7 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
       state.preview = null
       state.installing = false
       state.statusMessage = t('pluginInstalled')
+      dispatchAgentConfigChanged()
       render()
     } catch {
       showSafeError()
@@ -311,6 +314,11 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
   }
 
   async function handleToggle(plugin: AgentPluginInstallation) {
+    state.activeAction = `toggle:${plugin.pluginId}`
+    state.statusMessage = null
+    state.errorMessage = null
+    render()
+
     try {
       const response = await requestJSON<{
         plugin: AgentPluginInstallation
@@ -327,9 +335,12 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
         ? t('pluginEnabled')
         : t('pluginDisabled')
       state.errorMessage = null
-      render()
+      dispatchAgentConfigChanged()
     } catch {
       showSafeError()
+    } finally {
+      state.activeAction = null
+      render()
     }
   }
 
@@ -350,6 +361,7 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
     state.loading = false
     state.previewing = false
     state.installing = false
+    state.activeAction = null
     state.statusMessage = null
     state.errorMessage = t('pluginRequestFailed')
     render()
@@ -378,7 +390,7 @@ export function initAiAgentPluginAdmin(root: HTMLElement): void {
               <p>${escapeHtml(t('agentPluginsDescription'))}</p>
             </div>
           </div>
-          ${renderPluginTable(state.plugins, state.loading, t)}
+          ${renderPluginTable(state.plugins, state.loading, state.activeAction, t)}
         </div>
         <div class="ai-admin-section">
           <div class="ai-admin-section-header">
@@ -495,6 +507,7 @@ function renderMetric(label: string, value: string) {
 function renderPluginTable(
   plugins: AgentPluginInstallation[],
   loading: boolean,
+  activeAction: string | null,
   t: (key: TranslationKey) => string
 ) {
   if (loading) {
@@ -519,7 +532,7 @@ function renderPluginTable(
           </tr>
         </thead>
         <tbody>
-          ${plugins.map(plugin => renderPluginRow(plugin, t)).join('')}
+          ${plugins.map(plugin => renderPluginRow(plugin, activeAction, t)).join('')}
         </tbody>
       </table>
     </div>
@@ -528,6 +541,7 @@ function renderPluginTable(
 
 function renderPluginRow(
   plugin: AgentPluginInstallation,
+  activeAction: string | null,
   t: (key: TranslationKey) => string
 ) {
   const escapedPluginId = escapeHtml(plugin.pluginId)
@@ -552,6 +566,7 @@ function renderPluginRow(
             class="btn btn-secondary btn-sm"
             data-ai-agent-plugin-toggle
             data-plugin-id="${escapedPluginId}"
+            ${activeAction ? 'disabled' : ''}
           >
             ${plugin.enabled ? t('disable') : t('enable')}
           </button>
@@ -774,4 +789,8 @@ function escapeHtml(value: string) {
 
 function escapeAttribute(value: string) {
   return value.replace(/[^a-z0-9_-]/gi, '-').toLowerCase()
+}
+
+function dispatchAgentConfigChanged() {
+  window.dispatchEvent(new CustomEvent('superpaper:ai-agent-config-changed'))
 }

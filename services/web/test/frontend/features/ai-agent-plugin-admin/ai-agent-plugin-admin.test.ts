@@ -102,6 +102,10 @@ describe('ai-agent-plugin-admin', function () {
 
     await screen.findByText('LaTeX 投稿检查')
     fireEvent.click(screen.getByRole('button', { name: 'Disable' }))
+    expect(screen.getByRole('button', { name: 'Disable' })).to.have.property(
+      'disabled',
+      true
+    )
 
     await screen.findByText('Plugin disabled')
     screen.getByText('Disabled')

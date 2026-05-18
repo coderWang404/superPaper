@@ -121,6 +121,10 @@ describe('ai-provider-admin', function () {
 
     await screen.findByText('Provider One')
     fireEvent.click(screen.getByRole('button', { name: 'Sync models' }))
+    expect(screen.getByRole('button', { name: 'Sync models' })).to.have.property(
+      'disabled',
+      true
+    )
 
     await screen.findByText('Models synced')
     screen.getByText('model-one, model-two')
@@ -147,6 +151,10 @@ describe('ai-provider-admin', function () {
 
     await screen.findByText('Provider One')
     fireEvent.click(screen.getByRole('button', { name: 'Test' }))
+    expect(screen.getByRole('button', { name: 'Test' })).to.have.property(
+      'disabled',
+      true
+    )
 
     await screen.findByText('Provider test passed')
     screen.getByText('ok')

@@ -12,6 +12,7 @@ import './features/autoplay-video'
 import './features/mathjax'
 import './features/contact-form'
 import { initAiProviderAdmin } from './features/ai-provider-admin/ai-provider-admin'
+import { initAiAgentSettingsAdmin } from './features/ai-agent-plugin-admin/ai-agent-settings-admin'
 import { initAiAgentPluginAdmin } from './features/ai-agent-plugin-admin/ai-agent-plugin-admin'
 
 const aiProviderAdminRoot = document.querySelector<HTMLElement>(
@@ -25,6 +26,14 @@ if (aiProviderAdminRoot) {
 const aiAgentPluginAdminRoot = document.querySelector<HTMLElement>(
   '#ai-agent-plugin-admin'
 )
+
+const aiAgentSettingsAdminRoot = document.querySelector<HTMLElement>(
+  '#ai-agent-settings-admin'
+)
+
+if (aiAgentSettingsAdminRoot) {
+  initAiAgentSettingsAdmin(aiAgentSettingsAdminRoot)
+}
 
 if (aiAgentPluginAdminRoot) {
   initAiAgentPluginAdmin(aiAgentPluginAdminRoot)

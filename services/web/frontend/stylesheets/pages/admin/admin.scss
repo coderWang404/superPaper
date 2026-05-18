@@ -233,6 +233,7 @@
 }
 
 .ai-provider-admin,
+.ai-agent-settings-admin,
 .ai-agent-plugin-admin {
   display: flex;
   flex-direction: column;
@@ -392,6 +393,21 @@
   max-width: 960px;
 }
 
+.ai-admin-nested-form {
+  margin-top: var(--spacing-06);
+  padding: var(--spacing-06);
+  background: var(--bg-light-secondary);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--border-radius-medium);
+
+  h5 {
+    margin: 0 0 var(--spacing-05);
+    color: var(--content-primary);
+    font-size: 1.6rem;
+    font-weight: 600;
+  }
+}
+
 .ai-admin-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(240px, 1fr));
@@ -410,6 +426,27 @@
   justify-content: space-between;
   gap: var(--spacing-05);
   margin-top: var(--spacing-06);
+}
+
+.ai-admin-form-footer-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-05);
+}
+
+.ai-admin-form-wide {
+  margin-top: var(--spacing-05);
+}
+
+.ai-admin-textarea {
+  min-height: 180px;
+  resize: vertical;
+  font-family: var(--font-family-monospace);
+  line-height: 1.45;
+}
+
+.ai-admin-multiselect {
+  min-height: 132px;
 }
 
 .ai-admin-checkbox {
