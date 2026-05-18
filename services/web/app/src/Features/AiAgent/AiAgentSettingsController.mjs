@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import fs from 'node:fs/promises'
+import multer from 'multer'
+import lodash from 'lodash'
+import Settings from '@superpaper/settings'
 import SessionManager from '../Authentication/SessionManager.mjs'
 import ProjectAuditLogHandler from '../Project/ProjectAuditLogHandler.mjs'
 import UserAuditLogHandler from '../User/UserAuditLogHandler.mjs'
@@ -9,6 +13,7 @@ import {
 } from './AiAgentSettingsManager.mjs'
 import {
   AgentPluginInstallationError,
+  createUploadedAgentPluginPackage,
   installAgentPluginPackage,
   listInstalledAgentPlugins,
   previewAgentPluginPackage,
@@ -17,6 +22,7 @@ import {
 } from './AiAgentPluginInstallationManager.mjs'
 import { AgentPluginPackageValidationError } from './AiAgentPluginPackageManager.mjs'
 
+const defaultsDeep = lodash.defaultsDeep
 const SettingIdSchema = z.string().trim().min(1).max(120)
 const RequiredToolsSchema = z.array(SettingIdSchema).max(20).optional()
 const KeywordsSchema = z.array(z.string().trim().min(1).max(80)).max(40).optional()
@@ -70,6 +76,16 @@ const PluginSourceSchema = z.discriminatedUnion('sourceType', [
     sourceType: z.literal('zip_url'),
     url: z.string().trim().url().max(2000),
   }),
+  z.object({
+    sourceType: z.literal('uploaded_zip'),
+    uploadId: z.string().trim().uuid(),
+    originalName: z.string().trim().max(240).optional(),
+  }),
+  z.object({
+    sourceType: z.literal('github'),
+    url: z.string().trim().url().max(2000),
+    ref: z.string().trim().min(1).max(200).optional(),
+  }),
 ])
 
 const PluginInstallSchema = PluginSourceSchema.and(
@@ -82,9 +98,59 @@ const PluginEnabledSchema = z.object({
   enabled: z.boolean(),
 })
 
+const pluginUpload = multer(
+  defaultsDeep(
+    {
+      dest: Settings.path.uploadFolder,
+      limits: {
+        fileSize: 20 * 1024 * 1024,
+      },
+    },
+    Settings.multerOptions
+  )
+)
+
+function pluginUploadMiddleware(req, res, next) {
+  return pluginUpload.single('plugin')(
+    req,
+    res,
+    /** @param {any} err */ function (err) {
+      if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(422).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Plugin zip archive is too large',
+          },
+        })
+      }
+      if (err) {
+        return next(err)
+      }
+      if (!req.file?.path) {
+        return res.status(400).json({
+          error: {
+            code: 'INVALID_UPLOAD',
+            message: 'Plugin zip upload is required',
+          },
+        })
+      }
+      next()
+    }
+  )
+}
+
 async function projectConfig(req, res, next) {
   try {
-    res.json(await getAgentConfig({ projectId: req.params.Project_id }))
+    const includeContent = req.query?.includeContent === 'true'
+    const includeAllInstructionProfiles =
+      includeContent || req.query?.includeAllInstructionProfiles === 'true'
+    res.json(
+      await getAgentConfig({
+        projectId: req.params.Project_id,
+        includeContent,
+        includeAllInstructionProfiles,
+      })
+    )
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -111,6 +177,10 @@ async function updateProjectSettings(req, res, next) {
       scope: 'project',
       projectId: req.params.Project_id,
       userId,
+      includeContent: req.query?.includeContent === 'true',
+      includeAllInstructionProfiles:
+        req.query?.includeContent === 'true' ||
+        req.query?.includeAllInstructionProfiles === 'true',
       ...body,
     })
     ProjectAuditLogHandler.addEntryInBackground(
@@ -121,6 +191,105 @@ async function updateProjectSettings(req, res, next) {
       summarizeSettingsChange(body)
     )
     res.json(config)
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function listProjectPlugins(req, res, next) {
+  try {
+    res.json({
+      plugins: await listInstalledAgentPlugins({
+        scope: 'project',
+        projectId: req.params.Project_id,
+      }),
+    })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function previewProjectPlugin(req, res, next) {
+  try {
+    const source = PluginSourceSchema.parse(req.body)
+    res.json({ preview: await previewAgentPluginPackage(source) })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function uploadProjectPlugin(req, res, next) {
+  try {
+    const upload = await createUploadedAgentPluginPackage({
+      filePath: req.file?.path,
+      originalName: req.file?.originalname,
+    })
+    res.json(upload)
+  } catch (err) {
+    if (req.file?.path) {
+      await fs.rm(req.file.path, { force: true }).catch(() => {})
+    }
+    handleControllerError(err, res, next)
+  }
+}
+
+async function installProjectPlugin(req, res, next) {
+  try {
+    const body = PluginInstallSchema.parse(req.body)
+    const userId = SessionManager.getLoggedInUserId(req.session)
+    const installation = await installAgentPluginPackage({
+      source: body,
+      scope: 'project',
+      projectId: req.params.Project_id,
+      userId,
+      enabled: body.enabled,
+    })
+    ProjectAuditLogHandler.addEntryInBackground(
+      req.params.Project_id,
+      'agent-plugin-installed',
+      userId,
+      req.ip,
+      summarizePluginInstallation(installation)
+    )
+    res.json({
+      plugin: installation,
+      config: await getAgentConfig({
+        projectId: req.params.Project_id,
+        includeContent: true,
+        includeAllInstructionProfiles: true,
+      }),
+    })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function setProjectPluginEnabled(req, res, next) {
+  try {
+    const body = PluginEnabledSchema.parse(req.body)
+    const userId = SessionManager.getLoggedInUserId(req.session)
+    const plugin = await setInstalledAgentPluginEnabled({
+      pluginId: req.params.pluginId,
+      enabled: body.enabled,
+      scope: 'project',
+      projectId: req.params.Project_id,
+      userId,
+    })
+    ProjectAuditLogHandler.addEntryInBackground(
+      req.params.Project_id,
+      'agent-plugin-enabled-changed',
+      userId,
+      req.ip,
+      summarizePluginInstallation(plugin)
+    )
+    res.json({
+      plugin,
+      config: await getAgentConfig({
+        projectId: req.params.Project_id,
+        includeContent: true,
+        includeAllInstructionProfiles: true,
+      }),
+    })
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -275,8 +444,14 @@ export default {
   globalConfig,
   updateProjectSettings,
   updateGlobalSettings,
+  listProjectPlugins,
+  previewProjectPlugin,
+  uploadProjectPlugin,
+  installProjectPlugin,
+  setProjectPluginEnabled,
   listGlobalPlugins,
   previewGlobalPlugin,
   installGlobalPlugin,
   setGlobalPluginEnabled,
+  pluginUploadMiddleware,
 }

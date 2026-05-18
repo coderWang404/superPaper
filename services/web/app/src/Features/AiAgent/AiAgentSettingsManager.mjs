@@ -167,14 +167,11 @@ export async function listEnabledInstructionProfiles({ projectId } = {}) {
 }
 
 async function listInstructionProfiles({ projectId, enabledOnly = true } = {}) {
-  const query = {
-    $or: [{ scope: 'global' }],
-  }
+  const query = projectId
+    ? { scope: 'project', projectId }
+    : { scope: 'global' }
   if (enabledOnly) {
     query.enabled = true
-  }
-  if (projectId) {
-    query.$or.push({ scope: 'project', projectId })
   }
   const profiles = await AgentInstructionProfile.find(query)
     .sort({ scope: 1, name: 1 })
@@ -514,12 +511,9 @@ async function listEffectivePluginCatalog({ projectId } = {}) {
 }
 
 async function listSkillSettings(projectId) {
-  const query = {
-    $or: [{ scope: 'global' }],
-  }
-  if (projectId) {
-    query.$or.push({ scope: 'project', projectId })
-  }
+  const query = projectId
+    ? { scope: 'project', projectId }
+    : { scope: 'global' }
   const settings = await AgentSkillSetting.find(query)
     .sort({ scope: 1, skillId: 1 })
     .exec()
@@ -527,12 +521,9 @@ async function listSkillSettings(projectId) {
 }
 
 async function listPluginSettings(projectId) {
-  const query = {
-    $or: [{ scope: 'global' }],
-  }
-  if (projectId) {
-    query.$or.push({ scope: 'project', projectId })
-  }
+  const query = projectId
+    ? { scope: 'project', projectId }
+    : { scope: 'global' }
   const settings = await AgentPluginSetting.find(query)
     .sort({ scope: 1, pluginId: 1 })
     .exec()

@@ -108,16 +108,21 @@ describe('AiAgentSettingsManager', function () {
 
     expect(config.permissionProfile.id).to.equal('project-agent-default')
     expect(config.enabledSkillIds).to.include('custom-style-guide')
-    expect(config.enabledSkillIds).to.not.include('latex-compile-debug')
     expect(config.enabledPluginIds).to.not.include('latex-core')
-    expect(config.instructionProfiles).to.deep.include({
-      id: 'instruction-one',
-      scope: 'global',
-      projectId: null,
-      name: 'Global Agent Rules',
+    expect(config.enabledSkillIds).to.include('latex-compile-debug')
+    expect(config.instructionProfiles).to.deep.equal([])
+    expect(ctx.AgentSkillSetting.find).to.have.been.calledWith({
+      scope: 'project',
+      projectId: 'project-one',
+    })
+    expect(ctx.AgentPluginSetting.find).to.have.been.calledWith({
+      scope: 'project',
+      projectId: 'project-one',
+    })
+    expect(ctx.AgentInstructionProfile.find).to.have.been.calledWith({
+      scope: 'project',
+      projectId: 'project-one',
       enabled: true,
-      createdAt: null,
-      updatedAt: null,
     })
   })
 
@@ -139,7 +144,7 @@ describe('AiAgentSettingsManager', function () {
     })
     expect(config.instructionProfiles[0].sha256).to.match(/^[a-f0-9]{64}$/)
     expect(ctx.AgentInstructionProfile.find).to.have.been.calledWith({
-      $or: [{ scope: 'global' }],
+      scope: 'global',
     })
   })
 
@@ -148,10 +153,13 @@ describe('AiAgentSettingsManager', function () {
       projectId: 'project-one',
     })
 
-    expect(selectedSkills.map(skill => skill.id)).to.deep.equal([
-      'custom-style-guide',
-    ])
-    expect(selectedSkills[0].content).to.equal('Follow the project style guide.')
+    expect(selectedSkills.map(skill => skill.id)).to.include(
+      'custom-style-guide'
+    )
+    expect(selectedSkills.map(skill => skill.id)).to.include('latex-compile-debug')
+    expect(
+      selectedSkills.find(skill => skill.id === 'custom-style-guide').content
+    ).to.equal('Follow the project style guide.')
   })
 
   it('persists project settings with upserted skill, plugin, and instruction rows', async function (ctx) {

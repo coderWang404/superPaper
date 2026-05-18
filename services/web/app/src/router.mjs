@@ -575,6 +575,42 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     AiAgentSettingsController.updateProjectSettings,
   );
 
+  webRouter.get(
+    "/project/:Project_id/ai/agent/plugins",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    AiAgentSettingsController.listProjectPlugins,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/plugins/preview",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanAdminProject,
+    AiAgentSettingsController.previewProjectPlugin,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/plugins/upload",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanAdminProject,
+    AiAgentSettingsController.pluginUploadMiddleware,
+    AiAgentSettingsController.uploadProjectPlugin,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/plugins/install",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanAdminProject,
+    AiAgentSettingsController.installProjectPlugin,
+  );
+
+  webRouter.patch(
+    "/project/:Project_id/ai/agent/plugins/:pluginId",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanAdminProject,
+    AiAgentSettingsController.setProjectPluginEnabled,
+  );
+
   webRouter.post(
     "/project/:Project_id/ai/agent/sessions",
     AuthenticationController.requireLogin(),

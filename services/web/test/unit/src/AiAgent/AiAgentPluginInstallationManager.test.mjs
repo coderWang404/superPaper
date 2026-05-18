@@ -78,8 +78,10 @@ describe('AiAgentPluginInstallationManager', function () {
       mkdir: sinon.stub().resolves(),
       rm: sinon.stub().resolves(),
       cp: sinon.stub().resolves(),
-      mkdtemp: sinon.stub(),
+      mkdtemp: sinon.stub().resolves('/tmp/agent-plugin-one'),
       open: sinon.stub(),
+      rename: sinon.stub().resolves(),
+      stat: sinon.stub().resolves({ isFile: () => true }),
     }
     ctx.AgentPluginInstallation = {
       find: sinon.stub().returns({
@@ -117,7 +119,9 @@ describe('AiAgentPluginInstallationManager', function () {
       },
     }))
     vi.doMock('@superpaper/fetch-utils', () => ({
-      fetchStream: sinon.stub(),
+      fetchStream: (ctx.fetchStream = sinon.stub().callsFake(async function* () {
+        yield Buffer.from('zip-bytes')
+      })),
     }))
     vi.doMock('@superpaper/promise-utils', () => ({
       promisify: fn => fn,
@@ -246,6 +250,86 @@ describe('AiAgentPluginInstallationManager', function () {
     expect(installation.pluginId).to.equal('latex-submission-check')
   })
 
+  it('installs project-scoped plugins independently from global plugins', async function (ctx) {
+    await ctx.Manager.installAgentPluginPackage({
+      source: {
+        sourceType: 'local_directory',
+        path: '/srv/plugins/submission',
+      },
+      scope: 'project',
+      projectId: '507f1f77bcf86cd799439011',
+      userId: 'user-one',
+      enabled: true,
+    })
+
+    expect(ctx.AgentPluginInstallation.findOneAndUpdate).to.have.been.calledWith(
+      sinon.match({
+        scope: 'project',
+        projectId: '507f1f77bcf86cd799439011',
+        pluginId: 'latex-submission-check',
+        version: '1.0.0',
+      }),
+      sinon.match.any,
+      sinon.match.any
+    )
+    expect(ctx.AgentPluginSetting.updateOne).to.have.been.calledWith(
+      sinon.match({
+        scope: 'project',
+        projectId: '507f1f77bcf86cd799439011',
+        pluginId: 'latex-submission-check',
+      }),
+      sinon.match.any,
+      sinon.match.any
+    )
+    expect(ctx.AgentSkillSetting.updateOne).to.have.been.calledWith(
+      sinon.match({
+        scope: 'project',
+        projectId: '507f1f77bcf86cd799439011',
+        skillId: 'latex-submission-check/compile-debug',
+      }),
+      sinon.match.any,
+      sinon.match.any
+    )
+  })
+
+  it('normalizes GitHub plugin links to codeload archives', async function (ctx) {
+    const preview = await ctx.Manager.previewAgentPluginPackage({
+      sourceType: 'github',
+      url: 'https://github.com/example/agent-plugin/tree/dev',
+    })
+
+    expect(ctx.fetchStream).to.have.been.calledWith(
+      'https://codeload.github.com/example/agent-plugin/zip/refs/heads/dev'
+    )
+    expect(preview.source).to.deep.equal({
+      type: 'github',
+      url: 'https://github.com/example/agent-plugin/tree/dev',
+      archiveUrl:
+        'https://codeload.github.com/example/agent-plugin/zip/refs/heads/dev',
+      ref: 'dev',
+    })
+  })
+
+  it('stores uploaded zip packages and returns an installable upload id', async function (ctx) {
+    const upload = await ctx.Manager.createUploadedAgentPluginPackage({
+      filePath: '/tmp/uploaded-plugin.zip',
+      originalName: 'agent-plugin.zip',
+    })
+
+    expect(ctx.fs.rename).to.have.been.calledWith(
+      '/tmp/uploaded-plugin.zip',
+      sinon.match(/^\/data\/agent-plugins\/uploads\/[a-f0-9-]{36}\.zip$/i)
+    )
+    expect(ctx.previewPluginPackageFromDirectory).to.have.been.called
+    expect(upload.uploadId).to.match(/^[a-f0-9-]{36}$/i)
+    expect(upload.originalName).to.equal('agent-plugin.zip')
+    expect(upload.preview.source).to.include({
+      type: 'uploaded_zip',
+      uploadId: upload.uploadId,
+      originalName: 'agent-plugin.zip',
+    })
+  })
+
   it('lists installed plugins', async function (ctx) {
     const installations = await ctx.Manager.listInstalledAgentPlugins()
 
@@ -283,6 +367,18 @@ describe('AiAgentPluginInstallationManager', function () {
         updatedAt: null,
       },
     ])
+  })
+
+  it('lists project-scoped installed plugins', async function (ctx) {
+    await ctx.Manager.listInstalledAgentPlugins({
+      scope: 'project',
+      projectId: '507f1f77bcf86cd799439011',
+    })
+
+    expect(ctx.AgentPluginInstallation.find).to.have.been.calledWith({
+      scope: 'project',
+      projectId: '507f1f77bcf86cd799439011',
+    })
   })
 
   it('toggles plugin and bundled skills together', async function (ctx) {

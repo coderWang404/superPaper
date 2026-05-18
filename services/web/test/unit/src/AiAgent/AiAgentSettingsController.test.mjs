@@ -38,6 +38,17 @@ describe('AiAgentSettingsController', function () {
           this.code = code
         }
       },
+      createUploadedAgentPluginPackage: sinon.stub().resolves({
+        uploadId: '11111111-1111-4111-8111-111111111111',
+        originalName: 'plugin.zip',
+        preview: {
+          plugin: {
+            id: 'latex-submission-check',
+            version: '1.0.0',
+          },
+          skills: [],
+        },
+      }),
       installAgentPluginPackage: sinon.stub().resolves({
         pluginId: 'latex-submission-check',
         name: 'latex-submission-check',
@@ -133,6 +144,10 @@ describe('AiAgentSettingsController', function () {
     ctx.req = new MockRequest(vi)
     ctx.req.ip = '127.0.0.1'
     ctx.req.params.Project_id = 'project-one'
+    ctx.req.file = {
+      path: '/tmp/uploaded-plugin.zip',
+      originalname: 'plugin.zip',
+    }
     ctx.res = new MockResponse(vi)
     ctx.next = sinon.stub()
   })
@@ -142,6 +157,21 @@ describe('AiAgentSettingsController', function () {
 
     expect(ctx.SettingsManager.getAgentConfig).to.have.been.calledWith({
       projectId: 'project-one',
+      includeContent: false,
+      includeAllInstructionProfiles: false,
+    })
+    expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
+  })
+
+  it('returns editable project agent config for the project workspace', async function (ctx) {
+    ctx.req.query.includeContent = 'true'
+
+    await ctx.Controller.projectConfig(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.SettingsManager.getAgentConfig).to.have.been.calledWith({
+      projectId: 'project-one',
+      includeContent: true,
+      includeAllInstructionProfiles: true,
     })
     expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
   })
@@ -175,6 +205,8 @@ describe('AiAgentSettingsController', function () {
       scope: 'project',
       projectId: 'project-one',
       userId: 'user-one',
+      includeContent: false,
+      includeAllInstructionProfiles: false,
       skills: [{ id: 'academic-polish', enabled: false }],
       plugins: [{ id: 'latex-core', enabled: true }],
       instructionProfiles: [
@@ -294,6 +326,25 @@ describe('AiAgentSettingsController', function () {
     })
   })
 
+  it('lists project installed plugins', async function (ctx) {
+    await ctx.Controller.listProjectPlugins(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.listInstalledAgentPlugins).to.have.been
+      .calledWith({
+        scope: 'project',
+        projectId: 'project-one',
+      })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      plugins: [
+        {
+          pluginId: 'latex-submission-check',
+          version: '1.0.0',
+          enabled: true,
+        },
+      ],
+    })
+  })
+
   it('previews an external plugin source', async function (ctx) {
     ctx.req.body = {
       sourceType: 'zip_url',
@@ -308,6 +359,53 @@ describe('AiAgentSettingsController', function () {
         url: 'https://example.test/plugin.zip',
       })
     expect(jsonBody(ctx.res)).to.deep.equal({
+      preview: {
+        plugin: {
+          id: 'latex-submission-check',
+          version: '1.0.0',
+        },
+        skills: [],
+      },
+    })
+  })
+
+  it('previews a project GitHub plugin source', async function (ctx) {
+    ctx.req.body = {
+      sourceType: 'github',
+      url: 'https://github.com/example/agent-plugin',
+      ref: 'main',
+    }
+
+    await ctx.Controller.previewProjectPlugin(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.previewAgentPluginPackage).to.have.been
+      .calledWith({
+        sourceType: 'github',
+        url: 'https://github.com/example/agent-plugin',
+        ref: 'main',
+      })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      preview: {
+        plugin: {
+          id: 'latex-submission-check',
+          version: '1.0.0',
+        },
+        skills: [],
+      },
+    })
+  })
+
+  it('uploads and previews a project plugin zip', async function (ctx) {
+    await ctx.Controller.uploadProjectPlugin(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.createUploadedAgentPluginPackage).to
+      .have.been.calledWith({
+        filePath: '/tmp/uploaded-plugin.zip',
+        originalName: 'plugin.zip',
+      })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      uploadId: '11111111-1111-4111-8111-111111111111',
+      originalName: 'plugin.zip',
       preview: {
         plugin: {
           id: 'latex-submission-check',
@@ -355,6 +453,45 @@ describe('AiAgentSettingsController', function () {
     expect(jsonBody(ctx.res).config).to.deep.equal(ctx.config)
   })
 
+  it('installs a project plugin and records a project audit summary', async function (ctx) {
+    ctx.req.body = {
+      sourceType: 'zip_url',
+      url: 'https://example.test/plugin.zip',
+      enabled: true,
+    }
+
+    await ctx.Controller.installProjectPlugin(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.installAgentPluginPackage).to.have.been
+      .calledWith({
+        source: {
+          sourceType: 'zip_url',
+          url: 'https://example.test/plugin.zip',
+          enabled: true,
+        },
+        scope: 'project',
+        projectId: 'project-one',
+        userId: 'user-one',
+        enabled: true,
+      })
+    expect(ctx.ProjectAuditLogHandler.addEntryInBackground).to.have.been.calledWith(
+      'project-one',
+      'agent-plugin-installed',
+      'user-one',
+      '127.0.0.1',
+      {
+        pluginId: 'latex-submission-check',
+        version: '1.0.0',
+        enabled: true,
+        status: 'installed',
+        skillCount: 1,
+        sourceType: 'zip_url',
+        integrity: 'abc123',
+      }
+    )
+    expect(jsonBody(ctx.res).config).to.deep.equal(ctx.config)
+  })
+
   it('updates an installed plugin enabled state', async function (ctx) {
     ctx.req.params.pluginId = 'latex-submission-check'
     ctx.req.body = {
@@ -371,6 +508,40 @@ describe('AiAgentSettingsController', function () {
       })
     expect(ctx.UserAuditLogHandler.addEntryInBackground).to.have.been.calledWith(
       'user-one',
+      'agent-plugin-enabled-changed',
+      'user-one',
+      '127.0.0.1',
+      {
+        pluginId: 'latex-submission-check',
+        version: '1.0.0',
+        enabled: false,
+        status: 'disabled',
+        skillCount: 1,
+        sourceType: 'zip_url',
+        integrity: 'abc123',
+      }
+    )
+    expect(jsonBody(ctx.res).plugin.enabled).to.equal(false)
+  })
+
+  it('updates a project plugin enabled state', async function (ctx) {
+    ctx.req.params.pluginId = 'latex-submission-check'
+    ctx.req.body = {
+      enabled: false,
+    }
+
+    await ctx.Controller.setProjectPluginEnabled(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PluginInstallationManager.setInstalledAgentPluginEnabled).to.have
+      .been.calledWith({
+        pluginId: 'latex-submission-check',
+        enabled: false,
+        scope: 'project',
+        projectId: 'project-one',
+        userId: 'user-one',
+      })
+    expect(ctx.ProjectAuditLogHandler.addEntryInBackground).to.have.been.calledWith(
+      'project-one',
       'agent-plugin-enabled-changed',
       'user-one',
       '127.0.0.1',

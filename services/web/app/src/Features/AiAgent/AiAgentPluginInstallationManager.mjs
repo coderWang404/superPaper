@@ -18,6 +18,13 @@ const extractZipArchive = promisify(ArchiveManager.extractZipArchive)
 const findTopLevelDirectory = promisify(ArchiveManager.findTopLevelDirectory)
 const MAX_PLUGIN_ZIP_BYTES = 20 * 1024 * 1024
 const CACHE_ROOT = path.resolve(Settings.path.uploadFolder, '../agent-plugins')
+const UPLOAD_ROOT = path.join(CACHE_ROOT, 'uploads')
+const GITHUB_REPO_URL_RE =
+  /^https:\/\/github\.com\/(?<owner>[A-Za-z0-9_.-]+)\/(?<repo>[A-Za-z0-9_.-]+?)(?:\.git)?\/?$/
+const GITHUB_TREE_URL_RE =
+  /^https:\/\/github\.com\/(?<owner>[A-Za-z0-9_.-]+)\/(?<repo>[A-Za-z0-9_.-]+?)\/tree\/(?<ref>[^/]+)(?:\/.*)?$/
+const GITHUB_ARCHIVE_URL_RE =
+  /^https:\/\/github\.com\/(?<owner>[A-Za-z0-9_.-]+)\/(?<repo>[A-Za-z0-9_.-]+?)\/archive\/(?:refs\/heads\/)?(?<ref>[^/]+?)\.zip$/
 
 export class AgentPluginInstallationError extends Error {
   constructor(code, message) {
@@ -39,6 +46,34 @@ export async function previewAgentPluginPackage(source) {
     })
   } finally {
     await prepared.cleanup?.()
+  }
+}
+
+export async function createUploadedAgentPluginPackage({
+  filePath,
+  originalName = 'plugin.zip',
+}) {
+  if (!filePath) {
+    throw new AgentPluginPackageValidationError('Plugin zip upload is required')
+  }
+  const uploadId = crypto.randomUUID()
+  const storedPath = uploadedZipPath(uploadId)
+  await fs.mkdir(path.dirname(storedPath), { recursive: true })
+  await fs.rename(filePath, storedPath)
+  try {
+    const preview = await previewAgentPluginPackage({
+      sourceType: 'uploaded_zip',
+      uploadId,
+      originalName,
+    })
+    return {
+      uploadId,
+      originalName,
+      preview,
+    }
+  } catch (err) {
+    await fs.rm(storedPath, { force: true })
+    throw err
   }
 }
 
@@ -162,18 +197,33 @@ async function preparePluginSource(source = {}) {
   if (source.sourceType === 'zip_url') {
     return prepareZipUrlSource(source.url)
   }
+  if (source.sourceType === 'uploaded_zip') {
+    return prepareUploadedZipSource(source)
+  }
+  if (source.sourceType === 'github') {
+    return prepareGitHubSource(source)
+  }
   throw new AgentPluginPackageValidationError(
     'Unsupported agent plugin source type'
   )
 }
 
-async function prepareZipUrlSource(url) {
+function prepareGitHubSource(source) {
+  const archiveUrl = githubArchiveUrlFromSource(source)
+  return prepareZipUrlSource(archiveUrl.toString(), {
+    type: 'github',
+    url: source.url,
+    archiveUrl: archiveUrl.toString(),
+    ref: source.ref || inferGitHubRef(source.url),
+  })
+}
+
+async function prepareZipUrlSource(url, sourceOverride = null) {
   const parsedUrl = parsePluginUrl(url)
   const tempRoot = await fs.mkdtemp(
     path.join(Settings.path.uploadFolder, 'agent-plugin-')
   )
   const zipPath = path.join(tempRoot, 'plugin.zip')
-  const extractPath = path.join(tempRoot, 'contents')
   try {
     const stream = await fetchStream(parsedUrl.toString())
     await writeLimitedStreamToFile({
@@ -181,19 +231,51 @@ async function prepareZipUrlSource(url) {
       destination: zipPath,
       maxBytes: MAX_PLUGIN_ZIP_BYTES,
     })
-    await extractZipArchive(zipPath, extractPath)
-    const topLevelDirectory = await findTopLevelDirectory(extractPath)
-    return {
-      directory: topLevelDirectory,
-      source: {
+    return await prepareZipFileSource({
+      zipPath,
+      tempRoot,
+      source: sourceOverride || {
         type: 'zip_url',
         url: parsedUrl.toString(),
       },
-      cleanup: () => fs.rm(tempRoot, { recursive: true, force: true }),
-    }
+    })
   } catch (err) {
     await fs.rm(tempRoot, { recursive: true, force: true })
     throw err
+  }
+}
+
+async function prepareUploadedZipSource(source) {
+  const uploadId = validateUploadId(source.uploadId)
+  const zipPath = uploadedZipPath(uploadId)
+  const tempRoot = await fs.mkdtemp(
+    path.join(Settings.path.uploadFolder, 'agent-plugin-')
+  )
+  try {
+    await fs.stat(zipPath)
+    return await prepareZipFileSource({
+      zipPath,
+      tempRoot,
+      source: {
+        type: 'uploaded_zip',
+        uploadId,
+        originalName: source.originalName || null,
+      },
+    })
+  } catch (err) {
+    await fs.rm(tempRoot, { recursive: true, force: true })
+    throw err
+  }
+}
+
+async function prepareZipFileSource({ zipPath, tempRoot, source }) {
+  const extractPath = path.join(tempRoot, 'contents')
+  await extractZipArchive(zipPath, extractPath)
+  const topLevelDirectory = await findTopLevelDirectory(extractPath)
+  return {
+    directory: topLevelDirectory,
+    source,
+    cleanup: () => fs.rm(tempRoot, { recursive: true, force: true }),
   }
 }
 
@@ -210,6 +292,64 @@ function parsePluginUrl(url) {
     )
   }
   return parsedUrl
+}
+
+function validateUploadId(uploadId) {
+  const normalized = String(uploadId || '').trim()
+  if (!/^[a-f0-9-]{36}$/i.test(normalized)) {
+    throw new AgentPluginPackageValidationError('Plugin upload id is invalid')
+  }
+  return normalized
+}
+
+function uploadedZipPath(uploadId) {
+  return path.join(UPLOAD_ROOT, `${uploadId}.zip`)
+}
+
+function githubArchiveUrlFromSource(source) {
+  const parsed = parseGitHubUrl(source.url)
+  const ref = String(source.ref || parsed.ref || 'main').trim()
+  if (!ref || ref.includes('..') || ref.includes('\\')) {
+    throw new AgentPluginPackageValidationError('GitHub ref is invalid')
+  }
+  return new URL(
+    `https://codeload.github.com/${parsed.owner}/${parsed.repo}/zip/refs/heads/${encodeURIComponent(ref)}`
+  )
+}
+
+function parseGitHubUrl(url) {
+  let parsedUrl
+  try {
+    parsedUrl = new URL(url)
+  } catch {
+    throw new AgentPluginPackageValidationError('GitHub plugin URL is invalid')
+  }
+  if (parsedUrl.protocol !== 'https:' || parsedUrl.hostname !== 'github.com') {
+    throw new AgentPluginPackageValidationError(
+      'GitHub plugin URL must use https://github.com'
+    )
+  }
+  const normalized = parsedUrl.toString()
+  const match =
+    normalized.match(GITHUB_TREE_URL_RE) ||
+    normalized.match(GITHUB_ARCHIVE_URL_RE) ||
+    normalized.match(GITHUB_REPO_URL_RE)
+  if (!match?.groups?.owner || !match.groups.repo) {
+    throw new AgentPluginPackageValidationError('GitHub plugin URL is invalid')
+  }
+  return {
+    owner: match.groups.owner,
+    repo: match.groups.repo,
+    ref: match.groups.ref || null,
+  }
+}
+
+function inferGitHubRef(url) {
+  try {
+    return parseGitHubUrl(url).ref || 'main'
+  } catch {
+    return 'main'
+  }
 }
 
 async function writeLimitedStreamToFile({ stream, destination, maxBytes }) {
@@ -427,6 +567,21 @@ function publicSource(source = {}) {
       url: source.url,
     }
   }
+  if (source.type === 'uploaded_zip') {
+    return {
+      type: 'uploaded_zip',
+      uploadId: source.uploadId,
+      originalName: source.originalName || null,
+    }
+  }
+  if (source.type === 'github') {
+    return {
+      type: 'github',
+      url: source.url,
+      archiveUrl: source.archiveUrl,
+      ref: source.ref || null,
+    }
+  }
   return {}
 }
 
@@ -464,6 +619,20 @@ export function normalizePluginInstallSource(source = {}) {
     return {
       sourceType: 'zip_url',
       url: source.url,
+    }
+  }
+  if (source.sourceType === 'uploaded_zip') {
+    return {
+      sourceType: 'uploaded_zip',
+      uploadId: source.uploadId,
+      originalName: source.originalName,
+    }
+  }
+  if (source.sourceType === 'github') {
+    return {
+      sourceType: 'github',
+      url: source.url,
+      ref: source.ref,
     }
   }
   return source
