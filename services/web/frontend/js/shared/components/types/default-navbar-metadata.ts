@@ -1,4 +1,5 @@
 import type {
+  NavbarLanguage,
   NavbarItemData,
   NavbarSessionUser,
 } from '@/shared/components/types/navbar'
@@ -17,5 +18,7 @@ export type DefaultNavbarMetadata = {
   currentUrl: string
   sessionUser?: NavbarSessionUser
   adminUrl?: string
+  selectableLanguages?: NavbarLanguage[]
+  currentLangCode?: string
   items: NavbarItemData[]
 }

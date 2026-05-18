@@ -27,6 +27,12 @@ describe('Translations', function () {
             fr: { lngCode: 'fr', url: 'https://fr.superpaper.com' },
             da: { lngCode: 'da', url: 'https://da.superpaper.com' },
           },
+          selectableLanguages: ['en', 'zh-CN'],
+          languageCookieName: 'superpaper_lang',
+        },
+        translatedLanguages: {
+          en: 'English',
+          'zh-CN': '简体中文',
         },
       },
     }))
@@ -35,6 +41,9 @@ describe('Translations', function () {
 
     req = {
       url: '/',
+      body: {},
+      query: {},
+      cookies: {},
       headers: {
         'accept-language': '',
       },
@@ -42,6 +51,12 @@ describe('Translations', function () {
     }
     res = {
       locals: {},
+      cookie: vi.fn(),
+      redirect: vi.fn(),
+      json: vi.fn(),
+      status: vi.fn(function () {
+        return this
+      }),
       getHeader: () => {},
       setHeader: () => {},
     }
@@ -111,6 +126,31 @@ describe('Translations', function () {
       expect(req.lng).to.equal('fr')
     })
 
+    it('should prefer an explicit language cookie over the domain', async function () {
+      req.cookies.superpaper_lang = 'zh-CN'
+      req.headers.host = 'fr.superpaper.com'
+      await runMiddlewares()
+      expect(req.lng).to.equal('zh-CN')
+      expect(req.i18n.languageSource).to.equal('cookie')
+      expect(res.locals.currentLngCode).to.equal('zh-CN')
+    })
+
+    it('should not suggest a browser language when the user chose an explicit cookie language', async function () {
+      req.cookies.superpaper_lang = 'zh-CN'
+      req.headers.host = 'fr.superpaper.com'
+      req.headers['accept-language'] = 'da, en-gb;q=0.8, en;q=0.7'
+      await runMiddlewares()
+      expect(res.locals.suggestedLanguageSubdomainConfig).to.not.exist
+    })
+
+    it('should expose selectable languages', async function () {
+      await runMiddlewares()
+      expect(res.locals.selectableLanguages).to.deep.equal([
+        { code: 'en', name: 'English' },
+        { code: 'zh-CN', name: '简体中文' },
+      ])
+    })
+
     describe('suggestedLanguageSubdomainConfig', function () {
       it('should set suggestedLanguageSubdomainConfig if the detected lang is different to subdomain lang', async function () {
         req.headers['accept-language'] = 'da, en-gb;q=0.8, en;q=0.7'
@@ -127,6 +167,47 @@ describe('Translations', function () {
         req.headers.host = 'da.superpaper.com'
         await runMiddlewares()
         expect(res.locals.suggestedLanguageSubdomainConfig).to.not.exist
+      })
+    })
+  })
+
+  describe('setLanguageCookie', function () {
+    it('should persist a valid language and redirect back', function () {
+      req.body = {
+        language: 'zh-CN',
+        redirect: '/admin#ai-providers',
+      }
+
+      translations.setLanguageCookie(req, res)
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        'superpaper_lang',
+        'zh-CN',
+        {
+          domain: undefined,
+          httpOnly: true,
+          maxAge: 365 * 24 * 60 * 60 * 1000,
+          sameSite: undefined,
+          secure: undefined,
+        }
+      )
+      expect(res.redirect).toHaveBeenCalledWith(
+        303,
+        '/admin#ai-providers'
+      )
+    })
+
+    it('should reject an unsupported language', function () {
+      req.body = {
+        language: 'xx',
+      }
+
+      translations.setLanguageCookie(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'invalid_language',
+        validLanguages: ['en', 'zh-CN'],
       })
     })
   })

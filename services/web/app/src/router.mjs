@@ -62,6 +62,7 @@ import { plainTextResponse } from "./infrastructure/Response.mjs";
 import SocketDiagnostics from "./Features/SocketDiagnostics/SocketDiagnostics.mjs";
 import ClsiCacheController from "./Features/Compile/ClsiCacheController.mjs";
 import AsyncLocalStorage from "./infrastructure/AsyncLocalStorage.mjs";
+import translations from "./infrastructure/Translations.mjs";
 
 const { renderUnsupportedBrowserPage, unsupportedBrowserMiddleware } =
   UnsupportedBrowserMiddleware;
@@ -225,6 +226,9 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     RateLimiterMiddleware.rateLimit(rateLimiters.canSkipCaptcha),
     CaptchaMiddleware.canSkipCaptcha,
   );
+
+  webRouter.post("/language", translations.setLanguageCookie);
+  AuthenticationController.addEndpointToLoginWhitelist("/language");
 
   webRouter.get("/login", UserPagesController.loginPage);
   AuthenticationController.addEndpointToLoginWhitelist("/login");

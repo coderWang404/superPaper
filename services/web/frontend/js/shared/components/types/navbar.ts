@@ -2,6 +2,11 @@ export interface NavbarDropdownDivider {
   divider: true
 }
 
+export interface NavbarLanguage {
+  code: string
+  name: string
+}
+
 export interface NavbarDropdownContactUsItem {
   isContactUs: true
 }

@@ -1,6 +1,23 @@
 include ../_mixins/navbar
 include ../_mixins/material_symbol
 
+mixin language-menu-items(showDivider)
+	if selectableLanguages && selectableLanguages.length > 1
+		if showDivider
+			+dropdown-menu-divider
+		+dropdown-menu-item
+			.disabled.dropdown-item #{translate('language')}
+		each language in selectableLanguages
+			+dropdown-menu-item
+				form(method='POST' action='/language')
+					input(name='_csrf' type='hidden' value=csrfToken)
+					input(name='language' type='hidden' value=language.code)
+					input(name='redirect' type='hidden' value=currentUrlWithQueryParams)
+					button.dropdown-item.language-menu-item(type='submit' aria-current=language.code === currentLngCode ? 'true' : undefined)
+						span #{language.name}
+						if language.code === currentLngCode
+							+material-symbol('check', 'dropdown-item-trailing-icon')
+
 nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 	class={
 		'website-redesign-navbar': isWebsiteRedesign,
@@ -128,6 +145,18 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 									else
 										| !{translate(item.text)}
 
+					if selectableLanguages && selectableLanguages.length > 1 && !getSessionUser()
+						+nav-item.dropdown.nav-item-language
+							button.dropdown-toggle(
+								aria-haspopup='true'
+								aria-expanded='false'
+								data-bs-toggle='dropdown'
+								role='menuitem'
+							)
+								| #{translate('language')}
+							+dropdown-menu.dropdown-menu-end
+								+language-menu-items(false)
+
 					// logged out
 					if !getSessionUser()
 						// register link
@@ -174,6 +203,7 @@ nav.navbar.navbar-default.navbar-main.navbar-expand-lg(
 									.disabled.dropdown-item #{getSessionUser().email}
 								+dropdown-menu-divider
 								+dropdown-menu-link-item(href='/user/settings') #{translate('account_settings')}
+								+language-menu-items(true)
 								+dropdown-menu-divider
 								+dropdown-menu-item
 									//-

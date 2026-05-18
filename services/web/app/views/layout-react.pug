@@ -31,6 +31,8 @@ block append meta
 			currentUrl: currentUrl,
 			sessionUser: sessionUser ? {email: sessionUser.email} : undefined,
 			adminUrl: settings.adminUrl,
+			selectableLanguages: selectableLanguages,
+			currentLangCode: currentLngCode,
 			items: cloneAndTranslateText(nav.header_extras),
 		}
 	)

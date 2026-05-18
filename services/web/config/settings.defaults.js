@@ -457,6 +457,14 @@ module.exports = {
     subdomainLang: {
       www: { lngCode: 'en', url: siteUrl },
     },
+    selectableLanguages: (
+      process.env.SUPERPAPER_SELECTABLE_LANGUAGES || 'en,zh-CN'
+    )
+      .split(',')
+      .map(language => language.trim())
+      .filter(Boolean),
+    languageCookieName:
+      process.env.SUPERPAPER_LANGUAGE_COOKIE_NAME || 'superpaper_lang',
     defaultLng: 'en',
   },
 

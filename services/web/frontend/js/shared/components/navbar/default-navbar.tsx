@@ -31,6 +31,8 @@ function DefaultNavbar(
     showSignUpLink,
     sessionUser,
     adminUrl,
+    selectableLanguages,
+    currentLangCode,
     items,
   } = props;
   const { t } = useTranslation();
@@ -106,9 +108,15 @@ function DefaultNavbar(
                   {sessionUser ? (
                     <LoggedInItems
                       sessionUser={sessionUser}
+                      currentLangCode={currentLangCode}
+                      selectableLanguages={selectableLanguages}
                     />
                   ) : (
-                    <LoggedOutItems showSignUpLink={showSignUpLink} />
+                    <LoggedOutItems
+                      showSignUpLink={showSignUpLink}
+                      currentLangCode={currentLangCode}
+                      selectableLanguages={selectableLanguages}
+                    />
                   )}
                 </Nav>
               </Navbar.Collapse>

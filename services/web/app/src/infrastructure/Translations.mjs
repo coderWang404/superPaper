@@ -45,6 +45,14 @@ const locales = {
 }
 
 const fallbackLanguageCode = Settings.i18n.defaultLng || 'en'
+const languageCookieName = Settings.i18n.languageCookieName || 'superpaper_lang'
+const configuredSelectableLanguageCodes = Array.isArray(
+  Settings.i18n.selectableLanguages
+)
+  ? Settings.i18n.selectableLanguages.filter(languageCode =>
+      Object.hasOwn(locales, languageCode)
+    )
+  : []
 const availableLanguageCodes = []
 const availableHosts = new Map()
 const subdomainConfigs = new Map()
@@ -65,6 +73,11 @@ Object.values(Settings.i18n.subdomainLang || {}).forEach(function (spec) {
 if (!availableLanguageCodes.includes(fallbackLanguageCode)) {
   // always load the fallback locale
   availableLanguageCodes.push(fallbackLanguageCode)
+}
+for (const languageCode of configuredSelectableLanguageCodes) {
+  if (!availableLanguageCodes.includes(languageCode)) {
+    availableLanguageCodes.push(languageCode)
+  }
 }
 
 const resources = Object.fromEntries(
@@ -106,12 +119,71 @@ i18n
     logger.error({ err }, 'failed to initialize i18next library')
   })
 
+function isAvailableLanguageCode(languageCode) {
+  return availableLanguageCodes.includes(languageCode)
+}
+
+function getSelectableLanguages() {
+  const selectableLanguageCodes =
+    configuredSelectableLanguageCodes.length > 0
+      ? configuredSelectableLanguageCodes
+      : availableLanguageCodes
+
+  return selectableLanguageCodes.map(languageCode => ({
+    code: languageCode,
+    name: Settings.translatedLanguages?.[languageCode] || languageCode,
+  }))
+}
+
+function getLanguageFromRequest(req) {
+  const cookieLanguage = req.cookies?.[languageCookieName]
+  if (isAvailableLanguageCode(cookieLanguage)) {
+    return {
+      lang: cookieLanguage,
+      source: 'cookie',
+    }
+  }
+
+  return {
+    lang: availableHosts.get(req.headers.host) ?? fallbackLanguageCode,
+    source: 'domain',
+  }
+}
+
+function setLanguageCookie(req, res) {
+  const requestedLanguage = req.body?.language || req.query?.language
+
+  if (!isAvailableLanguageCode(requestedLanguage)) {
+    return res.status(400).json({
+      error: 'invalid_language',
+      validLanguages: getSelectableLanguages().map(language => language.code),
+    })
+  }
+
+  res.cookie(languageCookieName, requestedLanguage, {
+    domain: Settings.cookieDomain,
+    httpOnly: true,
+    maxAge: 365 * 24 * 60 * 60 * 1000,
+    sameSite: Settings.sameSiteCookie,
+    secure: Settings.secureCookie,
+  })
+
+  const redirectTo =
+    typeof req.body?.redirect === 'string' && req.body.redirect.startsWith('/')
+      ? req.body.redirect
+      : '/'
+  res.redirect(303, redirectTo)
+}
+
 function setLangBasedOnDomainMiddleware(req, res, next) {
-  // Determine language from subdomain
-  const lang = availableHosts.get(req.headers.host) ?? fallbackLanguageCode
+  // Determine language from explicit self-hosted preference first, then fall
+  // back to the legacy subdomain mapping.
+  const { lang, source } = getLanguageFromRequest(req)
 
   req.i18n = {
     language: lang,
+    languageSource: source,
+    selectableLanguages: getSelectableLanguages(),
   }
 
   req.language =
@@ -121,12 +193,15 @@ function setLangBasedOnDomainMiddleware(req, res, next) {
     res.locals.language =
       lang
 
+  res.locals.languageCookieName = languageCookieName
+  res.locals.selectableLanguages = req.i18n.selectableLanguages
+
   // If the set language is different from the language detection (based on
   // the Accept-Language header), then set flag which will show a banner
   // offering to switch to the appropriate library
   const detectedLanguageCode =
     req.acceptsLanguage(availableLanguageCodes) || fallbackLanguageCode
-  if (req.language !== detectedLanguageCode) {
+  if (source !== 'cookie' && req.language !== detectedLanguageCode) {
     res.locals.suggestedLanguageSubdomainConfig =
       subdomainConfigs.get(detectedLanguageCode)
   }
@@ -172,5 +247,8 @@ i18n.translate = i18n.t
 
 export default {
   setLangBasedOnDomainMiddleware,
+  setLanguageCookie,
+  getSelectableLanguages,
+  isAvailableLanguageCode,
   i18n,
 }

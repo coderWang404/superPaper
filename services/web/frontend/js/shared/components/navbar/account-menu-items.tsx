@@ -8,13 +8,19 @@ import NavDropdownLinkItem from './nav-dropdown-link-item'
 import { useDsNavStyle } from '@/features/project-list/components/use-is-ds-nav'
 import { SignOut } from '@phosphor-icons/react'
 import ThemeToggle from '@/features/project-list/components/sidebar/theme-toggle'
+import LanguageMenu from './language-menu'
+import type { NavbarLanguage } from '@/shared/components/types/navbar'
 
 export function AccountMenuItems({
   sessionUser,
   showThemeToggle = false,
+  currentLangCode,
+  selectableLanguages,
 }: {
   sessionUser: NavbarSessionUser
   showThemeToggle?: boolean
+  currentLangCode?: string
+  selectableLanguages?: NavbarLanguage[]
 }) {
   const { t } = useTranslation()
   const logOutFormId = 'logOutForm'
@@ -35,6 +41,10 @@ export function AccountMenuItems({
           <ThemeToggle />
         </DropdownListItem>
       )}
+      <LanguageMenu
+        currentLangCode={currentLangCode}
+        selectableLanguages={selectableLanguages}
+      />
 
       <NavDropdownDivider />
       <DropdownListItem>
