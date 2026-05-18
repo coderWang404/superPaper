@@ -61,7 +61,14 @@ export async function getProjectAiConfig() {
   }
 }
 
-export async function chat({ projectId, prompt, providerId: selectedProviderId, model, selection }) {
+export async function chat({
+  projectId,
+  prompt,
+  providerId: selectedProviderId,
+  model,
+  selection,
+  history = [],
+}) {
   const { provider, providerConfig, selectedModel, context, apiKey } =
     await buildChatRequest({
       projectId,
@@ -74,7 +81,7 @@ export async function chat({ projectId, prompt, providerId: selectedProviderId, 
     baseURL: provider.baseURL,
     apiKey,
     model: selectedModel,
-    messages: buildMessages(context, prompt),
+    messages: buildMessages(context, prompt, history),
   })
 
   return {
@@ -91,6 +98,7 @@ export async function chatStream({
   providerId: selectedProviderId,
   model,
   selection,
+  history = [],
 }) {
   const { provider, providerConfig, selectedModel, context, apiKey } =
     await buildChatRequest({
@@ -106,7 +114,7 @@ export async function chatStream({
       baseURL: provider.baseURL,
       apiKey,
       model: selectedModel,
-      messages: buildMessages(context, prompt),
+      messages: buildMessages(context, prompt, history),
     }),
     model: selectedModel,
     providerId: providerConfig.id,
@@ -146,12 +154,28 @@ async function buildChatRequest({
   }
 }
 
-function buildMessages(context, prompt) {
+function buildMessages(context, prompt, history = []) {
   return [
     { role: 'system', content: SYSTEM_MESSAGE },
     ...context.messages,
+    ...normalizeHistory(history),
     { role: 'user', content: prompt },
   ]
+}
+
+function normalizeHistory(history = []) {
+  return history
+    .filter(
+      message =>
+        (message.role === 'user' || message.role === 'assistant') &&
+        typeof message.content === 'string' &&
+        message.content.trim()
+    )
+    .slice(-20)
+    .map(message => ({
+      role: message.role,
+      content: message.content.slice(0, 12_000),
+    }))
 }
 
 function publicContext(context) {

@@ -125,6 +125,26 @@ describe('AiProjectChatManager', function () {
     })
   })
 
+  it('includes previous chat messages before the current prompt', async function (ctx) {
+    await ctx.Manager.chat({
+      projectId: 'project-id',
+      prompt: 'Continue',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      history: [
+        { role: 'user', content: 'Previous question' },
+        { role: 'assistant', content: 'Previous answer' },
+      ],
+    })
+
+    const chatArgs = ctx.createOpenAICompatibleChatCompletion.firstCall.args[0]
+    expect(chatArgs.messages.slice(-3)).to.deep.equal([
+      { role: 'user', content: 'Previous question' },
+      { role: 'assistant', content: 'Previous answer' },
+      { role: 'user', content: 'Continue' },
+    ])
+  })
+
   it('streams answers with project context metadata', async function (ctx) {
     const result = await ctx.Manager.chatStream({
       projectId: 'project-id',

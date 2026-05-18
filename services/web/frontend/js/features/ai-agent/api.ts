@@ -18,6 +18,8 @@ export type AiAgentSkill = {
   description: string
   modelInvocable: boolean
   requiredTools: string[]
+  keywords?: string[]
+  content?: string
   enabled?: boolean
   scope?: string
   pluginId?: string | null
@@ -50,6 +52,9 @@ export type AiAgentInstructionProfile = {
   projectId: string | null
   name: string
   enabled: boolean
+  content?: string
+  sha256?: string
+  bytes?: number
   createdAt: string | null
   updatedAt: string | null
 }

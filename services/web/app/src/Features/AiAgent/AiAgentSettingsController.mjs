@@ -92,7 +92,12 @@ async function projectConfig(req, res, next) {
 
 async function globalConfig(req, res, next) {
   try {
-    res.json(await getAgentConfig())
+    res.json(
+      await getAgentConfig({
+        includeContent: true,
+        includeAllInstructionProfiles: true,
+      })
+    )
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -127,6 +132,8 @@ async function updateGlobalSettings(req, res, next) {
     const config = await updateAgentSettings({
       scope: 'global',
       userId: SessionManager.getLoggedInUserId(req.session),
+      includeContent: true,
+      includeAllInstructionProfiles: true,
       ...body,
     })
     res.json(config)
@@ -170,7 +177,10 @@ async function installGlobalPlugin(req, res, next) {
     )
     res.json({
       plugin: installation,
-      config: await getAgentConfig(),
+      config: await getAgentConfig({
+        includeContent: true,
+        includeAllInstructionProfiles: true,
+      }),
     })
   } catch (err) {
     handleControllerError(err, res, next)
@@ -195,7 +205,10 @@ async function setGlobalPluginEnabled(req, res, next) {
     )
     res.json({
       plugin,
-      config: await getAgentConfig(),
+      config: await getAgentConfig({
+        includeContent: true,
+        includeAllInstructionProfiles: true,
+      }),
     })
   } catch (err) {
     handleControllerError(err, res, next)

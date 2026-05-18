@@ -146,6 +146,16 @@ describe('AiAgentSettingsController', function () {
     expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
   })
 
+  it('returns editable global agent config for admins', async function (ctx) {
+    await ctx.Controller.globalConfig(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.SettingsManager.getAgentConfig).to.have.been.calledWith({
+      includeContent: true,
+      includeAllInstructionProfiles: true,
+    })
+    expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
+  })
+
   it('updates project settings and records an audit summary without content', async function (ctx) {
     ctx.req.body = {
       skills: [{ id: 'academic-polish', enabled: false }],
@@ -192,6 +202,52 @@ describe('AiAgentSettingsController', function () {
         ],
       }
     )
+    expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
+  })
+
+  it('updates global settings and returns editable config', async function (ctx) {
+    ctx.req.body = {
+      skills: [
+        {
+          id: 'custom-style-guide',
+          enabled: true,
+          displayName: 'Custom style',
+          content: 'Follow the style guide.',
+        },
+      ],
+      instructionProfiles: [
+        {
+          name: 'Global Agent Rules',
+          content: 'Do not reveal secrets.',
+          enabled: true,
+        },
+      ],
+    }
+
+    await ctx.Controller.updateGlobalSettings(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.SettingsManager.updateAgentSettings).to.have.been.calledWith({
+      scope: 'global',
+      userId: 'user-one',
+      includeContent: true,
+      includeAllInstructionProfiles: true,
+      skills: [
+        {
+          id: 'custom-style-guide',
+          enabled: true,
+          displayName: 'Custom style',
+          content: 'Follow the style guide.',
+        },
+      ],
+      plugins: [],
+      instructionProfiles: [
+        {
+          name: 'Global Agent Rules',
+          content: 'Do not reveal secrets.',
+          enabled: true,
+        },
+      ],
+    })
     expect(jsonBody(ctx.res)).to.deep.equal(ctx.config)
   })
 

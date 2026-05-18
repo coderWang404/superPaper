@@ -19,6 +19,16 @@ const ChatRequestSchema = z.object({
   providerId: z.string().trim().min(1).max(200).optional(),
   model: z.string().trim().min(1).max(200).optional(),
   selection: SelectionSchema,
+  history: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string().min(1).max(12_000),
+      })
+    )
+    .max(20)
+    .optional()
+    .default([]),
 })
 
 function sendValidationError(res) {
@@ -82,6 +92,7 @@ async function chat(req, res, next) {
         providerId: body.providerId,
         model: body.model,
         selection: body.selection,
+        history: body.history,
       })
     )
   } catch (err) {
@@ -99,6 +110,7 @@ async function chatStream(req, res, next) {
       providerId: body.providerId,
       model: body.model,
       selection: body.selection,
+      history: body.history,
     })
 
     res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8')

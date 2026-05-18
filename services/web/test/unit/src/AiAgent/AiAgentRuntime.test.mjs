@@ -47,6 +47,13 @@ describe('AiAgentRuntime', function () {
       countDocuments: sinon.stub().returns({
         exec: sinon.stub().resolves(0),
       }),
+      find: sinon.stub().returns({
+        sort: sinon.stub().returns({
+          limit: sinon.stub().returns({
+            exec: sinon.stub().resolves([]),
+          }),
+        }),
+      }),
       create: sinon.stub().callsFake(async event => ({
         _id: `event-${event.sequence}`,
         createdAt: new Date('2026-05-16T00:00:00Z'),
@@ -396,6 +403,79 @@ describe('AiAgentRuntime', function () {
     ])
     expect(result.session.status).to.equal('waiting_for_act')
     expect(result.session.enabledPluginIds).to.deep.equal(['latex-core'])
+  })
+
+  it('continues an agent session with previous user and assistant messages', async function (ctx) {
+    ctx.AgentEvent.find.returns({
+      sort: sinon.stub().returns({
+        limit: sinon.stub().returns({
+          exec: sinon.stub().resolves([
+            {
+              payload: {
+                role: 'assistant',
+                kind: 'final',
+                content: 'Previous answer.',
+              },
+            },
+            {
+              payload: {
+                role: 'user',
+                content: 'Previous question.',
+              },
+            },
+          ]),
+        }),
+      }),
+    })
+
+    await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Continue the same task',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    const firstMessages =
+      ctx.createOpenAICompatibleChatCompletion.firstCall.args[0].messages
+    expect(
+      firstMessages.some(message =>
+        String(message.content).includes('Previous question.')
+      )
+    ).to.equal(true)
+    expect(
+      firstMessages.some(message =>
+        String(message.content).includes('Previous answer.')
+      )
+    ).to.equal(true)
+  })
+
+  it('persists provider and model when a later turn switches channel', async function (ctx) {
+    const nextProvider = {
+      ...ctx.provider,
+      _id: 'provider-two',
+      name: 'Provider Two',
+      defaultModel: 'model-two',
+      models: [{ id: 'model-two', displayName: 'model-two', enabled: true }],
+    }
+    ctx.AiProvider.findById.returns({
+      exec: sinon.stub().resolves(nextProvider),
+    })
+
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Continue with another provider',
+      providerId: 'provider-two',
+      model: 'model-two',
+    })
+
+    expect(ctx.session.providerId).to.equal('provider-two')
+    expect(ctx.session.model).to.equal('model-two')
+    expect(result.session.providerId).to.equal('provider-two')
+    expect(result.session.model).to.equal('model-two')
   })
 
   it('starts act mode for a planned session', async function (ctx) {

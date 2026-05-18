@@ -30,6 +30,10 @@ export type ProjectAiChatRequest = {
   providerId?: string
   model?: string
   selection?: ProjectAiSelection
+  history?: Array<{
+    role: 'user' | 'assistant'
+    content: string
+  }>
 }
 
 export type ProjectAiChatResponse = {

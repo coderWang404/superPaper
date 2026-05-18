@@ -121,6 +121,28 @@ describe('AiAgentSettingsManager', function () {
     })
   })
 
+  it('returns editable content for global agent administration', async function (ctx) {
+    const config = await ctx.Manager.getAgentConfig({
+      includeContent: true,
+      includeAllInstructionProfiles: true,
+    })
+
+    const skill = config.skills.find(
+      currentSkill => currentSkill.id === 'custom-style-guide'
+    )
+    expect(skill.content).to.equal('Follow the project style guide.')
+    expect(skill.keywords).to.deep.equal(['style'])
+    expect(config.instructionProfiles[0]).to.include({
+      name: 'Global Agent Rules',
+      content: 'Never expose secrets.',
+      bytes: 21,
+    })
+    expect(config.instructionProfiles[0].sha256).to.match(/^[a-f0-9]{64}$/)
+    expect(ctx.AgentInstructionProfile.find).to.have.been.calledWith({
+      $or: [{ scope: 'global' }],
+    })
+  })
+
   it('selects only enabled skills for model context', async function (ctx) {
     const selectedSkills = await ctx.Manager.getSelectedSkillsForTask('fix compile style', {
       projectId: 'project-one',

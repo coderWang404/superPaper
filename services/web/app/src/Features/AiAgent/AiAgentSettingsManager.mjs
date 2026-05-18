@@ -42,8 +42,8 @@ function normalizeScope(scope) {
   return scope === 'project' ? 'project' : 'global'
 }
 
-function publicSkillDefinition(skill) {
-  return {
+function publicSkillDefinition(skill, { includeContent = false } = {}) {
+  const definition = {
     id: skill.id,
     name: skill.name,
     displayName: skill.displayName,
@@ -54,6 +54,11 @@ function publicSkillDefinition(skill) {
     scope: skill.scope || 'builtin',
     pluginId: skill.pluginId || null,
   }
+  if (includeContent) {
+    definition.content = skill.content || ''
+    definition.keywords = Array.isArray(skill.keywords) ? [...skill.keywords] : []
+  }
+  return definition
 }
 
 function publicPluginDefinition(plugin) {
@@ -70,8 +75,8 @@ function publicPluginDefinition(plugin) {
   }
 }
 
-function publicInstructionProfile(profile) {
-  return {
+function publicInstructionProfile(profile, { includeContent = false } = {}) {
+  const definition = {
     id: profile._id?.toString?.() || profile.id || profile.name,
     scope: profile.scope,
     projectId: profile.projectId?.toString?.() || profile.projectId || null,
@@ -80,6 +85,16 @@ function publicInstructionProfile(profile) {
     createdAt: profile.createdAt || null,
     updatedAt: profile.updatedAt || null,
   }
+  if (includeContent) {
+    const content = String(profile.content || '')
+    definition.content = content
+    definition.sha256 = profile.sha256 || profileContentHash(content)
+    definition.bytes =
+      typeof profile.bytes === 'number'
+        ? profile.bytes
+        : Buffer.byteLength(content, 'utf8')
+  }
+  return definition
 }
 
 function publicInstructionSource(profile) {
@@ -93,11 +108,17 @@ function publicInstructionSource(profile) {
   }
 }
 
-export async function getAgentConfig({ projectId } = {}) {
+export async function getAgentConfig({
+  projectId,
+  includeContent = false,
+  includeAllInstructionProfiles = false,
+} = {}) {
   const [skills, plugins, instructionProfiles] = await Promise.all([
     listEffectiveSkillCatalog({ projectId }),
     listEffectivePluginCatalog({ projectId }),
-    listEnabledInstructionProfiles({ projectId }),
+    includeAllInstructionProfiles
+      ? listInstructionProfiles({ projectId, enabledOnly: false })
+      : listEnabledInstructionProfiles({ projectId }),
   ])
   const effectiveSkills = applyPluginAvailabilityToSkills(skills, plugins)
 
@@ -105,7 +126,9 @@ export async function getAgentConfig({ projectId } = {}) {
     permissionProfile: getDefaultPermissionProfile(),
     tools: listToolDefinitions(),
     toolPolicies: listToolPolicyDefinitions(),
-    skills: effectiveSkills.map(publicSkillDefinition),
+    skills: effectiveSkills.map(skill =>
+      publicSkillDefinition(skill, { includeContent })
+    ),
     plugins: plugins.map(publicPluginDefinition),
     enabledSkillIds: effectiveSkills
       .filter(skill => skill.enabled !== false)
@@ -113,7 +136,9 @@ export async function getAgentConfig({ projectId } = {}) {
     enabledPluginIds: plugins
       .filter(plugin => plugin.enabled !== false)
       .map(plugin => plugin.id),
-    instructionProfiles: instructionProfiles.map(publicInstructionProfile),
+    instructionProfiles: instructionProfiles.map(profile =>
+      publicInstructionProfile(profile, { includeContent })
+    ),
   }
 }
 
@@ -138,9 +163,15 @@ export async function listEnabledPluginDefinitions({ projectId } = {}) {
 }
 
 export async function listEnabledInstructionProfiles({ projectId } = {}) {
+  return listInstructionProfiles({ projectId, enabledOnly: true })
+}
+
+async function listInstructionProfiles({ projectId, enabledOnly = true } = {}) {
   const query = {
-    enabled: true,
     $or: [{ scope: 'global' }],
+  }
+  if (enabledOnly) {
+    query.enabled = true
   }
   if (projectId) {
     query.$or.push({ scope: 'project', projectId })
@@ -166,6 +197,8 @@ export async function updateAgentSettings({
   skills = [],
   plugins = [],
   instructionProfiles = [],
+  includeContent = false,
+  includeAllInstructionProfiles = false,
 }) {
   const normalizedScope = normalizeScope(scope)
   const normalizedProjectId = normalizedScope === 'project' ? projectId : null
@@ -197,7 +230,11 @@ export async function updateAgentSettings({
     ),
   ])
 
-  return getAgentConfig({ projectId: normalizedProjectId })
+  return getAgentConfig({
+    projectId: normalizedProjectId,
+    includeContent,
+    includeAllInstructionProfiles,
+  })
 }
 
 async function listEffectiveSkillCatalog({ projectId } = {}) {
