@@ -10,6 +10,7 @@ import FileTreeOutlinePanel from '@/features/file-tree/components/file-tree-outl
 import ChatPane from '@/features/chat/components/chat-pane'
 import ChatIndicator from '@/features/chat/components/chat-indicator'
 import AiAssistantPanel from '@/features/ai-assistant/components/ai-assistant-panel'
+import AgentSettingsPanel from '@/features/ai-agent-settings/components/agent-settings-panel'
 import getMeta from '@/utils/meta'
 import classNames from 'classnames'
 import IntegrationsPanel from '@/features/integrations-panel/integrations-panel'
@@ -138,14 +139,19 @@ export const RailLayout = () => {
       {
         key: 'ai-assistant',
         icon: AiAssistantRailIcon,
-        title: 'AI Assistant',
+        title: t('ai_assistant'),
         component: <AiAssistantPanel />,
+      },
+      {
+        key: 'agent-settings',
+        icon: 'tune',
+        title: t('agent_settings'),
+        component: <AgentSettingsPanel />,
       },
       ...moduleRailEntries,
     ],
     [
       t,
-      view,
       isRestrictedTokenMember,
       isSuperPaper,
       gitBridgeEnabled,

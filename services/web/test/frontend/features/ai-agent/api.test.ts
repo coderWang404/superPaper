@@ -4,10 +4,16 @@ import fetchMock from 'fetch-mock'
 import {
   applyProjectAiAgentPatch,
   createProjectAiAgentSession,
+  getEditableProjectAiAgentConfig,
   getProjectAiAgentConfig,
+  installProjectAiAgentPlugin,
+  listProjectAiAgentPlugins,
+  previewProjectAiAgentPlugin,
   rejectProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
+  setProjectAiAgentPluginEnabled,
   startProjectAiAgentAct,
+  updateProjectAiAgentSettings,
 } from '../../../../frontend/js/features/ai-agent/api'
 
 describe('ai-agent api', function () {
@@ -54,6 +60,128 @@ describe('ai-agent api', function () {
 
     expect(config.permissionProfile.id).to.equal('project-agent-default')
     expect(config.tools[0].name).to.equal('project.read_file')
+  })
+
+  it('loads editable project agent config', async function () {
+    fetchMock.get('/project/project123/ai/agent/config?includeContent=true', {
+      permissionProfile: {
+        id: 'project-agent-default',
+      },
+      tools: [],
+      skills: [{ id: 'project-skill', content: 'Skill body' }],
+      plugins: [],
+      instructionProfiles: [
+        {
+          name: 'Project Agent Rules',
+          content: 'Project rules',
+        },
+      ],
+    })
+
+    const config = await getEditableProjectAiAgentConfig('project123')
+
+    expect(config.skills[0].content).to.equal('Skill body')
+    expect(config.instructionProfiles?.[0].content).to.equal('Project rules')
+  })
+
+  it('updates project agent settings with PATCH', async function () {
+    fetchMock.patch('/project/project123/ai/agent/settings?includeContent=true', {
+      skills: [],
+      plugins: [],
+      instructionProfiles: [],
+    })
+
+    await updateProjectAiAgentSettings('project123', {
+      instructionProfiles: [
+        {
+          id: 'rules',
+          scope: 'project',
+          projectId: 'project123',
+          name: 'Project Agent Rules',
+          content: 'Project rules',
+          enabled: true,
+          createdAt: null,
+          updatedAt: null,
+        },
+      ],
+    })
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/settings?includeContent=true'
+    )[0]
+    expect(call.options.method).to.equal('patch')
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      instructionProfiles: [
+        {
+          id: 'rules',
+          scope: 'project',
+          projectId: 'project123',
+          name: 'Project Agent Rules',
+          content: 'Project rules',
+          enabled: true,
+          createdAt: null,
+          updatedAt: null,
+        },
+      ],
+    })
+  })
+
+  it('manages project-scoped plugins', async function () {
+    fetchMock.get('/project/project123/ai/agent/plugins', {
+      plugins: [{ pluginId: 'latex-plugin' }],
+    })
+    fetchMock.post('/project/project123/ai/agent/plugins/preview', {
+      preview: { plugin: { id: 'latex-plugin' }, skills: [] },
+    })
+    fetchMock.post('/project/project123/ai/agent/plugins/install', {
+      plugin: { pluginId: 'latex-plugin' },
+      config: {},
+    })
+    fetchMock.patch('/project/project123/ai/agent/plugins/latex-plugin', {
+      plugin: { pluginId: 'latex-plugin', enabled: false },
+      config: {},
+    })
+
+    await listProjectAiAgentPlugins('project123')
+    await previewProjectAiAgentPlugin('project123', {
+      sourceType: 'github',
+      url: 'https://github.com/example/latex-plugin',
+    })
+    await installProjectAiAgentPlugin('project123', {
+      sourceType: 'github',
+      url: 'https://github.com/example/latex-plugin',
+      enabled: true,
+    })
+    await setProjectAiAgentPluginEnabled('project123', 'latex-plugin', false)
+
+    expect(
+      JSON.parse(
+        fetchMock.callHistory.calls(
+          '/project/project123/ai/agent/plugins/preview'
+        )[0].options.body as string
+      )
+    ).to.deep.equal({
+      sourceType: 'github',
+      url: 'https://github.com/example/latex-plugin',
+    })
+    expect(
+      JSON.parse(
+        fetchMock.callHistory.calls(
+          '/project/project123/ai/agent/plugins/install'
+        )[0].options.body as string
+      )
+    ).to.deep.equal({
+      sourceType: 'github',
+      url: 'https://github.com/example/latex-plugin',
+      enabled: true,
+    })
+    expect(
+      JSON.parse(
+        fetchMock.callHistory.calls(
+          '/project/project123/ai/agent/plugins/latex-plugin'
+        )[0].options.body as string
+      )
+    ).to.deep.equal({ enabled: false })
   })
 
   it('creates project agent sessions', async function () {

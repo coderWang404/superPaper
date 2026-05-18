@@ -6,9 +6,8 @@ block content
 	- const isChineseAdmin = adminLang.startsWith('zh')
 	- const aiAdminTabLabel = isChineseAdmin ? 'AI 管理' : 'AI Administration'
 	- const aiAdminTitle = aiAdminTabLabel
-	- const aiAdminSubtitle = isChineseAdmin ? '模型渠道、Agent 插件与可复用技能的统一控制台。' : 'Unified controls for model gateways, Agent plugins, and reusable skills.'
+	- const aiAdminSubtitle = isChineseAdmin ? '模型渠道与默认模型的站点级控制台。Agent 约束、Skills 和 Plugins 在项目工作台中按项目独立管理。' : 'Site-level controls for model gateways and default models. Agent rules, skills, and plugins are managed per project in the editor workspace.'
 	- const aiProviderLoading = isChineseAdmin ? '正在加载 AI 供应商...' : 'Loading AI providers...'
-	- const agentPluginLoading = isChineseAdmin ? '正在加载 Agent 插件...' : 'Loading Agent plugins...'
 	#main-content.content.content-alt
 		.container
 			.row
@@ -119,10 +118,6 @@ block content
 												p= aiAdminSubtitle
 											#ai-provider-admin(data-csrf-token=csrfToken)
 												p.text-muted= aiProviderLoading
-											#ai-agent-settings-admin(data-csrf-token=csrfToken)
-												p.text-muted= agentPluginLoading
-											#ai-agent-plugin-admin(data-csrf-token=csrfToken)
-												p.text-muted= agentPluginLoading
 
 									.tab-pane(role='tabpanel' id='tpds')
 										h3 Flush project to TPDS

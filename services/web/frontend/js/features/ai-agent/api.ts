@@ -1,4 +1,4 @@
-import { FetchError, getJSON, postJSON } from '@/infrastructure/fetch-json'
+import { FetchError, getJSON, patchJSON, postJSON } from '@/infrastructure/fetch-json'
 import getMeta from '@/utils/meta'
 import type { ProjectAiSelection } from '@/features/ai-assistant/api'
 
@@ -35,6 +35,89 @@ export type AiAgentPlugin = {
   skills: string[]
   toolPresets: string[]
   scope?: string
+}
+
+export type AiAgentPluginSource =
+  | {
+      sourceType: 'local_directory'
+      path: string
+    }
+  | {
+      sourceType: 'zip_url'
+      url: string
+    }
+  | {
+      sourceType: 'github'
+      url: string
+      ref?: string
+    }
+  | {
+      sourceType: 'uploaded_zip'
+      uploadId: string
+      originalName?: string
+    }
+
+export type AiAgentPluginPreviewSkill = {
+  id: string
+  displayName: string
+  description: string
+  requiredTools: string[]
+  contentBytes: number
+  sourcePath: string
+}
+
+export type AiAgentPluginPreview = {
+  plugin: {
+    id: string
+    name: string
+    version: string
+    displayName: string
+    description: string
+    manifestFormat: string
+  }
+  source: {
+    type: string
+    url?: string
+    archiveUrl?: string
+    ref?: string | null
+    uploadId?: string
+    originalName?: string | null
+    pathHash?: string
+  }
+  skills: AiAgentPluginPreviewSkill[]
+  integrity: {
+    sha256?: string
+  }
+  packageBytes: number
+  fileCount: number
+  warnings: string[]
+}
+
+export type AiAgentPluginInstallation = {
+  pluginId: string
+  name: string
+  version: string
+  displayName: string
+  description: string
+  enabled: boolean
+  status: string
+  manifestFormat: string
+  source: {
+    type: string
+    url?: string
+    archiveUrl?: string
+    ref?: string | null
+    uploadId?: string
+    originalName?: string | null
+    pathHash?: string
+  }
+  integrity: {
+    sha256?: string
+  }
+  packageBytes: number
+  fileCount: number
+  skillIds: string[]
+  warnings: string[]
 }
 
 export type AiAgentToolPolicy = {
@@ -252,6 +335,93 @@ export function getProjectAiAgentConfig(projectId: string) {
   return getJSON<ProjectAiAgentConfig>(`/project/${projectId}/ai/agent/config`)
 }
 
+export function getEditableProjectAiAgentConfig(projectId: string) {
+  return getJSON<ProjectAiAgentConfig>(
+    `/project/${projectId}/ai/agent/config?includeContent=true`
+  )
+}
+
+export function updateProjectAiAgentSettings(
+  projectId: string,
+  body: {
+    skills?: AiAgentSkill[]
+    plugins?: AiAgentPlugin[]
+    instructionProfiles?: AiAgentInstructionProfile[]
+  }
+) {
+  return fetchJSONPatch<ProjectAiAgentConfig>(
+    `/project/${projectId}/ai/agent/settings?includeContent=true`,
+    body
+  )
+}
+
+export function listProjectAiAgentPlugins(projectId: string) {
+  return getJSON<{ plugins: AiAgentPluginInstallation[] }>(
+    `/project/${projectId}/ai/agent/plugins`
+  )
+}
+
+export function previewProjectAiAgentPlugin(
+  projectId: string,
+  body: AiAgentPluginSource
+) {
+  return postJSON<{ preview: AiAgentPluginPreview }>(
+    `/project/${projectId}/ai/agent/plugins/preview`,
+    { body }
+  )
+}
+
+export function installProjectAiAgentPlugin(
+  projectId: string,
+  body: AiAgentPluginSource & { enabled?: boolean }
+) {
+  return postJSON<{
+    plugin: AiAgentPluginInstallation
+    config: ProjectAiAgentConfig
+  }>(`/project/${projectId}/ai/agent/plugins/install`, { body })
+}
+
+export function setProjectAiAgentPluginEnabled(
+  projectId: string,
+  pluginId: string,
+  enabled: boolean
+) {
+  return fetchJSONPatch<{
+    plugin: AiAgentPluginInstallation
+    config: ProjectAiAgentConfig
+  }>(`/project/${projectId}/ai/agent/plugins/${encodeURIComponent(pluginId)}`, {
+    enabled,
+  })
+}
+
+export async function uploadProjectAiAgentPluginZip(
+  projectId: string,
+  file: File
+) {
+  const formData = new FormData()
+  formData.append('plugin', file, file.name)
+  const path = `/project/${projectId}/ai/agent/plugins/upload`
+  const response = await fetch(path, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'application/json',
+      'X-Csrf-Token': getMeta('ol-csrfToken'),
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new FetchError(response.statusText, path, undefined, response)
+  }
+
+  return response.json() as Promise<{
+    uploadId: string
+    originalName: string
+    preview: AiAgentPluginPreview
+  }>
+}
+
 export function createProjectAiAgentSession(
   projectId: string,
   body: CreateProjectAiAgentSessionRequest
@@ -260,6 +430,12 @@ export function createProjectAiAgentSession(
     `/project/${projectId}/ai/agent/sessions`,
     { body }
   )
+}
+
+function fetchJSONPatch<T>(path: string, body: Record<string, unknown>) {
+  return patchJSON<T>(path, {
+    body,
+  })
 }
 
 export function startProjectAiAgentAct(projectId: string, sessionId: string) {

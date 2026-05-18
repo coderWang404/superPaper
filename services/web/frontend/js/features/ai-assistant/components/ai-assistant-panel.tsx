@@ -114,6 +114,22 @@ export default function AiAssistantPanel() {
     }
   }, [agentConfig, configError, mode, projectId])
 
+  useEffect(() => {
+    const handleAgentConfigChanged = () => {
+      setAgentConfig(null)
+    }
+    window.addEventListener(
+      'superpaper:ai-agent-config-changed',
+      handleAgentConfigChanged
+    )
+    return () => {
+      window.removeEventListener(
+        'superpaper:ai-agent-config-changed',
+        handleAgentConfigChanged
+      )
+    }
+  }, [])
+
   const selectedProvider = useMemo(() => {
     return (
       config?.providers.find(provider => provider.id === selectedProviderId) ??
