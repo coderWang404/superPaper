@@ -1,6 +1,8 @@
 import { parseOpenAIModelsResponse } from './AiProviderValidation.mjs'
 
-const DEFAULT_TIMEOUT_MS = 10_000
+const DEFAULT_MODEL_SYNC_TIMEOUT_MS = 10_000
+const DEFAULT_CHAT_COMPLETION_TIMEOUT_MS = 60_000
+const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
 
 function buildModelsURL(baseURL) {
   return `${baseURL.replace(/\/+$/, '')}/models`
@@ -48,7 +50,7 @@ function buildChatCompletionBody({ baseURL, model, messages, temperature, stream
 
 export class AiProviderError extends Error {
   constructor(message, options = {}) {
-    super(message)
+    super(message, options)
     this.name = 'AiProviderError'
     this.status = options.status
   }
@@ -65,10 +67,9 @@ export async function syncOpenAICompatibleModels({
   baseURL,
   apiKey,
   fetchImpl = fetch,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
+  timeoutMs = DEFAULT_MODEL_SYNC_TIMEOUT_MS,
 }) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const timeout = createRequestTimeout(timeoutMs)
   try {
     const response = await fetchImpl(buildModelsURL(baseURL), {
       method: 'GET',
@@ -76,7 +77,7 @@ export async function syncOpenAICompatibleModels({
         Authorization: `Bearer ${apiKey}`,
         Accept: 'application/json',
       },
-      signal: controller.signal,
+      signal: timeout.signal,
     })
 
     if (!response.ok) {
@@ -90,7 +91,7 @@ export async function syncOpenAICompatibleModels({
   } catch (err) {
     throw toProviderError(err, 'AI provider model sync failed')
   } finally {
-    clearTimeout(timeout)
+    timeout.clear()
   }
 }
 
@@ -100,11 +101,10 @@ export async function createOpenAICompatibleChatCompletion({
   model,
   messages,
   fetchImpl = fetch,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
+  timeoutMs = DEFAULT_CHAT_COMPLETION_TIMEOUT_MS,
   temperature = 0.2,
 }) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const timeout = createRequestTimeout(timeoutMs)
   try {
     const response = await fetchImpl(buildChatCompletionsURL(baseURL), {
       method: 'POST',
@@ -116,7 +116,7 @@ export async function createOpenAICompatibleChatCompletion({
       body: JSON.stringify(
         buildChatCompletionBody({ baseURL, model, messages, temperature })
       ),
-      signal: controller.signal,
+      signal: timeout.signal,
     })
 
     if (!response.ok) {
@@ -135,7 +135,7 @@ export async function createOpenAICompatibleChatCompletion({
   } catch (err) {
     throw toProviderError(err, 'AI provider chat completion failed')
   } finally {
-    clearTimeout(timeout)
+    timeout.clear()
   }
 }
 
@@ -145,11 +145,10 @@ export async function* streamOpenAICompatibleChatCompletion({
   model,
   messages,
   fetchImpl = fetch,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
+  timeoutMs = DEFAULT_STREAM_IDLE_TIMEOUT_MS,
   temperature = 0.2,
 }) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const timeout = createRequestTimeout(timeoutMs)
   try {
     const response = await fetchImpl(buildChatCompletionsURL(baseURL), {
       method: 'POST',
@@ -167,7 +166,7 @@ export async function* streamOpenAICompatibleChatCompletion({
           stream: true,
         })
       ),
-      signal: controller.signal,
+      signal: timeout.signal,
     })
 
     if (!response.ok) {
@@ -180,19 +179,42 @@ export async function* streamOpenAICompatibleChatCompletion({
       throw new AiProviderError('AI provider chat completion stream is empty')
     }
 
-    yield* parseOpenAICompatibleSSE(response.body)
+    timeout.reset()
+    yield* parseOpenAICompatibleSSE(response.body, () => timeout.reset())
   } catch (err) {
     throw toProviderError(err, 'AI provider chat completion failed')
   } finally {
-    clearTimeout(timeout)
+    timeout.clear()
   }
 }
 
-async function* parseOpenAICompatibleSSE(body) {
+function createRequestTimeout(timeoutMs) {
+  const controller = new AbortController()
+  let timeout = null
+  const reset = () => {
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+    timeout = setTimeout(() => controller.abort(), timeoutMs)
+  }
+  reset()
+  return {
+    signal: controller.signal,
+    reset,
+    clear() {
+      if (timeout) {
+        clearTimeout(timeout)
+      }
+    },
+  }
+}
+
+async function* parseOpenAICompatibleSSE(body, onChunk = () => {}) {
   const decoder = new TextDecoder()
   let buffer = ''
 
   for await (const chunk of streamBodyChunks(body)) {
+    onChunk()
     buffer += decoder.decode(chunk, { stream: true })
     let newlineIndex = buffer.indexOf('\n')
 
@@ -248,7 +270,6 @@ async function* streamBodyChunks(body) {
     } finally {
       reader.releaseLock()
     }
-    return
   }
 
   yield* body

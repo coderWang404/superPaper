@@ -1,3 +1,4 @@
+import logger from '@superpaper/logger'
 import { AiProvider } from '../../models/AiProvider.mjs'
 import { decryptApiKey } from './AiProviderSecrets.mjs'
 import { buildProjectContext } from './AiProjectContextBuilder.mjs'
@@ -77,12 +78,26 @@ export async function chat({
       model,
       selection,
     })
-  const answer = await createOpenAICompatibleChatCompletion({
-    baseURL: provider.baseURL,
-    apiKey,
-    model: selectedModel,
-    messages: buildMessages(context, prompt, history),
-  })
+  let answer
+  try {
+    answer = await createOpenAICompatibleChatCompletion({
+      ...providerRequestOptions({
+        provider,
+        providerConfig,
+        selectedModel,
+        apiKey,
+      }),
+      messages: buildMessages(context, prompt, history),
+    })
+  } catch (err) {
+    logProviderFailure({
+      err,
+      providerConfig,
+      selectedModel,
+      operation: 'chat_completion',
+    })
+    throw err
+  }
 
   return {
     answer,
@@ -110,16 +125,71 @@ export async function chatStream({
     })
 
   return {
-    stream: streamOpenAICompatibleChatCompletion({
-      baseURL: provider.baseURL,
-      apiKey,
-      model: selectedModel,
-      messages: buildMessages(context, prompt, history),
+    stream: logProviderStreamFailure({
+      providerConfig,
+      selectedModel,
+      stream: streamOpenAICompatibleChatCompletion({
+        ...providerRequestOptions({
+          provider,
+          providerConfig,
+          selectedModel,
+          apiKey,
+        }),
+        messages: buildMessages(context, prompt, history),
+      }),
     }),
     model: selectedModel,
     providerId: providerConfig.id,
     context: publicContext(context),
   }
+}
+
+function providerRequestOptions({ provider, providerConfig, selectedModel, apiKey }) {
+  return {
+    baseURL: provider.baseURL,
+    apiKey,
+    model: selectedModel,
+    providerName: providerConfig.name,
+  }
+}
+
+async function* logProviderStreamFailure({
+  providerConfig,
+  selectedModel,
+  stream,
+}) {
+  try {
+    yield* stream
+  } catch (err) {
+    logProviderFailure({
+      err,
+      providerConfig,
+      selectedModel,
+      operation: 'chat_stream',
+    })
+    throw err
+  }
+}
+
+function logProviderFailure({ err, providerConfig, selectedModel, operation }) {
+  logger.warn(
+    {
+      err: {
+        name: err.name,
+        message: err.message,
+        status: err.status,
+        causeName: err.cause?.name,
+        causeMessage: err.cause?.message,
+      },
+      aiProvider: {
+        id: providerConfig.id,
+        name: providerConfig.name,
+        model: selectedModel,
+      },
+      operation,
+    },
+    'AI provider request failed'
+  )
 }
 
 async function buildChatRequest({

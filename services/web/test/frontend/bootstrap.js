@@ -9,7 +9,19 @@ fs.mkdirSync(path.dirname(process.env.BABEL_CACHE_PATH), { recursive: true })
 // Run babel on tests to allow support for import/export statements in Node
 require('@babel/register')({
   extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
-  plugins: [['module-resolver', { alias: { '^@/(.+)': './frontend/js/\\1' } }]],
+  plugins: [
+    [
+      'module-resolver',
+      {
+        alias: {
+          '^@/(.+)': './frontend/js/\\1',
+          '^streamdown$': './test/frontend/helpers/streamdown-shim.js',
+          '^@streamdown/cjk$':
+            './test/frontend/helpers/streamdown-cjk-shim.js',
+        },
+      },
+    ],
+  ],
 })
 
 // Load JSDOM to mock the DOM in Node

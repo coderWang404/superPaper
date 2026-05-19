@@ -31,6 +31,7 @@ import {
   type ProjectAiAgentPatchDiffLine,
   type ProjectAiAgentSession,
 } from '@/features/ai-agent/api'
+import AiMarkdown from './ai-markdown'
 
 type AssistantMode = 'chat' | 'agent'
 
@@ -416,9 +417,7 @@ export default function AiAssistantPanel() {
                       model: selectedModel,
                     })}
                   </div>
-                  <div className="ai-assistant-answer-text">
-                    {streamedAnswer}
-                  </div>
+                  <AiMarkdown content={streamedAnswer} streaming />
                 </div>
               )}
               {mode === 'agent' && agentEvents.length > 0 && (
@@ -440,7 +439,7 @@ export default function AiAssistantPanel() {
                   <div className="ai-assistant-message-meta">
                     {t('ai_assistant_agent_name')}
                   </div>
-                  <div className="ai-assistant-answer-text">{agentAnswer}</div>
+                  <AiMarkdown content={agentAnswer} />
                 </div>
               )}
               {chatMessages.length === 0 &&
@@ -552,7 +551,11 @@ function ChatTranscriptMessage({
               model: message.model || '',
             })}
       </div>
-      <div className="ai-assistant-answer-text">{message.content}</div>
+      {message.role === 'assistant' ? (
+        <AiMarkdown content={message.content} />
+      ) : (
+        <div className="ai-assistant-answer-text">{message.content}</div>
+      )}
     </div>
   )
 }
@@ -618,6 +621,8 @@ function AgentEventList({
               t={t}
               onSessionStatusChange={onSessionStatusChange}
             />
+          ) : shouldRenderAgentEventAsMarkdown(event) ? (
+            <AiMarkdown content={formatAgentEventPayload(event, t)} />
           ) : (
             <div className="ai-assistant-answer-text">
               {formatAgentEventPayload(event, t)}
@@ -683,6 +688,14 @@ function formatAgentEventPayload(event: ProjectAiAgentEvent, t: TFunction) {
     return `${payload.from} -> ${payload.to}`
   }
   return JSON.stringify(payload, null, 2)
+}
+
+function shouldRenderAgentEventAsMarkdown(event: ProjectAiAgentEvent) {
+  return (
+    event.type === 'message' &&
+    event.payload.role === 'assistant' &&
+    typeof event.payload.content === 'string'
+  )
 }
 
 function AgentPatchReview({

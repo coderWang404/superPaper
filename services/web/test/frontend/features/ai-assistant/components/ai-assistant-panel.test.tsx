@@ -108,7 +108,7 @@ describe('<AiAssistantPanel />', function () {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
-    await screen.findByText('Use \\\\cite{} here.')
+    await screen.findByText(/Use \\cite\{\} here\./)
 
     const call = fetchMock.callHistory.calls(
       '/project/project123/ai/chat/stream'
@@ -137,7 +137,7 @@ describe('<AiAssistantPanel />', function () {
       target: { value: 'First question.' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
-    await screen.findByText('Use \\\\cite{} here.')
+    await screen.findByText(/Use \\cite\{\} here\./)
 
     fireEvent.change(screen.getByLabelText('Provider'), {
       target: { value: 'provider-two' },
@@ -147,7 +147,7 @@ describe('<AiAssistantPanel />', function () {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
-    await screen.findAllByText('Use \\\\cite{} here.')
+    await screen.findAllByText(/Use \\cite\{\} here\./)
     const secondCall = fetchMock.callHistory.calls(
       '/project/project123/ai/chat/stream'
     )[1]
@@ -232,6 +232,26 @@ describe('<AiAssistantPanel />', function () {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
     await screen.findByText('Streaming answer')
+  })
+
+  it('renders assistant Markdown while keeping user messages as text', async function () {
+    mockConfig()
+    mockChatStream({
+      deltas: ['## Result\n\n- **Use** `\\\\cite{key}`\n\n'],
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: '**Do not render me**' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findByRole('heading', { name: 'Result', level: 2 })
+    screen.getByText('Use')
+    screen.getByText(/\\cite\{key\}/)
+    expect(screen.getAllByText('**Do not render me**')).to.have.length(2)
   })
 
   it('runs agent mode and renders streamed tool events', async function () {
@@ -463,7 +483,10 @@ function mockConfigWithTwoProviders() {
 }
 
 function mockChatStream(
-  overrides: { repeat?: number } & Record<string, unknown> = {}
+  overrides: {
+    repeat?: number
+    deltas?: string[]
+  } & Record<string, unknown> = {}
 ) {
   const response = {
     providerId: 'provider-one',
@@ -483,7 +506,10 @@ function mockChatStream(
       truncated: boolean
     }
   }
-  const { repeat } = overrides
+  const { deltas = ['Use ', '\\\\cite{} here.'], repeat } = overrides
+  const deltaLines = deltas
+    .map(delta => JSON.stringify({ type: 'delta', delta }) + '\n')
+    .join('')
 
   fetchMock.post(
     '/project/project123/ai/chat/stream',
@@ -491,10 +517,7 @@ function mockChatStream(
       status: 200,
       headers: { 'Content-Type': 'application/x-ndjson' },
       body:
-        JSON.stringify({ type: 'delta', delta: 'Use ' }) +
-        '\n' +
-        JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
-        '\n' +
+        deltaLines +
         JSON.stringify({ type: 'done', ...response }) +
         '\n',
     },

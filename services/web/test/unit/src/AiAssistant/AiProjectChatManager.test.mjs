@@ -45,6 +45,9 @@ describe('AiProjectChatManager', function () {
         yield 'answer'
       })()
     )
+    ctx.logger = {
+      warn: sinon.stub(),
+    }
 
     vi.doMock('../../../../app/src/models/AiProvider', () => ({
       AiProvider: ctx.AiProvider,
@@ -70,6 +73,9 @@ describe('AiProjectChatManager', function () {
           ctx.streamOpenAICompatibleChatCompletion,
       })
     )
+    vi.doMock('@superpaper/logger', () => ({
+      default: ctx.logger,
+    }))
 
     ctx.Manager = await import(modulePath)
   })
@@ -175,5 +181,79 @@ describe('AiProjectChatManager', function () {
       selectionIncluded: true,
       truncated: false,
     })
+  })
+
+  it('logs sanitized provider failures for chat requests', async function (ctx) {
+    const providerError = new Error('fetch failed for https://ai.example.test')
+    providerError.name = 'TypeError'
+    providerError.cause = new Error('socket hang up')
+    ctx.createOpenAICompatibleChatCompletion.rejects(providerError)
+
+    await expect(
+      ctx.Manager.chat({
+        projectId: 'project-id',
+        prompt: 'Secret project prompt',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      })
+    ).to.be.rejectedWith('fetch failed for https://ai.example.test')
+
+    expect(ctx.logger.warn).to.have.been.calledOnce
+    const logPayload = ctx.logger.warn.firstCall.args[0]
+    expect(logPayload).to.deep.equal({
+      err: {
+        name: 'TypeError',
+        message: 'fetch failed for https://ai.example.test',
+        status: undefined,
+        causeName: 'Error',
+        causeMessage: 'socket hang up',
+      },
+      aiProvider: {
+        id: 'provider-id',
+        name: 'Claude Hub',
+        model: 'gpt-4.1',
+      },
+      operation: 'chat_completion',
+    })
+    expect(JSON.stringify(logPayload)).to.not.include('test-key')
+    expect(JSON.stringify(logPayload)).to.not.include('Secret project prompt')
+  })
+
+  it('logs sanitized provider failures for streaming requests', async function (ctx) {
+    const providerError = new Error('aborted after idle timeout')
+    ctx.streamOpenAICompatibleChatCompletion.returns(
+      (async function* () {
+        yield 'partial answer'
+        throw providerError
+      })()
+    )
+
+    const result = await ctx.Manager.chatStream({
+      projectId: 'project-id',
+      prompt: 'Secret stream prompt',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    const chunks = []
+    await expect(
+      (async () => {
+        for await (const chunk of result.stream) {
+          chunks.push(chunk)
+        }
+      })()
+    ).to.be.rejectedWith('aborted after idle timeout')
+
+    expect(ctx.logger.warn).to.have.been.calledOnce
+    expect(chunks).to.deep.equal(['partial answer'])
+    const logPayload = ctx.logger.warn.firstCall.args[0]
+    expect(logPayload.operation).to.equal('chat_stream')
+    expect(logPayload.aiProvider).to.deep.equal({
+      id: 'provider-id',
+      name: 'Claude Hub',
+      model: 'gpt-4.1',
+    })
+    expect(JSON.stringify(logPayload)).to.not.include('test-key')
+    expect(JSON.stringify(logPayload)).to.not.include('Secret stream prompt')
   })
 })
