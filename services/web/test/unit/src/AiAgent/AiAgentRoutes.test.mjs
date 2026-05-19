@@ -254,4 +254,21 @@ describe('AiAgent routes', function () {
     )
     expect(route.handlers).to.include('AiAgentController.rejectPatch')
   })
+
+  it('mounts the patch rollback endpoint behind login, rate limit, and project write access', function () {
+    const route = findRoute(
+      'post',
+      '/project/:Project_id/ai/agent/patches/:patchId/rollback'
+    )
+
+    expect(route).to.exist
+    expect(route.handlers).to.include('AuthenticationController.requireLogin()')
+    expect(route.handlers).to.include(
+      "RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat,{params:['Project_id']})"
+    )
+    expect(route.handlers).to.include(
+      'AuthorizationMiddleware.ensureUserCanWriteProjectContent'
+    )
+    expect(route.handlers).to.include('AiAgentController.rollbackPatch')
+  })
 })

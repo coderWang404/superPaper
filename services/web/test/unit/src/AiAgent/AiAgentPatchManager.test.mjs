@@ -342,6 +342,8 @@ describe('AiAgentPatchManager', function () {
     )
     expect(ctx.patchDocument.save).to.have.been.calledOnce
     expect(patch.status).to.equal('applied')
+    expect(patch.rollbackAvailable).to.equal(true)
+    expect(ctx.patchDocument.rollbackOperations).to.have.length(1)
     expect(ctx.CompileManager.promises.compile).to.have.been.calledWith(
       'project-one',
       'reviewer-one',
@@ -357,6 +359,70 @@ describe('AiAgentPatchManager', function () {
       buildId: 'build-one',
     })
     expect(ctx.AgentEvent.create).to.have.callCount(4)
+  })
+
+  it('rolls back applied replace_text patches through DocumentUpdaterHandler', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Update wording',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/main.tex'].lines[2] = 'New sentence.'
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been.calledWith(
+      'project-one',
+      'doc-main',
+      'reviewer-one',
+      [
+        '\\documentclass{article}',
+        '\\begin{document}',
+        'Old sentence.',
+        '\\end{document}',
+      ],
+      'agent-rollback'
+    )
+    expect(patch.status).to.equal('rolled_back')
+    expect(patch.rollbackAvailable).to.equal(false)
+    expect(patch.compileResult.status).to.equal('success')
+    expect(ctx.CompileManager.promises.compile).to.have.been.calledOnce
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'patch_rolled_back',
+        payload: {
+          patchId: 'patch-one',
+          operations: [
+            {
+              type: 'restore_doc_text',
+              path: '/main.tex',
+              currentPath: undefined,
+              docId: 'doc-main',
+            },
+          ],
+        },
+      })
+    )
   })
 
   it('applies create_doc patches through EditorController', async function (ctx) {
@@ -389,6 +455,48 @@ describe('AiAgentPatchManager', function () {
     )
     expect(patch.status).to.equal('applied')
     expect(patch.compileResult.status).to.equal('success')
+  })
+
+  it('rolls back applied create_doc patches by deleting the created doc', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Create methods section',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/sections/methods.tex',
+          content: '\\section{Methods}',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/sections/methods.tex'] = {
+      _id: 'doc-created',
+      lines: ['\\section{Methods}'],
+      rev: 1,
+    }
+    ctx.EditorController.promises.deleteEntity.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.deleteEntity).to.have.been.calledWith(
+      'project-one',
+      'doc-created',
+      'doc',
+      'agent-rollback',
+      'reviewer-one'
+    )
+    expect(patch.status).to.equal('rolled_back')
   })
 
   it('applies delete_doc patches through EditorController', async function (ctx) {
@@ -424,6 +532,48 @@ describe('AiAgentPatchManager', function () {
     expect(patch.compileResult.status).to.equal('success')
   })
 
+  it('rolls back applied delete_doc patches by restoring the deleted doc', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Remove obsolete note',
+      operations: [
+        {
+          type: 'delete_doc',
+          path: '/main.tex',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    delete ctx.docs['/main.tex']
+    ctx.EditorController.promises.upsertDocWithPath.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.upsertDocWithPath).to.have.been.calledWith(
+      'project-one',
+      '/main.tex',
+      [
+        '\\documentclass{article}',
+        '\\begin{document}',
+        'Old sentence.',
+        '\\end{document}',
+      ],
+      'agent-rollback',
+      'reviewer-one'
+    )
+    expect(patch.status).to.equal('rolled_back')
+  })
+
   it('applies rename_entity patches through EditorController', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -457,6 +607,46 @@ describe('AiAgentPatchManager', function () {
       .called
     expect(patch.status).to.equal('applied')
     expect(patch.compileResult.status).to.equal('success')
+  })
+
+  it('rolls back applied rename_entity patches by restoring the old name', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Rename main document',
+      operations: [
+        {
+          type: 'rename_entity',
+          path: '/main.tex',
+          newName: 'paper.tex',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/paper.tex'] = ctx.docs['/main.tex']
+    delete ctx.docs['/main.tex']
+    ctx.EditorController.promises.renameEntity.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.renameEntity).to.have.been.calledWith(
+      'project-one',
+      'doc-main',
+      'doc',
+      'main.tex',
+      'reviewer-one',
+      'agent-rollback'
+    )
+    expect(patch.status).to.equal('rolled_back')
   })
 
   it('applies move_entity patches through EditorController', async function (ctx) {
@@ -497,6 +687,56 @@ describe('AiAgentPatchManager', function () {
       .called
     expect(patch.status).to.equal('applied')
     expect(patch.compileResult.status).to.equal('success')
+  })
+
+  it('rolls back applied move_entity patches by moving the doc back', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Move main document',
+      operations: [
+        {
+          type: 'move_entity',
+          path: '/main.tex',
+          targetFolderPath: '/sections',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/sections/main.tex'] = ctx.docs['/main.tex']
+    delete ctx.docs['/main.tex']
+    ctx.EditorController.promises.mkdirp.resetHistory()
+    ctx.EditorController.promises.mkdirp.resolves({
+      newFolders: [],
+      folder: { _id: 'root-folder' },
+    })
+    ctx.EditorController.promises.moveEntity.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+
+    expect(ctx.EditorController.promises.mkdirp).to.have.been.calledWith(
+      'project-one',
+      '/',
+      'reviewer-one'
+    )
+    expect(ctx.EditorController.promises.moveEntity).to.have.been.calledWith(
+      'project-one',
+      'doc-main',
+      'root-folder',
+      'doc',
+      'reviewer-one',
+      'agent-rollback'
+    )
+    expect(patch.status).to.equal('rolled_back')
   })
 
   it('marks a patch conflicted when the document changed', async function (ctx) {

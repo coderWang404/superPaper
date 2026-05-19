@@ -264,6 +264,11 @@
     color: var(--content-positive-themed);
   }
 
+  &.rolled-back {
+    border-color: var(--content-info-themed);
+    color: var(--content-info-themed);
+  }
+
   &.conflicted,
   &.rejected {
     border-color: var(--border-danger-themed);

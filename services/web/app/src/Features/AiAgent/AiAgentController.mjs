@@ -11,6 +11,7 @@ import {
   AiAgentPatchError,
   applyPatch as applyAgentPatch,
   rejectPatch as rejectAgentPatch,
+  rollbackPatch as rollbackAgentPatch,
 } from './AiAgentPatchManager.mjs'
 
 const SelectionSchema = z
@@ -146,6 +147,19 @@ async function rejectPatch(req, res, next) {
   }
 }
 
+async function rollbackPatch(req, res, next) {
+  try {
+    const patch = await rollbackAgentPatch({
+      projectId: req.params.Project_id,
+      userId: SessionManager.getLoggedInUserId(req.session),
+      patchId: req.params.patchId,
+    })
+    res.json({ patch })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
 function handleControllerError(err, res, next) {
   if (err instanceof z.ZodError || err.name === 'ZodError') {
     res.status(422).json({
@@ -184,7 +198,7 @@ function handleControllerError(err, res, next) {
     return
   }
   if (err instanceof AiAgentPatchError) {
-    const status = err.code === 'AGENT_PATCH_CONFLICT' ? 409 : 422
+    const status = err.code?.includes('CONFLICT') ? 409 : 422
     res.status(status).json({
       error: {
         code: err.code,
@@ -222,4 +236,5 @@ export default {
   turnStream,
   applyPatch,
   rejectPatch,
+  rollbackPatch,
 }

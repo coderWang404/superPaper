@@ -22,6 +22,7 @@ import {
   createProjectAiAgentSession,
   getProjectAiAgentConfig,
   rejectProjectAiAgentPatch,
+  rollbackProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
   startProjectAiAgentAct,
   type ProjectAiAgentConfig,
@@ -635,6 +636,9 @@ function formatAgentEventTitle(event: ProjectAiAgentEvent, t: TFunction) {
   if (event.type === 'patch_applied') {
     return t('ai_assistant_patch_applied')
   }
+  if (event.type === 'patch_rolled_back') {
+    return t('ai_assistant_patch_rolled_back')
+  }
   if (event.type === 'tool_call') {
     return t('ai_assistant_tool_call', {
       name: String(event.payload.name ?? ''),
@@ -695,7 +699,9 @@ function AgentPatchReview({
   const [patch, setPatch] = useState(initialPatch)
   const [applying, setApplying] = useState(false)
   const [rejecting, setRejecting] = useState(false)
+  const [rollingBack, setRollingBack] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const busy = applying || rejecting || rollingBack
 
   async function handleApply() {
     setApplying(true)
@@ -725,12 +731,30 @@ function AgentPatchReview({
     }
   }
 
+  async function handleRollback() {
+    setRollingBack(true)
+    setError(null)
+    try {
+      const response = await rollbackProjectAiAgentPatch(projectId, patch.id)
+      setPatch(response.patch)
+      onSessionStatusChange('completed')
+    } catch (rollbackError) {
+      setError(getErrorMessage(rollbackError))
+    } finally {
+      setRollingBack(false)
+    }
+  }
+
   return (
     <div className="ai-assistant-agent-patch">
       <div className="ai-assistant-agent-patch-header">
         <span>{patch.summary || t('ai_assistant_proposed_edit')}</span>
-        <span className={`ai-assistant-agent-patch-status ${patch.status}`}>
-          {patch.status}
+        <span
+          className={`ai-assistant-agent-patch-status ${patchStatusClassName(
+            patch.status
+          )}`}
+        >
+          {formatPatchStatus(patch.status, t)}
         </span>
       </div>
       {patch.operations.map(operation => (
@@ -752,31 +776,68 @@ function AgentPatchReview({
         </div>
       )}
       <div className="ai-assistant-agent-patch-actions">
-        <OLButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={patch.status !== 'pending' || rejecting || applying}
-          isLoading={rejecting}
-          loadingLabel={t('ai_assistant_rejecting')}
-          onClick={handleReject}
-        >
-          {t('reject')}
-        </OLButton>
-        <OLButton
-          type="button"
-          size="sm"
-          variant="primary"
-          disabled={patch.status !== 'pending' || applying || rejecting}
-          isLoading={applying}
-          loadingLabel={t('ai_assistant_applying')}
-          onClick={handleApply}
-        >
-          {t('ai_assistant_apply_patch')}
-        </OLButton>
+        {patch.status === 'pending' && (
+          <>
+            <OLButton
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={busy}
+              isLoading={rejecting}
+              loadingLabel={t('ai_assistant_rejecting')}
+              onClick={handleReject}
+            >
+              {t('reject')}
+            </OLButton>
+            <OLButton
+              type="button"
+              size="sm"
+              variant="primary"
+              disabled={busy}
+              isLoading={applying}
+              loadingLabel={t('ai_assistant_applying')}
+              onClick={handleApply}
+            >
+              {t('ai_assistant_apply_patch')}
+            </OLButton>
+          </>
+        )}
+        {patch.status === 'applied' && patch.rollbackAvailable && (
+          <OLButton
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            isLoading={rollingBack}
+            loadingLabel={t('ai_assistant_rolling_back')}
+            onClick={handleRollback}
+          >
+            {t('ai_assistant_rollback_patch')}
+          </OLButton>
+        )}
       </div>
     </div>
   )
+}
+
+function patchStatusClassName(status: ProjectAiAgentPatch['status']) {
+  return status.replaceAll('_', '-')
+}
+
+function formatPatchStatus(status: ProjectAiAgentPatch['status'], t: TFunction) {
+  if (status === 'rolled_back') {
+    return t('ai_assistant_patch_status_rolled_back')
+  }
+  if (status === 'applied') {
+    return t('ai_assistant_patch_status_applied')
+  }
+  if (status === 'rejected') {
+    return t('ai_assistant_patch_status_rejected')
+  }
+  if (status === 'conflicted') {
+    return t('ai_assistant_patch_status_conflicted')
+  }
+  return status
 }
 
 function DiffLine({ line }: { line: ProjectAiAgentPatchDiffLine }) {

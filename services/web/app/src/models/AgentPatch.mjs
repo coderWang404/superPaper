@@ -12,12 +12,21 @@ export const AgentPatchSchema = new Schema(
     rejectedByUserId: { type: Schema.Types.ObjectId, default: null },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'applied', 'rejected', 'conflicted'],
+      enum: [
+        'pending',
+        'approved',
+        'applied',
+        'rejected',
+        'conflicted',
+        'rolled_back',
+      ],
       default: 'pending',
       index: true,
     },
     baseRevision: { type: Schema.Types.Mixed, default: {} },
     operations: { type: Array, default: [] },
+    appliedOperations: { type: Array, default: [] },
+    rollbackOperations: { type: Array, default: [] },
     summary: { type: String, default: '' },
     riskLevel: {
       type: String,
@@ -27,6 +36,8 @@ export const AgentPatchSchema = new Schema(
     approvedAt: { type: Date, default: null },
     appliedAt: { type: Date, default: null },
     rejectedAt: { type: Date, default: null },
+    rolledBackByUserId: { type: Schema.Types.ObjectId, default: null },
+    rolledBackAt: { type: Date, default: null },
   },
   {
     collection: 'agentPatches',

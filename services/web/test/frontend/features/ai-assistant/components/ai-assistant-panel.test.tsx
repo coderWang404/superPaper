@@ -324,10 +324,27 @@ describe('<AiAssistantPanel />', function () {
         ...mockPatch(),
         status: 'applied',
         appliedAt: '2026-05-16T00:00:00.000Z',
+        rollbackAvailable: true,
         compileResult: {
           ok: true,
           status: 'success',
           buildId: 'build-one',
+          outputFiles: [{ path: 'output.pdf', type: 'pdf', size: 123 }],
+          validationProblems: [],
+        },
+      },
+    })
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/rollback', {
+      patch: {
+        ...mockPatch(),
+        status: 'rolled_back',
+        appliedAt: '2026-05-16T00:00:00.000Z',
+        rolledBackAt: '2026-05-16T00:01:00.000Z',
+        rollbackAvailable: false,
+        compileResult: {
+          ok: true,
+          status: 'success',
+          buildId: 'build-two',
           outputFiles: [{ path: 'output.pdf', type: 'pdf', size: 123 }],
           validationProblems: [],
         },
@@ -359,11 +376,18 @@ describe('<AiAssistantPanel />', function () {
 
     await screen.findByText('applied')
     await screen.findByText('Compile: success')
+    fireEvent.click(screen.getByRole('button', { name: 'Roll back' }))
+
+    await screen.findByText('rolled back')
     await screen.findByText('Act: ready')
     const applyCall = fetchMock.callHistory.calls(
       '/project/project123/ai/agent/patches/patch-one/apply'
     )[0]
     expect(JSON.parse(applyCall.options.body as string)).to.deep.equal({})
+    const rollbackCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/rollback'
+    )[0]
+    expect(JSON.parse(rollbackCall.options.body as string)).to.deep.equal({})
   })
 
   it('rejects agent patches from the review panel', async function () {

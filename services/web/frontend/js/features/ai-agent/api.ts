@@ -320,13 +320,21 @@ export type ProjectAiAgentPatch = {
   sessionId: string
   projectId: string
   createdByUserId: string
-  status: 'pending' | 'approved' | 'applied' | 'rejected' | 'conflicted'
+  status:
+    | 'pending'
+    | 'approved'
+    | 'applied'
+    | 'rejected'
+    | 'conflicted'
+    | 'rolled_back'
   baseRevision: Record<string, unknown>
   operations: ProjectAiAgentPatchOperation[]
   summary: string
   riskLevel: 'low' | 'medium' | 'high'
   createdAt: string | null
   appliedAt: string | null
+  rolledBackAt?: string | null
+  rollbackAvailable?: boolean
   compileResult?: {
     ok: boolean
     status: string
@@ -493,6 +501,13 @@ export function applyProjectAiAgentPatch(projectId: string, patchId: string) {
 export function rejectProjectAiAgentPatch(projectId: string, patchId: string) {
   return postJSON<{ patch: ProjectAiAgentPatch }>(
     `/project/${projectId}/ai/agent/patches/${patchId}/reject`,
+    { body: {} }
+  )
+}
+
+export function rollbackProjectAiAgentPatch(projectId: string, patchId: string) {
+  return postJSON<{ patch: ProjectAiAgentPatch }>(
+    `/project/${projectId}/ai/agent/patches/${patchId}/rollback`,
     { body: {} }
   )
 }

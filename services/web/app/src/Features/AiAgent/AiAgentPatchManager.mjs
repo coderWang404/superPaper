@@ -126,6 +126,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     ProjectEntityHandler.promises.getAllFiles(projectId),
   ])
   const appliedOperations = []
+  const rollbackOperations = []
 
   for (const operation of patch.operations || []) {
     if (operation.type === 'replace_text') {
@@ -136,6 +137,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
         patch,
         docs,
         appliedOperations,
+        rollbackOperations,
       })
     } else if (operation.type === 'create_doc') {
       await applyCreateDocOperation({
@@ -146,6 +148,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
         docs,
         files,
         appliedOperations,
+        rollbackOperations,
       })
     } else if (operation.type === 'delete_doc') {
       await applyDeleteDocOperation({
@@ -155,6 +158,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
         patch,
         docs,
         appliedOperations,
+        rollbackOperations,
       })
     } else if (operation.type === 'rename_entity') {
       await applyRenameEntityOperation({
@@ -165,6 +169,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
         docs,
         files,
         appliedOperations,
+        rollbackOperations,
       })
     } else if (operation.type === 'move_entity') {
       await applyMoveEntityOperation({
@@ -175,6 +180,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
         docs,
         files,
         appliedOperations,
+        rollbackOperations,
       })
     } else {
       throw new AiAgentPatchError(
@@ -189,6 +195,8 @@ export async function applyPatch({ projectId, userId, patchId }) {
   patch.appliedByUserId = userId
   patch.approvedAt = patch.approvedAt || new Date()
   patch.appliedAt = new Date()
+  patch.appliedOperations = appliedOperations
+  patch.rollbackOperations = rollbackOperations
   await patch.save()
   const publicAppliedPatch = publicPatch(patch)
 
@@ -224,6 +232,64 @@ export async function applyPatch({ projectId, userId, patchId }) {
   ).exec()
 
   return publicAppliedPatch
+}
+
+export async function rollbackPatch({ projectId, userId, patchId }) {
+  const patch = await AgentPatch.findOne({
+    _id: patchId,
+    projectId,
+  }).exec()
+
+  if (!patch) {
+    throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
+  }
+  if (patch.status !== 'applied') {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_NOT_APPLIED',
+      'Only applied agent patches can be rolled back'
+    )
+  }
+
+  const rollbackOperations = patch.rollbackOperations || []
+  if (!rollbackOperations.length) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_ROLLBACK_UNAVAILABLE',
+      'Agent patch does not have a rollback snapshot'
+    )
+  }
+
+  const reversedOperations = [...rollbackOperations].reverse()
+  await assertRollbackOperationsSafe({ projectId, operations: reversedOperations })
+
+  for (const operation of reversedOperations) {
+    await applyRollbackOperation({ projectId, userId, operation })
+  }
+
+  patch.status = 'rolled_back'
+  patch.rolledBackByUserId = userId
+  patch.rolledBackAt = new Date()
+  await patch.save()
+
+  await recordPatchEvent({
+    sessionId: patch.sessionId,
+    projectId,
+    userId,
+    type: 'patch_rolled_back',
+    payload: {
+      patchId: patch._id?.toString?.() || patch.id,
+      operations: rollbackOperations.map(publicRollbackOperation),
+    },
+  })
+
+  const publicRolledBackPatch = publicPatch(patch)
+  publicRolledBackPatch.compileResult = await compileAfterPatch({
+    sessionId: patch.sessionId,
+    projectId,
+    userId,
+    patchId: patch._id?.toString?.() || patch.id,
+  })
+
+  return publicRolledBackPatch
 }
 
 export async function rejectPatch({ projectId, userId, patchId }) {
@@ -279,6 +345,9 @@ export function publicPatch(patch) {
     riskLevel: patch.riskLevel || 'low',
     createdAt: patch.createdAt || null,
     appliedAt: patch.appliedAt || null,
+    rolledBackAt: patch.rolledBackAt || null,
+    rollbackAvailable:
+      patch.status === 'applied' && (patch.rollbackOperations || []).length > 0,
     compileResult: patch.compileResult || null,
   }
 }
@@ -532,6 +601,7 @@ async function applyReplaceTextOperation({
   patch,
   docs,
   appliedOperations,
+  rollbackOperations,
 }) {
   const doc = docs[operation.path]
   if (!doc) {
@@ -571,6 +641,14 @@ async function applyReplaceTextOperation({
     baseSha256: operation.baseSha256,
     appliedSha256: sha256(nextContent),
   })
+  rollbackOperations.push({
+    type: 'restore_doc_text',
+    path: operation.path,
+    docId: operation.docId,
+    beforeText: currentContent,
+    beforeSha256: operation.baseSha256,
+    afterSha256: sha256(nextContent),
+  })
 }
 
 async function applyCreateDocOperation({
@@ -581,6 +659,7 @@ async function applyCreateDocOperation({
   docs,
   files,
   appliedOperations,
+  rollbackOperations,
 }) {
   if (docs[operation.path] || files[operation.path]) {
     await markConflicted(patch)
@@ -603,6 +682,12 @@ async function applyCreateDocOperation({
     docId: doc?._id?.toString?.() || doc?._id || null,
     appliedSha256: sha256(operation.content || ''),
   })
+  rollbackOperations.push({
+    type: 'delete_created_doc',
+    path: operation.path,
+    docId: doc?._id?.toString?.() || doc?._id || null,
+    afterSha256: sha256(operation.content || ''),
+  })
 }
 
 async function applyDeleteDocOperation({
@@ -612,6 +697,7 @@ async function applyDeleteDocOperation({
   patch,
   docs,
   appliedOperations,
+  rollbackOperations,
 }) {
   const doc = docs[operation.path]
   if (!doc) {
@@ -644,6 +730,13 @@ async function applyDeleteDocOperation({
     docId: operation.docId,
     baseSha256: operation.baseSha256,
   })
+  rollbackOperations.push({
+    type: 'restore_deleted_doc',
+    path: operation.path,
+    docId: operation.docId,
+    beforeText: currentContent,
+    beforeSha256: operation.baseSha256,
+  })
 }
 
 async function applyRenameEntityOperation({
@@ -654,6 +747,7 @@ async function applyRenameEntityOperation({
   docs,
   files,
   appliedOperations,
+  rollbackOperations,
 }) {
   const doc = docs[operation.path]
   if (!doc) {
@@ -696,6 +790,14 @@ async function applyRenameEntityOperation({
     docId: operation.docId,
     baseSha256: operation.baseSha256,
   })
+  rollbackOperations.push({
+    type: 'rename_entity_back',
+    path: operation.path,
+    currentPath: operation.newPath,
+    docId: operation.docId,
+    beforeSha256: operation.baseSha256,
+    oldName: path.posix.basename(operation.path),
+  })
 }
 
 async function applyMoveEntityOperation({
@@ -706,6 +808,7 @@ async function applyMoveEntityOperation({
   docs,
   files,
   appliedOperations,
+  rollbackOperations,
 }) {
   const doc = docs[operation.path]
   if (!doc) {
@@ -754,6 +857,159 @@ async function applyMoveEntityOperation({
     docId: operation.docId,
     baseSha256: operation.baseSha256,
   })
+  rollbackOperations.push({
+    type: 'move_entity_back',
+    path: operation.path,
+    currentPath: operation.newPath,
+    docId: operation.docId,
+    beforeSha256: operation.baseSha256,
+    targetFolderPath: path.posix.dirname(operation.path),
+  })
+}
+
+async function assertRollbackOperationsSafe({ projectId, operations }) {
+  const [docs, files] = await getProjectEntities(projectId)
+  for (const operation of operations) {
+    assertRollbackOperationSafe(operation, { docs, files })
+  }
+}
+
+function assertRollbackOperationSafe(operation, { docs, files }) {
+  if (operation.type === 'restore_doc_text') {
+    const doc = docs[operation.path]
+    assertRollbackDoc(doc, operation.afterSha256)
+    return
+  }
+  if (operation.type === 'delete_created_doc') {
+    const doc = docs[operation.path]
+    assertRollbackDoc(doc, operation.afterSha256)
+    return
+  }
+  if (operation.type === 'restore_deleted_doc') {
+    assertRollbackTargetEmpty(operation.path, { docs, files })
+    return
+  }
+  if (operation.type === 'rename_entity_back') {
+    const doc = docs[operation.currentPath]
+    assertRollbackDoc(doc, operation.beforeSha256)
+    assertRollbackTargetEmpty(operation.path, { docs, files })
+    return
+  }
+  if (operation.type === 'move_entity_back') {
+    const doc = docs[operation.currentPath]
+    assertRollbackDoc(doc, operation.beforeSha256)
+    assertRollbackTargetEmpty(operation.path, { docs, files })
+    return
+  }
+  throw new AiAgentPatchError(
+    'AGENT_PATCH_ROLLBACK_UNSUPPORTED_OPERATION',
+    'Agent patch rollback operation is not supported'
+  )
+}
+
+async function applyRollbackOperation({ projectId, userId, operation }) {
+  if (operation.type === 'restore_doc_text') {
+    await DocumentUpdaterHandler.promises.setDocument(
+      projectId,
+      operation.docId,
+      userId,
+      splitDocText(operation.beforeText || ''),
+      'agent-rollback'
+    )
+    return
+  }
+  if (operation.type === 'delete_created_doc') {
+    await EditorController.promises.deleteEntity(
+      projectId,
+      operation.docId,
+      'doc',
+      'agent-rollback',
+      userId
+    )
+    return
+  }
+  if (operation.type === 'restore_deleted_doc') {
+    await EditorController.promises.upsertDocWithPath(
+      projectId,
+      operation.path,
+      splitDocText(operation.beforeText || ''),
+      'agent-rollback',
+      userId
+    )
+    return
+  }
+  if (operation.type === 'rename_entity_back') {
+    await EditorController.promises.renameEntity(
+      projectId,
+      operation.docId,
+      'doc',
+      operation.oldName,
+      userId,
+      'agent-rollback'
+    )
+    return
+  }
+  if (operation.type === 'move_entity_back') {
+    const { lastFolder, folder } = await EditorController.promises.mkdirp(
+      projectId,
+      operation.targetFolderPath,
+      userId
+    )
+    const targetFolder = lastFolder || folder
+    await EditorController.promises.moveEntity(
+      projectId,
+      operation.docId,
+      targetFolder._id,
+      'doc',
+      userId,
+      'agent-rollback'
+    )
+    return
+  }
+  throw new AiAgentPatchError(
+    'AGENT_PATCH_ROLLBACK_UNSUPPORTED_OPERATION',
+    'Agent patch rollback operation is not supported'
+  )
+}
+
+function assertRollbackDoc(doc, expectedSha256) {
+  if (!doc) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_ROLLBACK_CONFLICT',
+      'Agent patch rollback target document was not found'
+    )
+  }
+  if (expectedSha256 && sha256(getDocText(doc)) !== expectedSha256) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_ROLLBACK_CONFLICT',
+      'Agent patch rollback target document changed'
+    )
+  }
+}
+
+function assertRollbackTargetEmpty(projectPath, { docs, files }) {
+  if (docs[projectPath] || files[projectPath]) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_ROLLBACK_CONFLICT',
+      'Agent patch rollback target path already exists'
+    )
+  }
+}
+
+function publicRollbackOperation(operation) {
+  return {
+    type: operation.type,
+    path: operation.path,
+    currentPath: operation.currentPath,
+    docId: operation.docId,
+  }
+}
+
+function getProjectEntities(projectId) {
+  return Promise.all([
+    ProjectEntityHandler.promises.getAllDocs(projectId),
+    ProjectEntityHandler.promises.getAllFiles(projectId),
+  ])
 }
 
 function assertUniqueOperationPaths(operations) {
