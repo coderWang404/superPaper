@@ -100,6 +100,13 @@ body {
     object-fit: contain;
   }
 
+  .ide-rail-tab-svg-icon {
+    display: block;
+    width: 20px;
+    height: 32px;
+    margin: 0 auto;
+  }
+
   &.open-rail {
     color: var(--ide-rail-link-active-color);
     background-color: var(--ide-rail-link-active-background);

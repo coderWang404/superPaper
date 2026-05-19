@@ -65,6 +65,9 @@ describe('AiAgentSettingsManager', function () {
           exec: sinon.stub().resolves(ctx.skillSettings),
         }),
       }),
+      deleteMany: sinon.stub().returns({
+        exec: sinon.stub().resolves({ acknowledged: true, deletedCount: 0 }),
+      }),
       updateOne: sinon.stub().returns({
         exec: sinon.stub().resolves({ acknowledged: true }),
       }),
@@ -75,6 +78,9 @@ describe('AiAgentSettingsManager', function () {
           exec: sinon.stub().resolves(ctx.pluginSettings),
         }),
       }),
+      deleteMany: sinon.stub().returns({
+        exec: sinon.stub().resolves({ acknowledged: true, deletedCount: 0 }),
+      }),
       updateOne: sinon.stub().returns({
         exec: sinon.stub().resolves({ acknowledged: true }),
       }),
@@ -84,6 +90,9 @@ describe('AiAgentSettingsManager', function () {
         sort: sinon.stub().returns({
           exec: sinon.stub().resolves(ctx.instructionProfiles),
         }),
+      }),
+      deleteMany: sinon.stub().returns({
+        exec: sinon.stub().resolves({ acknowledged: true, deletedCount: 0 }),
       }),
       updateOne: sinon.stub().returns({
         exec: sinon.stub().resolves({ acknowledged: true }),
@@ -235,6 +244,26 @@ describe('AiAgentSettingsManager', function () {
       }),
       { upsert: true }
     )
+  })
+
+  it('replaces only setting collections provided by the request', async function (ctx) {
+    await ctx.Manager.updateAgentSettings({
+      scope: 'project',
+      projectId: 'project-one',
+      userId: 'user-one',
+      instructionProfiles: [],
+    })
+
+    expect(ctx.AgentInstructionProfile.deleteMany).to.have.been.calledWith({
+      scope: 'project',
+      projectId: 'project-one',
+      name: { $nin: [] },
+    })
+    expect(ctx.AgentInstructionProfile.updateOne).to.not.have.been.called
+    expect(ctx.AgentSkillSetting.deleteMany).to.not.have.been.called
+    expect(ctx.AgentSkillSetting.updateOne).to.not.have.been.called
+    expect(ctx.AgentPluginSetting.deleteMany).to.not.have.been.called
+    expect(ctx.AgentPluginSetting.updateOne).to.not.have.been.called
   })
 
   it('rejects skills that require unknown tools', async function (ctx) {

@@ -590,6 +590,13 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
   );
 
   webRouter.post(
+    "/project/:Project_id/ai/agent/skills/import-preview",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanAdminProject,
+    AiAgentSettingsController.previewProjectSkillImport,
+  );
+
+  webRouter.post(
     "/project/:Project_id/ai/agent/plugins/upload",
     AuthenticationController.requireLogin(),
     AuthorizationMiddleware.ensureUserCanAdminProject,

@@ -191,40 +191,44 @@ export async function updateAgentSettings({
   scope,
   projectId = null,
   userId = null,
-  skills = [],
-  plugins = [],
-  instructionProfiles = [],
+  skills,
+  plugins,
+  instructionProfiles,
   includeContent = false,
   includeAllInstructionProfiles = false,
 }) {
   const normalizedScope = normalizeScope(scope)
   const normalizedProjectId = normalizedScope === 'project' ? projectId : null
+  const scopeQuery = { scope: normalizedScope, projectId: normalizedProjectId }
 
   await Promise.all([
-    ...skills.map(skill =>
-      upsertSkillSetting({
-        scope: normalizedScope,
-        projectId: normalizedProjectId,
-        userId,
-        skill,
-      })
-    ),
-    ...plugins.map(plugin =>
-      upsertPluginSetting({
-        scope: normalizedScope,
-        projectId: normalizedProjectId,
-        userId,
-        plugin,
-      })
-    ),
-    ...instructionProfiles.map(profile =>
-      upsertInstructionProfile({
-        scope: normalizedScope,
-        projectId: normalizedProjectId,
-        userId,
-        profile,
-      })
-    ),
+    Array.isArray(skills)
+      ? replaceSkillSettings({
+          scope: normalizedScope,
+          projectId: normalizedProjectId,
+          userId,
+          skills,
+          scopeQuery,
+        })
+      : null,
+    Array.isArray(plugins)
+      ? replacePluginSettings({
+          scope: normalizedScope,
+          projectId: normalizedProjectId,
+          userId,
+          plugins,
+          scopeQuery,
+        })
+      : null,
+    Array.isArray(instructionProfiles)
+      ? replaceInstructionProfiles({
+          scope: normalizedScope,
+          projectId: normalizedProjectId,
+          userId,
+          instructionProfiles,
+          scopeQuery,
+        })
+      : null,
   ])
 
   return getAgentConfig({
@@ -232,6 +236,78 @@ export async function updateAgentSettings({
     includeContent,
     includeAllInstructionProfiles,
   })
+}
+
+async function replaceSkillSettings({
+  scope,
+  projectId,
+  userId,
+  skills,
+  scopeQuery,
+}) {
+  const skillIds = skills.map(skill => skill.id)
+  await AgentSkillSetting.deleteMany({
+    ...scopeQuery,
+    skillId: { $nin: skillIds },
+  }).exec()
+  await Promise.all(
+    skills.map(skill =>
+      upsertSkillSetting({
+        scope,
+        projectId,
+        userId,
+        skill,
+      })
+    )
+  )
+}
+
+async function replacePluginSettings({
+  scope,
+  projectId,
+  userId,
+  plugins,
+  scopeQuery,
+}) {
+  const pluginIds = plugins.map(plugin => plugin.id)
+  await AgentPluginSetting.deleteMany({
+    ...scopeQuery,
+    pluginId: { $nin: pluginIds },
+  }).exec()
+  await Promise.all(
+    plugins.map(plugin =>
+      upsertPluginSetting({
+        scope,
+        projectId,
+        userId,
+        plugin,
+      })
+    )
+  )
+}
+
+async function replaceInstructionProfiles({
+  scope,
+  projectId,
+  userId,
+  instructionProfiles,
+  scopeQuery,
+}) {
+  const profileNames = instructionProfiles.map(profile => profile.name)
+  await AgentInstructionProfile.deleteMany({
+    ...scopeQuery,
+    name: { $nin: profileNames },
+  }).exec()
+  await Promise.all(
+    instructionProfiles.map(profile =>
+      upsertInstructionProfile({
+        scope,
+        projectId,
+        userId,
+        profile,
+      })
+    )
+  )
 }
 
 async function listEffectiveSkillCatalog({ projectId } = {}) {
@@ -260,6 +336,7 @@ async function listEffectiveSkillCatalog({ projectId } = {}) {
     return {
       ...skill,
       enabled: setting.enabled ?? skill.enabled,
+      name: setting.name || skill.name,
       displayName: setting.displayName || skill.displayName,
       description: setting.description || skill.description,
       modelInvocable:
@@ -285,7 +362,7 @@ async function listEffectiveSkillCatalog({ projectId } = {}) {
     .filter(setting => !builtinSkillIds.has(setting.skillId))
     .map(setting => ({
       id: setting.skillId,
-      name: setting.skillId,
+      name: setting.name || setting.skillId,
       displayName: setting.displayName || setting.skillId,
       description: setting.description || '',
       modelInvocable: setting.modelInvocable !== false,
@@ -311,6 +388,7 @@ async function upsertSkillSetting({ scope, projectId, userId, skill }) {
   for (const field of [
     'displayName',
     'description',
+    'name',
     'modelInvocable',
     'requiredTools',
     'keywords',

@@ -25,6 +25,7 @@ import {
   installProjectAiAgentPlugin,
   listProjectAiAgentPlugins,
   previewProjectAiAgentPlugin,
+  previewProjectAiAgentSkillImport,
   setProjectAiAgentPluginEnabled,
   updateProjectAiAgentSettings,
   uploadProjectAiAgentPluginZip,
@@ -33,6 +34,7 @@ import {
   type AiAgentPluginPreview,
   type AiAgentPluginSource,
   type AiAgentSkill,
+  type AiAgentSkillImportSource,
   type ProjectAiAgentConfig,
 } from '@/features/ai-agent/api'
 
@@ -63,11 +65,28 @@ type PluginSourceState = {
   originalName?: string
 }
 
+type AgentSettingsTab = 'rules' | 'skills' | 'plugins'
+
 const PROJECT_RULES_NAME = 'Project Agent Rules'
 const DEFAULT_RULES = `# Project Agent Rules
 
 - Never expose secrets, tokens, cookies, or internal configuration.
 - Project file edits must be proposed as a patch before user approval.
+`
+const DEFAULT_SKILL_MARKDOWN = `---
+name: custom-skill
+description: Describe the concrete task and when the Agent should use this Skill.
+---
+
+# Custom Skill
+
+Use this Skill when the user asks for this workflow.
+
+## Instructions
+
+1. Inspect the relevant project context first.
+2. Keep the response focused on the requested task.
+3. Propose file edits as a patch for user review.
 `
 
 export default function AgentSettingsPanel() {
@@ -88,7 +107,11 @@ export default function AgentSettingsPanel() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [pluginBusy, setPluginBusy] = useState(false)
+  const [skillImportBusy, setSkillImportBusy] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [activeTab, setActiveTab] = useState<AgentSettingsTab>('skills')
+  const [skillEditorVisible, setSkillEditorVisible] = useState(false)
+  const [skillImportUrl, setSkillImportUrl] = useState('')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -177,10 +200,26 @@ export default function AgentSettingsPanel() {
 
   async function handleSkillSubmit(event: FormEvent) {
     event.preventDefault()
+    const validationError = validateSkillForm(skillForm, t)
+    if (validationError) {
+      setErrorMessage(validationError)
+      return
+    }
     const nextSkill = skillFromForm(skillForm)
     const skills = upsertSkill(config?.skills ?? [], nextSkill)
     await saveConfig({ skills }, t('agent_settings_skill_saved'))
     setSkillForm(emptySkillForm())
+    setSkillEditorVisible(false)
+  }
+
+  async function handleSkillImportSubmit(event?: FormEvent) {
+    event?.preventDefault()
+    const source = skillSourceFromText(skillImportUrl)
+    if (!source) {
+      setErrorMessage(t('agent_settings_skill_url_required'))
+      return
+    }
+    await previewSkillImportSource(source)
   }
 
   async function toggleSkill(skill: AiAgentSkill) {
@@ -284,7 +323,13 @@ export default function AgentSettingsPanel() {
       return
     }
     const detectedSource = sourceFromText(text)
+    const detectedSkillSource = skillSourceFromText(text)
+    if (detectedSkillSource) {
+      await previewSkillImportSource(detectedSkillSource)
+      return
+    }
     if (detectedSource) {
+      setActiveTab('plugins')
       setPluginSource(sourceStateFromSource(detectedSource))
       await previewSource(detectedSource)
     }
@@ -297,6 +342,7 @@ export default function AgentSettingsPanel() {
     try {
       if (isZipFile(file)) {
         const response = await uploadProjectAiAgentPluginZip(projectId, file)
+        setActiveTab('plugins')
         setPreview(response.preview)
         setPluginSource({
           kind: 'uploaded_zip',
@@ -310,6 +356,8 @@ export default function AgentSettingsPanel() {
       const text = await readFileText(file)
       const nextForm = skillFormFromDroppedText(text, file.name)
       setSkillForm(nextForm)
+      setSkillEditorVisible(true)
+      setActiveTab('skills')
       setStatusMessage(t('agent_settings_skill_file_recognized'))
     } catch (error) {
       setErrorMessage(errorToMessage(error, t))
@@ -342,6 +390,29 @@ export default function AgentSettingsPanel() {
     }
   }
 
+  async function previewSkillImportSource(source: AiAgentSkillImportSource) {
+    setSkillImportBusy(true)
+    setStatusMessage(null)
+    setErrorMessage(null)
+    try {
+      const response = await previewProjectAiAgentSkillImport(projectId, source)
+      setSkillForm(
+        skillFormFromDroppedText(
+          response.preview.content,
+          response.preview.source.path || 'SKILL.md'
+        )
+      )
+      setSkillEditorVisible(true)
+      setActiveTab('skills')
+      setSkillImportUrl(response.preview.source.url)
+      setStatusMessage(t('agent_settings_skill_url_imported'))
+    } catch (error) {
+      setErrorMessage(errorToMessage(error, t))
+    } finally {
+      setSkillImportBusy(false)
+    }
+  }
+
   return (
     <div className="agent-settings-panel">
       <RailPanelHeader title={t('agent_settings')} />
@@ -368,65 +439,166 @@ export default function AgentSettingsPanel() {
 
         {!loading && (
           <>
-            {!canAdminProject && (
-              <Alert variant="warning">
-                {t('agent_settings_view_only')}
-              </Alert>
+            {config && (
+              <>
+                {!canAdminProject && (
+                  <Alert variant="warning">
+                    {t('agent_settings_view_only')}
+                  </Alert>
+                )}
+                {statusMessage && (
+                  <Alert variant="success" role="status">
+                    {statusMessage}
+                  </Alert>
+                )}
+                {errorMessage && (
+                  <Alert variant="danger" role="alert">
+                    {errorMessage}
+                  </Alert>
+                )}
+                <div className="agent-settings-hero">
+                  <div>
+                    <h5>{t('agent_settings_workspace_title')}</h5>
+                    <p>{t('agent_settings_workspace_description')}</p>
+                  </div>
+                  <DropZone
+                    active={dragActive}
+                    disabled={!canAdminProject || pluginBusy || skillImportBusy}
+                    fileInputRef={fileInputRef}
+                    t={t}
+                    onFileInput={handleFileInput}
+                  />
+                </div>
+                <AgentSettingsTabs
+                  activeTab={activeTab}
+                  skillCount={config.skills.length}
+                  pluginCount={plugins.length}
+                  t={t}
+                  onChange={setActiveTab}
+                />
+                {activeTab === 'rules' && (
+                  <RulesSection
+                    t={t}
+                    form={instructionForm}
+                    disabled={!canAdminProject || saving}
+                    saving={saving}
+                    onChange={setInstructionForm}
+                    onSubmit={handleRulesSubmit}
+                  />
+                )}
+                {activeTab === 'skills' && (
+                  <SkillsSection
+                    t={t}
+                    skills={projectSkills}
+                    builtinSkills={builtinSkills}
+                    form={skillForm}
+                    editorVisible={skillEditorVisible}
+                    importUrl={skillImportUrl}
+                    importBusy={skillImportBusy}
+                    disabled={!canAdminProject || saving}
+                    saving={saving}
+                    onFormChange={setSkillForm}
+                    onImportUrlChange={setSkillImportUrl}
+                    onImportUrlSubmit={handleSkillImportSubmit}
+                    onSubmit={handleSkillSubmit}
+                    onCreateNew={() => {
+                      setSkillForm(
+                        skillFormFromDroppedText(
+                          DEFAULT_SKILL_MARKDOWN,
+                          'SKILL.md'
+                        )
+                      )
+                      setSkillEditorVisible(true)
+                      setActiveTab('skills')
+                    }}
+                    onEdit={skill => {
+                      setSkillForm(skillFormFromSkill(skill))
+                      setSkillEditorVisible(true)
+                    }}
+                    onCancel={() => {
+                      setSkillForm(emptySkillForm())
+                      setSkillEditorVisible(false)
+                    }}
+                    onToggle={toggleSkill}
+                  />
+                )}
+                {activeTab === 'plugins' && (
+                  <PluginsSection
+                    t={t}
+                    plugins={plugins}
+                    preview={preview}
+                    source={pluginSource}
+                    busy={pluginBusy}
+                    disabled={!canAdminProject || pluginBusy}
+                    onSourceChange={setPluginSource}
+                    onPreview={handlePluginPreview}
+                    onInstall={handlePluginInstall}
+                    onToggle={handlePluginToggle}
+                  />
+                )}
+              </>
             )}
-            {statusMessage && (
-              <Alert variant="success" role="status">
-                {statusMessage}
-              </Alert>
-            )}
-            {errorMessage && (
-              <Alert variant="danger" role="alert">
-                {errorMessage}
-              </Alert>
-            )}
-            <DropZone
-              active={dragActive}
-              disabled={!canAdminProject || pluginBusy}
-              fileInputRef={fileInputRef}
-              t={t}
-              onFileInput={handleFileInput}
-            />
-            <RulesSection
-              t={t}
-              form={instructionForm}
-              disabled={!canAdminProject || saving}
-              saving={saving}
-              onChange={setInstructionForm}
-              onSubmit={handleRulesSubmit}
-            />
-            <SkillsSection
-              t={t}
-              skills={projectSkills}
-              builtinSkills={builtinSkills}
-              form={skillForm}
-              config={config}
-              disabled={!canAdminProject || saving}
-              saving={saving}
-              onFormChange={setSkillForm}
-              onSubmit={handleSkillSubmit}
-              onEdit={skill => setSkillForm(skillFormFromSkill(skill))}
-              onCancel={() => setSkillForm(emptySkillForm())}
-              onToggle={toggleSkill}
-            />
-            <PluginsSection
-              t={t}
-              plugins={plugins}
-              preview={preview}
-              source={pluginSource}
-              busy={pluginBusy}
-              disabled={!canAdminProject || pluginBusy}
-              onSourceChange={setPluginSource}
-              onPreview={handlePluginPreview}
-              onInstall={handlePluginInstall}
-              onToggle={handlePluginToggle}
-            />
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function AgentSettingsTabs({
+  activeTab,
+  skillCount,
+  pluginCount,
+  t,
+  onChange,
+}: {
+  activeTab: AgentSettingsTab
+  skillCount: number
+  pluginCount: number
+  t: ReturnType<typeof useTranslation>['t']
+  onChange: (tab: AgentSettingsTab) => void
+}) {
+  const tabs: Array<{
+    id: AgentSettingsTab
+    label: string
+    count?: number
+  }> = [
+    {
+      id: 'skills',
+      label: t('agent_settings_tab_skills'),
+      count: skillCount,
+    },
+    {
+      id: 'plugins',
+      label: t('agent_settings_tab_plugins'),
+      count: pluginCount,
+    },
+    { id: 'rules', label: t('agent_settings_tab_rules') },
+  ]
+  return (
+    <div
+      className="agent-settings-tabs"
+      role="tablist"
+      aria-label={t('agent_settings')}
+    >
+      {tabs.map(tab => (
+        <button
+          type="button"
+          key={tab.id}
+          role="tab"
+          aria-selected={activeTab === tab.id}
+          aria-label={
+            typeof tab.count === 'number'
+              ? `${tab.label} ${tab.count}`
+              : tab.label
+          }
+          className={activeTab === tab.id ? 'active' : ''}
+          onClick={() => onChange(tab.id)}
+        >
+          <span>{tab.label}</span>
+          {typeof tab.count === 'number' && <em>{tab.count}</em>}
+        </button>
+      ))}
     </div>
   )
 }
@@ -446,7 +618,6 @@ function DropZone({
 }) {
   return (
     <div className={`agent-settings-dropzone ${active ? 'active' : ''}`}>
-      <MaterialIcon type="upload_file" />
       <div>
         <strong>{t('agent_settings_dropzone_title')}</strong>
         <span>{t('agent_settings_dropzone_description')}</span>
@@ -495,6 +666,7 @@ function RulesSection({
         <p>{t('agent_settings_project_rules_description')}</p>
       </div>
       <Form
+        className="agent-settings-rule-editor"
         onSubmit={onSubmit}
         aria-label={t('agent_settings_project_rules_form')}
       >
@@ -518,6 +690,7 @@ function RulesSection({
             rows={9}
             value={form.content}
             disabled={disabled}
+            spellCheck={false}
             onChange={event =>
               onChange({ ...form, content: event.currentTarget.value })
             }
@@ -553,11 +726,16 @@ function SkillsSection({
   skills,
   builtinSkills,
   form,
-  config,
+  editorVisible,
+  importUrl,
+  importBusy,
   disabled,
   saving,
   onFormChange,
+  onImportUrlChange,
+  onImportUrlSubmit,
   onSubmit,
+  onCreateNew,
   onEdit,
   onCancel,
   onToggle,
@@ -566,107 +744,234 @@ function SkillsSection({
   skills: AiAgentSkill[]
   builtinSkills: AiAgentSkill[]
   form: SkillFormState
-  config: ProjectAiAgentConfig | null
+  editorVisible: boolean
+  importUrl: string
+  importBusy: boolean
   disabled: boolean
   saving: boolean
   onFormChange: (form: SkillFormState) => void
+  onImportUrlChange: (value: string) => void
+  onImportUrlSubmit: (event: FormEvent) => void
   onSubmit: (event: FormEvent) => void
+  onCreateNew: () => void
   onEdit: (skill: AiAgentSkill) => void
   onCancel: () => void
   onToggle: (skill: AiAgentSkill) => void
 }) {
+  const customSkills = skills.filter(skill => !skill.pluginId)
+  const pluginSkills = skills.filter(skill => Boolean(skill.pluginId))
+  const allSkills = [...customSkills, ...pluginSkills, ...builtinSkills]
+  const selectedSkill = allSkills.find(skill => skill.id === form.editingSkillId)
+  const enabledCount = allSkills.filter(skill => skill.enabled !== false).length
+  const hasDraft = Boolean(
+    editorVisible ||
+    form.editingSkillId ||
+      form.content.trim() ||
+      form.displayName.trim() ||
+      form.description.trim() ||
+      form.id.trim()
+  )
   return (
-    <section className="agent-settings-section">
+    <section className="agent-settings-section agent-settings-workbench">
       <div className="agent-settings-section-header">
         <h5>{t('agent_settings_project_skills')}</h5>
         <p>{t('agent_settings_project_skills_description')}</p>
       </div>
-      <div className="agent-settings-list">
-        {skills.length === 0 && (
-          <p className="agent-settings-muted">
-            {t('agent_settings_no_project_skills')}
-          </p>
-        )}
-        {skills.map(skill => (
-          <SkillRow
+      <div className="agent-settings-split-view">
+        <aside className="agent-settings-sidebar-list">
+          <div className="agent-settings-sidebar-toolbar">
+            <div>
+              <strong>{t('agent_settings_skill_library')}</strong>
+              <span>
+                {t('agent_settings_skills_enabled_summary', {
+                  enabled: enabledCount,
+                  total: allSkills.length,
+                })}
+              </span>
+            </div>
+            <OLButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={disabled}
+              onClick={onCreateNew}
+            >
+              {t('agent_settings_new_skill')}
+            </OLButton>
+          </div>
+          <form
+            className="agent-settings-skill-import"
+            onSubmit={onImportUrlSubmit}
+            aria-label={t('agent_settings_skill_url_import_form')}
+          >
+            <div>
+              <strong>{t('agent_settings_import_skill_url')}</strong>
+              <span>{t('agent_settings_import_skill_url_description')}</span>
+            </div>
+            <div className="agent-settings-inline-control">
+              <OLFormControl
+                value={importUrl}
+                disabled={disabled || importBusy}
+                aria-label={t('agent_settings_skill_url')}
+                placeholder="https://github.com/org/repo/blob/main/skills/name/SKILL.md"
+                onChange={event =>
+                  onImportUrlChange(event.currentTarget.value)
+                }
+              />
+              <OLButton
+                type="submit"
+                variant="secondary"
+                size="sm"
+                disabled={disabled || importBusy || !importUrl.trim()}
+                isLoading={importBusy}
+                loadingLabel={t('agent_settings_importing')}
+              >
+                {t('agent_settings_import_skill')}
+              </OLButton>
+            </div>
+          </form>
+          <SkillGroup
             t={t}
-            key={skill.id}
-            skill={skill}
+            title={t('agent_settings_custom_skills')}
+            empty={t('agent_settings_no_project_skills')}
+            skills={customSkills}
+            selectedSkillId={form.editingSkillId}
             disabled={disabled}
             onEdit={onEdit}
             onToggle={onToggle}
           />
-        ))}
+          <SkillGroup
+            t={t}
+            title={t('agent_settings_plugin_skills')}
+            empty={t('agent_settings_no_plugin_skills')}
+            skills={pluginSkills}
+            selectedSkillId={form.editingSkillId}
+            disabled={disabled}
+            onEdit={onEdit}
+            onToggle={onToggle}
+          />
+          <SkillGroup
+            t={t}
+            title={t('agent_settings_builtin_skills')}
+            empty={t('agent_settings_no_builtin_skills')}
+            skills={builtinSkills}
+            selectedSkillId={form.editingSkillId}
+            disabled={disabled}
+            onEdit={onEdit}
+            onToggle={onToggle}
+          />
+        </aside>
+        <div className="agent-settings-editor-pane">
+          {hasDraft ? (
+            <SkillForm
+              t={t}
+              form={form}
+              selectedSkill={selectedSkill ?? null}
+              disabled={disabled}
+              saving={saving}
+              onChange={onFormChange}
+              onSubmit={onSubmit}
+              onCancel={onCancel}
+            />
+          ) : (
+            <div className="agent-settings-empty-state">
+              <strong>{t('agent_settings_skill_editor_empty_title')}</strong>
+              <span>{t('agent_settings_skill_editor_empty')}</span>
+            </div>
+          )}
+        </div>
       </div>
-      {builtinSkills.length > 0 && (
-        <details className="agent-settings-details">
-          <summary>{t('agent_settings_builtin_skills_available')}</summary>
-          <div className="agent-settings-chip-list">
-            {builtinSkills.map(skill => (
-              <span className="agent-settings-chip" key={skill.id}>
-                {skill.displayName || skill.id}
-              </span>
-            ))}
-          </div>
-        </details>
-      )}
-      <SkillForm
-        t={t}
-        form={form}
-        config={config}
-        disabled={disabled}
-        saving={saving}
-        onChange={onFormChange}
-        onSubmit={onSubmit}
-        onCancel={onCancel}
-      />
     </section>
+  )
+}
+
+function SkillGroup({
+  t,
+  title,
+  empty,
+  skills,
+  selectedSkillId,
+  disabled,
+  onEdit,
+  onToggle,
+}: {
+  t: ReturnType<typeof useTranslation>['t']
+  title: string
+  empty: string
+  skills: AiAgentSkill[]
+  selectedSkillId: string | null
+  disabled: boolean
+  onEdit: (skill: AiAgentSkill) => void
+  onToggle: (skill: AiAgentSkill) => void
+}) {
+  return (
+    <div className="agent-settings-skill-group">
+      <div className="agent-settings-skill-group-title">{title}</div>
+      {skills.length === 0 ? (
+        <p className="agent-settings-muted">{empty}</p>
+      ) : (
+        <div className="agent-settings-skill-list">
+          {skills.map(skill => (
+            <SkillRow
+              t={t}
+              key={skill.id}
+              skill={skill}
+              selected={selectedSkillId === skill.id}
+              disabled={disabled}
+              onEdit={onEdit}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
 function SkillRow({
   t,
   skill,
+  selected,
   disabled,
   onEdit,
   onToggle,
 }: {
   t: ReturnType<typeof useTranslation>['t']
   skill: AiAgentSkill
+  selected: boolean
   disabled: boolean
   onEdit: (skill: AiAgentSkill) => void
   onToggle: (skill: AiAgentSkill) => void
 }) {
-  const pluginManaged = Boolean(skill.pluginId)
+  const sourceLabel = skillSourceLabel(skill, t)
   return (
-    <div className="agent-settings-row">
-      <div>
-        <strong>{skill.displayName || skill.name || skill.id}</strong>
-        <span>{skill.id}</span>
-        {skill.description && <p>{skill.description}</p>}
-      </div>
-      <div className="agent-settings-row-actions">
-        <span className={`agent-settings-badge ${skill.enabled === false ? 'off' : 'on'}`}>
-          {skill.enabled === false ? t('disabled') : t('enabled')}
+    <div className={`agent-settings-skill-row ${selected ? 'selected' : ''}`}>
+      <button
+        type="button"
+        className="agent-settings-skill-open"
+        disabled={disabled && !skill.content}
+        onClick={() => onEdit(skill)}
+      >
+        <span className="agent-settings-file-icon" aria-hidden="true">
+          <MaterialIcon type="description" />
         </span>
-        <OLButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={disabled || pluginManaged}
-          onClick={() => onEdit(skill)}
-        >
-          {t('edit')}
-        </OLButton>
-        <OLButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={disabled}
-          onClick={() => onToggle(skill)}
-        >
-          {skill.enabled === false ? t('enable') : t('disable')}
-        </OLButton>
+        <span className="agent-settings-skill-copy">
+          <strong>{skill.displayName || skill.name || skill.id}</strong>
+          <span>{skill.description || skill.id}</span>
+        </span>
+      </button>
+      <div className="agent-settings-skill-meta">
+        <span className="agent-settings-source">{sourceLabel}</span>
+        <label className="agent-settings-switch">
+          <input
+            type="checkbox"
+            checked={skill.enabled !== false}
+            disabled={disabled}
+            onChange={() => onToggle(skill)}
+            aria-label={`${skill.displayName || skill.id} ${t('enabled')}`}
+          />
+          <span />
+        </label>
       </div>
     </div>
   )
@@ -675,7 +980,7 @@ function SkillRow({
 function SkillForm({
   t,
   form,
-  config,
+  selectedSkill,
   disabled,
   saving,
   onChange,
@@ -684,16 +989,42 @@ function SkillForm({
 }: {
   t: ReturnType<typeof useTranslation>['t']
   form: SkillFormState
-  config: ProjectAiAgentConfig | null
+  selectedSkill: AiAgentSkill | null
   disabled: boolean
   saving: boolean
   onChange: (form: SkillFormState) => void
   onSubmit: (event: FormEvent) => void
   onCancel: () => void
 }) {
+  const preview = skillPreviewFromForm(form)
+  const parsed = parseSkillMarkdown(form.content)
+  const hasValidFrontmatter = Boolean(preview.id && preview.description)
+  const invalidName = Boolean(
+    preview.id && !isSafeSkillName(preview.id)
+  )
+  const readOnlyPluginSkill = Boolean(form.pluginId)
+  const metadataRows = [
+    [
+      t('agent_settings_skill_preview_name'),
+      preview.id || t('agent_settings_skill_preview_missing_name'),
+    ],
+    [
+      t('description'),
+      preview.description || t('agent_settings_skill_preview_missing_description'),
+    ],
+    [
+      t('agent_settings_skill_source'),
+      selectedSkill ? skillSourceLabel(selectedSkill, t) : 'SKILL.md',
+    ],
+    [
+      t('agent_settings_required_tools'),
+      form.requiredTools.join(', ') || t('agent_settings_no_required_tools'),
+    ],
+  ]
+
   return (
     <Form
-      className="agent-settings-nested-form"
+      className="agent-settings-skill-editor"
       onSubmit={onSubmit}
       aria-label={
         form.editingSkillId
@@ -701,97 +1032,79 @@ function SkillForm({
           : t('agent_settings_add_skill_form')
       }
     >
-      <h6>
-        {form.editingSkillId
-          ? t('agent_settings_edit_skill')
-          : t('agent_settings_add_skill')}
-      </h6>
-      <div className="agent-settings-grid">
-        <Form.Group className="agent-settings-field" controlId="agent-skill-id">
-          <Form.Label>{t('agent_settings_skill_id')}</Form.Label>
-          <OLFormControl
-            value={form.id}
-            disabled={disabled || Boolean(form.editingSkillId)}
-            required
-            onChange={event => onChange({ ...form, id: event.currentTarget.value })}
-          />
-        </Form.Group>
-        <Form.Group
-          className="agent-settings-field"
-          controlId="agent-skill-display-name"
-        >
-          <Form.Label>{t('agent_settings_display_name')}</Form.Label>
-          <OLFormControl
-            value={form.displayName}
-            disabled={disabled}
-            required
-            onChange={event =>
-              onChange({ ...form, displayName: event.currentTarget.value })
+      <div className="agent-settings-editor-header">
+        <div>
+          <h6>
+            {preview.displayName ||
+              preview.id ||
+              (form.editingSkillId
+                ? t('agent_settings_edit_skill')
+                : t('agent_settings_add_skill'))}
+          </h6>
+          <p>{t('agent_settings_skill_editor_description')}</p>
+        </div>
+        <div className="agent-settings-actions">
+          <OLButton type="button" variant="secondary" onClick={onCancel}>
+            {t('cancel')}
+          </OLButton>
+          <OLButton
+            type="submit"
+            variant="primary"
+            disabled={
+              disabled ||
+              readOnlyPluginSkill ||
+              !hasValidFrontmatter ||
+              invalidName
             }
-          />
-        </Form.Group>
-        <Form.Group
-          className="agent-settings-field"
-          controlId="agent-skill-description"
-        >
-          <Form.Label>{t('description')}</Form.Label>
-          <OLFormControl
-            value={form.description}
-            disabled={disabled}
-            required
-            onChange={event =>
-              onChange({ ...form, description: event.currentTarget.value })
-            }
-          />
-        </Form.Group>
-        <Form.Group
-          className="agent-settings-field"
-          controlId="agent-skill-keywords"
-        >
-          <Form.Label>{t('agent_settings_keywords')}</Form.Label>
-          <OLFormControl
-            value={form.keywords}
-            disabled={disabled}
-            onChange={event =>
-              onChange({ ...form, keywords: event.currentTarget.value })
-            }
-          />
-        </Form.Group>
+            isLoading={saving}
+            loadingLabel={t('saving')}
+          >
+            {t('agent_settings_save_skill')}
+          </OLButton>
+        </div>
       </div>
-      <Form.Group className="agent-settings-field" controlId="agent-skill-tools">
-        <Form.Label>{t('agent_settings_required_tools')}</Form.Label>
-        <OLFormSelect
-          multiple
-          value={form.requiredTools}
-          disabled={disabled}
+      <div className="agent-settings-skill-summary">
+        {metadataRows.map(([label, value]) => (
+          <div key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+      {!hasValidFrontmatter && (
+        <Alert variant="warning" className="agent-settings-inline-alert">
+          {t('agent_settings_skill_frontmatter_required')}
+        </Alert>
+      )}
+      {invalidName && (
+        <Alert variant="warning" className="agent-settings-inline-alert">
+          {t('agent_settings_skill_name_invalid')}
+        </Alert>
+      )}
+      {readOnlyPluginSkill && (
+        <Alert variant="info" className="agent-settings-inline-alert">
+          {t('agent_settings_plugin_skill_readonly')}
+        </Alert>
+      )}
+      <Form.Group
+        className="agent-settings-field agent-settings-markdown-field"
+        controlId="agent-skill-content"
+      >
+        <Form.Label>{t('agent_settings_skill_markdown')}</Form.Label>
+        <Form.Control
+          as="textarea"
+          rows={18}
+          value={form.content}
+          disabled={disabled || readOnlyPluginSkill}
+          spellCheck={false}
+          required
           onChange={event =>
             onChange({
               ...form,
-              requiredTools: Array.from(event.currentTarget.selectedOptions).map(
-                option => option.value
-              ),
+              content: event.currentTarget.value,
+              ...metadataFromSkillMarkdown(event.currentTarget.value, form),
             })
           }
-        >
-          {(config?.tools ?? []).map(tool => (
-            <option key={tool.name} value={tool.name}>
-              {tool.name}
-            </option>
-          ))}
-        </OLFormSelect>
-      </Form.Group>
-      <Form.Group
-        className="agent-settings-field"
-        controlId="agent-skill-content"
-      >
-        <Form.Label>{t('agent_settings_skill_content')}</Form.Label>
-        <Form.Control
-          as="textarea"
-          rows={8}
-          value={form.content}
-          disabled={disabled}
-          required
-          onChange={event => onChange({ ...form, content: event.currentTarget.value })}
         />
       </Form.Group>
       <div className="agent-settings-form-footer">
@@ -809,31 +1122,133 @@ function SkillForm({
             id="agent-skill-model-invocable"
             label={t('agent_settings_model_can_choose_skill')}
             checked={form.modelInvocable}
-            disabled={disabled}
+            disabled={disabled || readOnlyPluginSkill}
             onChange={event =>
               onChange({ ...form, modelInvocable: event.currentTarget.checked })
             }
           />
         </div>
-        <div className="agent-settings-actions">
-          {form.editingSkillId && (
-            <OLButton type="button" variant="secondary" onClick={onCancel}>
-              {t('cancel')}
-            </OLButton>
-          )}
-          <OLButton
-            type="submit"
-            variant="primary"
-            disabled={disabled}
-            isLoading={saving}
-            loadingLabel={t('saving')}
-          >
-            {t('agent_settings_save_skill')}
-          </OLButton>
-        </div>
       </div>
+      <details className="agent-settings-advanced">
+        <summary>{t('agent_settings_parsed_metadata')}</summary>
+        <p>{t('agent_settings_parsed_metadata_description')}</p>
+        <dl className="agent-settings-metadata-list">
+          <div>
+            <dt>{t('agent_settings_skill_id')}</dt>
+            <dd>{form.id || parsed.name || t('agent_settings_none')}</dd>
+          </div>
+          <div>
+            <dt>{t('agent_settings_keywords')}</dt>
+            <dd>{form.keywords || t('agent_settings_none')}</dd>
+          </div>
+          <div>
+            <dt>{t('agent_settings_required_tools')}</dt>
+            <dd>
+              {form.requiredTools.join(', ') ||
+                t('agent_settings_no_required_tools')}
+            </dd>
+          </div>
+        </dl>
+        <div className="agent-settings-grid agent-settings-compat-fields">
+          <Form.Group
+            className="agent-settings-field"
+            controlId="agent-skill-display-name"
+          >
+            <Form.Label>{t('agent_settings_display_name')}</Form.Label>
+            <OLFormControl
+              value={form.displayName}
+              disabled={disabled || readOnlyPluginSkill}
+              placeholder="Literature Review"
+              onChange={event =>
+                onChange({ ...form, displayName: event.currentTarget.value })
+              }
+            />
+          </Form.Group>
+          <Form.Group
+            className="agent-settings-field"
+            controlId="agent-skill-id"
+          >
+            <Form.Label>{t('agent_settings_skill_id')}</Form.Label>
+            <OLFormControl
+              value={form.id}
+              disabled={
+                disabled || readOnlyPluginSkill || Boolean(form.editingSkillId)
+              }
+              required
+              onChange={event =>
+                onChange({ ...form, id: event.currentTarget.value })
+              }
+            />
+          </Form.Group>
+          <Form.Group
+            className="agent-settings-field"
+            controlId="agent-skill-keywords"
+          >
+            <Form.Label>{t('agent_settings_keywords')}</Form.Label>
+            <OLFormControl
+              value={form.keywords}
+              disabled={disabled || readOnlyPluginSkill}
+              onChange={event =>
+                onChange({ ...form, keywords: event.currentTarget.value })
+              }
+            />
+          </Form.Group>
+        </div>
+        <Form.Group
+          className="agent-settings-field"
+          controlId="agent-skill-tools"
+        >
+          <Form.Label>{t('agent_settings_required_tools')}</Form.Label>
+          <OLFormSelect
+            multiple
+            value={form.requiredTools}
+            disabled={disabled || readOnlyPluginSkill}
+            onChange={event =>
+              onChange({
+                ...form,
+                requiredTools: Array.from(
+                  event.currentTarget.selectedOptions
+                ).map(option => option.value),
+              })
+            }
+          >
+            {selectedSkillRequiredTools(selectedSkill, form).map(toolName => (
+              <option key={toolName} value={toolName}>
+                {toolName}
+              </option>
+            ))}
+          </OLFormSelect>
+        </Form.Group>
+      </details>
     </Form>
   )
+}
+
+function selectedSkillRequiredTools(
+  selectedSkill: AiAgentSkill | null,
+  form: SkillFormState
+) {
+  const tools = new Set<string>()
+  for (const tool of selectedSkill?.requiredTools ?? []) {
+    tools.add(tool)
+  }
+  for (const tool of form.requiredTools) {
+    tools.add(tool)
+  }
+  return [...tools].sort()
+}
+
+function skillSourceLabel(
+  skill: AiAgentSkill,
+  t: ReturnType<typeof useTranslation>['t']
+) {
+  if (skill.scope === 'builtin') {
+    return t('agent_settings_builtin_skill')
+  }
+  if (skill.pluginId) {
+    return t('agent_settings_plugin_skill')
+  }
+  return t('agent_settings_project_skill')
 }
 
 function PluginsSection({
@@ -860,101 +1275,131 @@ function PluginsSection({
   onToggle: (plugin: AiAgentPluginInstallation) => void
 }) {
   return (
-    <section className="agent-settings-section">
+    <section className="agent-settings-section agent-settings-workbench">
       <div className="agent-settings-section-header">
         <h5>{t('agent_settings_project_plugins')}</h5>
         <p>{t('agent_settings_project_plugins_description')}</p>
       </div>
-      <div className="agent-settings-list">
-        {plugins.length === 0 && (
-          <p className="agent-settings-muted">
-            {t('agent_settings_no_project_plugins')}
-          </p>
-        )}
-        {plugins.map(plugin => (
-          <PluginRow
-            t={t}
-            key={`${plugin.pluginId}:${plugin.version}`}
-            plugin={plugin}
-            disabled={disabled}
-            onToggle={onToggle}
-          />
-        ))}
-      </div>
-      <Form
-        className="agent-settings-nested-form"
-        onSubmit={onPreview}
-        aria-label={t('agent_settings_plugin_source_form')}
-      >
-        <h6>{t('agent_settings_install_plugin')}</h6>
-        <div className="agent-settings-grid">
-          <Form.Group
-            className="agent-settings-field"
-            controlId="agent-plugin-source-type"
+      <div className="agent-settings-split-view">
+        <aside className="agent-settings-sidebar-list">
+          <div className="agent-settings-sidebar-toolbar">
+            <div>
+              <strong>{t('agent_settings_installed_plugins')}</strong>
+              <span>
+                {t('agent_settings_plugins_enabled_summary', {
+                  enabled: plugins.filter(plugin => plugin.enabled).length,
+                  total: plugins.length,
+                })}
+              </span>
+            </div>
+          </div>
+          <div className="agent-settings-plugin-list">
+            {plugins.length === 0 && (
+              <p className="agent-settings-muted">
+                {t('agent_settings_no_project_plugins')}
+              </p>
+            )}
+            {plugins.map(plugin => (
+              <PluginRow
+                t={t}
+                key={`${plugin.pluginId}:${plugin.version}`}
+                plugin={plugin}
+                disabled={disabled}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
+        </aside>
+        <div className="agent-settings-editor-pane">
+          <Form
+            className="agent-settings-plugin-installer"
+            onSubmit={onPreview}
+            aria-label={t('agent_settings_plugin_source_form')}
           >
-            <Form.Label>{t('agent_settings_source_type')}</Form.Label>
-            <OLFormSelect
-              value={source.kind}
-              disabled={disabled || source.kind === 'uploaded_zip'}
-              onChange={event =>
-                onSourceChange({
-                  kind: event.currentTarget.value as PluginSourceState['kind'],
-                  value: '',
-                })
-              }
-            >
-              <option value="github">{t('agent_settings_github_link')}</option>
-              <option value="zip_url">{t('agent_settings_https_zip_url')}</option>
-              <option value="local_directory">
-                {t('agent_settings_server_directory')}
-              </option>
-              {source.kind === 'uploaded_zip' && (
-                <option value="uploaded_zip">
-                  {t('agent_settings_uploaded_zip')}
-                </option>
-              )}
-            </OLFormSelect>
-          </Form.Group>
-          <Form.Group
-            className="agent-settings-field"
-            controlId="agent-plugin-source-value"
-          >
-            <Form.Label>{pluginSourceLabel(source.kind, t)}</Form.Label>
-            <OLFormControl
-              value={source.value}
-              disabled={disabled || source.kind === 'uploaded_zip'}
-              required={source.kind !== 'uploaded_zip'}
-              onChange={event =>
-                onSourceChange({ ...source, value: event.currentTarget.value })
-              }
-              placeholder={pluginSourcePlaceholder(source.kind)}
+            <div className="agent-settings-editor-header">
+              <div>
+                <h6>{t('agent_settings_install_plugin')}</h6>
+                <p>{t('agent_settings_plugin_import_description')}</p>
+              </div>
+            </div>
+            <div className="agent-settings-plugin-source-row">
+              <Form.Group
+                className="agent-settings-field"
+                controlId="agent-plugin-source-type"
+              >
+                <Form.Label>{t('agent_settings_source_type')}</Form.Label>
+                <OLFormSelect
+                  value={source.kind}
+                  disabled={disabled || source.kind === 'uploaded_zip'}
+                  onChange={event =>
+                    onSourceChange({
+                      kind: event.currentTarget.value as PluginSourceState['kind'],
+                      value: '',
+                    })
+                  }
+                >
+                  <option value="github">{t('agent_settings_github_link')}</option>
+                  <option value="zip_url">{t('agent_settings_https_zip_url')}</option>
+                  <option value="local_directory">
+                    {t('agent_settings_server_directory')}
+                  </option>
+                  {source.kind === 'uploaded_zip' && (
+                    <option value="uploaded_zip">
+                      {t('agent_settings_uploaded_zip')}
+                    </option>
+                  )}
+                </OLFormSelect>
+              </Form.Group>
+              <Form.Group
+                className="agent-settings-field"
+                controlId="agent-plugin-source-value"
+              >
+                <Form.Label>{pluginSourceLabel(source.kind, t)}</Form.Label>
+                <OLFormControl
+                  value={source.value}
+                  disabled={disabled || source.kind === 'uploaded_zip'}
+                  required={source.kind !== 'uploaded_zip'}
+                  onChange={event =>
+                    onSourceChange({
+                      ...source,
+                      value: event.currentTarget.value,
+                    })
+                  }
+                  placeholder={pluginSourcePlaceholder(source.kind)}
+                />
+              </Form.Group>
+            </div>
+            <div className="agent-settings-form-footer">
+              <span className="agent-settings-muted">
+                {t('agent_settings_plugin_source_hint')}
+              </span>
+              <OLButton
+                type="submit"
+                variant="primary"
+                disabled={disabled || source.kind === 'uploaded_zip'}
+                isLoading={busy}
+                loadingLabel={t('agent_settings_previewing')}
+              >
+                {t('agent_settings_preview_plugin')}
+              </OLButton>
+            </div>
+          </Form>
+          {preview ? (
+            <PluginPreview
+              t={t}
+              preview={preview}
+              busy={busy}
+              disabled={disabled}
+              onInstall={onInstall}
             />
-          </Form.Group>
+          ) : (
+            <div className="agent-settings-empty-state">
+              <strong>{t('agent_settings_plugin_preview_empty_title')}</strong>
+              <span>{t('agent_settings_plugin_preview_empty')}</span>
+            </div>
+          )}
         </div>
-        <div className="agent-settings-form-footer">
-          <span className="agent-settings-muted">
-            {t('agent_settings_plugin_source_hint')}
-          </span>
-          <OLButton
-            type="submit"
-            variant="secondary"
-            disabled={disabled || source.kind === 'uploaded_zip'}
-            isLoading={busy}
-            loadingLabel={t('agent_settings_previewing')}
-          >
-            {t('agent_settings_preview_plugin')}
-          </OLButton>
-        </div>
-      </Form>
-      {preview && (
-        <PluginPreview
-          t={t}
-          preview={preview}
-          busy={busy}
-          disabled={disabled}
-          onInstall={onInstall}
-        />
-      )}
+      </div>
     </section>
   )
 }
@@ -971,31 +1416,31 @@ function PluginRow({
   onToggle: (plugin: AiAgentPluginInstallation) => void
 }) {
   return (
-    <div className="agent-settings-row">
-      <div>
-        <strong>{plugin.displayName || plugin.name}</strong>
-        <span>{plugin.pluginId}</span>
+    <div className="agent-settings-plugin-row">
+      <div className="agent-settings-plugin-copy">
+        <div>
+          <strong>{plugin.displayName || plugin.name}</strong>
+          <span className="agent-settings-source">
+            {sourceLabel(plugin.source, t)}
+          </span>
+        </div>
         <p>
+          {plugin.pluginId} ·{' '}
           {t('agent_settings_skill_count', {
             count: plugin.skillIds.length,
-          })}{' '}
-          · {sourceLabel(plugin.source, t)}
+          })}
         </p>
       </div>
-      <div className="agent-settings-row-actions">
-        <span className={`agent-settings-badge ${plugin.enabled ? 'on' : 'off'}`}>
-          {plugin.enabled ? t('enabled') : t('disabled')}
-        </span>
-        <OLButton
-          type="button"
-          size="sm"
-          variant="secondary"
+      <label className="agent-settings-switch">
+        <input
+          type="checkbox"
+          checked={plugin.enabled}
           disabled={disabled}
-          onClick={() => onToggle(plugin)}
-        >
-          {plugin.enabled ? t('disable') : t('enable')}
-        </OLButton>
-      </div>
+          onChange={() => onToggle(plugin)}
+          aria-label={`${plugin.displayName || plugin.name} ${t('enabled')}`}
+        />
+        <span />
+      </label>
     </div>
   )
 }
@@ -1029,9 +1474,12 @@ function PluginPreview({
         <span>{formatBytes(preview.packageBytes)}</span>
         <code>{shortHash(preview.integrity.sha256)}</code>
       </div>
-      <div className="agent-settings-list compact">
+      <div className="agent-settings-preview-skills">
         {preview.skills.map(skill => (
-          <div className="agent-settings-row" key={skill.id}>
+          <div className="agent-settings-preview-skill" key={skill.id}>
+            <span className="agent-settings-file-icon" aria-hidden="true">
+              <MaterialIcon type="description" />
+            </span>
             <div>
               <strong>{skill.displayName || skill.id}</strong>
               <span>{skill.id}</span>
@@ -1121,16 +1569,41 @@ function upsertInstructionProfile(
 }
 
 function skillFromForm(form: SkillFormState): AiAgentSkill {
+  const parsed = parseSkillMarkdown(form.content)
+  const id = slugFromSkillName(
+    form.editingSkillId ||
+      form.id.trim() ||
+      parsed.name ||
+      'custom-skill'
+  )
+  const displayName =
+    form.displayName.trim() ||
+    parsed.displayName ||
+    firstMarkdownHeading(form.content) ||
+    parsed.name ||
+    id
+  const description =
+    parsed.description || form.description.trim() || displayName
+  const parsedModelInvocable =
+    typeof parsed.disableModelInvocation === 'boolean'
+      ? !parsed.disableModelInvocation
+      : parsed.modelInvocable
   return {
-    id: form.id.trim(),
-    name: form.id.trim(),
-    displayName: form.displayName.trim(),
-    description: form.description.trim(),
-    keywords: splitList(form.keywords),
-    requiredTools: form.requiredTools,
+    id,
+    name: parsed.name || id,
+    displayName,
+    description,
+    keywords: splitList(form.keywords || (parsed.keywords ?? []).join(', ')),
+    requiredTools:
+      form.requiredTools.length > 0
+        ? form.requiredTools
+        : parsed.requiredTools || parsed.allowedTools || [],
     content: form.content,
     enabled: form.enabled,
-    modelInvocable: form.modelInvocable,
+    modelInvocable:
+      typeof parsedModelInvocable === 'boolean'
+        ? parsedModelInvocable
+        : form.modelInvocable,
     scope: 'project',
     pluginId: form.pluginId,
   }
@@ -1152,15 +1625,140 @@ function skillFormFromSkill(skill: AiAgentSkill): SkillFormState {
 }
 
 function skillFormFromDroppedText(content: string, fileName: string) {
-  const id = slugFromFileName(fileName)
-  const title = firstMarkdownHeading(content) || id
+  const parsed = parseSkillMarkdown(content)
+  const id = parsed.name || slugFromFileName(fileName)
+  const title =
+    parsed.displayName || firstMarkdownHeading(content) || parsed.name || id
   return {
     ...emptySkillForm(),
-    id,
+    id: slugFromSkillName(id),
     displayName: title,
-    description: firstNonHeadingLine(content) || title,
+    description: parsed.description || firstNonHeadingLine(content) || title,
+    keywords: (parsed.keywords ?? []).join(', '),
+    requiredTools: parsed.requiredTools || parsed.allowedTools || [],
+    modelInvocable:
+      typeof parsed.disableModelInvocation === 'boolean'
+        ? !parsed.disableModelInvocation
+        : parsed.modelInvocable !== false,
     content,
   }
+}
+
+function metadataFromSkillMarkdown(
+  content: string,
+  form: SkillFormState
+): Partial<SkillFormState> {
+  const parsed = parseSkillMarkdown(content)
+  const title = parsed.displayName || firstMarkdownHeading(content) || parsed.name
+  const next: Partial<SkillFormState> = {}
+  if (title) {
+    next.displayName = title
+  }
+  if (parsed.name && !form.editingSkillId) {
+    next.id = slugFromSkillName(parsed.name)
+  }
+  if (parsed.description) {
+    next.description = parsed.description
+  }
+  const parsedTools = parsed.requiredTools || parsed.allowedTools
+  if (parsedTools) {
+    next.requiredTools = parsedTools
+  }
+  if (parsed.keywords) {
+    next.keywords = parsed.keywords.join(', ')
+  }
+  if (typeof parsed.disableModelInvocation === 'boolean') {
+    next.modelInvocable = !parsed.disableModelInvocation
+  } else if (typeof parsed.modelInvocable === 'boolean') {
+    next.modelInvocable = parsed.modelInvocable
+  }
+  return next
+}
+
+function parseSkillMarkdown(content: string) {
+  const frontmatter = content.match(/^---\s*\n([\s\S]*?)\n---\s*(?:\n|$)/)
+  if (!frontmatter) {
+    return {}
+  }
+  return {
+    name: yamlStringValue(frontmatter[1], 'name'),
+    displayName: yamlStringValue(frontmatter[1], 'displayName'),
+    description: yamlStringValue(frontmatter[1], 'description'),
+    requiredTools: yamlStringListValue(frontmatter[1], 'requiredTools'),
+    allowedTools: yamlStringListValue(frontmatter[1], 'allowed-tools'),
+    keywords: yamlStringListValue(frontmatter[1], 'keywords'),
+    modelInvocable: yamlBooleanValue(frontmatter[1], 'modelInvocable'),
+    disableModelInvocation: yamlBooleanValue(
+      frontmatter[1],
+      'disable-model-invocation'
+    ),
+  }
+}
+
+function yamlStringValue(yaml: string, key: string) {
+  const match = yaml.match(
+    new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|(.+?))\\s*$`, 'm')
+  )
+  return (match?.[1] || match?.[2] || match?.[3] || '').trim()
+}
+
+function yamlStringListValue(yaml: string, key: string) {
+  const scalar = yamlStringValue(yaml, key)
+  if (scalar) {
+    return splitList(scalar)
+  }
+  const block = yaml.match(
+    new RegExp(`^${key}:\\s*\\n((?:\\s+-\\s+.+\\n?)+)`, 'm')
+  )
+  if (!block) {
+    return undefined
+  }
+  return block[1]
+    .split(/\r?\n/)
+    .map(line => line.replace(/^\s+-\s+/, '').trim())
+    .filter(Boolean)
+}
+
+function yamlBooleanValue(yaml: string, key: string) {
+  const value = yamlStringValue(yaml, key).toLowerCase()
+  if (['true', 'yes'].includes(value)) {
+    return true
+  }
+  if (['false', 'no'].includes(value)) {
+    return false
+  }
+  return undefined
+}
+
+function skillPreviewFromForm(form: SkillFormState) {
+  const parsed = parseSkillMarkdown(form.content)
+  return {
+    id: parsed.name || form.id.trim(),
+    displayName:
+      form.displayName.trim() ||
+      parsed.displayName ||
+      firstMarkdownHeading(form.content) ||
+      parsed.name,
+    description: parsed.description || form.description.trim(),
+  }
+}
+
+function validateSkillForm(
+  form: SkillFormState,
+  t: ReturnType<typeof useTranslation>['t']
+) {
+  const parsed = parseSkillMarkdown(form.content)
+  if (!parsed.name || !parsed.description) {
+    return t('agent_settings_skill_frontmatter_required')
+  }
+  if (!isSafeSkillName(parsed.name)) {
+    return t('agent_settings_skill_name_invalid')
+  }
+  return null
+}
+
+function isSafeSkillName(name: string) {
+  return /^[a-z0-9][a-z0-9-]{0,119}$/.test(name)
 }
 
 function upsertSkill(skills: AiAgentSkill[], nextSkill: AiAgentSkill) {
@@ -1205,14 +1803,43 @@ function sourceFromText(text: string): AiAgentPluginSource | null {
   if (!value) {
     return null
   }
-  if (isGitHubUrl(value)) {
-    return githubSourceFromUrl(value)
+  const line = value
+    .split(/\s+/)
+    .find(
+      item =>
+        isGitHubUrl(item) || item.startsWith('https://') || item.startsWith('/')
+    )
+  if (!line) {
+    return null
   }
-  if (value.startsWith('https://')) {
-    return { sourceType: 'zip_url', url: value }
+  if (isGitHubUrl(line)) {
+    return githubSourceFromUrl(line)
   }
-  if (value.startsWith('/')) {
-    return { sourceType: 'local_directory', path: value }
+  if (line.startsWith('https://')) {
+    return { sourceType: 'zip_url', url: line }
+  }
+  if (line.startsWith('/')) {
+    return { sourceType: 'local_directory', path: line }
+  }
+  return null
+}
+
+function skillSourceFromText(text: string): AiAgentSkillImportSource | null {
+  const value = text.trim()
+  if (!value) {
+    return null
+  }
+  const line = value
+    .split(/\s+/)
+    .find(item => item.startsWith('https://'))
+  if (!line) {
+    return null
+  }
+  if (isGitHubSkillUrl(line)) {
+    return { sourceType: 'github_file', url: line }
+  }
+  if (isRawSkillUrl(line)) {
+    return { sourceType: 'url', url: line }
   }
   return null
 }
@@ -1253,6 +1880,34 @@ function isGitHubUrl(value: string) {
   }
 }
 
+function isGitHubSkillUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'github.com' &&
+      (url.pathname.includes('/blob/') || url.pathname.includes('/tree/')) &&
+      (url.pathname.toLowerCase().endsWith('/skill.md') ||
+        url.pathname.includes('/tree/'))
+    )
+  } catch {
+    return false
+  }
+}
+
+function isRawSkillUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'raw.githubusercontent.com' &&
+      url.pathname.toLowerCase().endsWith('/skill.md')
+    )
+  } catch {
+    return false
+  }
+}
+
 function splitList(value: string) {
   return value
     .split(/[,\n]/)
@@ -1284,6 +1939,13 @@ function readFileText(file: File) {
 function slugFromFileName(fileName: string) {
   return fileName
     .replace(/\.[^.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'custom-skill'
+}
+
+function slugFromSkillName(name: string) {
+  return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'custom-skill'

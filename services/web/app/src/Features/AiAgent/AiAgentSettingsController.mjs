@@ -21,6 +21,10 @@ import {
   summarizePluginInstallation,
 } from './AiAgentPluginInstallationManager.mjs'
 import { AgentPluginPackageValidationError } from './AiAgentPluginPackageManager.mjs'
+import {
+  AgentSkillImportValidationError,
+  previewAgentSkillImport,
+} from './AiAgentSkillImportManager.mjs'
 
 const defaultsDeep = lodash.defaultsDeep
 const SettingIdSchema = z.string().trim().min(1).max(120)
@@ -30,12 +34,13 @@ const KeywordsSchema = z.array(z.string().trim().min(1).max(80)).max(40).optiona
 const SkillSettingSchema = z.object({
   id: SettingIdSchema,
   enabled: z.boolean(),
+  name: SettingIdSchema.optional(),
   displayName: z.string().trim().min(1).max(200).optional(),
   description: z.string().trim().max(1000).optional(),
   modelInvocable: z.boolean().optional(),
   requiredTools: RequiredToolsSchema,
   keywords: KeywordsSchema,
-  content: z.string().max(16_000).optional(),
+  content: z.string().max(32_000).optional(),
   pluginId: SettingIdSchema.optional(),
 })
 
@@ -58,13 +63,9 @@ const InstructionProfileSchema = z.object({
 })
 
 const SettingsUpdateSchema = z.object({
-  skills: z.array(SkillSettingSchema).max(50).optional().default([]),
-  plugins: z.array(PluginSettingSchema).max(50).optional().default([]),
-  instructionProfiles: z
-    .array(InstructionProfileSchema)
-    .max(20)
-    .optional()
-    .default([]),
+  skills: z.array(SkillSettingSchema).max(50).optional(),
+  plugins: z.array(PluginSettingSchema).max(50).optional(),
+  instructionProfiles: z.array(InstructionProfileSchema).max(20).optional(),
 })
 
 const PluginSourceSchema = z.discriminatedUnion('sourceType', [
@@ -97,6 +98,17 @@ const PluginInstallSchema = PluginSourceSchema.and(
 const PluginEnabledSchema = z.object({
   enabled: z.boolean(),
 })
+
+const SkillImportSourceSchema = z.discriminatedUnion('sourceType', [
+  z.object({
+    sourceType: z.literal('github_file'),
+    url: z.string().trim().url().max(2000),
+  }),
+  z.object({
+    sourceType: z.literal('url'),
+    url: z.string().trim().url().max(2000),
+  }),
+])
 
 const pluginUpload = multer(
   defaultsDeep(
@@ -213,6 +225,15 @@ async function previewProjectPlugin(req, res, next) {
   try {
     const source = PluginSourceSchema.parse(req.body)
     res.json({ preview: await previewAgentPluginPackage(source) })
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
+async function previewProjectSkillImport(req, res, next) {
+  try {
+    const source = SkillImportSourceSchema.parse(req.body)
+    res.json({ preview: await previewAgentSkillImport(source) })
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -386,19 +407,25 @@ async function setGlobalPluginEnabled(req, res, next) {
 
 function summarizeSettingsChange(body) {
   return {
-    skills: body.skills.map(skill => ({
-      id: skill.id,
-      enabled: skill.enabled,
-    })),
-    plugins: body.plugins.map(plugin => ({
-      id: plugin.id,
-      enabled: plugin.enabled,
-    })),
-    instructionProfiles: body.instructionProfiles.map(profile => ({
-      name: profile.name,
-      enabled: profile.enabled,
-      bytes: Buffer.byteLength(profile.content || '', 'utf8'),
-    })),
+    skills: Array.isArray(body.skills)
+      ? body.skills.map(skill => ({
+          id: skill.id,
+          enabled: skill.enabled,
+        }))
+      : undefined,
+    plugins: Array.isArray(body.plugins)
+      ? body.plugins.map(plugin => ({
+          id: plugin.id,
+          enabled: plugin.enabled,
+        }))
+      : undefined,
+    instructionProfiles: Array.isArray(body.instructionProfiles)
+      ? body.instructionProfiles.map(profile => ({
+          name: profile.name,
+          enabled: profile.enabled,
+          bytes: Buffer.byteLength(profile.content || '', 'utf8'),
+        }))
+      : undefined,
   }
 }
 
@@ -416,7 +443,9 @@ function handleControllerError(err, res, next) {
     err instanceof AgentSettingsValidationError ||
     err.name === 'AgentSettingsValidationError' ||
     err instanceof AgentPluginPackageValidationError ||
-    err.name === 'AgentPluginPackageValidationError'
+    err.name === 'AgentPluginPackageValidationError' ||
+    err instanceof AgentSkillImportValidationError ||
+    err.name === 'AgentSkillImportValidationError'
   ) {
     res.status(422).json({
       error: {
@@ -446,6 +475,7 @@ export default {
   updateGlobalSettings,
   listProjectPlugins,
   previewProjectPlugin,
+  previewProjectSkillImport,
   uploadProjectPlugin,
   installProjectPlugin,
   setProjectPluginEnabled,

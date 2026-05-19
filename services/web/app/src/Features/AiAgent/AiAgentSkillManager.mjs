@@ -84,7 +84,7 @@ export function selectSkillsForTask(
   const explicitPluginRefs = extractExplicitPluginRefs(task)
   const candidateSkills =
     Array.isArray(availableSkills) && availableSkills.length > 0
-      ? availableSkills
+      ? availableSkills.filter(skill => skill.modelInvocable !== false)
       : BUILTIN_SKILLS
   const scored = candidateSkills.map(skill => ({
     skill,

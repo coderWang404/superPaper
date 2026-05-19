@@ -102,6 +102,36 @@ describe('AiAgentSettingsController', function () {
           }
         },
     }
+    ctx.SkillImportManager = {
+      AgentSkillImportValidationError:
+        class AgentSkillImportValidationError extends Error {
+          constructor(message) {
+            super(message)
+            this.name = 'AgentSkillImportValidationError'
+          }
+        },
+      previewAgentSkillImport: sinon.stub().resolves({
+        source: {
+          type: 'github_file',
+          url: 'https://github.com/example/skills/blob/main/SKILL.md',
+          rawUrl:
+            'https://raw.githubusercontent.com/example/skills/main/SKILL.md',
+        },
+        content: `---
+name: literature-review
+description: Review related work.
+---
+
+# Literature Review
+`,
+        metadata: {
+          name: 'literature-review',
+          description: 'Review related work.',
+        },
+        bytes: 82,
+        sha256: 'abc123',
+      }),
+    }
     ctx.SessionManager = {
       getLoggedInUserId: sinon.stub().returns('user-one'),
     }
@@ -123,6 +153,10 @@ describe('AiAgentSettingsController', function () {
     vi.doMock(
       '../../../../app/src/Features/AiAgent/AiAgentPluginPackageManager',
       () => ctx.PluginPackageManager
+    )
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/AiAgentSkillImportManager',
+      () => ctx.SkillImportManager
     )
     vi.doMock(
       '../../../../app/src/Features/Authentication/SessionManager',
@@ -271,7 +305,6 @@ describe('AiAgentSettingsController', function () {
           content: 'Follow the style guide.',
         },
       ],
-      plugins: [],
       instructionProfiles: [
         {
           name: 'Global Agent Rules',
@@ -392,6 +425,25 @@ describe('AiAgentSettingsController', function () {
         },
         skills: [],
       },
+    })
+  })
+
+  it('previews a project GitHub SKILL.md import source', async function (ctx) {
+    ctx.req.body = {
+      sourceType: 'github_file',
+      url: 'https://github.com/example/skills/blob/main/SKILL.md',
+    }
+
+    await ctx.Controller.previewProjectSkillImport(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.SkillImportManager.previewAgentSkillImport).to.have.been
+      .calledWith({
+        sourceType: 'github_file',
+        url: 'https://github.com/example/skills/blob/main/SKILL.md',
+      })
+    expect(jsonBody(ctx.res).preview.metadata).to.deep.equal({
+      name: 'literature-review',
+      description: 'Review related work.',
     })
   })
 

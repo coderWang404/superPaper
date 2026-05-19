@@ -3,7 +3,6 @@ import {
   fireEvent,
   screen,
   waitForElementToBeRemoved,
-  within,
 } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
 import { type FC, type PropsWithChildren, useMemo, useState } from 'react'
@@ -39,9 +38,30 @@ describe('<AiAssistantPanel />', function () {
     screen.getByText('Provider One')
     screen.getByText('Model One')
     screen.getByText('Using project context')
+    screen.getByText('Start from this project')
+    screen.getByRole('button', { name: /Agent Settings|Agent 设置/ })
+    screen.getByRole('button', {
+      name: 'Diagnose the latest compile error',
+    })
     screen.getByRole('button', { name: 'Chat' })
     screen.getByRole('button', { name: 'Agent' })
-    within(screen.getByTestId('ai-assistant-composer')).getByLabelText('Model')
+    screen.getByLabelText('Model')
+  })
+
+  it('fills the composer from a suggested prompt', async function () {
+    mockConfig()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Diagnose the latest compile error' })
+    )
+
+    expect(screen.getByLabelText('Ask about this project')).to.have.property(
+      'value',
+      'Diagnose the latest compile error'
+    )
   })
 
   it('shows an empty provider state when no provider is configured', async function () {

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import RailPanelHeader from '@/features/ide-react/components/rail/rail-panel-header'
+import { useRailContext } from '@/features/ide-react/context/rail-context'
 import { useProjectContext } from '@/shared/context/project-context'
 import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
 import { useEditorSelectionContext } from '@/shared/context/editor-selection-context'
@@ -39,9 +40,16 @@ type ChatMessage = {
   model?: string
 }
 
+const PROMPT_SUGGESTION_KEYS = [
+  'ai_assistant_suggestion_explain',
+  'ai_assistant_suggestion_compile',
+  'ai_assistant_suggestion_improve',
+]
+
 export default function AiAssistantPanel() {
   const { t } = useTranslation()
   const { projectId } = useProjectContext()
+  const { openTab } = useRailContext()
   const { currentDocumentId, openDocName } = useEditorOpenDocContext()
   const { editorSelection } = useEditorSelectionContext()
   const { view } = useEditorViewContext()
@@ -144,6 +152,9 @@ export default function AiAssistantPanel() {
   const enabledModels = useMemo(() => {
     return selectedProvider?.models.filter(model => model.enabled) ?? []
   }, [selectedProvider])
+  const selectedModelName =
+    enabledModels.find(model => model.id === selectedModel)?.displayName ||
+    selectedModel
 
   const selection = useMemo(() => {
     const range = editorSelection?.main
@@ -326,45 +337,56 @@ export default function AiAssistantPanel() {
 
         {selectedProvider && selectedModel && (
           <>
-            <ProviderSelector
-              providers={config?.providers ?? []}
-              selectedProvider={selectedProvider}
-              t={t}
-              onProviderChange={providerId => {
-                const nextProvider = config?.providers.find(
-                  provider => provider.id === providerId
-                )
-                setSelectedProviderId(providerId)
-                setSelectedModel(getDefaultModel(nextProvider))
-              }}
-            />
-
-            <div
-              className="ai-assistant-mode-switch"
-              aria-label={t('ai_assistant_mode')}
-            >
+            <div className="ai-assistant-workbench-bar">
+              <div
+                className="ai-assistant-mode-switch"
+                aria-label={t('ai_assistant_mode')}
+              >
+                <button
+                  type="button"
+                  className={mode === 'chat' ? 'active' : ''}
+                  aria-pressed={mode === 'chat'}
+                  onClick={() => setMode('chat')}
+                >
+                  {t('chat')}
+                </button>
+                <button
+                  type="button"
+                  className={mode === 'agent' ? 'active' : ''}
+                  aria-pressed={mode === 'agent'}
+                  onClick={() => setMode('agent')}
+                >
+                  {t('ai_assistant_agent_mode')}
+                </button>
+              </div>
               <button
                 type="button"
-                className={mode === 'chat' ? 'active' : ''}
-                aria-pressed={mode === 'chat'}
-                onClick={() => setMode('chat')}
+                className="ai-assistant-settings-link"
+                onClick={() => openTab('agent-settings')}
               >
-                {t('chat')}
-              </button>
-              <button
-                type="button"
-                className={mode === 'agent' ? 'active' : ''}
-                aria-pressed={mode === 'agent'}
-                onClick={() => setMode('agent')}
-              >
-                {t('ai_assistant_agent_mode')}
+                {t('agent_settings')}
               </button>
             </div>
 
-            <div className="ai-assistant-context-strip">
-              {selection
-                ? t('ai_assistant_using_current_selection')
-                : t('ai_assistant_using_project_context')}
+            <div className="ai-assistant-provider-card">
+              <ProviderSelector
+                providers={config?.providers ?? []}
+                selectedProvider={selectedProvider}
+                t={t}
+                onProviderChange={providerId => {
+                  const nextProvider = config?.providers.find(
+                    provider => provider.id === providerId
+                  )
+                  setSelectedProviderId(providerId)
+                  setSelectedModel(getDefaultModel(nextProvider))
+                }}
+              />
+              <ComposerModelSelector
+                selectedModel={selectedModel}
+                enabledModels={enabledModels}
+                t={t}
+                onModelChange={setSelectedModel}
+              />
             </div>
 
             {mode === 'agent' && agentConfig && (
@@ -420,6 +442,26 @@ export default function AiAssistantPanel() {
                   <div className="ai-assistant-answer-text">{agentAnswer}</div>
                 </div>
               )}
+              {chatMessages.length === 0 &&
+                agentEvents.length === 0 &&
+                !streamedAnswer &&
+                !agentAnswer && (
+                  <div className="ai-assistant-welcome">
+                    <h5>{t('ai_assistant_welcome_title')}</h5>
+                    <p>{t('ai_assistant_welcome_description')}</p>
+                    <div className="ai-assistant-suggestions">
+                      {PROMPT_SUGGESTION_KEYS.map(key => (
+                        <button
+                          type="button"
+                          key={key}
+                          onClick={() => setPrompt(t(key))}
+                        >
+                          {t(key)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
 
             <form
@@ -428,22 +470,26 @@ export default function AiAssistantPanel() {
               onSubmit={handleSubmit}
             >
               <label htmlFor="ai-assistant-prompt">
-                {t('ai_assistant_prompt_label')}
+                <span>{t('ai_assistant_prompt_label')}</span>
+                <em id="ai-assistant-prompt-context">
+                  {selection
+                    ? t('ai_assistant_using_current_selection')
+                    : t('ai_assistant_using_project_context')}
+                </em>
               </label>
               <textarea
                 id="ai-assistant-prompt"
+                aria-label={t('ai_assistant_prompt_label')}
+                aria-describedby="ai-assistant-prompt-context"
                 value={prompt}
                 onChange={event => setPrompt(event.target.value)}
                 placeholder={t('ai_assistant_prompt_placeholder')}
                 rows={4}
               />
               <div className="ai-assistant-composer-footer">
-                <ComposerModelSelector
-                  selectedModel={selectedModel}
-                  enabledModels={enabledModels}
-                  t={t}
-                  onModelChange={setSelectedModel}
-                />
+                <span className="ai-assistant-current-model">
+                  {selectedProvider.name} · {selectedModelName}
+                </span>
                 <OLButton
                   type="submit"
                   variant="primary"
@@ -769,26 +815,21 @@ function ProviderSelector({
 }) {
   return (
     <div className="ai-assistant-provider">
+      <span className="ai-assistant-label">{t('ai_assistant_provider')}</span>
       {providers.length > 1 ? (
-        <div>
-          <span className="ai-assistant-label">{t('ai_assistant_provider')}</span>
-          <OLFormSelect
-            aria-label={t('ai_assistant_provider')}
-            value={selectedProvider.id}
-            onChange={event => onProviderChange(event.target.value)}
-          >
-            {providers.map(provider => (
-              <option value={provider.id} key={provider.id}>
-                {provider.name}
-              </option>
-            ))}
-          </OLFormSelect>
-        </div>
+        <OLFormSelect
+          aria-label={t('ai_assistant_provider')}
+          value={selectedProvider.id}
+          onChange={event => onProviderChange(event.target.value)}
+        >
+          {providers.map(provider => (
+            <option value={provider.id} key={provider.id}>
+              {provider.name}
+            </option>
+          ))}
+        </OLFormSelect>
       ) : (
-        <div>
-          <span className="ai-assistant-label">{t('ai_assistant_provider')}</span>
-          <span>{selectedProvider.name}</span>
-        </div>
+        <strong>{selectedProvider.name}</strong>
       )}
     </div>
   )
@@ -807,6 +848,7 @@ function ComposerModelSelector({
 }) {
   return (
     <div className="ai-assistant-model-select">
+      <span className="ai-assistant-label">{t('ai_assistant_model')}</span>
       <OLFormSelect
         aria-label={t('ai_assistant_model')}
         value={selectedModel}

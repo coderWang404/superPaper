@@ -1,12 +1,22 @@
 import { Panel } from 'react-resizable-panels'
-import { useRailContext } from '@/features/ide-react/context/rail-context'
+import {
+  RailTabKey,
+  useRailContext,
+} from '@/features/ide-react/context/rail-context'
 import classNames from 'classnames'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import usePreviousValue from '@/shared/hooks/use-previous-value'
 import { HistorySidebar } from '@/features/ide-react/components/history-sidebar'
 import { Tab } from 'react-bootstrap'
 import { RailElement } from '@/features/ide-react/util/rail-types'
 import { shouldIncludeElement } from '@/features/ide-react/util/rail-utils'
+
+const AGENT_WORKSPACE_TABS: RailTabKey[] = ['ai-assistant', 'agent-settings']
+const DEFAULT_RAIL_SIZE = 15
+const DEFAULT_WORKBENCH_SIZE = 20
+const DEFAULT_AGENT_WORKSPACE_SIZE = 32
+const MIN_RAIL_SIZE = 5
+const MIN_AGENT_WORKSPACE_SIZE = 24
 
 export default function RailPanel({
   isReviewPanelOpen,
@@ -26,6 +36,20 @@ export default function RailPanel({
     return prevTab !== selectedTab
   }, [prevTab, selectedTab])
 
+  const isAgentWorkspaceTab = AGENT_WORKSPACE_TABS.includes(selectedTab)
+  const defaultSize = defaultSizeForTab(selectedTab)
+  const minSize = isAgentWorkspaceTab ? MIN_AGENT_WORKSPACE_SIZE : MIN_RAIL_SIZE
+
+  useEffect(() => {
+    const panelHandle = panelRef.current
+    if (!panelHandle || !isAgentWorkspaceTab) {
+      return
+    }
+    if (panelHandle.getSize() < MIN_AGENT_WORKSPACE_SIZE) {
+      panelHandle.resize(DEFAULT_AGENT_WORKSPACE_SIZE)
+    }
+  }, [isAgentWorkspaceTab, panelRef, selectedTab])
+
   const onCollapse = useCallback(() => {
     if (!tabHasChanged) {
       handlePaneCollapse()
@@ -37,8 +61,8 @@ export default function RailPanel({
       id={`ide-redesign-sidebar-panel-${isHistoryView ? 'file-tree' : selectedTab}`}
       className={classNames({ hidden: isReviewPanelOpen })}
       order={1}
-      defaultSize={selectedTab === 'workbench' ? 20 : 15}
-      minSize={5}
+      defaultSize={defaultSize}
+      minSize={minSize}
       maxSize={80}
       ref={panelRef}
       collapsible
@@ -67,4 +91,14 @@ export default function RailPanel({
       </div>
     </Panel>
   )
+}
+
+function defaultSizeForTab(selectedTab: RailTabKey) {
+  if (selectedTab === 'workbench') {
+    return DEFAULT_WORKBENCH_SIZE
+  }
+  if (AGENT_WORKSPACE_TABS.includes(selectedTab)) {
+    return DEFAULT_AGENT_WORKSPACE_SIZE
+  }
+  return DEFAULT_RAIL_SIZE
 }

@@ -13,6 +13,7 @@ export const AgentSkillSettingSchema = new Schema(
     projectId: { type: Schema.Types.ObjectId, default: null, index: true },
     skillId: { type: String, required: true, index: true },
     enabled: { type: Boolean, default: true },
+    name: { type: String, default: null },
     displayName: { type: String, default: null },
     description: { type: String, default: null },
     modelInvocable: { type: Boolean, default: true },

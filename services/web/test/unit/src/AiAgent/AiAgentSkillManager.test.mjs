@@ -60,6 +60,25 @@ describe('AiAgentSkillManager', function () {
     ).to.deep.equal(['plugin-two/compile-debug'])
   })
 
+  it('does not select skills that are disabled for model invocation', function () {
+    const skills = selectSkillsForTask('Use $style-guide to polish this section', {
+      availableSkills: [
+        {
+          id: 'style-guide',
+          name: 'style-guide',
+          displayName: 'Style Guide',
+          description: 'Apply style',
+          keywords: ['polish'],
+          requiredTools: [],
+          modelInvocable: false,
+          content: 'Apply style.',
+        },
+      ],
+    })
+
+    expect(skills).to.deep.equal([])
+  })
+
   it('formats selected skills for model context', function () {
     const [skill] = selectSkillsForTask('polish academic english')
     const prompt = formatSkillsForPrompt([skill])

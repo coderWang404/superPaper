@@ -93,6 +93,34 @@ export type AiAgentPluginPreview = {
   warnings: string[]
 }
 
+export type AiAgentSkillImportSource =
+  | {
+      sourceType: 'github_file'
+      url: string
+    }
+  | {
+      sourceType: 'url'
+      url: string
+    }
+
+export type AiAgentSkillImportPreview = {
+  source: {
+    type: string
+    url: string
+    rawUrl?: string
+    ref?: string
+    path?: string
+  }
+  content: string
+  metadata: {
+    name?: string
+    description?: string
+    displayName?: string
+  }
+  bytes: number
+  sha256: string
+}
+
 export type AiAgentPluginInstallation = {
   pluginId: string
   name: string
@@ -367,6 +395,16 @@ export function previewProjectAiAgentPlugin(
 ) {
   return postJSON<{ preview: AiAgentPluginPreview }>(
     `/project/${projectId}/ai/agent/plugins/preview`,
+    { body }
+  )
+}
+
+export function previewProjectAiAgentSkillImport(
+  projectId: string,
+  body: AiAgentSkillImportSource
+) {
+  return postJSON<{ preview: AiAgentSkillImportPreview }>(
+    `/project/${projectId}/ai/agent/skills/import-preview`,
     { body }
   )
 }

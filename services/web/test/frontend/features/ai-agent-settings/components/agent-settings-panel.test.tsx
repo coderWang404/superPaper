@@ -32,12 +32,20 @@ describe('<AgentSettingsPanel />', function () {
     await waitForElementToBeRemoved(() =>
       screen.getByText('Loading Agent settings…')
     )
+    screen.getByText('Project Agent Workbench')
+    screen.getByRole('tab', { name: /Skills 2/ })
+    screen.getByRole('tab', { name: /Plugins/ })
+    screen.getByRole('tab', { name: 'Rules' })
+    screen.getByText('Project skill')
+    screen.getByRole('button', { name: 'Choose file' })
+    screen.getByLabelText('LaTeX 编译错误诊断 Enabled')
+    expect(screen.queryByText('Global Agent Rules')).to.equal(null)
+    expect(screen.queryByLabelText('Skill ID')).to.equal(null)
+    fireEvent.click(screen.getByRole('tab', { name: 'Rules' }))
     screen.getByDisplayValue('Project Agent Rules')
     screen.getByDisplayValue('Use project-specific constraints.')
-    screen.getByText('Project skill')
+    fireEvent.click(screen.getByRole('tab', { name: /Plugins/ }))
     screen.getByText('LaTeX 投稿检查')
-    screen.getByRole('button', { name: 'Choose file' })
-    expect(screen.queryByText('Global Agent Rules')).to.equal(null)
   })
 
   it('saves project rules through the project settings endpoint', async function () {
@@ -69,6 +77,7 @@ describe('<AgentSettingsPanel />', function () {
     await waitForElementToBeRemoved(() =>
       screen.getByText('Loading Agent settings…')
     )
+    fireEvent.click(screen.getByRole('tab', { name: 'Rules' }))
     fireEvent.change(screen.getByLabelText('Rules content'), {
       target: { value: 'Updated rules.' },
     })
@@ -109,6 +118,7 @@ describe('<AgentSettingsPanel />', function () {
     await waitForElementToBeRemoved(() =>
       screen.getByText('Loading Agent settings…')
     )
+    fireEvent.click(screen.getByRole('tab', { name: /Plugins/ }))
     fireEvent.change(screen.getByLabelText('GitHub URL'), {
       target: { value: 'https://github.com/example/agent-plugin/tree/dev' },
     })
@@ -154,7 +164,7 @@ describe('<AgentSettingsPanel />', function () {
 
     await screen.findByText('Skill file recognized')
     screen.getByDisplayValue('Literature Review')
-    expect(screen.getByLabelText('Skill content')).to.have.property(
+    expect(screen.getByLabelText('SKILL.md')).to.have.property(
       'value',
       skillContent
     )
@@ -185,10 +195,107 @@ describe('<AgentSettingsPanel />', function () {
 
     await screen.findByText('Skill file recognized')
     screen.getByDisplayValue('Literature Review')
-    expect(screen.getByLabelText('Skill content')).to.have.property(
+    expect(screen.getByLabelText('SKILL.md')).to.have.property(
       'value',
       skillContent
     )
+  })
+
+  it('imports a SKILL.md file from a GitHub URL', async function () {
+    mockConfig()
+    mockPlugins()
+    fetchMock.post('/project/project123/ai/agent/skills/import-preview', {
+      preview: {
+        source: {
+          type: 'github_file',
+          url: 'https://github.com/example/skills/blob/main/SKILL.md',
+          rawUrl:
+            'https://raw.githubusercontent.com/example/skills/main/SKILL.md',
+          path: 'SKILL.md',
+        },
+        content: `---
+name: literature-review
+description: Review related work.
+---
+
+# Literature Review
+`,
+        metadata: {
+          name: 'literature-review',
+          description: 'Review related work.',
+        },
+        bytes: 82,
+        sha256: 'abc123',
+      },
+    })
+
+    renderWithEditorContext(<AgentSettingsPanel />, {
+      permissionsLevel: 'owner',
+      mockCompileOnLoad: true,
+    })
+
+    await waitForElementToBeRemoved(() =>
+      screen.getByText('Loading Agent settings…')
+    )
+    fireEvent.change(screen.getByLabelText('SKILL.md URL'), {
+      target: {
+        value: 'https://github.com/example/skills/blob/main/SKILL.md',
+      },
+    })
+    fireEvent.submit(
+      screen.getByRole('form', { name: 'Import skill from URL' })
+    )
+
+    await screen.findByText('SKILL.md imported from URL')
+    screen.getByText('Review related work.')
+    expect(screen.getByLabelText('SKILL.md')).to.have.property(
+      'value'
+    ).that.contains('name: literature-review')
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/skills/import-preview'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      sourceType: 'github_file',
+      url: 'https://github.com/example/skills/blob/main/SKILL.md',
+    })
+  })
+
+  it('reads SKILL.md frontmatter without exposing internal fields by default', async function () {
+    mockConfig()
+    mockPlugins()
+
+    renderWithEditorContext(<AgentSettingsPanel />, {
+      permissionsLevel: 'owner',
+      mockCompileOnLoad: true,
+    })
+
+    await waitForElementToBeRemoved(() =>
+      screen.getByText('Loading Agent settings…')
+    )
+    const skillContent = `---
+name: citation-auditor
+description: Check citation coverage before submission.
+---
+
+# Citation Auditor
+
+Review citation coverage.`
+    const file = new File([skillContent], 'SKILL.md', {
+      type: 'text/markdown',
+    })
+    Object.defineProperty(file, 'text', {
+      value: async () => skillContent,
+    })
+    fireEvent.change(screen.getByLabelText('Choose file'), {
+      target: { files: [file] },
+    })
+
+    await screen.findByText('Skill file recognized')
+    screen.getByDisplayValue('Citation Auditor')
+    screen.getByText('Check citation coverage before submission.')
+    screen.getByText('Parsed metadata')
+    fireEvent.click(screen.getByText('Parsed metadata'))
+    screen.getByDisplayValue('citation-auditor')
   })
 
   it('uploads dropped plugin zips and installs the preview', async function () {
@@ -215,6 +322,7 @@ describe('<AgentSettingsPanel />', function () {
     const file = new File(['zip'], 'agent-plugin.zip', {
       type: 'application/zip',
     })
+    fireEvent.click(screen.getByRole('tab', { name: /Plugins/ }))
     fireEvent.drop(screen.getByText('Drop SKILL.md or plugin zip here'), {
       dataTransfer: {
         files: [file],
@@ -256,6 +364,7 @@ describe('<AgentSettingsPanel />', function () {
     screen.getByText(
       "You can view this project's Agent settings, but only project owners can change rules, skills, and plugins."
     )
+    fireEvent.click(screen.getByRole('tab', { name: 'Rules' }))
     expect(screen.getByRole('button', { name: 'Save rules' })).to.have.property(
       'disabled',
       true
