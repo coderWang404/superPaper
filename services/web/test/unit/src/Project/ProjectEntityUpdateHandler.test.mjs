@@ -145,6 +145,10 @@ describe('ProjectEntityUpdateHandler', function () {
         replaceFileWithDoc: sinon.stub(),
       },
     }
+    ctx.ProjectFileStore = {
+      writeTextFile: sinon.stub(),
+      deleteFile: sinon.stub(),
+    }
     ctx.TpdsUpdateSender = {
       promises: {
         addFile: sinon.stub().resolves(),
@@ -238,6 +242,13 @@ describe('ProjectEntityUpdateHandler', function () {
       '../../../../app/src/Features/Project/ProjectEntityMongoUpdateHandler',
       () => ({
         default: ctx.ProjectEntityMongoUpdateHandler,
+      })
+    )
+
+    vi.doMock(
+      '../../../../app/src/Features/Project/ProjectFileStore',
+      () => ({
+        default: ctx.ProjectFileStore,
       })
     )
 
@@ -1452,6 +1463,48 @@ describe('ProjectEntityUpdateHandler', function () {
   })
 
   describe('upsertDocWithPath', function () {
+    describe('for filesystem projects', function () {
+      beforeEach(async function (ctx) {
+        ctx.project.storageBackend = 'filesystem'
+        ctx.ProjectGetter.promises.getProject.resolves(ctx.project)
+        ctx.ProjectFileStore.writeTextFile.resolves({
+          projectPath: '/sections/intro.tex',
+          sha256: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        })
+
+        ctx.result =
+          await ctx.ProjectEntityUpdateHandler.promises.upsertDocWithPath(
+            projectId,
+            '/sections/intro.tex',
+            ['hello', 'world'],
+            ctx.source,
+            userId
+          )
+      })
+
+      it('writes the text file to the workspace', function (ctx) {
+        ctx.ProjectFileStore.writeTextFile.should.have.been.calledWith({
+          projectId,
+          projectPath: '/sections/intro.tex',
+          content: 'hello\nworld',
+        })
+      })
+
+      it('returns a compatibility doc result', function (ctx) {
+        expect(ctx.result.doc).to.include({
+          _id: 'abcdef1234567890abcdef12',
+          name: 'intro.tex',
+          storageBackend: 'filesystem',
+          path: '/sections/intro.tex',
+          sha256:
+            'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        })
+        expect(ctx.result.isNew).to.equal(false)
+        expect(ctx.result.newFolders).to.deep.equal([])
+        expect(ctx.result.folder).to.equal(null)
+      })
+    })
+
     describe('upserting a doc', function () {
       let upsertDocWithPathResult
       beforeEach(async function (ctx) {
@@ -1804,6 +1857,35 @@ describe('ProjectEntityUpdateHandler', function () {
   })
 
   describe('deleteEntityWithPath', function () {
+    describe('for filesystem projects', function () {
+      beforeEach(async function (ctx) {
+        ctx.project.storageBackend = 'filesystem'
+        ctx.ProjectGetter.promises.getProject.resolves(ctx.project)
+        ctx.ProjectFileStore.deleteFile.resolves({
+          projectPath: '/sections/intro.tex',
+        })
+
+        ctx.result =
+          await ctx.ProjectEntityUpdateHandler.promises.deleteEntityWithPath(
+            projectId,
+            '/sections/intro.tex',
+            userId,
+            ctx.source
+          )
+      })
+
+      it('deletes the workspace file by path', function (ctx) {
+        ctx.ProjectFileStore.deleteFile.should.have.been.calledWith({
+          projectId,
+          projectPath: '/sections/intro.tex',
+        })
+      })
+
+      it('returns the deleted path', function (ctx) {
+        expect(ctx.result).to.equal('/sections/intro.tex')
+      })
+    })
+
     describe('when the entity exists', function () {
       beforeEach(async function (ctx) {
         ctx.doc = { _id: docId }

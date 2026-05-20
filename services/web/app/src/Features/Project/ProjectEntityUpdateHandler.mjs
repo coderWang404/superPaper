@@ -12,6 +12,7 @@ import FileStoreHandler from '../FileStore/FileStoreHandler.mjs'
 import LockManager from '../../infrastructure/LockManager.mjs'
 import { Project } from '../../models/Project.mjs'
 import ProjectEntityHandler from './ProjectEntityHandler.mjs'
+import ProjectFileStore from './ProjectFileStore.mjs'
 import ProjectGetter from './ProjectGetter.mjs'
 import ProjectLocator from './ProjectLocator.mjs'
 import ProjectOptionsHandler from './ProjectOptionsHandler.mjs'
@@ -230,6 +231,13 @@ async function unsetRootDoc(projectId) {
     { _id: projectId },
     { $unset: { rootDoc_id: true } }
   ).exec()
+}
+
+async function isFilesystemProject(projectId) {
+  const project = await ProjectGetter.promises.getProject(projectId, {
+    storageBackend: 1,
+  })
+  return project?.storageBackend === 'filesystem'
 }
 
 async function addDoc(projectId, folderId, docName, docLines, userId, source) {
@@ -682,6 +690,28 @@ const upsertDocWithPath = wrapWithLock(
     if (!SafePath.isCleanPath(elementPath)) {
       throw new Errors.InvalidNameError('invalid element name')
     }
+    if (await isFilesystemProject(projectId)) {
+      const projectPath = elementPath.startsWith('/')
+        ? elementPath
+        : `/${elementPath}`
+      const write = await ProjectFileStore.writeTextFile({
+        projectId,
+        projectPath,
+        content: docLines.join('\n'),
+      })
+      return {
+        doc: {
+          _id: write.sha256.slice(0, 24),
+          name: Path.basename(projectPath),
+          storageBackend: 'filesystem',
+          path: projectPath,
+          sha256: write.sha256,
+        },
+        isNew: false,
+        newFolders: [],
+        folder: null,
+      }
+    }
     const docName = Path.basename(elementPath)
     const folderPath = Path.dirname(elementPath)
     const { newFolders, folder } =
@@ -833,6 +863,14 @@ const deleteEntity = wrapWithLock(
 
 const deleteEntityWithPath = wrapWithLock(
   async (projectId, path, userId, source) => {
+    if (await isFilesystemProject(projectId)) {
+      const projectPath = path.startsWith('/') ? path : `/${path}`
+      await ProjectFileStore.deleteFile({
+        projectId,
+        projectPath,
+      })
+      return projectPath
+    }
     const { element, type } = await ProjectLocator.promises.findElementByPath({
       project_id: projectId,
       path,
