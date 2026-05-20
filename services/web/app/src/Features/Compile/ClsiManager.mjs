@@ -741,6 +741,7 @@ async function _buildRequest(projectId, userId, options) {
     compiler: 1,
     imageName: 1,
     'superpaper.history.id': 1,
+    storageBackend: 1,
     ...(options.compileFromHistory ? {} : { rootDoc_id: 1, rootFolder: 1 }),
   })
   if (project == null) {
@@ -797,6 +798,13 @@ async function _buildRequest(projectId, userId, options) {
         compileFromHistory: false,
       })
     }
+  }
+
+  if (project.storageBackend === 'filesystem') {
+    const timer = new Metrics.Timer('editor.compile-getdocs-filesystem')
+    const { docs, files } = await _getContentFromWorkspace(projectId)
+    timer.done()
+    return _finaliseRequest(projectId, options, project, docs, files)
   }
 
   if (options.incrementalCompilesEnabled || options.syncType != null) {
@@ -1063,6 +1071,12 @@ async function _getContentFromMongo(projectId) {
   return { docs, files }
 }
 
+async function _getContentFromWorkspace(projectId) {
+  const docs = await ProjectEntityHandler.promises.getAllDocs(projectId)
+  const files = await ProjectEntityHandler.promises.getAllFiles(projectId)
+  return { docs, files }
+}
+
 function _finaliseRequest(projectId, options, project, docs, files) {
   const resources = []
   let flags
@@ -1123,11 +1137,20 @@ function _finaliseRequest(projectId, options, project, docs, files) {
   for (let path in files) {
     const file = files[path]
     path = path.replace(/^\//, '') // Remove leading /
-    resources.push({
-      path,
-      url: HistoryManager.getFilestoreBlobURL(historyId, file.hash),
-      modified: file.created?.getTime(),
-    })
+    if (file.storageBackend === 'filesystem') {
+      resources.push({
+        path,
+        content: file.contentBase64,
+        contentEncoding: 'base64',
+        modified: file.modified?.getTime?.(),
+      })
+    } else {
+      resources.push({
+        path,
+        url: HistoryManager.getFilestoreBlobURL(historyId, file.hash),
+        modified: file.created?.getTime(),
+      })
+    }
   }
 
   if (options.fileLineErrors) {

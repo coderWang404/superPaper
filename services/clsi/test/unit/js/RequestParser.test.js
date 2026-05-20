@@ -417,6 +417,41 @@ describe('RequestParser', () => {
     })
   })
 
+  describe('with a base64 content resource', () => {
+    beforeEach(async ctx => {
+      await new Promise((resolve, reject) => {
+        ctx.validResource.content = Buffer.from([1, 2, 3]).toString('base64')
+        ctx.validResource.contentEncoding = 'base64'
+        ctx.validRequest.compile.resources.push(ctx.validResource)
+        ctx.RequestParser.parse(ctx.validRequest, (error, data) => {
+          if (error) return reject(error)
+          ctx.data = data
+          resolve()
+        })
+      })
+    })
+
+    it('should return the content encoding in the parsed response', ctx => {
+      ctx.data.resources[0].contentEncoding.should.equal('base64')
+    })
+  })
+
+  describe('with an unsupported content encoding', () => {
+    beforeEach(ctx => {
+      ctx.validResource.contentEncoding = 'gzip'
+      ctx.validRequest.compile.resources.push(ctx.validResource)
+      ctx.RequestParser.parse(ctx.validRequest, ctx.callback)
+    })
+
+    it('should return an error', ctx => {
+      ctx.callback
+        .calledWithMatch({
+          message: 'contentEncoding attribute should be one of: base64',
+        })
+        .should.equal(true)
+    })
+  })
+
   describe('without a root resource path', () => {
     beforeEach(ctx => {
       delete ctx.validRequest.compile.rootResourcePath

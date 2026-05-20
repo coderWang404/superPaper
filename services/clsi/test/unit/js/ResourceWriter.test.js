@@ -464,6 +464,36 @@ describe('ResourceWriter', () => {
       })
     })
 
+    describe('with a base64 content resource', () => {
+      beforeEach(ctx => {
+        ctx.bytes = Buffer.from([0, 1, 2, 255])
+        ctx.resource = {
+          path: 'figures/plot.pdf',
+          content: ctx.bytes.toString('base64'),
+          contentEncoding: 'base64',
+        }
+        ctx.fs.writeFile = sinon.stub().callsArg(2)
+        ctx.fs.mkdir = sinon.stub().callsArg(2)
+        return ctx.ResourceWriter._writeResourceToDisk(
+          ctx.project_id,
+          ctx.resource,
+          ctx.basePath,
+          ctx.callback
+        )
+      })
+
+      it('should write decoded bytes to disk', ctx => {
+        return ctx.fs.writeFile
+          .calledWith(
+            path.join(ctx.basePath, ctx.resource.path),
+            sinon.match(
+              value => Buffer.isBuffer(value) && value.equals(ctx.bytes)
+            )
+          )
+          .should.equal(true)
+      })
+    })
+
     return describe('with a file path that breaks out of the root folder', () => {
       beforeEach(ctx => {
         ctx.resource = {

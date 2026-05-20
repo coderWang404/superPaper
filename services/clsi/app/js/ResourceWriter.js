@@ -360,7 +360,11 @@ export default ResourceWriter = {
                 }
               ) // try and continue compiling even if http resource can not be downloaded at this time
             } else {
-              fs.writeFile(path, resource.content, callback)
+              const content =
+                resource.contentEncoding === 'base64'
+                  ? Buffer.from(resource.content, 'base64')
+                  : resource.content
+              fs.writeFile(path, content, callback)
             }
           }
         )

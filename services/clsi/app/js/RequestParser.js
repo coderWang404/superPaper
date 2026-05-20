@@ -206,6 +206,14 @@ function _parseResource(resource) {
   if (resource.path == null || typeof resource.path !== 'string') {
     throw new Error('all resources should have a path attribute')
   }
+  const contentEncoding = _parseAttribute(
+    'contentEncoding',
+    resource.contentEncoding,
+    {
+      validValues: ['base64'],
+      type: 'string',
+    }
+  )
 
   if (resource.modified != null) {
     modified = new Date(resource.modified)
@@ -237,6 +245,7 @@ function _parseResource(resource) {
     url: resource.url,
     fallbackURL: resource.fallbackURL,
     content: resource.content,
+    contentEncoding,
   }
 }
 

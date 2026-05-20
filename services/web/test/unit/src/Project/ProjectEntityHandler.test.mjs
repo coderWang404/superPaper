@@ -528,6 +528,12 @@ describe('ProjectEntityHandler', function () {
           content: projectPath === '/main.tex' ? 'hello\nworld' : 'intro',
           sha256: `${projectPath}-sha`,
         })),
+        readFileBuffer: sinon.stub().callsFake(async ({ projectPath }) => ({
+          projectPath,
+          content: Buffer.from([1, 2, 3, 4]),
+          bytes: 4,
+          sha256: `${projectPath}-binary-sha`,
+        })),
       }
       vi.doMock(
         '../../../../app/src/Features/Project/ProjectFileStore.mjs',
@@ -557,6 +563,23 @@ describe('ProjectEntityHandler', function () {
 
       expect(Object.keys(files)).to.deep.equal(['/figures/plot.pdf'])
       expect(files['/figures/plot.pdf'].name).to.equal('plot.pdf')
+    })
+
+    it('gets filesystem binary files with base64 content', async function (ctx) {
+      const files = await ctx.ProjectEntityHandler.promises.getAllFiles(
+        projectId
+      )
+
+      expect(files['/figures/plot.pdf']).to.include({
+        storageBackend: 'filesystem',
+        bytes: 4,
+        sha256: '/figures/plot.pdf-binary-sha',
+        contentBase64: Buffer.from([1, 2, 3, 4]).toString('base64'),
+      })
+      expect(ctx.ProjectFileStore.readFileBuffer).to.have.been.calledWith({
+        projectId,
+        projectPath: '/figures/plot.pdf',
+      })
     })
 
     it('builds a rootFolder compatibility tree from workspace files', function (ctx) {

@@ -44,6 +44,30 @@ describe('ProjectFileStore', function () {
     expect(file.sha256).to.match(/^[a-f0-9]{64}$/)
   })
 
+  it('reads a binary file as a buffer with metadata', async function (ctx) {
+    const absolutePath = path.join(
+      ctx.tmpRoot,
+      'project-1',
+      'workspace',
+      'figures',
+      'plot.pdf'
+    )
+    const bytes = Buffer.from([0, 1, 2, 255])
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true })
+    await fs.writeFile(absolutePath, bytes)
+
+    const file = await ctx.ProjectFileStore.readFileBuffer({
+      projectId: 'project-1',
+      projectPath: '/figures/plot.pdf',
+    })
+
+    expect(file.projectPath).to.equal('/figures/plot.pdf')
+    expect(Buffer.isBuffer(file.content)).to.equal(true)
+    expect(file.content).to.deep.equal(bytes)
+    expect(file.bytes).to.equal(4)
+    expect(file.sha256).to.match(/^[a-f0-9]{64}$/)
+  })
+
   it('lists visible files and hides internal directories', async function (ctx) {
     await ctx.ProjectFileStore.writeTextFile({
       projectId: 'project-1',

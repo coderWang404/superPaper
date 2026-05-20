@@ -373,6 +373,7 @@ describe('ClsiManager', function () {
             rootDoc_id: 1,
             imageName: 1,
             rootFolder: 1,
+            storageBackend: 1,
             'superpaper.history.id': 1,
           }
         )
@@ -523,6 +524,7 @@ describe('ClsiManager', function () {
             rootDoc_id: 1,
             imageName: 1,
             rootFolder: 1,
+            storageBackend: 1,
             'superpaper.history.id': 1,
           }
         )
@@ -659,6 +661,7 @@ describe('ClsiManager', function () {
             rootDoc_id: 1,
             imageName: 1,
             rootFolder: 1,
+            storageBackend: 1,
             'superpaper.history.id': 1,
           }
         )
@@ -732,6 +735,89 @@ describe('ClsiManager', function () {
             },
             signal: sinon.match.instanceOf(AbortSignal),
           }
+        )
+      })
+    })
+
+    describe('with a filesystem-backed project', function () {
+      beforeEach(async function (ctx) {
+        ctx.project.storageBackend = 'filesystem'
+        ctx.docs = {
+          '/main.tex': {
+            name: 'main.tex',
+            _id: 'fs-main-doc-id',
+            lines: ['\\includegraphics{figures/plot.pdf}'],
+          },
+        }
+        ctx.files = {
+          '/figures/plot.pdf': {
+            name: 'plot.pdf',
+            _id: 'fs-file-id',
+            storageBackend: 'filesystem',
+            contentBase64: Buffer.from([1, 2, 3, 4]).toString('base64'),
+            bytes: 4,
+            sha256: 'plot-sha',
+          },
+        }
+        ctx.ProjectEntityHandler.promises.getAllDocs.resolves(ctx.docs)
+        ctx.ProjectEntityHandler.promises.getAllFiles.resolves(ctx.files)
+
+        await ctx.ClsiManager.promises.sendRequest(
+          ctx.project._id,
+          ctx.user_id,
+          {
+            compileBackendClass: 'c3d',
+            compileGroup: 'standard',
+            incrementalCompilesEnabled: true,
+          }
+        )
+      })
+
+      it('gets the project storage backend with compile fields', function (ctx) {
+        ctx.ProjectGetter.promises.getProject.should.have.been.calledWith(
+          ctx.project._id,
+          {
+            compiler: 1,
+            rootDoc_id: 1,
+            imageName: 1,
+            rootFolder: 1,
+            storageBackend: 1,
+            'superpaper.history.id': 1,
+          }
+        )
+      })
+
+      it('does not read from the doc updater', function (ctx) {
+        expect(
+          ctx.DocumentUpdaterHandler.promises.getProjectDocsIfMatch
+        ).not.to.have.been.called
+        expect(
+          ctx.DocumentUpdaterHandler.promises.flushProjectToMongo
+        ).not.to.have.been.called
+      })
+
+      it('sends workspace docs and binary files to CLSI', function (ctx) {
+        expect(ctx.FetchUtils.fetchStringWithResponse).to.have.been.calledWith(
+          sinon.match.any,
+          sinon.match({
+            json: {
+              compile: {
+                rootResourcePath: 'main.tex',
+                resources: [
+                  {
+                    path: 'main.tex',
+                    content: '\\includegraphics{figures/plot.pdf}',
+                  },
+                  {
+                    path: 'figures/plot.pdf',
+                    content: Buffer.from([1, 2, 3, 4]).toString('base64'),
+                    contentEncoding: 'base64',
+                    modified: undefined,
+                  },
+                ],
+              },
+            },
+          })
         )
       })
     })

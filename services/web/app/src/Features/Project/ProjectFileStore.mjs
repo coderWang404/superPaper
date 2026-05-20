@@ -53,6 +53,32 @@ async function readTextFile({ projectId, projectPath }) {
   }
 }
 
+async function readFileBuffer({ projectId, projectPath }) {
+  const resolved = await ProjectWorkspaceManager.resolveProjectPath({
+    projectId,
+    projectPath,
+  })
+  let content
+  try {
+    content = await fs.readFile(resolved.absolutePath)
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw new ProjectFileStoreError(
+        'PROJECT_FILE_NOT_FOUND',
+        'Project file not found'
+      )
+    }
+    throw err
+  }
+  return {
+    projectPath: resolved.projectPath,
+    absolutePath: resolved.absolutePath,
+    content,
+    bytes: content.length,
+    sha256: sha256(content),
+  }
+}
+
 async function writeTextFile({ projectId, projectPath, content }) {
   assertTextPath(projectPath)
   await ensureWorkspace(projectId)
@@ -167,6 +193,7 @@ function sha256(content) {
 
 export default {
   readTextFile,
+  readFileBuffer,
   writeTextFile,
   listFiles,
   renameFile,

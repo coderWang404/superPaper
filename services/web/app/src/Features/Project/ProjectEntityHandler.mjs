@@ -292,11 +292,17 @@ async function getAllFilesystemFiles(projectId) {
   const files = {}
   for (const entry of entries.filter(entry => entry.type === 'file')) {
     const file = createFilesystemFile(entry.projectPath)
+    const content = await ProjectFileStore.readFileBuffer({
+      projectId,
+      projectPath: entry.projectPath,
+    })
     files[entry.projectPath] = {
       ...file,
       folder: null,
       storageBackend: 'filesystem',
-      bytes: entry.bytes,
+      bytes: content.bytes,
+      contentBase64: content.content.toString('base64'),
+      sha256: content.sha256,
     }
   }
   return files
