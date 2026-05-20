@@ -74,6 +74,17 @@ export const ProjectSchema = new Schema(
     tokenAccessReadAndWrite_refs: [{ type: ObjectId, ref: 'User' }],
     fromV1TemplateId: { type: Number },
     fromV1TemplateVersionId: { type: Number },
+    storageBackend: {
+      type: String,
+      enum: ['mongo', 'filesystem'],
+      default: 'mongo',
+      index: true,
+    },
+    workspace: {
+      rootPath: { type: String, default: null },
+      migratedAt: { type: Date, default: null },
+      finalizedAt: { type: Date, default: null },
+    },
     superpaper: {
       id: { type: Number },
       imported_at_ver_id: { type: Number },
