@@ -171,4 +171,5 @@ export default {
   listFiles,
   renameFile,
   deleteFile,
+  isTextProjectPath,
 }

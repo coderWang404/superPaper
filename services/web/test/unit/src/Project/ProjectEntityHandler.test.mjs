@@ -490,4 +490,108 @@ describe('ProjectEntityHandler', function () {
       expect(result.ranges).to.equal(ctx.ranges)
     })
   })
+
+  describe('filesystem-backed projects', function () {
+    beforeEach(async function (ctx) {
+      vi.resetModules()
+      ctx.project.rootFolder = [
+        {
+          _id: 'root-folder-id',
+          name: 'rootFolder',
+          docs: [],
+          fileRefs: [],
+          folders: [],
+        },
+      ]
+      ctx.project.storageBackend = 'filesystem'
+      ctx.ProjectGetter.promises.getProject = sinon.stub().resolves(ctx.project)
+      ctx.ProjectFileStore = {
+        listFiles: sinon.stub().resolves([
+          {
+            projectPath: '/main.tex',
+            type: 'doc',
+            bytes: 11,
+          },
+          {
+            projectPath: '/sections/intro.tex',
+            type: 'doc',
+            bytes: 5,
+          },
+          {
+            projectPath: '/figures/plot.pdf',
+            type: 'file',
+            bytes: 4,
+          },
+        ]),
+        readTextFile: sinon.stub().callsFake(async ({ projectPath }) => ({
+          projectPath,
+          content: projectPath === '/main.tex' ? 'hello\nworld' : 'intro',
+          sha256: `${projectPath}-sha`,
+        })),
+      }
+      vi.doMock(
+        '../../../../app/src/Features/Project/ProjectFileStore.mjs',
+        () => ({
+          default: ctx.ProjectFileStore,
+        })
+      )
+      ctx.ProjectEntityHandler = (await import(modulePath)).default
+    })
+
+    it('gets all docs from workspace files', async function (ctx) {
+      const docs = await ctx.ProjectEntityHandler.promises.getAllDocs(projectId)
+
+      expect(docs['/main.tex'].lines).to.deep.equal(['hello', 'world'])
+      expect(docs['/main.tex'].rev).to.equal(0)
+      expect(docs['/sections/intro.tex'].lines).to.deep.equal(['intro'])
+      expect(Object.keys(docs)).to.deep.equal([
+        '/main.tex',
+        '/sections/intro.tex',
+      ])
+    })
+
+    it('gets all files from workspace files', async function (ctx) {
+      const files = await ctx.ProjectEntityHandler.promises.getAllFiles(
+        projectId
+      )
+
+      expect(Object.keys(files)).to.deep.equal(['/figures/plot.pdf'])
+      expect(files['/figures/plot.pdf'].name).to.equal('plot.pdf')
+    })
+
+    it('builds a rootFolder compatibility tree from workspace files', function (ctx) {
+      const rootFolder = ctx.ProjectEntityHandler.buildFilesystemRootFolder([
+        {
+          projectPath: '/main.tex',
+          type: 'doc',
+        },
+        {
+          projectPath: '/sections/intro.tex',
+          type: 'doc',
+        },
+        {
+          projectPath: '/figures/plot.pdf',
+          type: 'file',
+        },
+      ])
+
+      expect(rootFolder.docs.map(doc => doc.name)).to.deep.equal(['main.tex'])
+      expect(rootFolder.folders.map(folder => folder.name)).to.deep.equal([
+        'sections',
+        'figures',
+      ])
+    })
+
+    it('gets doc paths by generated doc id', async function (ctx) {
+      const paths =
+        await ctx.ProjectEntityHandler.promises.getAllDocPathsFromProjectById(
+          projectId
+        )
+
+      expect(Object.values(paths)).to.deep.equal([
+        '/main.tex',
+        '/sections/intro.tex',
+      ])
+    })
+  })
 })
