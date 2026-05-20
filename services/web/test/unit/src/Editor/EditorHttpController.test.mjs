@@ -137,6 +137,9 @@ describe('EditorHttpController', function () {
     ctx.ProjectEditorHandler = {
       buildProjectModelView: sinon.stub().returns(ctx.projectView),
     }
+    ctx.ProjectWorkspaceWatcher = {
+      start: sinon.stub().resolves(),
+    }
     ctx.TokenAccessHandler = {
       getRequestToken: sinon.stub().returns(ctx.token),
     }
@@ -186,6 +189,12 @@ describe('EditorHttpController', function () {
       '../../../../app/src/Features/Project/ProjectEditorHandler.mjs',
       () => ({
         default: ctx.ProjectEditorHandler,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/Project/ProjectWorkspaceWatcher.mjs',
+      () => ({
+        default: ctx.ProjectWorkspaceWatcher,
       })
     )
     vi.doMock(
@@ -452,6 +461,23 @@ describe('EditorHttpController', function () {
           isTokenMember: true,
           isInvitedMember: false,
         })
+      })
+    })
+
+    describe('with a filesystem project', function () {
+      beforeEach(async function (ctx) {
+        ctx.project.storageBackend = 'filesystem'
+        ctx.projectView.storageBackend = 'filesystem'
+        await new Promise(resolve => {
+          ctx.res.callback = resolve
+          ctx.EditorHttpController.joinProject(ctx.req, ctx.res)
+        })
+      })
+
+      it('starts the workspace watcher', function (ctx) {
+        expect(ctx.ProjectWorkspaceWatcher.start).to.have.been.calledWith(
+          ctx.project._id.toString()
+        )
       })
     })
 

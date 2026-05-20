@@ -8,7 +8,9 @@ import { useProjectContext } from '@/shared/context/project-context'
 import { useConnectionContext } from '@/features/ide-react/context/connection-context'
 import { useIdeReactContext } from '@/features/ide-react/context/ide-react-context'
 import { useModalsContext } from '@/features/ide-react/context/modals-context'
+import { postJSON } from '@/infrastructure/fetch-json'
 import { debugConsole } from '@/utils/debugging'
+import getMeta from '@/utils/meta'
 import { useCallback } from 'react'
 import { PublicAccessLevel } from '../../../../../types/public-access-level'
 import { useLocation } from '@/shared/hooks/use-location'
@@ -103,6 +105,30 @@ function useSocketListeners() {
       },
       [projectId, updateProject, permissionsLevel]
     )
+  )
+
+  useSocketListener(
+    socket,
+    'project:filesystem:changed',
+    useCallback(() => {
+      const userId = getMeta('ol-anonymous')
+        ? 'anonymous-user'
+        : getMeta('ol-user_id')
+      postJSON(`/project/${projectId}/join`, {
+        body: {
+          userId,
+        },
+      })
+        .then(({ project }: any) => {
+          updateProject({ rootFolder: project.rootFolder })
+        })
+        .catch(err => {
+          debugConsole.error(
+            'Error refreshing project after filesystem change',
+            err
+          )
+        })
+    }, [projectId, updateProject])
   )
 
   useSocketListener(

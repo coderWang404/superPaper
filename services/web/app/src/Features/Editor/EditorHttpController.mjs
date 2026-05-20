@@ -3,6 +3,7 @@ import EditorController from './EditorController.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import AuthorizationManager from '../Authorization/AuthorizationManager.mjs'
 import ProjectEditorHandler from '../Project/ProjectEditorHandler.mjs'
+import ProjectWorkspaceWatcher from '../Project/ProjectWorkspaceWatcher.mjs'
 import Metrics from '@superpaper/metrics'
 import CollaboratorsInviteGetter from '../Collaborators/CollaboratorsInviteGetter.mjs'
 import PrivilegeLevels from '../Authorization/PrivilegeLevels.mjs'
@@ -66,6 +67,9 @@ async function joinProject(req, res, next) {
       project.spellCheckLanguage
     )
   }
+  if (project.storageBackend === 'filesystem') {
+    await ProjectWorkspaceWatcher.start(projectId.toString())
+  }
 
   res.json({
     project,
@@ -112,7 +116,7 @@ async function _buildJoinProjectView(req, projectId, userId) {
     invites = await CollaboratorsInviteGetter.promises.getAllInvites(projectId)
   }
   return {
-    project: ProjectEditorHandler.buildProjectModelView(
+    project: await ProjectEditorHandler.buildProjectModelView(
       project,
       ownerMember,
       members,

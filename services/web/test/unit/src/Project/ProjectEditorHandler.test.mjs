@@ -1,5 +1,6 @@
 import _ from 'lodash'
-import { expect } from 'vitest'
+import sinon from 'sinon'
+import { expect, vi } from 'vitest'
 
 const modulePath = '../../../../app/src/Features/Project/ProjectEditorHandler'
 
@@ -96,8 +97,8 @@ describe('ProjectEditorHandler', function () {
 
   describe('buildProjectModelView', function () {
     describe('with owner, members and invites included', function () {
-      beforeEach(function (ctx) {
-        ctx.result = ctx.handler.buildProjectModelView(
+      beforeEach(async function (ctx) {
+        ctx.result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
           ctx.members,
@@ -218,8 +219,8 @@ describe('ProjectEditorHandler', function () {
     })
 
     describe('with a restricted user', function () {
-      beforeEach(function (ctx) {
-        ctx.result = ctx.handler.buildProjectModelView(
+      beforeEach(async function (ctx) {
+        ctx.result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
           [],
@@ -301,9 +302,9 @@ describe('ProjectEditorHandler', function () {
     })
 
     describe('deletedByExternalDataSource', function () {
-      it('should set the deletedByExternalDataSource flag to false when it is not there', function (ctx) {
+      it('should set the deletedByExternalDataSource flag to false when it is not there', async function (ctx) {
         delete ctx.project.deletedByExternalDataSource
-        const result = ctx.handler.buildProjectModelView(
+        const result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
           ctx.members,
@@ -313,8 +314,8 @@ describe('ProjectEditorHandler', function () {
         result.deletedByExternalDataSource.should.equal(false)
       })
 
-      it('should set the deletedByExternalDataSource flag to false when it is false', function (ctx) {
-        const result = ctx.handler.buildProjectModelView(
+      it('should set the deletedByExternalDataSource flag to false when it is false', async function (ctx) {
+        const result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
           ctx.members,
@@ -324,9 +325,9 @@ describe('ProjectEditorHandler', function () {
         result.deletedByExternalDataSource.should.equal(false)
       })
 
-      it('should set the deletedByExternalDataSource flag to true when it is true', function (ctx) {
+      it('should set the deletedByExternalDataSource flag to true when it is true', async function (ctx) {
         ctx.project.deletedByExternalDataSource = true
-        const result = ctx.handler.buildProjectModelView(
+        const result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
           ctx.members,
@@ -338,14 +339,14 @@ describe('ProjectEditorHandler', function () {
     })
 
     describe('features', function () {
-      beforeEach(function (ctx) {
+      beforeEach(async function (ctx) {
         ctx.owner.features = {
           versioning: true,
           collaborators: 3,
           compileGroup: 'priority',
           compileTimeout: 96,
         }
-        ctx.result = ctx.handler.buildProjectModelView(
+        ctx.result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
           ctx.members,
@@ -370,5 +371,67 @@ describe('ProjectEditorHandler', function () {
       })
     })
 
+    describe('with a filesystem project', function () {
+      beforeEach(async function (ctx) {
+        vi.resetModules()
+        ctx.ProjectEntityHandler = {
+          buildFilesystemRootFolder: sinon.stub().returns({
+            _id: 'workspace-root-id',
+            name: 'rootFolder',
+            docs: [{ _id: 'doc-id', name: 'main.tex' }],
+            fileRefs: [],
+            folders: [],
+          }),
+        }
+        ctx.ProjectFileStore = {
+          listFiles: sinon.stub().resolves([
+            { projectPath: '/main.tex', type: 'doc', bytes: 4 },
+          ]),
+        }
+        vi.doMock(
+          '../../../../app/src/Features/Project/ProjectEntityHandler.mjs',
+          () => ({
+            default: ctx.ProjectEntityHandler,
+          })
+        )
+        vi.doMock(
+          '../../../../app/src/Features/Project/ProjectFileStore.mjs',
+          () => ({
+            default: ctx.ProjectFileStore,
+          })
+        )
+        ctx.handler = (await import(modulePath)).default
+        ctx.project.storageBackend = 'filesystem'
+        ctx.result = await ctx.handler.buildProjectModelView(
+          ctx.project,
+          ctx.ownerMember,
+          ctx.members,
+          ctx.invites,
+          false
+        )
+      })
+
+      afterEach(function () {
+        vi.doUnmock(
+          '../../../../app/src/Features/Project/ProjectEntityHandler.mjs'
+        )
+        vi.doUnmock(
+          '../../../../app/src/Features/Project/ProjectFileStore.mjs'
+        )
+        vi.resetModules()
+      })
+
+      it('builds rootFolder from workspace files', function (ctx) {
+        expect(ctx.ProjectFileStore.listFiles).to.have.been.calledWith({
+          projectId: ctx.project._id,
+        })
+        expect(
+          ctx.ProjectEntityHandler.buildFilesystemRootFolder
+        ).to.have.been.calledWith([
+          { projectPath: '/main.tex', type: 'doc', bytes: 4 },
+        ])
+        expect(ctx.result.rootFolder[0].docs[0].name).to.equal('main.tex')
+      })
+    })
   })
 })

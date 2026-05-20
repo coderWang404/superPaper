@@ -3,19 +3,25 @@ import Path from 'node:path'
 let ProjectEditorHandler
 
 export default ProjectEditorHandler = {
-  buildProjectModelView(
+  async buildProjectModelView(
     project,
     ownerMember,
     members,
     invites,
     isRestrictedUser
   ) {
+    let rootFolder = project.rootFolder[0]
+    if (project.storageBackend === 'filesystem') {
+      rootFolder = await buildFilesystemRootFolder(project._id)
+    }
+
     const result = {
       _id: project._id,
       name: project.name,
       rootDoc_id: project.rootDoc_id,
       mainBibliographyDoc_id: project.mainBibliographyDoc_id,
-      rootFolder: [this.buildFolderModelView(project.rootFolder[0])],
+      rootFolder: [this.buildFolderModelView(rootFolder)],
+      storageBackend: project.storageBackend,
       publicAccesLevel: project.publicAccesLevel,
       dropboxEnabled: !!project.existsInDropbox,
       compiler: project.compiler,
@@ -108,4 +114,14 @@ export default ProjectEditorHandler = {
     }
     return invites.map(invite => _.pick(invite, ['_id', 'email', 'privileges']))
   },
+}
+
+async function buildFilesystemRootFolder(projectId) {
+  const [{ default: ProjectFileStore }, { default: ProjectEntityHandler }] =
+    await Promise.all([
+      import('./ProjectFileStore.mjs'),
+      import('./ProjectEntityHandler.mjs'),
+    ])
+  const entries = await ProjectFileStore.listFiles({ projectId })
+  return ProjectEntityHandler.buildFilesystemRootFolder(entries)
 }
