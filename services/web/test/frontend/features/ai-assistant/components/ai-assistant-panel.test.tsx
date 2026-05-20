@@ -275,7 +275,11 @@ describe('<AiAssistantPanel />', function () {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
 
+    await screen.findByText('Work log')
     await screen.findByText('Tool call: project.read_file')
+    screen.getByText('project.read_file')
+    screen.getByText('1 event')
+    await screen.findByText('Result')
     await screen.findByText('Agent answer')
 
     const createCall = fetchMock.callHistory.calls(
@@ -388,6 +392,7 @@ describe('<AiAssistantPanel />', function () {
 
     await screen.findByText('Patch review')
     screen.getByText('Update wording')
+    fireEvent.click(screen.getByText('Review diff'))
     screen.getByText('/main.tex')
     screen.getByText('-Old sentence.')
     screen.getByText('+New sentence.')

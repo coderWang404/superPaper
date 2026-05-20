@@ -19,12 +19,14 @@
 .ai-assistant-workbench-bar,
 .ai-assistant-provider-card,
 .ai-assistant-agent-controls,
+.ai-assistant-agent-result,
+.ai-assistant-agent-events,
+.ai-assistant-agent-patch-card,
 .ai-assistant-answer,
 .ai-assistant-empty,
 .ai-assistant-error,
 .ai-assistant-welcome,
 .ai-assistant-message,
-.ai-assistant-agent-event,
 .ai-assistant-composer {
   border: 1px solid var(--border-divider-themed);
   border-radius: 6px;
@@ -179,14 +181,113 @@
   align-self: flex-start;
 }
 
-.ai-assistant-agent-events {
+.ai-assistant-agent-stack {
+  display: grid;
+  gap: var(--spacing-03);
+  width: 100%;
+}
+
+.ai-assistant-agent-result {
   display: grid;
   gap: var(--spacing-02);
+  padding: var(--spacing-03);
+}
+
+.ai-assistant-agent-events {
+  overflow: hidden;
+}
+
+.ai-assistant-agent-events-summary,
+.ai-assistant-agent-event-summary,
+.ai-assistant-agent-patch-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--spacing-02);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  .material-symbols {
+    color: var(--content-secondary-themed);
+    font-size: 18px;
+    transition: transform 0.15s ease;
+  }
+}
+
+.ai-assistant-agent-events[open] > .ai-assistant-agent-events-summary,
+.ai-assistant-agent-event[open] > .ai-assistant-agent-event-summary,
+.ai-assistant-agent-patch-details[open]
+  > .ai-assistant-agent-patch-summary {
+  .material-symbols {
+    transform: rotate(180deg);
+  }
+}
+
+.ai-assistant-agent-events-summary {
+  padding: var(--spacing-02);
+  color: var(--content-primary-themed);
+  font-size: var(--font-size-02);
+  font-weight: 700;
+}
+
+.ai-assistant-agent-events-count {
+  justify-self: end;
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-01);
+  font-weight: 400;
+}
+
+.ai-assistant-agent-events-body {
+  display: grid;
+  gap: 1px;
+  border-top: 1px solid var(--border-divider-themed);
+  background-color: var(--border-divider-themed);
 }
 
 .ai-assistant-agent-event {
+  background-color: var(--bg-primary-themed);
+}
+
+.ai-assistant-agent-event-summary {
+  grid-template-columns: minmax(88px, auto) minmax(0, 1fr) auto;
+  min-height: 34px;
+  padding: var(--spacing-02);
+
+  &.static {
+    grid-template-columns: minmax(88px, auto) minmax(0, 1fr);
+    border-bottom: 1px solid var(--border-divider-themed);
+    cursor: default;
+    user-select: text;
+  }
+}
+
+.ai-assistant-agent-event-title {
+  min-width: 0;
+  color: var(--content-primary-themed);
+  font-size: var(--font-size-01);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ai-assistant-agent-event-snippet {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--content-secondary-themed);
+  font-size: var(--font-size-01);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-assistant-agent-event-body {
   display: grid;
   gap: var(--spacing-02);
+  border-top: 1px solid var(--border-divider-themed);
+  background-color: var(--bg-secondary-themed);
   padding: var(--spacing-02);
 }
 
@@ -340,6 +441,7 @@
 .ai-assistant-agent-patch {
   display: grid;
   gap: var(--spacing-02);
+  padding: var(--spacing-02);
 }
 
 .ai-assistant-agent-patch-header,
@@ -390,6 +492,28 @@
 .ai-assistant-agent-patch-file {
   display: grid;
   gap: var(--spacing-01);
+}
+
+.ai-assistant-agent-patch-details {
+  overflow: hidden;
+  border: 1px solid var(--border-divider-themed);
+  border-radius: 5px;
+  background-color: var(--bg-primary-themed);
+}
+
+.ai-assistant-agent-patch-summary {
+  min-height: 32px;
+  padding: var(--spacing-02);
+  color: var(--content-primary-themed);
+  font-size: var(--font-size-01);
+  font-weight: 700;
+}
+
+.ai-assistant-agent-patch-body {
+  display: grid;
+  gap: var(--spacing-02);
+  border-top: 1px solid var(--border-divider-themed);
+  padding: var(--spacing-02);
 }
 
 .ai-assistant-agent-patch-path {
