@@ -75,6 +75,25 @@ describe('AiAgentRuntime', function () {
         canUserWriteProjectContent: sinon.stub().resolves(true),
       },
     }
+    ctx.ProjectGetter = {
+      promises: {
+        getProject: sinon.stub().resolves({
+          _id: 'project-id',
+          storageBackend: 'mongo',
+        }),
+      },
+    }
+    ctx.ClineAgentRuntimeAdapter = {
+      runTurn: sinon.stub().callsFake(async function* () {
+        yield {
+          type: 'message',
+          payload: {
+            role: 'assistant',
+            content: 'Cline changed the project.',
+          },
+        }
+      }),
+    }
     ctx.decryptApiKey = sinon.stub().resolves('test-key')
     ctx.createOpenAICompatibleChatCompletion = sinon.stub()
     ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
@@ -223,6 +242,13 @@ describe('AiAgentRuntime', function () {
       () => ({
         default: ctx.AuthorizationManager,
       })
+    )
+    vi.doMock('../../../../app/src/Features/Project/ProjectGetter', () => ({
+      default: ctx.ProjectGetter,
+    }))
+    vi.doMock(
+      '../../../../app/src/Features/AiAgent/ClineAgentRuntimeAdapter.mjs',
+      () => ctx.ClineAgentRuntimeAdapter
     )
     vi.doMock(
       '../../../../app/src/Features/AiAssistant/AiProviderSecrets',
@@ -403,6 +429,54 @@ describe('AiAgentRuntime', function () {
     ])
     expect(result.session.status).to.equal('waiting_for_act')
     expect(result.session.enabledPluginIds).to.deep.equal(['latex-core'])
+  })
+
+  it('routes filesystem projects through the Cline adapter', async function (ctx) {
+    ctx.ProjectGetter.promises.getProject.resolves({
+      _id: 'project-id',
+      storageBackend: 'filesystem',
+    })
+
+    const streamedEvents = []
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update the paper',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      onEvent: event => streamedEvents.push(event),
+    })
+
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update the paper',
+      provider: {
+        baseURL: 'https://ai.example.test/v1',
+        apiKey: 'test-key',
+        model: 'gpt-4.1',
+      },
+    })
+    expect(ctx.createOpenAICompatibleChatCompletion).not.to.have.been.called
+    expect(streamedEvents.map(event => event.type)).to.deep.equal(['message'])
+    expect(result.answer).to.equal('Cline changed the project.')
+    expect(result.session.status).to.equal('completed')
+  })
+
+  it('keeps mongo projects on the legacy tool loop', async function (ctx) {
+    await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Explain the project',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).not.to.have.been.called
+    expect(ctx.createOpenAICompatibleChatCompletion).to.have.been.called
   })
 
   it('continues an agent session with previous user and assistant messages', async function (ctx) {

@@ -2,8 +2,10 @@ import { AgentEvent } from '../../models/AgentEvent.mjs'
 import { AgentSession } from '../../models/AgentSession.mjs'
 import { AiProvider } from '../../models/AiProvider.mjs'
 import AuthorizationManager from '../Authorization/AuthorizationManager.mjs'
+import ProjectGetter from '../Project/ProjectGetter.mjs'
 import { decryptApiKey } from '../AiAssistant/AiProviderSecrets.mjs'
 import { createOpenAICompatibleChatCompletion } from '../AiAssistant/AiProviderClient.mjs'
+import * as ClineAgentRuntimeAdapter from './ClineAgentRuntimeAdapter.mjs'
 import {
   executeTool,
   listToolDefinitions,
@@ -142,6 +144,21 @@ export async function runTurn({
   }
   if (session.mode === 'act') {
     await assertUserCanAct({ projectId, userId })
+  }
+
+  const project = await ProjectGetter.promises.getProject(projectId, {
+    storageBackend: 1,
+  })
+  if (project?.storageBackend === 'filesystem') {
+    return await runClineFilesystemTurn({
+      projectId,
+      userId,
+      session,
+      prompt,
+      providerId,
+      model,
+      onEvent,
+    })
   }
 
   const eventRecorder = await createEventRecorder({
@@ -300,6 +317,82 @@ export async function runTurn({
     await updateSessionStatus(session, 'failed')
     await eventRecorder.record('error', {
       code: err.code || err.name || 'AGENT_ERROR',
+      message: safeErrorMessage(err),
+    })
+    throw err
+  }
+}
+
+async function runClineFilesystemTurn({
+  projectId,
+  userId,
+  session,
+  prompt,
+  providerId,
+  model,
+  onEvent,
+}) {
+  const eventRecorder = await createEventRecorder({
+    session,
+    projectId,
+    userId,
+    onEvent,
+  })
+  await updateSessionStatus(session, 'running')
+  try {
+    const provider = await resolveProvider(providerId || session.providerId)
+    const providerConfig = publicProviderConfig(provider)
+    const selectedModel = model || session.model || providerConfig.defaultModel
+    if (
+      !providerConfig.models.some(
+        availableModel => availableModel.id === selectedModel
+      )
+    ) {
+      throw new AiAgentError(
+        'AI_MODEL_NOT_AVAILABLE',
+        'AI model is not available'
+      )
+    }
+    const apiKey = await decryptApiKey(provider.encryptedApiKey)
+    session.providerId = providerConfig.id
+    session.model = selectedModel
+    session.mode = 'act'
+    await persistSessionMetadata(session)
+
+    let finalAnswer = ''
+    for await (const adapterEvent of ClineAgentRuntimeAdapter.runTurn({
+      projectId,
+      userId,
+      sessionId: session._id,
+      prompt,
+      provider: {
+        baseURL: provider.baseURL,
+        apiKey,
+        model: selectedModel,
+      },
+    })) {
+      await eventRecorder.record(adapterEvent.type, adapterEvent.payload || {})
+      if (
+        adapterEvent.type === 'message' &&
+        adapterEvent.payload?.role === 'assistant' &&
+        adapterEvent.payload?.content
+      ) {
+        finalAnswer = adapterEvent.payload.content
+      }
+    }
+    if (!finalAnswer) {
+      finalAnswer = 'Cline agent run completed.'
+    }
+    await updateSessionStatus(session, 'completed')
+    return {
+      session: publicSession(session),
+      answer: finalAnswer,
+      events: eventRecorder.events,
+    }
+  } catch (err) {
+    await updateSessionStatus(session, 'failed')
+    await eventRecorder.record('error', {
+      code: err.code || err.name || 'CLINE_AGENT_ERROR',
       message: safeErrorMessage(err),
     })
     throw err

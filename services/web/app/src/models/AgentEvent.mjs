@@ -20,6 +20,8 @@ export const AgentEventSchema = new Schema(
         'patch_applied',
         'compile_started',
         'compile_result',
+        'checkpoint_created',
+        'workspace_diff',
         'mode_changed',
         'permission_denied',
         'settings_changed',
