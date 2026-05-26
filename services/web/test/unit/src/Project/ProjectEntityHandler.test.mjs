@@ -439,6 +439,7 @@ describe('ProjectEntityHandler', function () {
       ctx.version = 42
       ctx.ranges = { mock: 'ranges' }
       ctx.callback = sinon.stub()
+      ctx.ProjectGetter.promises.getProject = sinon.stub().resolves(ctx.project)
       ctx.DocstoreManager.promises.getDoc = sinon.stub().resolves({
         lines: ctx.lines,
         rev: ctx.rev,
@@ -467,6 +468,7 @@ describe('ProjectEntityHandler', function () {
       ctx.rev = 5
       ctx.version = 42
       ctx.ranges = { mock: 'ranges' }
+      ctx.ProjectGetter.promises.getProject = sinon.stub().resolves(ctx.project)
 
       ctx.DocstoreManager.promises.getDoc = sinon.stub().resolves({
         lines: ctx.lines,
@@ -498,9 +500,27 @@ describe('ProjectEntityHandler', function () {
         {
           _id: 'root-folder-id',
           name: 'rootFolder',
-          docs: [],
+          docs: [
+            {
+              _id: 'legacy-main-doc-id',
+              name: 'main.tex',
+            },
+          ],
           fileRefs: [],
-          folders: [],
+          folders: [
+            {
+              _id: 'legacy-sections-folder-id',
+              name: 'sections',
+              docs: [
+                {
+                  _id: 'legacy-intro-doc-id',
+                  name: 'intro.tex',
+                },
+              ],
+              fileRefs: [],
+              folders: [],
+            },
+          ],
         },
       ]
       ctx.project.storageBackend = 'filesystem'
@@ -603,6 +623,73 @@ describe('ProjectEntityHandler', function () {
         'sections',
         'figures',
       ])
+    })
+
+    it('preserves existing doc ids when rebuilding the filesystem tree', function (ctx) {
+      const rootFolder = ctx.ProjectEntityHandler.buildFilesystemRootFolder(
+        [
+          {
+            projectPath: '/main.tex',
+            type: 'doc',
+          },
+          {
+            projectPath: '/new-agent-file.tex',
+            type: 'doc',
+          },
+          {
+            projectPath: '/sections/intro.tex',
+            type: 'doc',
+          },
+        ],
+        ctx.project.rootFolder[0]
+      )
+
+      expect(rootFolder.docs.find(doc => doc.name === 'main.tex')).to.include({
+        _id: 'legacy-main-doc-id',
+        name: 'main.tex',
+      })
+      expect(
+        rootFolder.docs.find(doc => doc.name === 'new-agent-file.tex')._id
+      ).to.match(/^[a-f0-9]{24}$/)
+      expect(
+        rootFolder.docs.find(doc => doc.name === 'new-agent-file.tex')._id
+      ).not.to.equal('legacy-main-doc-id')
+      expect(
+        rootFolder.folders
+          .find(folder => folder.name === 'sections')
+          .docs.find(doc => doc.name === 'intro.tex')
+      ).to.include({
+        _id: 'legacy-intro-doc-id',
+        name: 'intro.tex',
+      })
+    })
+
+    it('reads filesystem docs from the workspace by preserved doc id', async function (ctx) {
+      const doc = await ctx.ProjectEntityHandler.promises.getDoc(
+        projectId,
+        'legacy-main-doc-id'
+      )
+
+      expect(doc).to.deep.include({
+        rev: 0,
+        version: 0,
+      })
+      expect(doc.lines).to.deep.equal(['hello', 'world'])
+      expect(doc.ranges).to.deep.equal({})
+      expect(ctx.ProjectFileStore.readTextFile).to.have.been.calledWith({
+        projectId,
+        projectPath: '/main.tex',
+      })
+    })
+
+    it('returns the preserved filesystem doc id for a workspace path', async function (ctx) {
+      const docId =
+        await ctx.ProjectEntityHandler.promises.getFilesystemDocIdForPath(
+          projectId,
+          '/sections/intro.tex'
+        )
+
+      expect(docId).to.equal('legacy-intro-doc-id')
     })
 
     it('gets doc paths by generated doc id', async function (ctx) {

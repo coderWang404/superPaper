@@ -68,6 +68,27 @@ describe('ProjectFileStore', function () {
     expect(file.sha256).to.match(/^[a-f0-9]{64}$/)
   })
 
+  it('writes a binary file as a buffer', async function (ctx) {
+    const bytes = Buffer.from([9, 8, 7, 6])
+
+    const write = await ctx.ProjectFileStore.writeFileBuffer({
+      projectId: 'project-1',
+      projectPath: '/figures/plot.pdf',
+      content: bytes,
+    })
+
+    const file = await ctx.ProjectFileStore.readFileBuffer({
+      projectId: 'project-1',
+      projectPath: '/figures/plot.pdf',
+    })
+    expect(file.content).to.deep.equal(bytes)
+    expect(write).to.include({
+      projectPath: '/figures/plot.pdf',
+      bytes: bytes.length,
+    })
+    expect(write.sha256).to.match(/^[a-f0-9]{64}$/)
+  })
+
   it('lists visible files and hides internal directories', async function (ctx) {
     await ctx.ProjectFileStore.writeTextFile({
       projectId: 'project-1',
@@ -100,6 +121,8 @@ describe('ProjectFileStore', function () {
       '/main.tex',
       '/sections/intro.tex',
     ])
+    expect(files[0].sha256).to.match(/^[a-f0-9]{64}$/)
+    expect(files[1].sha256).to.match(/^[a-f0-9]{64}$/)
   })
 
   it('renames and deletes files', async function (ctx) {

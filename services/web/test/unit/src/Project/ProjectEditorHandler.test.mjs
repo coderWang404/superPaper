@@ -402,6 +402,15 @@ describe('ProjectEditorHandler', function () {
         )
         ctx.handler = (await import(modulePath)).default
         ctx.project.storageBackend = 'filesystem'
+        ctx.project.rootFolder = [
+          {
+            _id: 'legacy-root-id',
+            name: 'rootFolder',
+            docs: [{ _id: 'legacy-main-doc-id', name: 'main.tex' }],
+            fileRefs: [],
+            folders: [],
+          },
+        ]
         ctx.result = await ctx.handler.buildProjectModelView(
           ctx.project,
           ctx.ownerMember,
@@ -427,9 +436,10 @@ describe('ProjectEditorHandler', function () {
         })
         expect(
           ctx.ProjectEntityHandler.buildFilesystemRootFolder
-        ).to.have.been.calledWith([
-          { projectPath: '/main.tex', type: 'doc', bytes: 4 },
-        ])
+        ).to.have.been.calledWith(
+          [{ projectPath: '/main.tex', type: 'doc', bytes: 4 }],
+          ctx.project.rootFolder[0]
+        )
         expect(ctx.result.rootFolder[0].docs[0].name).to.equal('main.tex')
       })
     })

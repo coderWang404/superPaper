@@ -83,6 +83,25 @@ describe('AiAgentRuntime', function () {
         }),
       },
     }
+    ctx.ProjectStorageMigrationService = {
+      migrateProjectToFilesystem: sinon.stub().resolves({
+        projectId: 'project-id',
+        workspaceRoot: '/tmp/superpaper/project-id/workspace',
+      }),
+    }
+    ctx.ProjectCheckpointService = {
+      restoreCommit: sinon.stub().resolves({
+        commitHash: 'a'.repeat(40),
+        changedPaths: ['/main.tex'],
+      }),
+    }
+    ctx.ProjectWorkspaceWatcher = {
+      start: sinon.stub().resolves(),
+      poll: sinon.stub().resolves(),
+    }
+    ctx.logger = {
+      error: sinon.stub(),
+    }
     ctx.ClineAgentRuntimeAdapter = {
       runTurn: sinon.stub().callsFake(async function* () {
         yield {
@@ -95,50 +114,6 @@ describe('AiAgentRuntime', function () {
       }),
     }
     ctx.decryptApiKey = sinon.stub().resolves('test-key')
-    ctx.createOpenAICompatibleChatCompletion = sinon.stub()
-    ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
-      JSON.stringify({
-        plan: ['Read the main file'],
-        toolCalls: [
-          {
-            name: 'project.read_file',
-            input: { path: '/main.tex' },
-          },
-        ],
-      })
-    )
-    ctx.createOpenAICompatibleChatCompletion.onSecondCall().resolves(
-      JSON.stringify({
-        final: 'The project contains a main LaTeX document.',
-      })
-    )
-    ctx.executeTool = sinon.stub().resolves({
-      path: '/main.tex',
-      content: '\\documentclass{article}',
-      truncated: false,
-    })
-    ctx.listToolDefinitions = sinon.stub().returns([
-      {
-        name: 'project.read_file',
-        description: 'Read file',
-        access: 'read',
-        requiresApproval: false,
-        category: 'project',
-        riskLevel: 'low',
-      },
-    ])
-    ctx.loadAgentInstructions = sinon.stub().resolves({
-      sources: [
-        {
-          type: 'project-file',
-          path: '/AGENTS.md',
-          sha256: 'abc123',
-          bytes: 10,
-          content: 'Use concise answers.',
-        },
-      ],
-      truncated: false,
-    })
     ctx.selectedSkills = [
       {
         id: 'latex-compile-debug',
@@ -247,6 +222,27 @@ describe('AiAgentRuntime', function () {
       default: ctx.ProjectGetter,
     }))
     vi.doMock(
+      '../../../../app/src/Features/Project/ProjectStorageMigrationService.mjs',
+      () => ({
+        default: ctx.ProjectStorageMigrationService,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/Project/ProjectCheckpointService.mjs',
+      () => ({
+        default: ctx.ProjectCheckpointService,
+      })
+    )
+    vi.doMock(
+      '../../../../app/src/Features/Project/ProjectWorkspaceWatcher.mjs',
+      () => ({
+        default: ctx.ProjectWorkspaceWatcher,
+      })
+    )
+    vi.doMock('@superpaper/logger', () => ({
+      default: ctx.logger,
+    }))
+    vi.doMock(
       '../../../../app/src/Features/AiAgent/ClineAgentRuntimeAdapter.mjs',
       () => ctx.ClineAgentRuntimeAdapter
     )
@@ -254,33 +250,6 @@ describe('AiAgentRuntime', function () {
       '../../../../app/src/Features/AiAssistant/AiProviderSecrets',
       () => ({
         decryptApiKey: ctx.decryptApiKey,
-      })
-    )
-    vi.doMock(
-      '../../../../app/src/Features/AiAssistant/AiProviderClient',
-      () => ({
-        createOpenAICompatibleChatCompletion:
-          ctx.createOpenAICompatibleChatCompletion,
-      })
-    )
-    vi.doMock(
-      '../../../../app/src/Features/AiAgent/AiAgentToolRegistry',
-      () => ({
-        executeTool: ctx.executeTool,
-        listToolDefinitions: ctx.listToolDefinitions,
-        AiAgentToolError: class AiAgentToolError extends Error {},
-      })
-    )
-    vi.doMock(
-      '../../../../app/src/Features/AiAgent/AiAgentInstructionLoader',
-      () => ({
-        loadAgentInstructions: ctx.loadAgentInstructions,
-      })
-    )
-    vi.doMock(
-      '../../../../app/src/Features/AiAgent/AiAgentSkillManager',
-      () => ({
-        formatSkillsForPrompt: ctx.formatSkillsForPrompt,
       })
     )
     vi.doMock(
@@ -384,53 +353,6 @@ describe('AiAgentRuntime', function () {
     expect(session).to.not.have.property('encryptedApiKey')
   })
 
-  it('runs a read-only tool loop and records events', async function (ctx) {
-    const streamedEvents = []
-    const result = await ctx.Runtime.runTurn({
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      prompt: 'Explain the project',
-      providerId: 'provider-id',
-      model: 'gpt-4.1',
-      onEvent: event => streamedEvents.push(event),
-    })
-
-    expect(ctx.decryptApiKey).to.have.been.calledWith('encrypted-key')
-    expect(ctx.loadAgentInstructions).to.have.been.calledWith({
-      projectId: 'project-id',
-      currentPath: undefined,
-    })
-    expect(ctx.SettingsManager.getSelectedSkillsForTask).to.have.been.calledWith(
-      'Explain the project',
-      { projectId: 'project-id' }
-    )
-    expect(ctx.createOpenAICompatibleChatCompletion).to.have.been.calledTwice
-    expect(ctx.executeTool).to.have.been.calledWith({
-      name: 'project.read_file',
-      input: { path: '/main.tex' },
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      selection: undefined,
-    })
-    expect(ctx.PermissionManager.isToolAllowed).to.have.been.calledWith({
-      toolName: 'project.read_file',
-      mode: 'plan',
-    })
-    expect(result.answer).to.equal('The project contains a main LaTeX document.')
-    expect(streamedEvents.map(event => event.type)).to.deep.equal([
-      'message',
-      'message',
-      'message',
-      'tool_call',
-      'tool_result',
-      'message',
-    ])
-    expect(result.session.status).to.equal('waiting_for_act')
-    expect(result.session.enabledPluginIds).to.deep.equal(['latex-core'])
-  })
-
   it('routes filesystem projects through the Cline adapter', async function (ctx) {
     ctx.ProjectGetter.promises.getProject.resolves({
       _id: 'project-id',
@@ -448,38 +370,96 @@ describe('AiAgentRuntime', function () {
       onEvent: event => streamedEvents.push(event),
     })
 
-    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith({
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      prompt: 'Update the paper',
-      provider: {
-        baseURL: 'https://ai.example.test/v1',
-        apiKey: 'test-key',
-        model: 'gpt-4.1',
-      },
-    })
-    expect(ctx.createOpenAICompatibleChatCompletion).not.to.have.been.called
-    expect(streamedEvents.map(event => event.type)).to.deep.equal(['message'])
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith(
+      sinon.match({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update the paper',
+        provider: {
+          providerId: 'provider-id',
+          baseURL: 'https://ai.example.test/v1',
+          apiKey: 'test-key',
+          model: 'gpt-4.1',
+        },
+      })
+    )
+    expect(streamedEvents.map(event => event.type)).to.deep.equal([
+      'message',
+      'message',
+    ])
+    expect(streamedEvents[0].payload.kind).to.equal('context')
     expect(result.answer).to.equal('Cline changed the project.')
     expect(result.session.status).to.equal('completed')
   })
 
-  it('keeps mongo projects on the legacy tool loop', async function (ctx) {
+  it('migrates mongo projects before running Cline', async function (ctx) {
+    const streamedEvents = []
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update the paper',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      onEvent: event => streamedEvents.push(event),
+    })
+
+    expect(
+      ctx.ProjectStorageMigrationService.migrateProjectToFilesystem
+    ).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+    })
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith(
+      sinon.match({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update the paper',
+        provider: {
+          providerId: 'provider-id',
+          baseURL: 'https://ai.example.test/v1',
+          apiKey: 'test-key',
+          model: 'gpt-4.1',
+        },
+      })
+    )
+    expect(streamedEvents.map(event => event.type)).to.deep.equal([
+      'message',
+      'message',
+    ])
+    expect(streamedEvents[0].payload.kind).to.equal('context')
+    expect(result.answer).to.equal('Cline changed the project.')
+    expect(result.session.status).to.equal('completed')
+  })
+
+  it('starts the workspace watcher after filesystem preparation so direct Cline edits refresh clients', async function (ctx) {
     await ctx.Runtime.runTurn({
       projectId: 'project-id',
       userId: 'user-id',
       sessionId: 'session-id',
-      prompt: 'Explain the project',
+      prompt: 'Update the paper',
       providerId: 'provider-id',
       model: 'gpt-4.1',
     })
 
-    expect(ctx.ClineAgentRuntimeAdapter.runTurn).not.to.have.been.called
-    expect(ctx.createOpenAICompatibleChatCompletion).to.have.been.called
+    expect(ctx.ProjectWorkspaceWatcher.start).to.have.been.calledWith(
+      'project-id'
+    )
+    expect(
+      ctx.ProjectWorkspaceWatcher.start.calledAfter(
+        ctx.ProjectStorageMigrationService.migrateProjectToFilesystem
+      )
+    ).to.equal(true)
+    expect(
+      ctx.ClineAgentRuntimeAdapter.runTurn.calledAfter(
+        ctx.ProjectWorkspaceWatcher.start
+      )
+    ).to.equal(true)
   })
 
-  it('continues an agent session with previous user and assistant messages', async function (ctx) {
+  it('continues an agent session through Cline', async function (ctx) {
     ctx.AgentEvent.find.returns({
       sort: sinon.stub().returns({
         limit: sinon.stub().returns({
@@ -511,17 +491,184 @@ describe('AiAgentRuntime', function () {
       model: 'gpt-4.1',
     })
 
-    const firstMessages =
-      ctx.createOpenAICompatibleChatCompletion.firstCall.args[0].messages
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith(
+      sinon.match({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Continue the same task',
+      })
+    )
+  })
+
+  it('passes project rules, selected skills, plugins, and tool policy context to Cline', async function (ctx) {
+    ctx.SettingsManager.getAgentConfig.resolves({
+      permissionProfile: {
+        id: 'project-agent-default',
+        writeToolsRequireApproval: false,
+        externalToolsEnabled: false,
+        actRequiredForWriteTools: true,
+      },
+      tools: [
+        {
+          name: 'project.read_file',
+          description: 'Read file',
+          access: 'read',
+          requiresApproval: false,
+          category: 'project',
+          riskLevel: 'low',
+        },
+      ],
+      skills: [
+        {
+          id: 'academic-polish',
+          name: 'academic-polish',
+          displayName: 'Academic polish',
+          description: 'Improve academic prose',
+          requiredTools: ['project.read_file'],
+          enabled: true,
+          content: 'Prefer concise academic English.',
+        },
+      ],
+      plugins: [
+        {
+          id: 'latex-core',
+          name: 'latex-core',
+          version: '1.0.0',
+          enabled: true,
+          skills: ['academic-polish'],
+        },
+      ],
+      enabledSkillIds: ['academic-polish'],
+      enabledPluginIds: ['latex-core'],
+      instructionProfiles: [
+        {
+          id: 'rules-one',
+          scope: 'project',
+          name: 'Project Rules',
+          enabled: true,
+          content: 'Never edit supplementary data unless asked.',
+          sha256: 'f'.repeat(64),
+          bytes: 43,
+        },
+      ],
+      toolPolicies: [
+        {
+          name: 'patch.propose',
+          access: 'write',
+          requiresApproval: false,
+          category: 'patch',
+          riskLevel: 'medium',
+          allowedModes: ['act'],
+        },
+      ],
+    })
+    ctx.SettingsManager.getSelectedSkillsForTask.resolves([
+      {
+        id: 'academic-polish',
+        name: 'academic-polish',
+        displayName: 'Academic polish',
+        description: 'Improve academic prose',
+        requiredTools: ['project.read_file'],
+        content: 'Prefer concise academic English.',
+      },
+    ])
+
+    await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Polish the abstract',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    expect(ctx.SettingsManager.getAgentConfig).to.have.been.calledWith({
+      projectId: 'project-id',
+      includeContent: true,
+    })
+    expect(ctx.SettingsManager.getSelectedSkillsForTask).to.have.been.calledWith(
+      'Polish the abstract',
+      { projectId: 'project-id' }
+    )
+    expect(ctx.session.enabledSkillIds).to.deep.equal(['academic-polish'])
+    expect(ctx.session.enabledPluginIds).to.deep.equal(['latex-core'])
+    expect(ctx.session.instructionSources).to.deep.equal([
+      {
+        type: 'instruction-profile',
+        scope: 'project',
+        path: 'Project Rules',
+        sha256: 'f'.repeat(64),
+        bytes: 43,
+      },
+    ])
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith(
+      sinon.match({
+        agentContext: {
+          permissionProfile: sinon.match({
+            id: 'project-agent-default',
+            externalToolsEnabled: false,
+          }),
+          instructionProfiles: [
+            sinon.match({
+              name: 'Project Rules',
+              content: 'Never edit supplementary data unless asked.',
+            }),
+          ],
+          skills: [
+            sinon.match({
+              id: 'academic-polish',
+              content: 'Prefer concise academic English.',
+            }),
+          ],
+          enabledPluginIds: ['latex-core'],
+          toolPolicies: [
+            sinon.match({
+              name: 'patch.propose',
+              requiresApproval: false,
+            }),
+          ],
+        },
+      })
+    )
+  })
+
+  it('records a readable Cline runtime context event before Cline starts', async function (ctx) {
+    await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Diagnose compile errors',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    const contextCall = ctx.AgentEvent.create
+      .getCalls()
+      .find(call => call.args[0].payload?.kind === 'context')
+
+    expect(contextCall).to.exist
+    expect(contextCall.args[0]).to.deep.include({
+      type: 'message',
+    })
+    expect(contextCall.args[0].payload).to.deep.include({
+      role: 'system',
+      kind: 'context',
+      enabledSkillIds: ['latex-compile-debug'],
+      enabledPluginIds: ['latex-core'],
+      permissionProfileId: 'project-agent-default',
+    })
+    expect(contextCall.args[0].payload.content).to.contain('Cline runtime')
+    expect(contextCall.args[0].payload.toolPolicySummary).to.deep.equal({
+      directWorkspaceWrites: true,
+      shellEnabled: true,
+      externalToolsEnabled: false,
+      mcpEnabled: false,
+      spawnAgentEnabled: false,
+      agentTeamsEnabled: false,
+    })
     expect(
-      firstMessages.some(message =>
-        String(message.content).includes('Previous question.')
-      )
-    ).to.equal(true)
-    expect(
-      firstMessages.some(message =>
-        String(message.content).includes('Previous answer.')
-      )
+      contextCall.calledBefore(ctx.ClineAgentRuntimeAdapter.runTurn.firstCall)
     ).to.equal(true)
   })
 
@@ -624,184 +771,158 @@ describe('AiAgentRuntime', function () {
     expect(ctx.decryptApiKey).to.not.have.been.called
   })
 
-  it('denies write tools in plan mode before execution', async function (ctx) {
-    ctx.PermissionManager.isToolAllowed
-      .withArgs({
-        toolName: 'patch.propose',
+  it('requires project write access before preparing and running Cline', async function (ctx) {
+    ctx.session.mode = 'plan'
+    ctx.session.status = 'planning'
+    ctx.AuthorizationManager.promises.canUserWriteProjectContent.resolves(false)
+
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update wording',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'AGENT_ACT_PERMISSION_DENIED'
+    )
+    expect(
+      ctx.ProjectStorageMigrationService.migrateProjectToFilesystem
+    ).not.to.have.been.called
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).not.to.have.been.called
+  })
+
+  it('logs sanitized Cline runtime diagnostics while keeping user events generic', async function (ctx) {
+    const leakedError = Object.assign(
+      new Error(
+        'Cline failed with apiKey test-key and Authorization Bearer abc123'
+      ),
+      {
+        code: 'CLINE_GATEWAY_REJECTED',
+      }
+    )
+    ctx.ClineAgentRuntimeAdapter.runTurn.callsFake(async function* () {
+      yield* []
+      throw leakedError
+    })
+
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update wording',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'CLINE_GATEWAY_REJECTED'
+    )
+
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'error',
+        payload: {
+          code: 'CLINE_GATEWAY_REJECTED',
+          message: 'Agent request failed',
+        },
+      })
+    )
+    expect(ctx.logger.error).to.have.been.calledOnce
+    const [logPayload, logMessage] = ctx.logger.error.firstCall.args
+    expect(logMessage).to.equal('cline agent runtime failed')
+    expect(logPayload).to.include({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      errorName: 'Error',
+      errorCode: 'CLINE_GATEWAY_REJECTED',
+    })
+    expect(logPayload.errorMessage).to.include('Cline failed with')
+    expect(logPayload.errorMessage).not.to.include('test-key')
+    expect(logPayload.errorMessage).not.to.include('abc123')
+  })
+
+  it('rolls a direct Cline session back to a checkpoint and records the restore event', async function (ctx) {
+    const watcherState = { projectId: 'project-id' }
+    ctx.ProjectWorkspaceWatcher.start.resolves(watcherState)
+
+    const result = await ctx.Runtime.rollbackSessionToCheckpoint({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      commitHash: 'a'.repeat(40),
+    })
+
+    expect(ctx.AuthorizationManager.promises.canUserWriteProjectContent).to.have
+      .been.calledWith('user-id', 'project-id', null)
+    expect(ctx.ProjectWorkspaceWatcher.start).to.have.been.calledWith(
+      'project-id'
+    )
+    expect(ctx.ProjectCheckpointService.restoreCommit).to.have.been.calledWith({
+      projectId: 'project-id',
+      commitHash: 'a'.repeat(40),
+    })
+    expect(ctx.ProjectWorkspaceWatcher.poll).to.have.been.calledWith(
+      watcherState
+    )
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'checkpoint_restored',
+        payload: {
+          commitHash: 'a'.repeat(40),
+          changedPaths: ['/main.tex'],
+        },
+      })
+    )
+    expect(result).to.deep.include({
+      restoredCommitHash: 'a'.repeat(40),
+    })
+    expect(result.changedPaths).to.deep.equal(['/main.tex'])
+    expect(result.event).to.deep.include({
+      sessionId: 'session-id',
+      sequence: 1,
+      type: 'checkpoint_restored',
+    })
+    expect(result.event.payload).to.deep.equal({
+      commitHash: 'a'.repeat(40),
+      changedPaths: ['/main.tex'],
+    })
+    expect(result.session).to.deep.equal({
+      id: 'session-id',
+      projectId: 'project-id',
+      userId: 'user-id',
+      status: 'planning',
+      mode: 'plan',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      task: 'Explain the project',
+      instructionSources: [],
+      enabledSkillIds: [],
+      enabledPluginIds: [],
+      permissionProfileId: 'project-agent-default',
+    })
+    expect(result).to.not.have.property('encryptedApiKey')
+    expect(result).to.deep.include({
+      session: {
+        id: 'session-id',
+        projectId: 'project-id',
+        userId: 'user-id',
+        status: 'planning',
         mode: 'plan',
-      })
-      .returns({
-        allowed: false,
-        reason: 'AGENT_MODE_NOT_ALLOWED',
-        message: 'Agent tool is not allowed in the current mode',
-      })
-    ctx.createOpenAICompatibleChatCompletion.reset()
-    ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
-      JSON.stringify({
-        toolCalls: [
-          {
-            name: 'patch.propose',
-            input: {
-              summary: 'Update wording',
-              operations: [
-                {
-                  type: 'replace_text',
-                  path: '/main.tex',
-                  oldText: 'Old',
-                  newText: 'New',
-                },
-              ],
-            },
-          },
-        ],
-      })
-    )
-    ctx.createOpenAICompatibleChatCompletion.onSecondCall().resolves(
-      JSON.stringify({ final: 'Need act mode.' })
-    )
-
-    const streamedEvents = []
-    const result = await ctx.Runtime.runTurn({
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      prompt: 'Update wording',
-      providerId: 'provider-id',
-      model: 'gpt-4.1',
-      onEvent: event => streamedEvents.push(event),
-    })
-
-    expect(ctx.executeTool).to.not.have.been.called
-    expect(streamedEvents.map(event => event.type)).to.include(
-      'permission_denied'
-    )
-    expect(result.session.status).to.equal('waiting_for_act')
-  })
-
-  it('records compile events around compile.run tool calls', async function (ctx) {
-    ctx.createOpenAICompatibleChatCompletion.reset()
-    ctx.createOpenAICompatibleChatCompletion.onFirstCall().resolves(
-      JSON.stringify({
-        toolCalls: [
-          {
-            name: 'compile.run',
-            input: { stopOnFirstError: true },
-          },
-        ],
-      })
-    )
-    ctx.createOpenAICompatibleChatCompletion.onSecondCall().resolves(
-      JSON.stringify({
-        final: 'Compile succeeded.',
-      })
-    )
-    ctx.executeTool.resolves({
-      ok: true,
-      status: 'success',
-      buildId: 'build-one',
-    })
-
-    const streamedEvents = []
-    const result = await ctx.Runtime.runTurn({
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      prompt: 'Compile the project',
-      providerId: 'provider-id',
-      model: 'gpt-4.1',
-      onEvent: event => streamedEvents.push(event),
-    })
-
-    expect(ctx.executeTool).to.have.been.calledWith({
-      name: 'compile.run',
-      input: { stopOnFirstError: true },
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      selection: undefined,
-    })
-    expect(streamedEvents.map(event => event.type)).to.deep.equal([
-      'message',
-      'message',
-      'tool_call',
-      'compile_started',
-      'compile_result',
-      'tool_result',
-      'message',
-    ])
-    expect(streamedEvents[4].payload.result).to.deep.equal({
-      ok: true,
-      status: 'success',
-      buildId: 'build-one',
-    })
-    expect(result.answer).to.equal('Compile succeeded.')
-  })
-
-  it('keeps sessions waiting for approval when a patch is proposed', async function (ctx) {
-    ctx.session.mode = 'act'
-    ctx.session.status = 'ready_for_act'
-    ctx.createOpenAICompatibleChatCompletion.reset()
-    ctx.createOpenAICompatibleChatCompletion.resolves(
-      JSON.stringify({
-        toolCalls: [
-          {
-            name: 'patch.propose',
-            input: {
-              summary: 'Update wording',
-              operations: [
-                {
-                  type: 'replace_text',
-                  path: '/main.tex',
-                  oldText: 'Old',
-                  newText: 'New',
-                },
-              ],
-            },
-          },
-        ],
-      })
-    )
-    ctx.executeTool.resolves({
-      patchId: 'patch-one',
-      requiresApproval: true,
-      patch: {
-        id: 'patch-one',
-        status: 'pending',
-        summary: 'Update wording',
-        operations: [{ type: 'replace_text', path: '/main.tex' }],
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+        task: 'Explain the project',
+        instructionSources: [],
+        enabledSkillIds: [],
+        enabledPluginIds: [],
+        permissionProfileId: 'project-agent-default',
       },
+      restoredCommitHash: 'a'.repeat(40),
+      changedPaths: ['/main.tex'],
     })
-
-    const streamedEvents = []
-    const result = await ctx.Runtime.runTurn({
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      prompt: 'Update wording',
-      providerId: 'provider-id',
-      model: 'gpt-4.1',
-      onEvent: event => streamedEvents.push(event),
-    })
-
-    expect(ctx.executeTool).to.have.been.calledWith({
-      name: 'patch.propose',
-      input: {
-        summary: 'Update wording',
-        operations: [
-          {
-            type: 'replace_text',
-            path: '/main.tex',
-            oldText: 'Old',
-            newText: 'New',
-          },
-        ],
-      },
-      projectId: 'project-id',
-      userId: 'user-id',
-      sessionId: 'session-id',
-      selection: undefined,
-    })
-    expect(streamedEvents.map(event => event.type)).to.include('patch_created')
-    expect(result.session.status).to.equal('waiting_for_approval')
   })
+
 })

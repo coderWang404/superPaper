@@ -45,6 +45,7 @@ const COMPILE_REQUEST_TIMEOUT_MS = 12 * 60 * 1000
 
 // Enable clsi-cache for all compiles for 20min when detecting low capacity.
 const ENABLE_COMPILE_FROM_CACHE_ON_503_MS = 20 * 60 * 1000
+const INCREMENTAL_SYNC_TYPES = new Set(['incremental', 'history-incremental'])
 let enableCompileFromCacheUntil = 0
 
 function _baseHistoryVersionKey(projectId, userId) {
@@ -174,6 +175,15 @@ async function sendRequest(projectId, userId, options) {
       ...options,
       syncType: 'full',
       forceNewClsiServer: true,
+    })
+  }
+  if (
+    result.status === 'failure' &&
+    INCREMENTAL_SYNC_TYPES.has(result.syncType)
+  ) {
+    result = await sendRequestOnce(projectId, userId, {
+      ...options,
+      syncType: 'full',
     })
   }
   return result
@@ -328,6 +338,7 @@ async function _sendBuiltRequest(projectId, userId, req, options) {
     status: compile.status,
     outputFiles,
     clsiServerId,
+    syncType: req.compile?.options?.syncType,
     buildId: compile.buildId,
     stats: compile.stats,
     timings: compile.timings,

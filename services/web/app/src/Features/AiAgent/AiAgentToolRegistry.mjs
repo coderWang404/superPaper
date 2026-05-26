@@ -6,6 +6,9 @@ import { createPatch } from './AiAgentPatchManager.mjs'
 import ProjectEntityHandler from '../Project/ProjectEntityHandler.mjs'
 import CompileManager from '../Compile/CompileManager.mjs'
 
+// Compatibility catalog for settings, plugin manifests, and reviewed patch
+// workflows. The normal project agent runtime is Cline-backed and must not route
+// model turns through this legacy JSON tool registry.
 const DEFAULT_READ_CHARS = 12_000
 const MAX_READ_CHARS = 50_000
 const DEFAULT_SEARCH_RESULTS = 20
@@ -84,6 +87,7 @@ const TOOL_DEFINITIONS = [
     name: 'project.list_files',
     description: 'List project docs and uploaded files with basic metadata.',
     inputSchema: ListFilesInputSchema,
+    inputExample: { pathPrefix: '/', extensions: ['.tex'] },
     access: 'read',
     requiresApproval: false,
     category: 'project',
@@ -94,6 +98,7 @@ const TOOL_DEFINITIONS = [
     name: 'project.read_file',
     description: 'Read a text document from the current project.',
     inputSchema: ReadFileInputSchema,
+    inputExample: { path: '/main.tex' },
     access: 'read',
     requiresApproval: false,
     category: 'project',
@@ -104,6 +109,7 @@ const TOOL_DEFINITIONS = [
     name: 'project.search',
     description: 'Search project text documents by plain substring.',
     inputSchema: SearchInputSchema,
+    inputExample: { query: '\\label', extensions: ['.tex'], maxResults: 20 },
     access: 'read',
     requiresApproval: false,
     category: 'project',
@@ -114,6 +120,7 @@ const TOOL_DEFINITIONS = [
     name: 'project.get_map',
     description: 'Build a compact LaTeX project map with labels and includes.',
     inputSchema: GetMapInputSchema,
+    inputExample: { maxFiles: 100 },
     access: 'read',
     requiresApproval: false,
     category: 'project',
@@ -124,6 +131,7 @@ const TOOL_DEFINITIONS = [
     name: 'editor.get_selection',
     description: 'Return the current editor selection supplied by the browser.',
     inputSchema: EmptyInputSchema,
+    inputExample: {},
     access: 'read',
     requiresApproval: false,
     category: 'editor',
@@ -134,6 +142,7 @@ const TOOL_DEFINITIONS = [
     name: 'compile.get_last_result',
     description: 'Return the last compile result when one is attached to the session.',
     inputSchema: EmptyInputSchema,
+    inputExample: {},
     access: 'read',
     requiresApproval: false,
     category: 'compile',
@@ -144,6 +153,7 @@ const TOOL_DEFINITIONS = [
     name: 'compile.run',
     description: 'Run a controlled project compile and return a compact result.',
     inputSchema: CompileRunInputSchema,
+    inputExample: { stopOnFirstError: true },
     access: 'read',
     requiresApproval: false,
     category: 'compile',
@@ -155,6 +165,16 @@ const TOOL_DEFINITIONS = [
     description:
       'Create a pending replace_text, create_doc, delete_doc, rename_entity, or move_entity patch for user review. This does not edit files.',
     inputSchema: PatchProposeInputSchema,
+    inputExample: {
+      summary: 'Create a smoke-test file',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/agent-real-channel-smoke.tex',
+          content: 'ROOT_CHANNEL_AGENT_ACT_OK\n',
+        },
+      ],
+    },
     access: 'write',
     requiresApproval: true,
     category: 'patch',
@@ -177,6 +197,8 @@ export function listToolDefinitions() {
   return TOOL_DEFINITIONS.map(tool => ({
     name: tool.name,
     description: tool.description,
+    inputSchema: z.toJSONSchema(tool.inputSchema),
+    inputExample: tool.inputExample || {},
     access: tool.access,
     requiresApproval: tool.requiresApproval,
     category: tool.category,

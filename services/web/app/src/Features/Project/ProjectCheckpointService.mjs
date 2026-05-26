@@ -56,8 +56,28 @@ async function diffWorktree({ projectId }) {
 
 async function restoreCommit({ projectId, commitHash }) {
   const cwd = await ensureRepository(projectId)
-  await git(cwd, ['checkout', commitHash, '--', '.'])
-  return { commitHash }
+  const changedPaths = await diffNameOnly(cwd, commitHash)
+  await git(cwd, ['reset', '--hard', commitHash])
+  await git(cwd, ['clean', '-fd'])
+  return { commitHash, changedPaths }
+}
+
+async function diffNameOnly(cwd, commitHash = null) {
+  const diffArgs = commitHash
+    ? ['diff', '--name-only', commitHash, '--', '.']
+    : ['diff', '--name-only', '--', '.']
+  const stdout = await git(cwd, diffArgs)
+  const untracked = await git(cwd, [
+    'ls-files',
+    '--others',
+    '--exclude-standard',
+  ])
+  return [...new Set(`${stdout}\n${untracked}`
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean))]
+    .sort()
+    .map(projectPath => `/${projectPath}`)
 }
 
 async function hasStagedChanges(cwd) {

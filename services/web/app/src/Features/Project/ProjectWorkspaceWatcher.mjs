@@ -1,5 +1,7 @@
 import logger from '@superpaper/logger'
+import DocumentUpdaterHandler from '../DocumentUpdater/DocumentUpdaterHandler.mjs'
 import EditorRealTimeController from '../Editor/EditorRealTimeController.mjs'
+import ProjectEntityHandler from './ProjectEntityHandler.mjs'
 import ProjectFileStore from './ProjectFileStore.mjs'
 
 const DEFAULT_INTERVAL_MS = 1500
@@ -47,6 +49,18 @@ async function poll(state) {
     const changedPaths = diffSnapshots(state.snapshot, next)
     state.snapshot = next
     if (changedPaths.length > 0) {
+      try {
+        await syncChangedDocsToDocumentUpdater(
+          state.projectId,
+          changedPaths,
+          next
+        )
+      } catch (err) {
+        logger.warn(
+          { err, projectId: state.projectId },
+          'workspace watcher doc sync failed'
+        )
+      }
       EditorRealTimeController.emitToRoom(
         state.projectId,
         'project:filesystem:changed',
@@ -62,20 +76,51 @@ async function poll(state) {
   }
 }
 
+async function syncChangedDocsToDocumentUpdater(
+  projectId,
+  changedPaths,
+  snapshot
+) {
+  for (const projectPath of changedPaths) {
+    const entry = snapshot.get(projectPath)?.entry
+    if (entry?.type !== 'doc') {
+      continue
+    }
+    const file = await ProjectFileStore.readTextFile({
+      projectId,
+      projectPath,
+    })
+    const docId = await ProjectEntityHandler.promises.getFilesystemDocIdForPath(
+      projectId,
+      projectPath
+    )
+    await DocumentUpdaterHandler.promises.setDocument(
+      projectId,
+      docId,
+      null,
+      file.content.split('\n'),
+      { kind: 'filesystem-workspace-sync' }
+    )
+  }
+}
+
 async function takeSnapshot(projectId) {
   const entries = await ProjectFileStore.listFiles({ projectId })
   return new Map(
     entries.map(entry => [
       entry.projectPath,
-      `${entry.type}:${entry.bytes}:${entry.sha256 || ''}`,
+      {
+        entry,
+        signature: `${entry.type}:${entry.bytes}:${entry.sha256 || ''}`,
+      },
     ])
   )
 }
 
 function diffSnapshots(previous, next) {
   const changedPaths = new Set()
-  for (const [projectPath, signature] of next.entries()) {
-    if (previous.get(projectPath) !== signature) {
+  for (const [projectPath, nextValue] of next.entries()) {
+    if (previous.get(projectPath)?.signature !== nextValue.signature) {
       changedPaths.add(projectPath)
     }
   }
@@ -93,4 +138,5 @@ export default {
   poll,
   takeSnapshot,
   diffSnapshots,
+  syncChangedDocsToDocumentUpdater,
 }

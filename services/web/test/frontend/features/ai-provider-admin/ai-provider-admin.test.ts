@@ -207,6 +207,12 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
+    expect(screen.queryByLabelText('New API key for Provider One')).to.equal(
+      null
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Replace key for Provider One' })
+    )
     fireEvent.input(screen.getByLabelText('New API key for Provider One'), {
       target: { value: fakeProviderKey },
     })
@@ -224,10 +230,23 @@ describe('ai-provider-admin', function () {
     expect(JSON.parse(call.options.body as string)).to.deep.equal({
       apiKey: fakeProviderKey,
     })
-    expect(
-      (screen.getByLabelText('New API key for Provider One') as HTMLInputElement)
-        .value
-    ).to.equal('')
+    expect(screen.queryByLabelText('New API key for Provider One')).to.equal(
+      null
+    )
+  })
+
+  it('explains the accepted Model IDs format', async function () {
+    fetchMock.get('/admin/ai/providers', { providers: [] })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('No AI providers configured')
+    const modelIdsInput = screen.getByLabelText('Model IDs')
+    const helper = screen.getByText(
+      'Use commas or new lines, for example: gpt-4.1, deepseek-chat.'
+    )
+
+    expect(modelIdsInput.getAttribute('aria-describedby')).to.equal(helper.id)
   })
 
   it('deletes a provider after confirmation', async function () {

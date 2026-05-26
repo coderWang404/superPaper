@@ -45,6 +45,7 @@ function ThinFooter({
   leftItems,
   rightItems,
 }: FooterMetadata) {
+  const currentYear = new Date().getFullYear()
   const showLanguagePicker = Boolean(
     subdomainLang && Object.keys(subdomainLang).length > 1
   )
@@ -56,7 +57,7 @@ function ThinFooter({
       <div className="site-footer-content d-print-none">
         <OLRow>
           <ul className="site-footer-items col-lg-9">
-            <li>© 2025</li>
+            <li>© {currentYear}</li>
             {showLanguagePicker || hasCustomLeftNav ? <Separator /> : null}
             {showLanguagePicker ? (
               <>

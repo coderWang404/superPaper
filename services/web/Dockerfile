@@ -17,8 +17,10 @@ RUN mkdir -p /superpaper/services/web/data/dumpFolder \
     &&  mkdir -p /superpaper/services/web/data/uploads \
     &&  mkdir -p /superpaper/services/web/data/zippedProjects \
     &&  mkdir -p /superpaper/services/web/data/projectHistories \
+    &&  mkdir -p /var/lib/superpaper \
     &&  chmod -R 0755 /superpaper/services/web/data \
-    &&  chown -R node:node /superpaper/services/web/data
+    &&  chown -R node:node /superpaper/services/web/data \
+    &&  chown -R node:node /var/lib/superpaper
 
 # Add intermediate certificate for prism.optica.org
 COPY services/web/certs/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crt.pem /usr/local/share/ca-certificates/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crt

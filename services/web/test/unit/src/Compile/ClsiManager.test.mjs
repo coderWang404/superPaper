@@ -739,6 +739,63 @@ describe('ClsiManager', function () {
       })
     })
 
+    describe('when an incremental compile returns failure', function () {
+      beforeEach(async function (ctx) {
+        const doc = ctx.docs['/main.tex']
+        ctx.DocumentUpdaterHandler.promises.getProjectDocsIfMatch.resolves([
+          { _id: doc._id, lines: doc.lines, v: 123 },
+        ])
+        ctx.ProjectEntityHandler.getAllDocPathsFromProject.returns({
+          'mock-doc-id-1': 'main.tex',
+        })
+        ctx.FetchUtils.fetchStringWithResponse.onCall(0).resolves({
+          body: JSON.stringify({
+            compile: {
+              status: 'failure',
+              outputFiles: [
+                {
+                  path: 'output.stdout',
+                  type: 'stdout',
+                  build: 'failed-build',
+                  url: `http://${CLSI_HOST}/snip/output.stdout`,
+                },
+              ],
+            },
+          }),
+          response: ctx.response,
+        })
+
+        ctx.result = await ctx.ClsiManager.promises.sendRequest(
+          ctx.project._id,
+          ctx.user_id,
+          {
+            timeout: 100,
+            incrementalCompilesEnabled: true,
+            compileBackendClass: 'c3d',
+            compileGroup: 'priority',
+          }
+        )
+      })
+
+      it('retries once with a full sync', function (ctx) {
+        expect(ctx.FetchUtils.fetchStringWithResponse).to.have.been.calledTwice
+
+        const firstCompileOptions =
+          ctx.FetchUtils.fetchStringWithResponse.getCall(0).args[1].json.compile
+            .options
+        const secondCompileOptions =
+          ctx.FetchUtils.fetchStringWithResponse.getCall(1).args[1].json.compile
+            .options
+
+        expect(firstCompileOptions.syncType).to.equal('incremental')
+        expect(secondCompileOptions.syncType).to.equal('full')
+      })
+
+      it('returns the full-sync result', function (ctx) {
+        expect(ctx.result.status).to.equal('success')
+      })
+    })
+
     describe('with a filesystem-backed project', function () {
       beforeEach(async function (ctx) {
         ctx.project.storageBackend = 'filesystem'

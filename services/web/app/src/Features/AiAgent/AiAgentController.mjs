@@ -4,6 +4,7 @@ import {
   AiAgentError,
   createSession as createAgentSession,
   getAgentConfig,
+  rollbackSessionToCheckpoint,
   runTurn,
   startAct as startAgentAct,
 } from './AiAgentRuntime.mjs'
@@ -33,6 +34,10 @@ const TurnSchema = z.object({
   providerId: z.string().trim().min(1).max(200).optional(),
   model: z.string().trim().min(1).max(200).optional(),
   selection: SelectionSchema,
+})
+
+const RollbackSessionCheckpointSchema = z.object({
+  commitHash: z.string().trim().regex(/^[a-f0-9]{40}$/i),
 })
 
 async function config(req, res, next) {
@@ -160,6 +165,21 @@ async function rollbackPatch(req, res, next) {
   }
 }
 
+async function rollbackSessionCheckpoint(req, res, next) {
+  try {
+    const body = RollbackSessionCheckpointSchema.parse(req.body)
+    const result = await rollbackSessionToCheckpoint({
+      projectId: req.params.Project_id,
+      userId: SessionManager.getLoggedInUserId(req.session),
+      sessionId: req.params.sessionId,
+      commitHash: body.commitHash,
+    })
+    res.json(result)
+  } catch (err) {
+    handleControllerError(err, res, next)
+  }
+}
+
 function handleControllerError(err, res, next) {
   if (err instanceof z.ZodError || err.name === 'ZodError') {
     res.status(422).json({
@@ -237,4 +257,5 @@ export default {
   applyPatch,
   rejectPatch,
   rollbackPatch,
+  rollbackSessionCheckpoint,
 }

@@ -55,4 +55,22 @@ describe('settings.defaults', function () {
     expect(settings.textExtensions).to.include('xyz')
   })
 
+  it('configures a default filesystem workspace root for project agents', function () {
+    clearSettingsCache()
+    const previousProjectWorkspaceRoot =
+      process.env.SUPERPAPER_PROJECT_WORKSPACE_ROOT
+    delete process.env.SUPERPAPER_PROJECT_WORKSPACE_ROOT
+    try {
+      const settings = require('@superpaper/settings')
+      expect(settings.projectWorkspaceRoot).to.equal('/var/lib/superpaper')
+    } finally {
+      if (previousProjectWorkspaceRoot === undefined) {
+        delete process.env.SUPERPAPER_PROJECT_WORKSPACE_ROOT
+      } else {
+        process.env.SUPERPAPER_PROJECT_WORKSPACE_ROOT =
+          previousProjectWorkspaceRoot
+      }
+      clearSettingsCache()
+    }
+  })
 })

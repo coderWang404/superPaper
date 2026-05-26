@@ -15,9 +15,12 @@ import { Folder } from '@ol-types/folder'
 
 // Warnings that may disappear after a second LaTeX pass
 const TRANSIENT_WARNING_REGEX = /^(Reference|Citation).+undefined on input line/
+const COMPILER_STDOUT_DIAGNOSTIC_REGEX =
+  /\b(error|failed|fatal|not found|no such file|undefined)\b/i
 
 const MAX_LOG_SIZE = 1024 * 1024 // 1MB
 const MAX_BIB_LOG_SIZE_PER_FILE = MAX_LOG_SIZE
+const COMPILER_STDOUT_LOG = 'output.stdout'
 
 export function handleOutputFiles(
   outputFiles: Map<string, PDFFile>,
@@ -142,6 +145,23 @@ export async function handleLogFiles(
       accumulateResults({ errors, warnings, typesetting })
     } catch (e) {
       debugConsole.warn(e) // ignore failure to parse the log file, but log a warning
+    }
+  }
+
+  if (!result.log?.trim()) {
+    const stdoutFile = outputFiles.get(COMPILER_STDOUT_LOG)
+
+    if (stdoutFile) {
+      result.log = await fetchFileWithSizeLimit(
+        buildURL(stdoutFile, data.pdfDownloadDomain),
+        signal,
+        MAX_LOG_SIZE
+      )
+      const stdoutDiagnostic = buildCompilerStdoutDiagnostic(result.log)
+
+      if (stdoutDiagnostic) {
+        accumulateResults({ errors: [stdoutDiagnostic] })
+      }
     }
   }
 
@@ -287,6 +307,53 @@ function normalizeFilePath(
 
 function isTransientWarning(warning: LatexLogEntry): boolean {
   return TRANSIENT_WARNING_REGEX.test(warning.message || '')
+}
+
+function buildCompilerStdoutDiagnostic(log: string): LatexLogEntry | null {
+  const message = summarizeCompilerStdout(log)
+
+  if (!message) {
+    return null
+  }
+
+  return {
+    line: null,
+    file: undefined,
+    level: 'error',
+    message,
+    content: log,
+    raw: log,
+    ruleId: 'compiler-stdout',
+  }
+}
+
+function summarizeCompilerStdout(log: string) {
+  const lines = log
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  if (lines.length === 0) {
+    return ''
+  }
+
+  const summaryIndex = lines.findIndex(line =>
+    /^Collected error summary/i.test(line)
+  )
+  const summaryLines =
+    summaryIndex >= 0
+      ? lines
+          .slice(summaryIndex + 1)
+          .filter(line => COMPILER_STDOUT_DIAGNOSTIC_REGEX.test(line))
+      : []
+  const diagnosticLines = summaryLines.length
+    ? summaryLines
+    : lines.filter(line => COMPILER_STDOUT_DIAGNOSTIC_REGEX.test(line))
+  const pickedLines = diagnosticLines.length
+    ? diagnosticLines
+    : lines.slice(0, 4)
+
+  return pickedLines.slice(0, 4).join('\n')
 }
 
 async function fetchFileWithSizeLimit(

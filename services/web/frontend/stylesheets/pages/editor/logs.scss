@@ -28,6 +28,58 @@
       gap: var(--spacing-02);
     }
 
+    .first-compiler-error-summary {
+      display: grid;
+      gap: var(--spacing-02);
+      border-left: 3px solid var(--content-danger-themed);
+      border-radius: var(--border-radius-base);
+      background-color: var(--bg-primary-themed);
+      padding: var(--spacing-04);
+
+      p {
+        margin: 0;
+        color: var(--content-secondary-themed);
+        font-size: var(--font-size-01);
+        line-height: var(--line-height-01);
+      }
+    }
+
+    .first-compiler-error-summary-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-02);
+    }
+
+    .first-compiler-error-summary-label {
+      color: var(--content-danger-themed);
+      font-size: var(--font-size-01);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .first-compiler-error-summary-source {
+      min-width: 0;
+      overflow: hidden;
+      color: var(--content-secondary-themed);
+      font-size: var(--font-size-01);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .first-compiler-error-summary-message {
+      color: var(--content-primary-themed);
+      font-size: var(--font-size-02);
+      font-weight: 700;
+      line-height: var(--line-height-02);
+      overflow-wrap: anywhere;
+    }
+
+    .first-compiler-error-summary-actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+
     .icon-button,
     .icon-button-small {
       @include ol-button-variant(

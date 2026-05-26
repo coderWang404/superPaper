@@ -362,6 +362,13 @@ export type ProjectAiAgentTurnResponse = {
   answer: string
 }
 
+export type ProjectAiAgentCheckpointRollbackResponse = {
+  session: ProjectAiAgentSession
+  restoredCommitHash: string
+  changedPaths: string[]
+  event: ProjectAiAgentEvent
+}
+
 type ProjectAiAgentStreamEvent =
   | { type: 'event'; event: ProjectAiAgentEvent }
   | { type: 'done'; session: ProjectAiAgentSession; answer: string }
@@ -509,6 +516,17 @@ export function rollbackProjectAiAgentPatch(projectId: string, patchId: string) 
   return postJSON<{ patch: ProjectAiAgentPatch }>(
     `/project/${projectId}/ai/agent/patches/${patchId}/rollback`,
     { body: {} }
+  )
+}
+
+export function rollbackProjectAiAgentSessionCheckpoint(
+  projectId: string,
+  sessionId: string,
+  commitHash: string
+) {
+  return postJSON<ProjectAiAgentCheckpointRollbackResponse>(
+    `/project/${projectId}/ai/agent/sessions/${sessionId}/rollback-checkpoint`,
+    { body: { commitHash } }
   )
 }
 

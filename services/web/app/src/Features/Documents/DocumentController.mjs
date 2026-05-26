@@ -15,17 +15,27 @@ async function getDocument(req, res) {
   const peek = req.query.peek === 'true'
   const project = await ProjectGetter.promises.getProject(projectId, {
     rootFolder: true,
+    storageBackend: true,
     superpaper: true,
   })
   if (!project) {
     return res.sendStatus(404)
   }
 
-  const { path } = await ProjectLocator.promises.findElement({
-    project,
-    element_id: docId,
-    type: 'doc',
-  })
+  let docPath
+  if (project.storageBackend === 'filesystem') {
+    docPath = await ProjectEntityHandler.promises.getDocPathByProjectIdAndDocId(
+      projectId,
+      docId
+    )
+  } else {
+    const { path } = await ProjectLocator.promises.findElement({
+      project,
+      element_id: docId,
+      type: 'doc',
+    })
+    docPath = path.fileSystem
+  }
 
   const { lines, version, ranges } = await ProjectEntityHandler.promises.getDoc(
     projectId,
@@ -67,7 +77,7 @@ async function getDocument(req, res) {
       lines,
       version,
       ranges,
-      pathname: path.fileSystem,
+      pathname: docPath,
       projectHistoryId,
       projectHistoryType,
       historyRangesSupport,

@@ -96,6 +96,23 @@ async function writeTextFile({ projectId, projectPath, content }) {
   }
 }
 
+async function writeFileBuffer({ projectId, projectPath, content }) {
+  await ensureWorkspace(projectId)
+  const resolved = await ProjectWorkspaceManager.resolveProjectPath({
+    projectId,
+    projectPath,
+  })
+  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content)
+  await fs.mkdir(path.dirname(resolved.absolutePath), { recursive: true })
+  await fs.writeFile(resolved.absolutePath, buffer)
+  return {
+    projectPath: resolved.projectPath,
+    absolutePath: resolved.absolutePath,
+    bytes: buffer.length,
+    sha256: sha256(buffer),
+  }
+}
+
 async function listFiles({ projectId }) {
   const workspaceRoot = ProjectWorkspaceManager.getWorkspaceRoot(projectId)
   const files = []
@@ -164,10 +181,12 @@ async function walk(root, relativeDir, files) {
       await walk(root, projectPath, files)
     } else if (entry.isFile()) {
       const stat = await fs.stat(absolutePath)
+      const content = await fs.readFile(absolutePath)
       files.push({
         projectPath,
         absolutePath,
         bytes: stat.size,
+        sha256: sha256(content),
         type: isTextProjectPath(projectPath) ? 'doc' : 'file',
       })
     }
@@ -195,6 +214,7 @@ export default {
   readTextFile,
   readFileBuffer,
   writeTextFile,
+  writeFileBuffer,
   listFiles,
   renameFile,
   deleteFile,

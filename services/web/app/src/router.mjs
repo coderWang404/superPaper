@@ -467,6 +467,12 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     AuthorizationMiddleware.ensureUserCanReadProject,
     ProjectController.projectEntitiesJson,
   );
+  webRouter.get(
+    "/project/:Project_id/file-tree",
+    AuthenticationController.requireLogin(),
+    AuthorizationMiddleware.ensureUserCanReadProject,
+    ProjectController.projectFileTreeJson,
+  );
 
   webRouter.get(
     "/project",
@@ -646,6 +652,16 @@ async function initialize(webRouter, privateApiRouter, publicApiRouter) {
     }),
     AuthorizationMiddleware.ensureUserCanWriteProjectContent,
     AiAgentController.startAct,
+  );
+
+  webRouter.post(
+    "/project/:Project_id/ai/agent/sessions/:sessionId/rollback-checkpoint",
+    AuthenticationController.requireLogin(),
+    RateLimiterMiddleware.rateLimit(rateLimiters.projectAiChat, {
+      params: ["Project_id"],
+    }),
+    AuthorizationMiddleware.ensureUserCanWriteProjectContent,
+    AiAgentController.rollbackSessionCheckpoint,
   );
 
   webRouter.post(

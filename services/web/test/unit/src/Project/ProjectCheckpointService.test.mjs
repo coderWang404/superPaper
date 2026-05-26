@@ -76,4 +76,62 @@ describe('ProjectCheckpointService', function () {
     expect(diff).to.contain('-hello')
     expect(diff).to.contain('+hello world')
   })
+
+  it('restores a checkpoint and reports changed paths', async function (ctx) {
+    const workspaceRoot = path.join(ctx.tmpRoot, 'project-1', 'workspace')
+    await fs.mkdir(workspaceRoot, { recursive: true })
+    await fs.writeFile(path.join(workspaceRoot, 'main.tex'), 'before\n')
+    const checkpoint = await ctx.ProjectCheckpointService.createCheckpoint({
+      projectId: 'project-1',
+      actorType: 'agent',
+      summary: 'Before agent run',
+    })
+    await fs.writeFile(path.join(workspaceRoot, 'main.tex'), 'after\n')
+
+    const result = await ctx.ProjectCheckpointService.restoreCommit({
+      projectId: 'project-1',
+      commitHash: checkpoint.commitHash,
+    })
+
+    expect(result).to.deep.equal({
+      commitHash: checkpoint.commitHash,
+      changedPaths: ['/main.tex'],
+    })
+    expect(await fs.readFile(path.join(workspaceRoot, 'main.tex'), 'utf8')).to
+      .equal('before\n')
+  })
+
+  it('removes files committed after the restored checkpoint', async function (ctx) {
+    const workspaceRoot = path.join(ctx.tmpRoot, 'project-1', 'workspace')
+    await fs.mkdir(workspaceRoot, { recursive: true })
+    await fs.writeFile(path.join(workspaceRoot, 'main.tex'), 'before\n')
+    const checkpoint = await ctx.ProjectCheckpointService.createCheckpoint({
+      projectId: 'project-1',
+      actorType: 'agent',
+      summary: 'Before agent run',
+    })
+    await fs.writeFile(path.join(workspaceRoot, 'agent-output.tex'), 'after\n')
+    await ctx.ProjectCheckpointService.createCheckpoint({
+      projectId: 'project-1',
+      actorType: 'agent',
+      summary: 'After agent run',
+    })
+
+    const result = await ctx.ProjectCheckpointService.restoreCommit({
+      projectId: 'project-1',
+      commitHash: checkpoint.commitHash,
+    })
+
+    expect(result).to.deep.equal({
+      commitHash: checkpoint.commitHash,
+      changedPaths: ['/agent-output.tex'],
+    })
+    let fileExists = true
+    try {
+      await fs.access(path.join(workspaceRoot, 'agent-output.tex'))
+    } catch {
+      fileExists = false
+    }
+    expect(fileExists).to.equal(false)
+  })
 })

@@ -36,6 +36,7 @@ import { useDebugDiffTracker } from '../hooks/use-debug-diff-tracker'
 import { convertFileRefToBinaryFile } from '@/features/ide-react/util/file-view'
 import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
 import { useEditorPropertiesContext } from '@/features/ide-react/context/editor-properties-context'
+import { openPreferredOrFallbackDoc } from '@/features/ide-react/util/open-initial-doc'
 
 export interface GotoOffsetOptions {
   gotoOffset: number
@@ -516,11 +517,11 @@ export const EditorManagerProvider: FC<React.PropsWithChildren> = ({
 
   const openInitialDoc = useCallback(
     async (fallbackDocId?: string) => {
-      const docId =
-        customLocalStorage.getItem(currentDocumentIdStorageKey) || fallbackDocId
-      if (docId) {
-        return await openDocWithId(docId)
-      }
+      return await openPreferredOrFallbackDoc({
+        preferredDocId: customLocalStorage.getItem(currentDocumentIdStorageKey),
+        fallbackDocId,
+        openDocWithId,
+      })
     },
     [currentDocumentIdStorageKey, openDocWithId]
   )

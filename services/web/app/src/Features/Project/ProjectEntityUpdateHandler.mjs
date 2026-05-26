@@ -68,6 +68,7 @@ async function getDocContext(projectId, docId) {
     project = await ProjectGetter.promises.getProject(projectId, {
       name: true,
       rootFolder: true,
+      storageBackend: true,
     })
   } catch (err) {
     throw OError.tag(err, 'error fetching project', {
@@ -77,6 +78,20 @@ async function getDocContext(projectId, docId) {
 
   if (!project) {
     throw new Errors.NotFoundError('project not found')
+  }
+  if (project.storageBackend === 'filesystem') {
+    const docPath =
+      await ProjectEntityHandler.promises.getDocPathByProjectIdAndDocId(
+        projectId,
+        docId
+      )
+    return {
+      projectName: project.name,
+      isDeletedDoc: false,
+      path: docPath,
+      folder: null,
+      storageBackend: 'filesystem',
+    }
   }
   try {
     const { path, folder } = await ProjectLocator.promises.findElement({
@@ -168,6 +183,19 @@ async function updateDocLines(
     throw error
   }
   const { projectName, isDeletedDoc, path, folder } = ctx
+  if (ctx.storageBackend === 'filesystem') {
+    const write = await ProjectFileStore.writeTextFile({
+      projectId,
+      projectPath: path,
+      content: lines.join('\n'),
+    })
+    ProjectUpdateHandler.promises
+      .markAsUpdated(projectId, lastUpdatedAt, lastUpdatedBy)
+      .catch(error => {
+        logger.error({ error }, 'failed to mark project as updated')
+      })
+    return { rev: 0, modified: true, sha256: write.sha256 }
+  }
   logger.debug({ projectId, docId }, 'telling docstore manager to update doc')
   let modified, rev
   try {

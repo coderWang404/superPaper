@@ -23,6 +23,7 @@ type ProviderState = {
   providers: AiProvider[]
   loading: boolean
   activeAction: string | null
+  expandedKeyProviderId: string | null
   statusMessage: TranslationKey | null
   errorMessage: TranslationKey | null
 }
@@ -46,6 +47,7 @@ type TranslationKey =
   | 'apiKeyReplaced'
   | 'apiKeyStored'
   | 'baseURL'
+  | 'cancel'
   | 'confirmDelete'
   | 'default'
   | 'defaultModel'
@@ -57,6 +59,7 @@ type TranslationKey =
   | 'health'
   | 'loading'
   | 'modelIds'
+  | 'modelIdsHelp'
   | 'models'
   | 'modelsSynced'
   | 'name'
@@ -98,6 +101,7 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     apiKeyReplaced: 'API key replaced',
     apiKeyStored: 'API key stored',
     baseURL: 'Base URL',
+    cancel: 'Cancel',
     confirmDelete: 'Delete AI provider',
     default: 'Default',
     defaultModel: 'Default model',
@@ -109,6 +113,7 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     health: 'Health',
     loading: 'Loading AI providers...',
     modelIds: 'Model IDs',
+    modelIdsHelp: 'Use commas or new lines, for example: gpt-4.1, deepseek-chat.',
     models: 'Models',
     modelsSynced: 'Models synced',
     name: 'Name',
@@ -150,6 +155,7 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     apiKeyReplaced: 'API 密钥已替换',
     apiKeyStored: 'API 密钥已保存',
     baseURL: 'Base URL',
+    cancel: '取消',
     confirmDelete: '删除 AI 供应商',
     default: '默认',
     defaultModel: '默认模型',
@@ -161,6 +167,7 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     health: '健康状态',
     loading: '正在加载 AI 供应商...',
     modelIds: '模型 ID',
+    modelIdsHelp: '可使用逗号或换行分隔，例如：gpt-4.1, deepseek-chat。',
     models: '模型',
     modelsSynced: '模型已同步',
     name: '名称',
@@ -202,6 +209,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
     providers: [],
     loading: true,
     activeAction: null,
+    expandedKeyProviderId: null,
     statusMessage: null,
     errorMessage: null,
   }
@@ -351,6 +359,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       replaceProvider(response.provider)
       state.statusMessage = 'apiKeyReplaced'
       state.errorMessage = null
+      state.expandedKeyProviderId = null
       apiKeyInput.value = ''
       render()
     } catch (error) {
@@ -424,7 +433,13 @@ export function initAiProviderAdmin(root: HTMLElement): void {
               <p>${escapeHtml(t('providersDescription'))}</p>
             </div>
           </div>
-          ${renderProviderTable(state.providers, state.loading, state.activeAction, t)}
+          ${renderProviderTable(
+            state.providers,
+            state.loading,
+            state.activeAction,
+            state.expandedKeyProviderId,
+            t
+          )}
         </div>
         <div class="ai-admin-section">
           <div class="ai-admin-section-header">
@@ -474,6 +489,30 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       .forEach(form => {
         form.addEventListener('submit', event => {
           handleReplaceKey(event, form.dataset.providerId || '').catch(() => {})
+        })
+      })
+
+    root
+      .querySelectorAll<HTMLButtonElement>('[data-ai-provider-show-replace-key]')
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          state.expandedKeyProviderId = button.dataset.providerId || null
+          state.statusMessage = null
+          state.errorMessage = null
+          render()
+        })
+      })
+
+    root
+      .querySelectorAll<HTMLButtonElement>(
+        '[data-ai-provider-cancel-replace-key]'
+      )
+      .forEach(button => {
+        button.addEventListener('click', () => {
+          if (state.expandedKeyProviderId === button.dataset.providerId) {
+            state.expandedKeyProviderId = null
+            render()
+          }
         })
       })
 
@@ -560,6 +599,7 @@ function renderProviderTable(
   providers: AiProvider[],
   loading: boolean,
   activeAction: string | null,
+  expandedKeyProviderId: string | null,
   t: (key: TranslationKey) => string
 ) {
   if (loading) {
@@ -585,7 +625,11 @@ function renderProviderTable(
         </tr>
       </thead>
       <tbody>
-        ${providers.map(provider => renderProviderRow(provider, activeAction, t)).join('')}
+        ${providers
+          .map(provider =>
+            renderProviderRow(provider, activeAction, expandedKeyProviderId, t)
+          )
+          .join('')}
       </tbody>
       </table>
     </div>
@@ -595,6 +639,7 @@ function renderProviderTable(
 function renderProviderRow(
   provider: AiProvider,
   activeAction: string | null,
+  expandedKeyProviderId: string | null,
   t: (key: TranslationKey) => string
 ) {
   const models =
@@ -604,6 +649,7 @@ function renderProviderRow(
   const isSyncing = activeAction === `sync:${provider.id}`
   const isTesting = activeAction === `test:${provider.id}`
   const isReplacingKey = activeAction === `replace-key:${provider.id}`
+  const isReplaceKeyExpanded = expandedKeyProviderId === provider.id
   return `
     <tr>
       <td>
@@ -611,7 +657,9 @@ function renderProviderRow(
         <div class="ai-admin-row-subtitle">${escapeHtml(
           provider.hasApiKey ? t('apiKeyStored') : t('noApiKeyStored')
         )}</div>
-        <form
+        ${
+          isReplaceKeyExpanded
+            ? `<form
           class="ai-provider-admin-replace-key"
           aria-label="${escapeHtml(t('replaceProviderKeyFor'))} ${escapedProviderName}"
           data-ai-provider-replace-key-form
@@ -635,7 +683,28 @@ function renderProviderRow(
           >
             ${escapeHtml(t(isReplacingKey ? 'replaceKeyBusy' : 'replaceKey'))}
           </button>
+          <button
+            class="btn btn-link btn-xs"
+            type="button"
+            data-ai-provider-cancel-replace-key
+            data-provider-id="${escapedProviderId}"
+            ${activeAction ? 'disabled' : ''}
+          >
+            ${escapeHtml(t('cancel'))}
+          </button>
         </form>
+        `
+            : `<button
+          type="button"
+          class="btn btn-secondary btn-xs ai-provider-admin-replace-key-toggle"
+          data-ai-provider-show-replace-key
+          data-provider-id="${escapedProviderId}"
+          aria-label="${escapeHtml(t('replaceProviderKeyFor'))} ${escapedProviderName}"
+          ${activeAction ? 'disabled' : ''}
+        >
+          ${escapeHtml(t('replaceKey'))}
+        </button>`
+        }
       </td>
       <td>${escapeHtml(provider.baseURL)}</td>
       <td>${escapeHtml(models)}</td>
@@ -691,6 +760,8 @@ function renderProviderRow(
 }
 
 function renderCreateForm(t: (key: TranslationKey) => string) {
+  const modelIdsHelpId = 'ai-provider-model-ids-help'
+
   return `
     <form class="ai-admin-form" aria-label="${escapeHtml(
       t('addProviderForm')
@@ -718,7 +789,17 @@ function renderCreateForm(t: (key: TranslationKey) => string) {
         <label class="form-label" for="ai-provider-model-ids">${escapeHtml(
           t('modelIds')
         )}</label>
-        <input class="form-control" id="ai-provider-model-ids" name="modelIds" type="text" placeholder="gpt-4.1, deepseek-chat">
+        <input
+          class="form-control"
+          id="ai-provider-model-ids"
+          name="modelIds"
+          type="text"
+          placeholder="gpt-4.1, deepseek-chat"
+          aria-describedby="${modelIdsHelpId}"
+        >
+        <p class="ai-admin-help-text" id="${modelIdsHelpId}">
+          ${escapeHtml(t('modelIdsHelp'))}
+        </p>
       </div>
       <div class="form-group">
         <label class="form-label" for="ai-provider-default-model">${escapeHtml(

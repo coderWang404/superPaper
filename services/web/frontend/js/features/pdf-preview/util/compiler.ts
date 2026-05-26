@@ -21,6 +21,13 @@ const AUTO_COMPILE_DEBOUNCE = 2500
 
 // If there is a pending op, wait for it to be saved before compiling
 const PENDING_OP_MAX_WAIT = 10000
+const STATUSES_THAT_REQUIRE_FULL_RETRY = new Set([
+  'exited',
+  'failure',
+  'terminated',
+  'timedout',
+  'unavailable',
+])
 
 const searchParams = new URLSearchParams(window.location.search)
 
@@ -39,7 +46,7 @@ export default class DocumentCompiler {
   projectRootDocId: string | null
   clsiServerId: string | null
   currentDoc: DocumentContainer | null
-  error: Error | undefined
+  error: Error | string | undefined
   timer: number
   defaultOptions: CompileOptions
   debouncedAutoCompile: DebouncedFunc<() => void>
@@ -171,12 +178,16 @@ export default class DocumentCompiler {
 
       data.options = options
       data.rootDocId = rootDocId
+      this.error = STATUSES_THAT_REQUIRE_FULL_RETRY.has(data.status)
+        ? data.status
+        : undefined
       if (data.clsiServerId) {
         this.clsiServerId = data.clsiServerId
       }
       this.setData(data)
     } catch (error: any) {
       debugConsole.error(error)
+      this.error = error
       this.cleanupCompileResult()
       this.setError(error.info?.statusCode === 429 ? 'rate-limited' : 'error')
     } finally {

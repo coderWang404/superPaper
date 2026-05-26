@@ -753,6 +753,9 @@ module.exports = {
 
   // Internal configs
   // ----------------
+  projectWorkspaceRoot:
+    process.env.SUPERPAPER_PROJECT_WORKSPACE_ROOT || '/var/lib/superpaper',
+
   path: {
     // If we ever need to write something to disk (e.g. incoming requests
     // that need processing but may be too big for memory, then write

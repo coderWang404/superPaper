@@ -143,6 +143,9 @@ describe('ProjectController', function () {
       },
     }
     ctx.ProjectEntityHandler = {}
+    ctx.ProjectFileStore = {
+      listFiles: sinon.stub().resolves([]),
+    }
     ctx.UserGetter = {
       getUserFullEmails: sinon.stub().yields(null, []),
       getUser: sinon.stub().resolves({ lastLoginIp: '192.170.18.2' }),
@@ -317,6 +320,13 @@ describe('ProjectController', function () {
       '../../../../app/src/Features/Project/ProjectEntityHandler',
       () => ({
         default: ctx.ProjectEntityHandler,
+      })
+    )
+
+    vi.doMock(
+      '../../../../app/src/Features/Project/ProjectFileStore.mjs',
+      () => ({
+        default: ctx.ProjectFileStore,
       })
     )
 
@@ -1283,6 +1293,65 @@ describe('ProjectController', function () {
           resolve()
         }
         ctx.ProjectController.projectEntitiesJson(ctx.req, ctx.res, ctx.next)
+      })
+    })
+  })
+
+  describe('projectFileTreeJson', function () {
+    beforeEach(function (ctx) {
+      ctx.req.params = { Project_id: 'abcd' }
+      ctx.project = {
+        _id: 'abcd',
+        storageBackend: 'filesystem',
+        rootFolder: [
+          {
+            _id: 'stale-root-id',
+            name: 'rootFolder',
+            docs: [{ _id: 'stale-doc-id', name: 'main.tex' }],
+            fileRefs: [],
+            folders: [],
+          },
+        ],
+      }
+      ctx.ProjectGetter.promises.getProject = sinon.stub().resolves(ctx.project)
+      ctx.ProjectEntityHandler.buildFilesystemRootFolder = sinon.stub().returns({
+        _id: 'workspace-root-id',
+        name: 'rootFolder',
+        docs: [{ _id: 'agent-doc-id', name: 'cline-new-file.tex' }],
+        fileRefs: [],
+        folders: [],
+      })
+      ctx.ProjectFileStore.listFiles = sinon.stub().resolves([
+        { projectPath: '/cline-new-file.tex', type: 'doc', bytes: 10 },
+      ])
+    })
+
+    it('returns a fresh rootFolder built from filesystem workspace files', async function (ctx) {
+      await new Promise(resolve => {
+        ctx.res.json = data => {
+          expect(data).to.deep.equal({
+            project_id: 'abcd',
+            rootFolder: [
+              {
+                _id: 'workspace-root-id',
+                name: 'rootFolder',
+                docs: [{ _id: 'agent-doc-id', name: 'cline-new-file.tex' }],
+                fileRefs: [],
+                folders: [],
+              },
+            ],
+          })
+          expect(ctx.ProjectFileStore.listFiles).to.have.been.calledWith({
+            projectId: 'abcd',
+          })
+          expect(
+            ctx.ProjectEntityHandler.buildFilesystemRootFolder
+          ).to.have.been.calledWith([
+            { projectPath: '/cline-new-file.tex', type: 'doc', bytes: 10 },
+          ])
+          resolve()
+        }
+        ctx.ProjectController.projectFileTreeJson(ctx.req, ctx.res, ctx.next)
       })
     })
   })

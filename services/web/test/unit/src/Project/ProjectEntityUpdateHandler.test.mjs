@@ -326,6 +326,7 @@ describe('ProjectEntityUpdateHandler', function () {
           .calledWith(projectId, {
             name: true,
             rootFolder: true,
+            storageBackend: true,
           })
           .should.equal(true)
       })
@@ -391,6 +392,55 @@ describe('ProjectEntityUpdateHandler', function () {
 
       it('should not send the doc the to the TPDS', function (ctx) {
         ctx.TpdsUpdateSender.promises.addDoc.called.should.equal(false)
+      })
+    })
+
+    describe('for filesystem projects', function () {
+      beforeEach(async function (ctx) {
+        ctx.project.storageBackend = 'filesystem'
+        ctx.ProjectEntityHandler.promises.getDocPathByProjectIdAndDocId.resolves(
+          ctx.path
+        )
+        ctx.ProjectFileStore.writeTextFile.resolves({
+          projectPath: ctx.path,
+          sha256: 'a'.repeat(64),
+        })
+
+        await ctx.ProjectEntityUpdateHandler.promises.updateDocLines(
+          projectId,
+          docId,
+          ctx.docLines,
+          ctx.version,
+          ctx.ranges,
+          ctx.lastUpdatedAt,
+          ctx.lastUpdatedBy
+        )
+      })
+
+      it('resolves the doc path through the filesystem tree', function (ctx) {
+        expect(
+          ctx.ProjectEntityHandler.promises.getDocPathByProjectIdAndDocId
+        ).to.have.been.calledWith(projectId, docId)
+      })
+
+      it('writes the updated text into the workspace', function (ctx) {
+        expect(ctx.ProjectFileStore.writeTextFile).to.have.been.calledWith({
+          projectId,
+          projectPath: ctx.path,
+          content: ctx.docLines.join('\n'),
+        })
+      })
+
+      it('does not write filesystem docs back to docstore', function (ctx) {
+        expect(ctx.DocstoreManager.promises.updateDoc).not.to.have.been.called
+      })
+
+      it('marks the project as updated', function (ctx) {
+        expect(ctx.ProjectUpdater.promises.markAsUpdated).to.have.been.calledWith(
+          projectId,
+          ctx.lastUpdatedAt,
+          ctx.lastUpdatedBy
+        )
       })
     })
 

@@ -22,6 +22,7 @@
     "test:frontend": "NODE_ENV=test TZ=GMT mocha --recursive --timeout 5000 --exit --extension js,jsx,mjs,ts,tsx --grep=${MOCHA_GREP:-} --require test/frontend/bootstrap.js --ignore '**/*.spec.{js,jsx,ts,tsx}' --ignore '**/helpers/**/*.{js,jsx,ts,tsx}' test/frontend modules/*/test/frontend",
     "test:frontend:coverage": "c8 --all --include 'frontend/js' --include 'modules/*/frontend/js' --exclude 'frontend/js/vendor' --reporter=lcov --reporter=text-summary yarn run test:frontend",
     "start": "node app.mjs",
+    "smoke:cline-agent-browser": "node scripts/ai_agent_cline_browser_smoke.mjs",
     "nodemon": "node --watch app.mjs --watch-locales",
     "webpack": "webpack serve --config webpack.config.dev.js",
     "webpack:production": "webpack --config webpack.config.prod.js",
@@ -179,7 +180,7 @@
     "xml2js": "^0.6.2",
     "xregexp": "^4.3.0",
     "yauzl": "^2.10.0",
-    "zod": "^4.0.17",
+    "zod": "4.3.6",
     "zod-validation-error": "^4.0.1"
   },
   "devDependencies": {
@@ -353,6 +354,7 @@
     "path-browserify": "^1.0.1",
     "pdfjs-dist": "5.1.91",
     "pirates": "^4.0.1",
+    "playwright": "^1.60.0",
     "postcss": "^8.4.31",
     "postcss-loader": "^7.3.3",
     "prop-types": "^15.7.2",

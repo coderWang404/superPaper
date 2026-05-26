@@ -21,6 +21,7 @@ export const AgentEventSchema = new Schema(
         'compile_started',
         'compile_result',
         'checkpoint_created',
+        'checkpoint_restored',
         'workspace_diff',
         'mode_changed',
         'permission_denied',

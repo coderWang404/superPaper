@@ -25,10 +25,7 @@ import { useCommandProvider } from '@/features/ide-react/hooks/use-command-provi
 import RailHelpDropdown from './rail-help-dropdown'
 import RailTab from './rail-tab'
 import RailActionElement, { RailAction } from './rail-action-element'
-import {
-  type CustomRailTabIcon,
-  RailElement,
-} from '@/features/ide-react/util/rail-types'
+import { RailElement } from '@/features/ide-react/util/rail-types'
 import RailPanel from './rail-panel'
 import RailResizeHandle from './rail-resize-handle'
 import RailModals from './rail-modals'
@@ -38,44 +35,6 @@ import importSuperPaperModules from '../../../../../macros/import-superpaper-mod
 import { shouldIncludeElement } from '@/features/ide-react/util/rail-utils'
 import { useEditorContext } from '@/shared/context/editor-context'
 import useEventListener from '@/shared/hooks/use-event-listener'
-
-const AiAssistantRailIcon: CustomRailTabIcon = ({ title, open }) => (
-  <svg
-    aria-hidden="true"
-    className="ide-rail-tab-link-icon ide-rail-tab-svg-icon"
-    focusable="false"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d={
-        open
-          ? 'M12 2.75 13.7 8.3 19.25 10l-5.55 1.7L12 17.25l-1.7-5.55L4.75 10l5.55-1.7L12 2.75Zm6 11 1 3.25 3.25 1-3.25 1-1 3.25-1-3.25-3.25-1 3.25-1 1-3.25Z'
-          : 'M12 5.4 11.3 7.7a2.4 2.4 0 0 1-1.6 1.6L7.4 10l2.3.7a2.4 2.4 0 0 1 1.6 1.6l.7 2.3.7-2.3a2.4 2.4 0 0 1 1.6-1.6l2.3-.7-2.3-.7a2.4 2.4 0 0 1-1.6-1.6L12 5.4Zm0-2.65c.33 0 .63.22.73.54l1.56 5.08 5.08 1.56a.77.77 0 0 1 0 1.47l-5.08 1.56-1.56 5.08a.77.77 0 0 1-1.46 0l-1.56-5.08-5.08-1.56a.77.77 0 0 1 0-1.47l5.08-1.56 1.56-5.08c.1-.32.4-.54.73-.54Zm6 11c.33 0 .62.21.72.52l.88 2.86 2.86.88a.75.75 0 0 1 0 1.43l-2.86.88-.88 2.86a.75.75 0 0 1-1.43 0l-.88-2.86-2.86-.88a.75.75 0 0 1 0-1.43l2.86-.88.88-2.86c.1-.31.39-.52.71-.52Z'
-      }
-      fill="currentColor"
-    />
-    <title>{title}</title>
-  </svg>
-)
-
-const AgentSettingsRailIcon: CustomRailTabIcon = ({ title, open }) => (
-  <svg
-    aria-hidden="true"
-    className="ide-rail-tab-link-icon ide-rail-tab-svg-icon"
-    focusable="false"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d={
-        open
-          ? 'M5 4h10v2H5V4Zm0 7h14v2H5v-2Zm0 7h8v2H5v-2Zm12-15a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm-8 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm7 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z'
-          : 'M5 4.25h9.2a3 3 0 0 1 5.6 0H21v1.5h-1.2a3 3 0 0 1-5.6 0H5v-1.5Zm12 1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 11.25h1.2a3 3 0 0 1 5.6 0H21v1.5h-9.2a3 3 0 0 1-5.6 0H5v-1.5Zm4 1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM5 18.25h8.2a3 3 0 0 1 5.6 0H21v1.5h-2.2a3 3 0 0 1-5.6 0H5v-1.5Zm11 1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z'
-      }
-      fill="currentColor"
-    />
-    <title>{title}</title>
-  </svg>
-)
 
 const moduleRailEntries = (
   importSuperPaperModules('railEntries') as {
@@ -167,13 +126,13 @@ export const RailLayout = () => {
       },
       {
         key: 'ai-assistant',
-        icon: AiAssistantRailIcon,
+        icon: 'smart_toy',
         title: t('ai_assistant'),
         component: <AiAssistantPanel />,
       },
       {
         key: 'agent-settings',
-        icon: AgentSettingsRailIcon,
+        icon: 'tune',
         title: t('agent_settings'),
         component: <AgentSettingsPanel />,
       },

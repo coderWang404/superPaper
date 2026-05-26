@@ -26,6 +26,12 @@ describe('<RailLayout /> AI assistant', function () {
     )
 
     cy.findByRole('button', { name: 'More options' }).click()
+    cy.findByRole('tab', { name: 'AI Assistant' })
+      .find('.material-symbols')
+      .should('have.text', 'smart_toy')
+    cy.findByRole('tab', { name: 'Agent Settings' })
+      .find('.material-symbols')
+      .should('have.text', 'tune')
     cy.findByRole('tab', { name: 'AI Assistant' }).click()
     cy.findByRole('heading', { name: 'AI Assistant' })
     cy.findByText('No AI provider configured')

@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 import sinon from 'sinon'
 import MockRequest from '../helpers/MockRequest.mjs'
 import MockResponse from '../helpers/MockResponse.mjs'
@@ -73,6 +73,7 @@ describe('DocumentController', function () {
           version: ctx.version,
           ranges: ctx.ranges,
         }),
+        getDocPathByProjectIdAndDocId: sinon.stub().resolves(ctx.pathname),
       },
     }
     ctx.ProjectEntityUpdateHandler = {
@@ -159,6 +160,28 @@ describe('DocumentController', function () {
           historyRangesSupport: false,
           otMigrationStage: 0,
         })
+      })
+    })
+
+    describe('when the project is filesystem-backed', function () {
+      beforeEach(async function (ctx) {
+        ctx.project.storageBackend = 'filesystem'
+        ctx.ProjectLocator.promises.findElement.resetHistory()
+
+        await new Promise(resolve => {
+          ctx.res.callback = err => {
+            resolve(err)
+          }
+          ctx.DocumentController.getDocument(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('gets the pathname from the fresh filesystem tree', function (ctx) {
+        expect(ctx.ProjectLocator.promises.findElement).not.to.have.been.called
+        expect(
+          ctx.ProjectEntityHandler.promises.getDocPathByProjectIdAndDocId
+        ).to.have.been.calledWith(ctx.project._id, ctx.doc._id)
+        JSON.parse(ctx.res.body).pathname.should.equal(ctx.pathname)
       })
     })
 

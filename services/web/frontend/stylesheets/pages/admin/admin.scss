@@ -111,8 +111,7 @@
 }
 
 .admin-nav-tabs-container {
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto hidden;
   scrollbar-width: thin;
 
   .nav-tabs {
@@ -411,8 +410,7 @@
 .ai-admin-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(240px, 1fr));
-  column-gap: var(--spacing-06);
-  row-gap: var(--spacing-04);
+  gap: var(--spacing-04) var(--spacing-06);
 
   .form-group {
     margin-bottom: 0;
@@ -436,6 +434,13 @@
 
 .ai-admin-form-wide {
   margin-top: var(--spacing-05);
+}
+
+.ai-admin-help-text {
+  margin: var(--spacing-02) 0 0;
+  color: var(--content-secondary);
+  font-size: 1.2rem;
+  line-height: 1.35;
 }
 
 .ai-admin-textarea {
@@ -468,6 +473,10 @@
   .form-control {
     min-width: 0;
   }
+}
+
+.ai-provider-admin-replace-key-toggle {
+  margin-top: var(--spacing-05);
 }
 
 .ai-agent-plugin-preview {
@@ -525,13 +534,13 @@
   }
 }
 
-@media (max-width: 991px) {
+@media (width <= 991px) {
   .ai-admin-overview {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
   }
 }
 
-@media (max-width: 767px) {
+@media (width <= 767px) {
   .ai-admin-page-header h2 {
     font-size: 2rem;
   }

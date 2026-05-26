@@ -5,6 +5,8 @@ import ProjectEntityHandler from './ProjectEntityHandler.mjs'
 import ProjectWorkspaceManager from './ProjectWorkspaceManager.mjs'
 import ProjectFileStore from './ProjectFileStore.mjs'
 import ProjectCheckpointService from './ProjectCheckpointService.mjs'
+import HistoryManager from '../History/HistoryManager.mjs'
+import { Project } from '../../models/Project.mjs'
 
 async function migrateProjectToFilesystem({ projectId, userId }) {
   const project = await ProjectGetter.promises.getProject(projectId)
@@ -23,6 +25,22 @@ async function migrateProjectToFilesystem({ projectId, userId }) {
       content: Array.isArray(doc.lines) ? doc.lines.join('\n') : '',
     })
   }
+  const files = await ProjectEntityHandler.promises.getAllFiles(projectId)
+  for (const [projectPath, file] of Object.entries(files)) {
+    if (!file.hash) {
+      continue
+    }
+    const { stream } = await HistoryManager.promises.requestBlobWithProjectId(
+      projectId,
+      file.hash,
+      'GET'
+    )
+    await ProjectFileStore.writeFileBuffer({
+      projectId,
+      projectPath,
+      content: await streamToBuffer(stream),
+    })
+  }
 
   await writeProjectMetadata({ project, projectId, workspaceRoot })
   const checkpoint = await ProjectCheckpointService.createCheckpoint({
@@ -32,13 +50,22 @@ async function migrateProjectToFilesystem({ projectId, userId }) {
     summary: 'Migrate project to filesystem workspace',
   })
 
-  project.storageBackend = 'filesystem'
-  project.workspace = {
+  const workspace = {
     rootPath: workspaceRoot,
     migratedAt: new Date(),
     finalizedAt: null,
   }
-  await project.save()
+  project.storageBackend = 'filesystem'
+  project.workspace = workspace
+  await Project.updateOne(
+    { _id: projectId },
+    {
+      $set: {
+        storageBackend: 'filesystem',
+        workspace,
+      },
+    }
+  ).exec()
 
   return {
     projectId,
@@ -65,6 +92,14 @@ async function writeProjectMetadata({ project, projectId, workspaceRoot }) {
     )}\n`,
     'utf8'
   )
+}
+
+async function streamToBuffer(stream) {
+  const chunks = []
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks)
 }
 
 export default {

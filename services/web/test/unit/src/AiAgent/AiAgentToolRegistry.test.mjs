@@ -87,7 +87,8 @@ describe('AiAgentToolRegistry', function () {
   })
 
   it('lists read-only tool definitions without implementation details', function (ctx) {
-    expect(ctx.Registry.listToolDefinitions()).to.deep.include({
+    const tools = ctx.Registry.listToolDefinitions()
+    expect(tools.find(tool => tool.name === 'project.read_file')).to.include({
       name: 'project.read_file',
       description: 'Read a text document from the current project.',
       access: 'read',
@@ -95,7 +96,7 @@ describe('AiAgentToolRegistry', function () {
       category: 'project',
       riskLevel: 'low',
     })
-    expect(ctx.Registry.listToolDefinitions()).to.deep.include({
+    expect(tools.find(tool => tool.name === 'patch.propose')).to.include({
       name: 'patch.propose',
       description:
         'Create a pending replace_text, create_doc, delete_doc, rename_entity, or move_entity patch for user review. This does not edit files.',
@@ -104,13 +105,33 @@ describe('AiAgentToolRegistry', function () {
       category: 'patch',
       riskLevel: 'medium',
     })
-    expect(ctx.Registry.listToolDefinitions()).to.deep.include({
+    expect(tools.find(tool => tool.name === 'compile.run')).to.include({
       name: 'compile.run',
       description: 'Run a controlled project compile and return a compact result.',
       access: 'read',
       requiresApproval: false,
       category: 'compile',
       riskLevel: 'medium',
+    })
+  })
+
+  it('includes model-facing input schemas and examples for tool calls', function (ctx) {
+    const patchTool = ctx.Registry.listToolDefinitions().find(
+      tool => tool.name === 'patch.propose'
+    )
+
+    expect(patchTool.inputSchema.type).to.equal('object')
+    expect(patchTool.inputSchema.required).to.include('operations')
+    expect(JSON.stringify(patchTool.inputSchema)).to.include('create_doc')
+    expect(patchTool.inputExample).to.deep.equal({
+      summary: 'Create a smoke-test file',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/agent-real-channel-smoke.tex',
+          content: 'ROOT_CHANNEL_AGENT_ACT_OK\n',
+        },
+      ],
     })
   })
 

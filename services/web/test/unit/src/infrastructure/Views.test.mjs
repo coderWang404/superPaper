@@ -126,4 +126,35 @@ describe('Views', function () {
       })
     }
   })
+
+  describe('thin footer layout', function () {
+    it('renders the current year in the copyright notice', function () {
+      class FixedDate extends Date {
+        constructor(...args) {
+          if (args.length === 0) {
+            super('2026-05-21T00:00:00.000Z')
+          } else {
+            super(...args)
+          }
+        }
+      }
+
+      const html = pug.renderFile('app/views/layout/thin-footer.pug', {
+        Date: FixedDate,
+        nav: {
+          left_footer: [],
+          right_footer: [],
+        },
+        settings: {
+          i18n: {
+            subdomainLang: {},
+          },
+        },
+        translate: text => text,
+      })
+
+      expect(html).to.contain('© 2026')
+      expect(html).not.to.contain('© 2025')
+    })
+  })
 })

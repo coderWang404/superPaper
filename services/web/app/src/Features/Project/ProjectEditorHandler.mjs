@@ -12,7 +12,7 @@ export default ProjectEditorHandler = {
   ) {
     let rootFolder = project.rootFolder[0]
     if (project.storageBackend === 'filesystem') {
-      rootFolder = await buildFilesystemRootFolder(project._id)
+      rootFolder = await buildFilesystemRootFolder(project._id, rootFolder)
     }
 
     const result = {
@@ -116,12 +116,15 @@ export default ProjectEditorHandler = {
   },
 }
 
-async function buildFilesystemRootFolder(projectId) {
+async function buildFilesystemRootFolder(projectId, previousRootFolder) {
   const [{ default: ProjectFileStore }, { default: ProjectEntityHandler }] =
     await Promise.all([
       import('./ProjectFileStore.mjs'),
       import('./ProjectEntityHandler.mjs'),
     ])
   const entries = await ProjectFileStore.listFiles({ projectId })
-  return ProjectEntityHandler.buildFilesystemRootFolder(entries)
+  return ProjectEntityHandler.buildFilesystemRootFolder(
+    entries,
+    previousRootFolder
+  )
 }

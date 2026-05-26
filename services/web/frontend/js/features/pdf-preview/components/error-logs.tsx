@@ -14,6 +14,13 @@ import LogEntry from './log-entry'
 import PdfClearCacheButton from '@/features/pdf-preview/components/pdf-clear-cache-button'
 import PdfDownloadFilesButton from '@/features/pdf-preview/components/pdf-download-files-button'
 import RollingBuildSelectedReminder from './rolling-build-selected-reminder'
+import { useProjectContext } from '@/shared/context/project-context'
+import OLButton from '@/shared/components/ol/ol-button'
+import MaterialIcon from '@/shared/components/material-icon'
+import {
+  buildCompileErrorAgentPrompt,
+  publishAiAssistantPrefill,
+} from '@/features/ai-assistant/util/agent-prefill'
 import importSuperPaperModules from '../../../../macros/import-superpaper-module.macro'
 
 const logsComponents: Array<{
@@ -35,6 +42,7 @@ function ErrorLogs({
   const { error, logEntries, rawLog, validationIssues, stoppedOnFirstError } =
     useCompileContext()
   const { t } = useTranslation()
+  const firstError = logEntries?.errors?.[0]
 
   const tabs = useMemo(() => {
     return [
@@ -90,6 +98,10 @@ function ErrorLogs({
               includeErrors={includeErrors}
               includeWarnings={includeWarnings}
             />
+          )}
+
+          {error === 'failure' && firstError && (
+            <FirstCompilerErrorSummary entry={firstError} />
           )}
 
           {error && <PdfPreviewError error={error} />}
@@ -165,3 +177,62 @@ const TabHeader = ({ tab, active }: { tab: ErrorLogTab; active: boolean }) => {
 export default withErrorBoundary(memo(ErrorLogs), () => (
   <PdfPreviewErrorBoundaryFallback type="logs" />
 ))
+
+function FirstCompilerErrorSummary({ entry }: { entry: LogEntryData }) {
+  const { t } = useTranslation()
+  const { projectId } = useProjectContext()
+  const source = formatFirstCompilerErrorSource(entry)
+  const title =
+    entry.messageComponent ?? entry.message ?? t('compile_error_entry_description')
+  const handleFixWithAgent = useCallback(() => {
+    publishAiAssistantPrefill({
+      projectId,
+      mode: 'agent',
+      prompt: buildCompileErrorAgentPrompt(entry),
+    })
+    window.dispatchEvent(
+      new CustomEvent('ui:select-rail-tab', {
+        detail: { tab: 'ai-assistant', open: true },
+      })
+    )
+  }, [entry, projectId])
+
+  return (
+    <section
+      aria-label={t('first_compiler_error')}
+      className="first-compiler-error-summary"
+    >
+      <div className="first-compiler-error-summary-header">
+        <span className="first-compiler-error-summary-label">
+          {t('first_compiler_error')}
+        </span>
+        {source && (
+          <code className="first-compiler-error-summary-source">{source}</code>
+        )}
+      </div>
+      <div className="first-compiler-error-summary-message">{title}</div>
+      <p>{t('first_compiler_error_guidance')}</p>
+      <div className="first-compiler-error-summary-actions">
+        <OLButton
+          type="button"
+          size="sm"
+          variant="secondary"
+          leadingIcon={<MaterialIcon type="smart_toy" className="icon-small" />}
+          onClick={handleFixWithAgent}
+        >
+          {t('fix_with_agent')}
+        </OLButton>
+      </div>
+    </section>
+  )
+}
+
+function formatFirstCompilerErrorSource(entry: LogEntryData) {
+  if (!entry.file) {
+    return ''
+  }
+  if (entry.line === null || entry.line === undefined || entry.line === '') {
+    return entry.file
+  }
+  return `${entry.file}:${entry.line}`
+}

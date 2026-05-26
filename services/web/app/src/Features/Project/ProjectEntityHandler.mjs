@@ -24,7 +24,7 @@ async function getAllDocs(projectId) {
     throw new Errors.NotFoundError('no project')
   }
   if (project.storageBackend === 'filesystem') {
-    return await getAllFilesystemDocs(projectId)
+    return await getAllFilesystemDocs(projectId, project.rootFolder?.[0])
   }
 
   // We get the path and name info from the project, and the lines and
@@ -70,7 +70,7 @@ async function getAllFiles(projectId) {
     throw new Errors.NotFoundError('no project')
   }
   if (project.storageBackend === 'filesystem') {
-    return await getAllFilesystemFiles(projectId)
+    return await getAllFilesystemFiles(projectId, project.rootFolder?.[0])
   }
 
   const folders = _getAllFoldersFromProject(project)
@@ -94,7 +94,7 @@ async function getAllEntities(projectId) {
     const entries = await ProjectFileStore.listFiles({ projectId })
     return getAllEntitiesFromProject({
       ...project,
-      rootFolder: [buildFilesystemRootFolder(entries)],
+      rootFolder: [buildFilesystemRootFolder(entries, project.rootFolder?.[0])],
     })
   }
   const entities = getAllEntitiesFromProject(project)
@@ -132,7 +132,7 @@ async function getAllDocPathsFromProjectById(projectId) {
     const entries = await ProjectFileStore.listFiles({ projectId })
     return getAllDocPathsFromProject({
       ...project,
-      rootFolder: [buildFilesystemRootFolder(entries)],
+      rootFolder: [buildFilesystemRootFolder(entries, project.rootFolder?.[0])],
     })
   }
   const docPaths = getAllDocPathsFromProject(project)
@@ -158,6 +158,16 @@ function getAllDocPathsFromProject(project) {
  * @return {Promise<{lines: *, rev: *, version: *, ranges: *}>}
  */
 async function getDoc(projectId, docId, options = {}) {
+  const project = await ProjectGetter.promises.getProject(projectId, {
+    rootFolder: 1,
+    storageBackend: 1,
+  })
+  if (project == null) {
+    throw new Errors.NotFoundError('no project')
+  }
+  if (project.storageBackend === 'filesystem') {
+    return await getFilesystemDoc(project, projectId, docId)
+  }
   const { lines, rev, version, ranges } = await DocstoreManager.promises.getDoc(
     projectId,
     docId,
@@ -182,7 +192,7 @@ async function getDocPathByProjectIdAndDocId(projectId, docId) {
     const entries = await ProjectFileStore.listFiles({ projectId })
     const filesystemProject = {
       ...project,
-      rootFolder: [buildFilesystemRootFolder(entries)],
+      rootFolder: [buildFilesystemRootFolder(entries, project.rootFolder?.[0])],
     }
     const docPath = await getDocPathFromProjectByDocId(
       filesystemProject,
@@ -265,15 +275,46 @@ function _getAllFoldersFromProject(project) {
   }
 }
 
-async function getAllFilesystemDocs(projectId) {
+async function getFilesystemDoc(project, projectId, docId) {
   const entries = await ProjectFileStore.listFiles({ projectId })
+  const filesystemProject = {
+    ...project,
+    rootFolder: [buildFilesystemRootFolder(entries, project.rootFolder?.[0])],
+  }
+  const projectPath = await getDocPathFromProjectByDocId(
+    filesystemProject,
+    docId
+  )
+  if (projectPath == null) {
+    throw new Errors.NotFoundError('no doc')
+  }
+  const file = await ProjectFileStore.readTextFile({
+    projectId,
+    projectPath,
+  })
+  return {
+    lines: file.content.split('\n'),
+    rev: 0,
+    version: 0,
+    ranges: {},
+    storageBackend: 'filesystem',
+    sha256: file.sha256,
+  }
+}
+
+async function getAllFilesystemDocs(projectId, previousRootFolder) {
+  const entries = await ProjectFileStore.listFiles({ projectId })
+  const { docsByPath } = getExistingEntitiesByPath(previousRootFolder)
   const docs = {}
   for (const entry of entries.filter(entry => entry.type === 'doc')) {
     const file = await ProjectFileStore.readTextFile({
       projectId,
       projectPath: entry.projectPath,
     })
-    const doc = createFilesystemDoc(entry.projectPath)
+    const doc = createFilesystemDoc(
+      entry.projectPath,
+      docsByPath.get(entry.projectPath)
+    )
     docs[entry.projectPath] = {
       _id: doc._id,
       name: doc.name,
@@ -287,11 +328,15 @@ async function getAllFilesystemDocs(projectId) {
   return docs
 }
 
-async function getAllFilesystemFiles(projectId) {
+async function getAllFilesystemFiles(projectId, previousRootFolder) {
   const entries = await ProjectFileStore.listFiles({ projectId })
+  const { filesByPath } = getExistingEntitiesByPath(previousRootFolder)
   const files = {}
   for (const entry of entries.filter(entry => entry.type === 'file')) {
-    const file = createFilesystemFile(entry.projectPath)
+    const file = createFilesystemFile(
+      entry.projectPath,
+      filesByPath.get(entry.projectPath)
+    )
     const content = await ProjectFileStore.readFileBuffer({
       projectId,
       projectPath: entry.projectPath,
@@ -308,37 +353,84 @@ async function getAllFilesystemFiles(projectId) {
   return files
 }
 
-function buildFilesystemRootFolder(entries) {
+function buildFilesystemRootFolder(entries, previousRootFolder = null) {
+  const { docsByPath, filesByPath } = getExistingEntitiesByPath(
+    previousRootFolder
+  )
   const docEntries = []
   const fileEntries = []
   for (const entry of entries) {
     if (entry.type === 'doc') {
       docEntries.push({
         path: entry.projectPath,
-        doc: createFilesystemDoc(entry.projectPath),
+        doc: createFilesystemDoc(
+          entry.projectPath,
+          docsByPath.get(entry.projectPath)
+        ),
       })
     } else {
       fileEntries.push({
         path: entry.projectPath,
-        file: createFilesystemFile(entry.projectPath),
+        file: createFilesystemFile(
+          entry.projectPath,
+          filesByPath.get(entry.projectPath)
+        ),
       })
     }
   }
   return FolderStructureBuilder.buildFolderStructure(docEntries, fileEntries)
 }
 
-function createFilesystemDoc(projectPath) {
+async function getFilesystemDocIdForPath(projectId, projectPath) {
+  const project = await ProjectGetter.promises.getProject(projectId, {
+    rootFolder: 1,
+    storageBackend: 1,
+  })
+  const { docsByPath } = getExistingEntitiesByPath(project?.rootFolder?.[0])
+  return (
+    docsByPath.get(projectPath)?._id?.toString?.() ||
+    docsByPath.get(projectPath)?._id ||
+    deterministicObjectId(`doc:${projectPath}`)
+  )
+}
+
+function createFilesystemDoc(projectPath, existingDoc = null) {
   return {
-    _id: deterministicObjectId(`doc:${projectPath}`),
+    ...(existingDoc || {}),
+    _id: existingDoc?._id || deterministicObjectId(`doc:${projectPath}`),
     name: path.basename(projectPath),
   }
 }
 
-function createFilesystemFile(projectPath) {
+function createFilesystemFile(projectPath, existingFile = null) {
   return {
-    _id: deterministicObjectId(`file:${projectPath}`),
+    ...(existingFile || {}),
+    _id: existingFile?._id || deterministicObjectId(`file:${projectPath}`),
     name: path.basename(projectPath),
   }
+}
+
+function getExistingEntitiesByPath(previousRootFolder) {
+  const docsByPath = new Map()
+  const filesByPath = new Map()
+
+  function visit(folder, basePath) {
+    if (!folder) {
+      return
+    }
+    for (const doc of folder.docs || []) {
+      docsByPath.set(path.posix.join(basePath, doc.name), doc)
+    }
+    for (const file of folder.fileRefs || []) {
+      filesByPath.set(path.posix.join(basePath, file.name), file)
+    }
+    for (const childFolder of folder.folders || []) {
+      visit(childFolder, path.posix.join(basePath, childFolder.name))
+    }
+  }
+
+  visit(previousRootFolder, '/')
+  return { docsByPath, filesByPath }
 }
 
 function deterministicObjectId(input) {
@@ -350,6 +442,7 @@ const ProjectEntityHandler = {
   getAllFiles,
   getAllEntities,
   getAllDocPathsFromProjectById,
+  getFilesystemDocIdForPath,
   getDoc,
   getDocPathByProjectIdAndDocId,
   getDocPathFromProjectByDocId,

@@ -8,12 +8,43 @@ import { useProjectContext } from '@/shared/context/project-context'
 import { useConnectionContext } from '@/features/ide-react/context/connection-context'
 import { useIdeReactContext } from '@/features/ide-react/context/ide-react-context'
 import { useModalsContext } from '@/features/ide-react/context/modals-context'
-import { postJSON } from '@/infrastructure/fetch-json'
+import { getJSON } from '@/infrastructure/fetch-json'
 import { debugConsole } from '@/utils/debugging'
-import getMeta from '@/utils/meta'
 import { useCallback } from 'react'
 import { PublicAccessLevel } from '../../../../../types/public-access-level'
 import { useLocation } from '@/shared/hooks/use-location'
+import { useEditorOpenDocContext } from '@/features/ide-react/context/editor-open-doc-context'
+import { useEditorManagerContext } from '@/features/ide-react/context/editor-manager-context'
+import { pathInFolder } from '@/features/file-tree/util/path'
+import type { Folder } from '../../../../../types/folder'
+
+function normalizeProjectPath(path: string) {
+  return path.startsWith('/') ? path : `/${path}`
+}
+
+function currentOpenDocWasChanged({
+  rootFolder,
+  currentDocumentId,
+  changedPaths,
+}: {
+  rootFolder: Folder[] | undefined
+  currentDocumentId: string | null
+  changedPaths: string[] | undefined
+}) {
+  if (!currentDocumentId || !changedPaths?.length || !rootFolder?.[0]) {
+    return false
+  }
+
+  const currentDocPath = pathInFolder(rootFolder[0], currentDocumentId)
+  if (!currentDocPath) {
+    return false
+  }
+
+  const normalizedCurrentDocPath = normalizeProjectPath(currentDocPath)
+  return changedPaths
+    .map(normalizeProjectPath)
+    .includes(normalizedCurrentDocPath)
+}
 
 function useSocketListeners() {
   const { t } = useTranslation()
@@ -21,6 +52,8 @@ function useSocketListeners() {
   const { showGenericMessageModal } = useModalsContext()
   const { permissionsLevel } = useIdeReactContext()
   const { projectId, updateProject } = useProjectContext()
+  const { currentDocumentId, currentDocument } = useEditorOpenDocContext()
+  const { openDocWithId } = useEditorManagerContext()
   const location = useLocation()
 
   useSocketListener(
@@ -110,25 +143,44 @@ function useSocketListeners() {
   useSocketListener(
     socket,
     'project:filesystem:changed',
-    useCallback(() => {
-      const userId = getMeta('ol-anonymous')
-        ? 'anonymous-user'
-        : getMeta('ol-user_id')
-      postJSON(`/project/${projectId}/join`, {
-        body: {
-          userId,
-        },
-      })
-        .then(({ project }: any) => {
-          updateProject({ rootFolder: project.rootFolder })
-        })
-        .catch(err => {
-          debugConsole.error(
-            'Error refreshing project after filesystem change',
-            err
-          )
-        })
-    }, [projectId, updateProject])
+    useCallback(
+      (payload?: { changedPaths?: string[] }) => {
+        getJSON(`/project/${projectId}/file-tree`)
+          .then(({ rootFolder }: any) => {
+            updateProject({ rootFolder })
+            if (
+              currentOpenDocWasChanged({
+                rootFolder,
+                currentDocumentId,
+                changedPaths: payload?.changedPaths,
+              }) &&
+              !currentDocument?.hasBufferedOps()
+            ) {
+              openDocWithId(currentDocumentId, { forceReopen: true }).catch(
+                err => {
+                  debugConsole.error(
+                    'Error reopening document after filesystem change',
+                    err
+                  )
+                }
+              )
+            }
+          })
+          .catch(err => {
+            debugConsole.error(
+              'Error refreshing project after filesystem change',
+              err
+            )
+          })
+      },
+      [
+        currentDocument,
+        currentDocumentId,
+        openDocWithId,
+        projectId,
+        updateProject,
+      ]
+    )
   )
 
   useSocketListener(

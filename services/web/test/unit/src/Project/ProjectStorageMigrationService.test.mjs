@@ -1,6 +1,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
+import { Readable } from 'node:stream'
 import { expect, vi } from 'vitest'
 import sinon from 'sinon'
 
@@ -19,7 +20,6 @@ describe('ProjectStorageMigrationService', function () {
       compiler: 'pdflatex',
       storageBackend: 'mongo',
       workspace: {},
-      save: sinon.stub().resolvesThis(),
     }
     ctx.docs = {
       '/main.tex': {
@@ -37,6 +37,7 @@ describe('ProjectStorageMigrationService', function () {
       '/figures/plot.pdf': {
         _id: 'file-1',
         name: 'plot.pdf',
+        hash: 'abc123',
       },
     }
     vi.doMock('@superpaper/settings', () => ({
@@ -72,6 +73,26 @@ describe('ProjectStorageMigrationService', function () {
         },
       })
     )
+    ctx.HistoryManager = {
+      promises: {
+        requestBlobWithProjectId: sinon.stub().resolves({
+          stream: Readable.from([Buffer.from([0, 1, 2, 255])]),
+          contentLength: 4,
+        }),
+      },
+    }
+    ctx.ProjectUpdateQuery = {
+      exec: sinon.stub().resolves({ matchedCount: 1 }),
+    }
+    ctx.ProjectModel = {
+      updateOne: sinon.stub().returns(ctx.ProjectUpdateQuery),
+    }
+    vi.doMock('../../../../app/src/models/Project.mjs', () => ({
+      Project: ctx.ProjectModel,
+    }))
+    vi.doMock('../../../../app/src/Features/History/HistoryManager.mjs', () => ({
+      default: ctx.HistoryManager,
+    }))
     ctx.ProjectStorageMigrationService = (await import(modulePath)).default
   })
 
@@ -96,6 +117,12 @@ describe('ProjectStorageMigrationService', function () {
       await fs.readFile(path.join(workspaceRoot, 'sections', 'intro.tex'), 'utf8')
     ).to.equal('Intro')
     expect(
+      await fs.readFile(path.join(workspaceRoot, 'figures', 'plot.pdf'))
+    ).to.deep.equal(Buffer.from([0, 1, 2, 255]))
+    expect(
+      ctx.HistoryManager.promises.requestBlobWithProjectId
+    ).to.have.been.calledWith('project-1', 'abc123', 'GET')
+    expect(
       JSON.parse(
         await fs.readFile(
           path.join(workspaceRoot, '.superpaper', 'project.json'),
@@ -110,8 +137,32 @@ describe('ProjectStorageMigrationService', function () {
     })
     expect(ctx.project.storageBackend).to.equal('filesystem')
     expect(ctx.project.workspace.rootPath).to.equal(workspaceRoot)
-    expect(ctx.project.save.called).to.equal(true)
+    expect(ctx.ProjectModel.updateOne).to.have.been.calledWith(
+      { _id: 'project-1' },
+      {
+        $set: {
+          storageBackend: 'filesystem',
+          workspace: {
+            rootPath: workspaceRoot,
+            migratedAt: sinon.match.date,
+            finalizedAt: null,
+          },
+        },
+      }
+    )
+    expect(ctx.ProjectUpdateQuery.exec.called).to.equal(true)
     expect(result.workspaceRoot).to.equal(workspaceRoot)
     expect(result.checkpoint.commitHash).to.equal('a'.repeat(40))
+  })
+
+  it('persists migration metadata for raw project records', async function (ctx) {
+    expect(ctx.project.save).to.equal(undefined)
+
+    await ctx.ProjectStorageMigrationService.migrateProjectToFilesystem({
+      projectId: 'project-1',
+      userId: 'user-1',
+    })
+
+    expect(ctx.ProjectModel.updateOne.calledOnce).to.equal(true)
   })
 })

@@ -52,6 +52,21 @@ describe('AiAgentController', function () {
           answer: 'Done',
         }
       }),
+      rollbackSessionToCheckpoint: sinon.stub().resolves({
+        session: ctx.session,
+        restoredCommitHash: 'a'.repeat(40),
+        changedPaths: ['/main.tex'],
+        event: {
+          id: 'event-restore',
+          sessionId: 'session-id',
+          sequence: 4,
+          type: 'checkpoint_restored',
+          payload: {
+            commitHash: 'a'.repeat(40),
+            changedPaths: ['/main.tex'],
+          },
+        },
+      }),
       AiAgentError: class AiAgentError extends Error {
         constructor(code, message) {
           super(message)
@@ -266,6 +281,35 @@ describe('AiAgentController', function () {
       patch: {
         id: 'patch-one',
         status: 'rolled_back',
+      },
+    })
+  })
+
+  it('rolls a direct agent session back to a checkpoint for the logged in user', async function (ctx) {
+    ctx.req.params.sessionId = 'session-id'
+    ctx.req.body = { commitHash: 'a'.repeat(40) }
+
+    await ctx.Controller.rollbackSessionCheckpoint(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Runtime.rollbackSessionToCheckpoint).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      commitHash: 'a'.repeat(40),
+    })
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      session: ctx.session,
+      restoredCommitHash: 'a'.repeat(40),
+      changedPaths: ['/main.tex'],
+      event: {
+        id: 'event-restore',
+        sessionId: 'session-id',
+        sequence: 4,
+        type: 'checkpoint_restored',
+        payload: {
+          commitHash: 'a'.repeat(40),
+          changedPaths: ['/main.tex'],
+        },
       },
     })
   })

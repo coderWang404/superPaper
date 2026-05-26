@@ -24,6 +24,7 @@ import Sources from '../Authorization/Sources.mjs'
 import TokenAccessHandler from '../TokenAccess/TokenAccessHandler.mjs'
 import CollaboratorsGetter from '../Collaborators/CollaboratorsGetter.mjs'
 import ProjectEntityHandler from './ProjectEntityHandler.mjs'
+import ProjectFileStore from './ProjectFileStore.mjs'
 import TpdsProjectFlusher from '../ThirdPartyDataStore/TpdsProjectFlusher.mjs'
 import Features from '../../infrastructure/Features.mjs'
 import UserController from '../User/UserController.mjs'
@@ -370,6 +371,22 @@ const _ProjectController = {
         type: e.doc != null ? 'doc' : 'file',
       }))
     res.json({ project_id: projectId, entities })
+  },
+
+  async projectFileTreeJson(req, res) {
+    const projectId = req.params.Project_id
+    const project = await ProjectGetter.promises.getProject(projectId)
+    let rootFolder = project.rootFolder[0]
+
+    if (project.storageBackend === 'filesystem') {
+      const entries = await ProjectFileStore.listFiles({ projectId })
+      rootFolder = ProjectEntityHandler.buildFilesystemRootFolder(
+        entries,
+        project.rootFolder?.[0]
+      )
+    }
+
+    res.json({ project_id: projectId, rootFolder: [rootFolder] })
   },
 
   async loadEditor(req, res, next) {
@@ -945,6 +962,7 @@ const ProjectController = {
   loadEditor: expressify(_ProjectController.loadEditor),
   newProject: expressify(_ProjectController.newProject),
   projectEntitiesJson: expressify(_ProjectController.projectEntitiesJson),
+  projectFileTreeJson: expressify(_ProjectController.projectFileTreeJson),
   renameProject: expressify(_ProjectController.renameProject),
   restoreProject: expressify(_ProjectController.restoreProject),
   trashProject: expressify(_ProjectController.trashProject),

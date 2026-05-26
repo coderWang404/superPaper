@@ -126,6 +126,10 @@ export async function createOpenAICompatibleChatCompletion({
       )
     }
 
+    if (isEventStreamResponse(response)) {
+      return await readOpenAICompatibleSSECompletion(response.body)
+    }
+
     const body = await response.json()
     const answer = body?.choices?.[0]?.message?.content
     if (typeof answer !== 'string') {
@@ -186,6 +190,25 @@ export async function* streamOpenAICompatibleChatCompletion({
   } finally {
     timeout.clear()
   }
+}
+
+async function readOpenAICompatibleSSECompletion(body) {
+  if (!body) {
+    throw new AiProviderError('AI provider chat completion stream is empty')
+  }
+  let answer = ''
+  for await (const delta of parseOpenAICompatibleSSE(body)) {
+    answer += delta
+  }
+  if (!answer) {
+    throw new AiProviderError('AI provider chat completion response is invalid')
+  }
+  return answer
+}
+
+function isEventStreamResponse(response) {
+  const contentType = response.headers?.get?.('content-type') || ''
+  return contentType.toLowerCase().includes('text/event-stream')
 }
 
 function createRequestTimeout(timeoutMs) {

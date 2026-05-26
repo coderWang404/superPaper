@@ -110,6 +110,46 @@ describe('AiProviderClient', function () {
     expect(answer).to.equal('AI answer')
   })
 
+  it('creates chat completions when a provider returns SSE for non-streaming requests', async function (ctx) {
+    const encoder = new TextEncoder()
+    const fetchImpl = sinon.stub().resolves({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/event-stream' }),
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              'data: {"choices":[{"delta":{"content":"Agent "}}]}\n\n'
+            )
+          )
+          controller.enqueue(
+            encoder.encode(
+              'data: {"choices":[{"delta":{"content":"answer"}}]}\n\n'
+            )
+          )
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        },
+      }),
+    })
+
+    const answer = await ctx.Client.createOpenAICompatibleChatCompletion({
+      baseURL: 'https://example.invalid/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      fetchImpl,
+    })
+
+    expect(JSON.parse(fetchImpl.firstCall.args[1].body)).to.deep.equal({
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      temperature: 0.2,
+    })
+    expect(answer).to.equal('Agent answer')
+  })
+
   it('wraps chat completion network failures in a provider error', async function (ctx) {
     const networkError = new TypeError('fetch failed')
     const fetchImpl = sinon.stub().rejects(networkError)

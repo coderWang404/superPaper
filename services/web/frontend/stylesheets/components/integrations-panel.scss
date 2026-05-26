@@ -25,6 +25,33 @@
   height: 100%;
 }
 
+.integrations-panel-empty {
+  display: grid;
+  gap: var(--spacing-02);
+  margin: var(--spacing-06) var(--spacing-04);
+  padding: var(--spacing-06);
+  color: var(--integrations-panel-description-color);
+  background-color: var(--integrations-panel-card-button-background);
+  border: 1px solid var(--integrations-panel-card-border);
+  border-radius: var(--border-radius-base);
+
+  .material-symbols {
+    color: var(--integrations-panel-color);
+    font-size: 28px;
+  }
+
+  strong {
+    color: var(--integrations-panel-color);
+    font-size: var(--font-size-02);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-01);
+    line-height: var(--line-height-02);
+  }
+}
+
 .integrations-panel-card-button {
   all: unset;
   display: block;
