@@ -16,3 +16,6 @@ temp/
 compiles/
 output/
 develop/output/
+
+.playwright-cli/
+test-results/
