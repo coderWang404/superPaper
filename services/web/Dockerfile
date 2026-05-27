@@ -6,6 +6,7 @@ FROM node:24.14.1 AS base
 WORKDIR /superpaper/services/web
 ENV PATH="/superpaper/node_modules/.bin:$PATH"
 RUN corepack enable
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 # Google Cloud Storage needs a writable $HOME/.config for resumable uploads
 # (see https://googleapis.dev/nodejs/storage/latest/File.html#createWriteStream)
