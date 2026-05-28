@@ -15,6 +15,7 @@
 let redisConfig, siteUrl
 let e
 const Path = require('node:path')
+const fs = require('node:fs')
 
 // These credentials are used for authenticating api requests
 // between services that may need to go over public channels
@@ -44,8 +45,19 @@ const parseIntOrFail = function (value) {
   return parsedValue
 }
 
-const DATA_DIR = '/var/lib/superpaper/data'
-const TMP_DIR = '/var/lib/superpaper/tmp'
+const env = function (...names) {
+  for (const name of names) {
+    if (process.env[name] != null) {
+      return process.env[name]
+    }
+  }
+}
+
+const STORAGE_ROOT =
+  env('SUPERPAPER_STORAGE_ROOT', 'OVERLEAF_STORAGE_ROOT') ||
+  (fs.existsSync('/var/lib/superpaper') ? '/var/lib/superpaper' : '/var/lib/overleaf')
+const DATA_DIR = Path.join(STORAGE_ROOT, 'data')
+const TMP_DIR = Path.join(STORAGE_ROOT, 'tmp')
 
 const settings = {
   clsi: {
@@ -67,7 +79,9 @@ const settings = {
   //
   // The following works out of the box with Mongo's default settings:
   mongo: {
-    url: process.env.SUPERPAPER_MONGO_URL || 'mongodb://dockerhost/sharelatex',
+    url:
+      env('SUPERPAPER_MONGO_URL', 'OVERLEAF_MONGO_URL', 'MONGO_URL') ||
+      'mongodb://dockerhost/sharelatex',
   },
 
   // Redis is used in superPaper Community Edition for high volume queries, like real-time
@@ -76,10 +90,17 @@ const settings = {
   // The following config will work with Redis's default settings:
   redis: {
     web: (redisConfig = {
-      host: process.env.SUPERPAPER_REDIS_HOST || 'dockerhost',
-      port: process.env.SUPERPAPER_REDIS_PORT || '6379',
-      password: process.env.SUPERPAPER_REDIS_PASS || undefined,
-      tls: process.env.SUPERPAPER_REDIS_TLS === 'true' ? {} : undefined,
+      host:
+        env('SUPERPAPER_REDIS_HOST', 'OVERLEAF_REDIS_HOST', 'REDIS_HOST') ||
+        'dockerhost',
+      port:
+        env('SUPERPAPER_REDIS_PORT', 'OVERLEAF_REDIS_PORT', 'REDIS_PORT') ||
+        '6379',
+      password: env('SUPERPAPER_REDIS_PASS', 'OVERLEAF_REDIS_PASS') || undefined,
+      tls:
+        env('SUPERPAPER_REDIS_TLS', 'OVERLEAF_REDIS_TLS') === 'true'
+          ? {}
+          : undefined,
       key_schema: {
         // document-updater
         blockingKey({ doc_id }) {
@@ -175,12 +196,19 @@ const settings = {
     outputDir: Path.join(DATA_DIR, 'output'),
   },
 
+  projectWorkspaceRoot:
+    env(
+      'SUPERPAPER_PROJECT_WORKSPACE_ROOT',
+      'OVERLEAF_PROJECT_WORKSPACE_ROOT'
+    ) || STORAGE_ROOT,
+
   // Server Config
   // -------------
 
   // Where your instance of superPaper Community Edition can be found publicly. This is used
   // when emails are sent out and in generated links:
-  siteUrl: (siteUrl = process.env.SUPERPAPER_SITE_URL || 'http://localhost'),
+  siteUrl: (siteUrl =
+    env('SUPERPAPER_SITE_URL', 'OVERLEAF_SITE_URL') || 'http://localhost'),
 
   // Status page URL as displayed on the maintenance/500 pages.
   statusPageUrl: process.env.SUPERPAPER_STATUS_PAGE_URL
@@ -194,27 +222,32 @@ const settings = {
   maintenanceMessageHTML: process.env.SUPERPAPER_MAINTENANCE_MESSAGE_HTML,
 
   // The name this is used to describe your superPaper Community Edition Installation
-  appName: process.env.SUPERPAPER_APP_NAME || 'superPaper Community Edition',
+  appName:
+    env('SUPERPAPER_APP_NAME', 'OVERLEAF_APP_NAME') ||
+    'superPaper Community Edition',
 
   restrictInvitesToExistingAccounts:
     process.env.SUPERPAPER_RESTRICT_INVITES_TO_EXISTING_ACCOUNTS === 'true',
 
   nav: {
     title:
-      process.env.SUPERPAPER_NAV_TITLE ||
-      process.env.SUPERPAPER_APP_NAME ||
+      env('SUPERPAPER_NAV_TITLE', 'OVERLEAF_NAV_TITLE') ||
+      env('SUPERPAPER_APP_NAME', 'OVERLEAF_APP_NAME') ||
       'superPaper Community Edition',
   },
 
   // The email address which users will be directed to as the main point of
   // contact for this installation of superPaper Community Edition.
-  adminEmail: process.env.SUPERPAPER_ADMIN_EMAIL || 'placeholder@example.com',
+  adminEmail:
+    env('SUPERPAPER_ADMIN_EMAIL', 'OVERLEAF_ADMIN_EMAIL') ||
+    'placeholder@example.com',
 
   // If provided, a sessionSecret is used to sign cookies so that they cannot be
   // spoofed. This is recommended.
   security: {
     sessionSecret:
-      process.env.SUPERPAPER_SESSION_SECRET || process.env.CRYPTO_RANDOM,
+      env('SUPERPAPER_SESSION_SECRET', 'OVERLEAF_SESSION_SECRET') ||
+      process.env.CRYPTO_RANDOM,
   },
 
   csp: {
@@ -355,47 +388,83 @@ if (process.env.SUPERPAPER_LOGIN_SUPPORT_TITLE != null) {
 //
 //     http://www.nodemailer.com/docs/transports
 
-if (process.env.SUPERPAPER_EMAIL_FROM_ADDRESS != null) {
+const emailFromAddress = env(
+  'SUPERPAPER_EMAIL_FROM_ADDRESS',
+  'OVERLEAF_EMAIL_FROM_ADDRESS'
+)
+
+if (emailFromAddress != null) {
   settings.email = {
-    fromAddress: process.env.SUPERPAPER_EMAIL_FROM_ADDRESS,
-    replyTo: process.env.SUPERPAPER_EMAIL_REPLY_TO || '',
-    driver: process.env.SUPERPAPER_EMAIL_DRIVER,
+    fromAddress: emailFromAddress,
+    replyTo: env('SUPERPAPER_EMAIL_REPLY_TO', 'OVERLEAF_EMAIL_REPLY_TO') || '',
+    driver: env('SUPERPAPER_EMAIL_DRIVER', 'OVERLEAF_EMAIL_DRIVER'),
     parameters: {
       // AWS Creds
-      AWSAccessKeyID: process.env.SUPERPAPER_EMAIL_AWS_SES_ACCESS_KEY_ID,
-      AWSSecretKey: process.env.SUPERPAPER_EMAIL_AWS_SES_SECRET_KEY,
-      region: process.env.SUPERPAPER_EMAIL_AWS_SES_REGION || 'us-east-1',
+      AWSAccessKeyID: env(
+        'SUPERPAPER_EMAIL_AWS_SES_ACCESS_KEY_ID',
+        'OVERLEAF_EMAIL_AWS_SES_ACCESS_KEY_ID'
+      ),
+      AWSSecretKey: env(
+        'SUPERPAPER_EMAIL_AWS_SES_SECRET_KEY',
+        'OVERLEAF_EMAIL_AWS_SES_SECRET_KEY'
+      ),
+      region:
+        env('SUPERPAPER_EMAIL_AWS_SES_REGION', 'OVERLEAF_EMAIL_AWS_SES_REGION') ||
+        'us-east-1',
 
       // SMTP Creds
-      host: process.env.SUPERPAPER_EMAIL_SMTP_HOST,
-      port: process.env.SUPERPAPER_EMAIL_SMTP_PORT,
-      secure: parse(process.env.SUPERPAPER_EMAIL_SMTP_SECURE),
-      ignoreTLS: parse(process.env.SUPERPAPER_EMAIL_SMTP_IGNORE_TLS),
-      name: process.env.SUPERPAPER_EMAIL_SMTP_NAME,
-      logger: process.env.SUPERPAPER_EMAIL_SMTP_LOGGER === 'true',
+      host: env('SUPERPAPER_EMAIL_SMTP_HOST', 'OVERLEAF_EMAIL_SMTP_HOST'),
+      port: env('SUPERPAPER_EMAIL_SMTP_PORT', 'OVERLEAF_EMAIL_SMTP_PORT'),
+      secure: parse(
+        env('SUPERPAPER_EMAIL_SMTP_SECURE', 'OVERLEAF_EMAIL_SMTP_SECURE')
+      ),
+      ignoreTLS: parse(
+        env('SUPERPAPER_EMAIL_SMTP_IGNORE_TLS', 'OVERLEAF_EMAIL_SMTP_IGNORE_TLS')
+      ),
+      name: env('SUPERPAPER_EMAIL_SMTP_NAME', 'OVERLEAF_EMAIL_SMTP_NAME'),
+      logger:
+        env('SUPERPAPER_EMAIL_SMTP_LOGGER', 'OVERLEAF_EMAIL_SMTP_LOGGER') ===
+        'true',
     },
 
-    textEncoding: process.env.SUPERPAPER_EMAIL_TEXT_ENCODING,
+    textEncoding: env(
+      'SUPERPAPER_EMAIL_TEXT_ENCODING',
+      'OVERLEAF_EMAIL_TEXT_ENCODING'
+    ),
     template: {
-      customFooter: process.env.SUPERPAPER_CUSTOM_EMAIL_FOOTER,
+      customFooter: env(
+        'SUPERPAPER_CUSTOM_EMAIL_FOOTER',
+        'OVERLEAF_CUSTOM_EMAIL_FOOTER'
+      ),
     },
   }
 
+  const smtpUser = env(
+    'SUPERPAPER_EMAIL_SMTP_USER',
+    'OVERLEAF_EMAIL_SMTP_USER'
+  )
+  const smtpPass = env(
+    'SUPERPAPER_EMAIL_SMTP_PASS',
+    'OVERLEAF_EMAIL_SMTP_PASS'
+  )
+
   if (
-    process.env.SUPERPAPER_EMAIL_SMTP_USER != null ||
-    process.env.SUPERPAPER_EMAIL_SMTP_PASS != null
+    smtpUser != null ||
+    smtpPass != null
   ) {
     settings.email.parameters.auth = {
-      user: process.env.SUPERPAPER_EMAIL_SMTP_USER,
-      pass: process.env.SUPERPAPER_EMAIL_SMTP_PASS,
+      user: smtpUser,
+      pass: smtpPass,
     }
   }
 
-  if (process.env.SUPERPAPER_EMAIL_SMTP_TLS_REJECT_UNAUTH != null) {
+  const smtpTlsRejectUnauth = env(
+    'SUPERPAPER_EMAIL_SMTP_TLS_REJECT_UNAUTH',
+    'OVERLEAF_EMAIL_SMTP_TLS_REJECT_UNAUTH'
+  )
+  if (smtpTlsRejectUnauth != null) {
     settings.email.parameters.tls = {
-      rejectUnauthorized: parse(
-        process.env.SUPERPAPER_EMAIL_SMTP_TLS_REJECT_UNAUTH
-      ),
+      rejectUnauthorized: parse(smtpTlsRejectUnauth),
     }
   }
 }
