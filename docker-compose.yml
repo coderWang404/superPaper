@@ -1,21 +1,21 @@
 services:
-  sharelatex:
+  superpaper-agent:
     restart: always
     build:
       context: .
       dockerfile: server-ce/Dockerfile
-    image: superpaper/superpaper:latest
-    container_name: sharelatex
+    image: superpaper/agent:latest
+    container_name: superpaper-agent
     depends_on:
-      mongo:
+      superpaper-agent-mongo:
         condition: service_healthy
-      redis:
+      superpaper-agent-redis:
         condition: service_started
     ports:
-      - 80:80
+      - "23000:80"
     stop_grace_period: 60s
     volumes:
-      - ~/sharelatex_data:/var/lib/superpaper
+      - superpaper-agent-data:/var/lib/superpaper
       ########################################################################
       ####  Server Pro: Uncomment the following line to mount the docker  ####
       ####             socket, required for Sibling Containers to work    ####
@@ -24,12 +24,12 @@ services:
     environment:
       SUPERPAPER_APP_NAME: superPaper Community Edition
 
-      SUPERPAPER_MONGO_URL: mongodb://mongo/sharelatex
+      SUPERPAPER_MONGO_URL: mongodb://superpaper-agent-mongo/sharelatex
 
       # Same property, unfortunately with different names in
       # different locations
-      SUPERPAPER_REDIS_HOST: redis
-      REDIS_HOST: redis
+      SUPERPAPER_REDIS_HOST: superpaper-agent-redis
+      REDIS_HOST: superpaper-agent-redis
 
       ENABLED_LINKED_FILE_TYPES: "project_file,project_output_file"
 
@@ -73,32 +73,32 @@ services:
 
       # SUPERPAPER_PROXY_LEARN: "true"
 
-  mongo:
+  superpaper-agent-mongo:
     restart: always
     image: mongo:6.0
-    container_name: mongo
+    container_name: superpaper-agent-mongo
     command: "--replSet superpaper"
     volumes:
-      - ~/mongo_data:/data/db
+      - superpaper-agent-mongo-data:/data/db
       - ./bin/shared/mongodb-init-replica-set.js:/docker-entrypoint-initdb.d/mongodb-init-replica-set.js
     environment:
       MONGO_INITDB_DATABASE: sharelatex
     extra_hosts:
       # Required when using the automatic database setup for initializing the replica set.
       # This override is not needed when running the setup after starting up mongo.
-      - mongo:127.0.0.1
+      - superpaper-agent-mongo:127.0.0.1
     healthcheck:
       test: echo 'db.stats().ok' | mongosh localhost:27017/test --quiet
       interval: 10s
       timeout: 10s
       retries: 5
 
-  redis:
+  superpaper-agent-redis:
     restart: always
     image: redis:6.2
-    container_name: redis
+    container_name: superpaper-agent-redis
     volumes:
-      - ~/redis_data:/data
+      - superpaper-agent-redis-data:/data
 
   # See https://github.com/jwilder/nginx-proxy for documentation on how to configure the nginx-proxy container,
   # and https://github.com/superpaper/superpaper/wiki/HTTPS-reverse-proxy-using-Nginx for an example of some recommended
@@ -114,3 +114,8 @@ services:
   #     volumes:
   #       - /var/run/docker.sock:/tmp/docker.sock:ro
   #       - /home/superpaper/tmp:/etc/nginx/certs
+
+volumes:
+  superpaper-agent-data:
+  superpaper-agent-mongo-data:
+  superpaper-agent-redis-data:
