@@ -6,11 +6,31 @@ import {
 
 const { ObjectId } = mongodb
 
-const MIN_MONGO_VERSION = [8, 0]
-const MIN_MONGO_FEATURE_COMPATIBILITY_VERSION = [7, 0]
+const MIN_MONGO_VERSION = parseMinVersionEnv('SUPERPAPER_MIN_MONGO_VERSION', [
+  6, 0,
+])
+const MIN_MONGO_FEATURE_COMPATIBILITY_VERSION = parseMinVersionEnv(
+  'SUPERPAPER_MIN_MONGO_FEATURE_COMPATIBILITY_VERSION',
+  [6, 0]
+)
 
 // Allow ignoring admin check failures via an environment variable
 const OVERRIDE_ENV_VAR_NAME = 'ALLOW_MONGO_ADMIN_CHECK_FAILURES'
+
+function parseMinVersionEnv(name, fallback) {
+  const raw = process.env[name]
+  if (!raw) {
+    return fallback
+  }
+
+  const match = raw.match(/^(\d+)\.(\d+)$/)
+  if (!match) {
+    console.error(`${name} must use major.minor format, for example 6.0`)
+    process.exit(1)
+  }
+
+  return [parseInt(match[1], 10), parseInt(match[2], 10)]
+}
 
 function shouldSkipAdminChecks() {
   return process.env[OVERRIDE_ENV_VAR_NAME] === 'true'

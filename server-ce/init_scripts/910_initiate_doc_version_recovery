@@ -5,8 +5,9 @@ set -euo pipefail
 source /etc/container_environment.sh
 source /etc/superpaper/env.sh
 
-LOG_FILE=/var/lib/superpaper/data/history/doc-version-recovery.log
-RESYNCS_NEEDED_FILE=/var/lib/superpaper/data/history/doc-version-recovery-resyncs-5.0.3.log
+LOG_FILE="$SUPERPAPER_STORAGE_ROOT/data/history/doc-version-recovery.log"
+RESYNCS_NEEDED_FILE="$SUPERPAPER_STORAGE_ROOT/data/history/doc-version-recovery-resyncs-5.0.3.log"
+mkdir -p "$(dirname "$LOG_FILE")"
 
 echo "Checking for doc version recovery. This can take a while if needed. Logs are in $LOG_FILE"
 cd /superpaper/services/history-v1

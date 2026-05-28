@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+mkdir -p /var/log/superpaper
+chown www-data:www-data /var/log/superpaper
+
 mkdir -p /var/lib/superpaper/data
 chown www-data:www-data /var/lib/superpaper/data
 

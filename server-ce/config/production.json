@@ -11,14 +11,7 @@
     "algorithm": "HS256"
   },
   "mongo": {},
-  "blobStore": {
-    "globalBucket": "/var/lib/superpaper/data/history/superpaper-global-blobs",
-    "projectBucket": "/var/lib/superpaper/data/history/superpaper-project-blobs"
-  },
-  "chunkStore": {
-    "bucket": "/var/lib/superpaper/data/history/superpaper-chunks"
-  },
-  "zipStore": {
-    "bucket": "/var/lib/superpaper/data/history/superpaper-zips"
-  }
+  "blobStore": {},
+  "chunkStore": {},
+  "zipStore": {}
 }

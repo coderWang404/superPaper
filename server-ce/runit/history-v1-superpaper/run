@@ -6,4 +6,6 @@ if [ "$DEBUG_NODE" == "true" ]; then
     NODE_PARAMS="--inspect=0.0.0.0:30640"
 fi
 
+source /etc/superpaper/env.sh
+
 NODE_CONFIG_DIR=/superpaper/services/history-v1/config exec /sbin/setuser www-data /usr/bin/node $NODE_PARAMS /superpaper/services/history-v1/app.js >> /var/log/superpaper/history-v1.log 2>&1

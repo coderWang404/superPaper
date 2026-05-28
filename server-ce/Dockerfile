@@ -52,7 +52,9 @@ ADD server-ce/nginx/clsi-nginx.conf /etc/nginx/sites-enabled/clsi-nginx.conf
 # Configure log rotation
 # ----------------------
 ADD server-ce/logrotate/superpaper /etc/logrotate.d/superpaper
-RUN chmod 644 /etc/logrotate.d/superpaper
+RUN chmod 644 /etc/logrotate.d/superpaper && \
+    mkdir -p /var/log/superpaper && \
+    chown www-data:www-data /var/log/superpaper
 
 # Configure cron tasks
 # ----------------------

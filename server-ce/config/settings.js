@@ -53,11 +53,37 @@ const env = function (...names) {
   }
 }
 
+const pathExists = function (path) {
+  try {
+    fs.accessSync(path)
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
+const isMountPoint = function (path) {
+  try {
+    const parent = Path.dirname(path)
+    const stat = fs.statSync(path)
+    const parentStat = fs.statSync(parent)
+    return stat.dev !== parentStat.dev
+  } catch (err) {
+    return false
+  }
+}
+
 const STORAGE_ROOT =
   env('SUPERPAPER_STORAGE_ROOT', 'OVERLEAF_STORAGE_ROOT') ||
-  (fs.existsSync('/var/lib/superpaper') ? '/var/lib/superpaper' : '/var/lib/overleaf')
+  (isMountPoint('/var/lib/superpaper')
+    ? '/var/lib/superpaper'
+    : isMountPoint('/var/lib/overleaf') || pathExists('/var/lib/overleaf')
+      ? '/var/lib/overleaf'
+      : '/var/lib/superpaper')
 const DATA_DIR = Path.join(STORAGE_ROOT, 'data')
 const TMP_DIR = Path.join(STORAGE_ROOT, 'tmp')
+const HISTORY_DIR = Path.join(DATA_DIR, 'history')
+const HISTORY_PREFIX = STORAGE_ROOT === '/var/lib/overleaf' ? 'overleaf' : 'superpaper'
 
 const settings = {
   clsi: {
@@ -528,10 +554,12 @@ switch (process.env.SUPERPAPER_FILESTORE_BACKEND) {
         // We can use DATA_DIR after switching history-v1 from 'config' to '@superpaper/settings'.
         project_blobs:
           process.env.SUPERPAPER_HISTORY_PROJECT_BLOBS_BUCKET ||
-          '/var/lib/superpaper/data/history/superpaper-project-blobs',
+          process.env.OVERLEAF_HISTORY_PROJECT_BLOBS_BUCKET ||
+          Path.join(HISTORY_DIR, `${HISTORY_PREFIX}-project-blobs`),
         global_blobs:
           process.env.SUPERPAPER_HISTORY_BLOBS_BUCKET ||
-          '/var/lib/superpaper/data/history/superpaper-global-blobs',
+          process.env.OVERLEAF_HISTORY_BLOBS_BUCKET ||
+          Path.join(HISTORY_DIR, `${HISTORY_PREFIX}-global-blobs`),
       },
     }
 }
