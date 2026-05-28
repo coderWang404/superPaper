@@ -3,8 +3,7 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: services/web/Dockerfile
-      target: app
+      dockerfile: server-ce/Dockerfile
     image: superpaper/superpaper:latest
     container_name: sharelatex
     depends_on:

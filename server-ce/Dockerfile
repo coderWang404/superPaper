@@ -3,7 +3,7 @@
 # superPaper Community Edition (superpaper/superpaper)
 # ---------------------------------------------
 
-ARG SUPERPAPER_BASE_TAG=sharelatex/sharelatex-base:latest
+ARG SUPERPAPER_BASE_TAG=sharelatex/sharelatex:5.5.4-with-texlive-full
 FROM $SUPERPAPER_BASE_TAG
 
 WORKDIR /superpaper
