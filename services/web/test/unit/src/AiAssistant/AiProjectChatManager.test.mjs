@@ -107,6 +107,7 @@ describe('AiProjectChatManager', function () {
     expect(ctx.decryptApiKey).to.have.been.calledWith('encrypted-key')
     expect(ctx.buildProjectContext).to.have.been.calledWith('project-id', {
       selection: { path: '/main.tex', text: 'Hello' },
+      maxChars: sinon.match.number,
     })
     const chatArgs = ctx.createOpenAICompatibleChatCompletion.firstCall.args[0]
     expect(chatArgs).to.include({
@@ -129,6 +130,40 @@ describe('AiProjectChatManager', function () {
         truncated: false,
       },
     })
+  })
+
+  it('reserves context budget for the current prompt and chat history', async function (ctx) {
+    await ctx.Manager.chat({
+      projectId: 'project-id',
+      prompt: 'P'.repeat(1_000),
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      history: [
+        { role: 'user', content: 'H'.repeat(5_000) },
+        { role: 'assistant', content: 'A'.repeat(5_000) },
+      ],
+    })
+
+    const [, options] = ctx.buildProjectContext.firstCall.args
+    expect(options.maxChars).to.be.lessThan(64_000)
+    expect(options.maxChars).to.be.greaterThan(40_000)
+  })
+
+  it('limits history so project context still has room in large conversations', async function (ctx) {
+    await ctx.Manager.chat({
+      projectId: 'project-id',
+      prompt: 'P'.repeat(8_000),
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      history: Array.from({ length: 20 }, (_, index) => ({
+        role: index % 2 === 0 ? 'user' : 'assistant',
+        content: 'H'.repeat(12_000),
+      })),
+    })
+
+    const [, options] = ctx.buildProjectContext.firstCall.args
+    expect(options.maxChars).to.be.greaterThan(30_000)
+    expect(options.maxChars).to.be.lessThan(40_000)
   })
 
   it('includes previous chat messages before the current prompt', async function (ctx) {

@@ -92,6 +92,7 @@ describe('AiProjectChatController', function () {
       providerId: 'provider-id',
       model: 'gpt-4.1',
       selection: { path: '/main.tex', text: 'Hello' },
+      history: [],
     })
     expect(jsonBody(ctx.res)).to.deep.equal(ctx.chatResult)
   })
@@ -172,6 +173,7 @@ describe('AiProjectChatController', function () {
       providerId: 'provider-id',
       model: 'gpt-4.1',
       selection: { path: '/main.tex', text: 'Hello' },
+      history: [],
     })
     expect(ctx.res.headers['Content-Type']).to.equal(
       'application/x-ndjson; charset=utf-8'
