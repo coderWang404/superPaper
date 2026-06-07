@@ -1,7 +1,7 @@
 import { parseOpenAIModelsResponse } from './AiProviderValidation.mjs'
 
 const DEFAULT_MODEL_SYNC_TIMEOUT_MS = 10_000
-const DEFAULT_CHAT_COMPLETION_TIMEOUT_MS = 60_000
+const DEFAULT_CHAT_COMPLETION_TIMEOUT_MS = 120_000
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
 
 function buildModelsURL(baseURL) {
@@ -120,8 +120,13 @@ export async function createOpenAICompatibleChatCompletion({
     })
 
     if (!response.ok) {
+      let detail = ''
+      try {
+        const body = await response.json()
+        detail = body?.error?.message || body?.message || ''
+      } catch {}
       throw new AiProviderError(
-        `AI provider chat completion failed with status ${response.status}`,
+        `AI provider chat completion failed with status ${response.status}${detail ? ': ' + detail : ''}`,
         { status: response.status }
       )
     }
@@ -174,8 +179,13 @@ export async function* streamOpenAICompatibleChatCompletion({
     })
 
     if (!response.ok) {
+      let detail = ''
+      try {
+        const body = await response.json()
+        detail = body?.error?.message || body?.message || ''
+      } catch {}
       throw new AiProviderError(
-        `AI provider chat completion failed with status ${response.status}`,
+        `AI provider chat completion failed with status ${response.status}${detail ? ': ' + detail : ''}`,
         { status: response.status }
       )
     }

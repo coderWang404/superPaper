@@ -340,6 +340,7 @@
   "ai_assistant_start_act_hint_no_plan": "请先发送规划请求。计划就绪后才能开始执行。",
   "ai_assistant_start_act_hint_planning": "规划仍在运行。计划就绪后才能开始执行。",
   "ai_assistant_starting": "正在开始",
+  "ai_assistant_streaming_response": "正在生成回复…",
   "ai_assistant_subagents_summary": "子 Agent：__state__",
   "ai_assistant_suggestion_compile": "诊断最近一次编译错误",
   "ai_assistant_suggestion_explain": "解释当前项目结构",

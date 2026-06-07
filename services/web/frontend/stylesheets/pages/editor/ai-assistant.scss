@@ -1,7 +1,10 @@
 .ai-assistant-panel {
+  container: ai-assistant-panel / inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 0;
+  overflow: hidden;
   color: var(--content-primary-themed);
   background-color: var(--bg-secondary-themed);
 }
@@ -12,6 +15,7 @@
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+  min-width: 0;
   overflow: auto;
   padding: 12px;
   scroll-behavior: smooth;
@@ -180,6 +184,7 @@
     font-size: var(--font-size-04);
     background: linear-gradient(135deg, var(--content-primary-themed), var(--content-info-themed));
     background-clip: text;
+    /* stylelint-disable-next-line property-no-vendor-prefix */
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -477,6 +482,8 @@
   flex-direction: column;
   gap: var(--spacing-04);
   min-height: 120px;
+  min-width: 0;
+  width: 100%;
   overflow: visible;
   padding-right: 0;
 }
@@ -484,10 +491,17 @@
 .ai-assistant-message {
   display: grid;
   gap: var(--spacing-02);
+  box-sizing: border-box;
+  min-width: 0;
   width: fit-content;
   max-width: min(92%, 680px);
   padding: 10px 14px;
   animation: message-appear 0.3s ease;
+
+  > * {
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 @keyframes message-appear {
@@ -508,6 +522,8 @@
   justify-content: space-between;
   gap: var(--spacing-02);
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .ai-assistant-message-actions {
@@ -516,10 +532,11 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--spacing-01);
-  opacity: 0;
+  opacity: 0.78;
   transition: opacity 0.15s ease;
 
-  .ai-assistant-message:hover & {
+  .ai-assistant-message:hover &,
+  .ai-assistant-message:focus-within & {
     opacity: 1;
   }
 
@@ -540,23 +557,61 @@
   }
 }
 
+.ai-assistant-streaming-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  border: 1px solid rgb(59 130 246 / 20%);
+  border-radius: 999px;
+  background-color: rgb(59 130 246 / 7%);
+  color: var(--content-info-themed);
+  font-size: var(--font-size-01);
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
+
+  span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentcolor;
+    animation: ai-assistant-pulse 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes ai-assistant-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .ai-assistant-message-user {
   align-self: flex-end;
   border: none;
-  border-radius: 18px 18px 4px 18px;
+  border-radius: 18px 18px 4px;
   background: linear-gradient(135deg, var(--bg-accent-03), rgb(59 130 246 / 12%));
   box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
 }
 
 .ai-assistant-message-assistant {
   align-self: flex-start;
-  border-radius: 4px 18px 18px 18px;
+  border-radius: 4px 18px 18px;
   border-color: var(--border-divider-themed);
 }
 
 .ai-assistant-message-document {
   width: 100%;
   max-width: 100%;
+  overflow: hidden;
   border-left: 3px solid var(--content-info-themed);
   border-radius: 0 12px 12px 0;
   background:
@@ -1045,9 +1100,13 @@
 }
 
 .ai-assistant-message-meta {
+  min-width: 0;
+  overflow: hidden;
   color: var(--content-secondary-themed);
   font-size: var(--font-size-01);
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ai-assistant-answer-text {
@@ -1058,10 +1117,17 @@
 }
 
 .ai-assistant-markdown {
+  min-width: 0;
+  max-width: 100%;
   overflow-wrap: anywhere;
   color: var(--content-primary-themed);
   font-size: var(--font-size-02);
   line-height: 1.65;
+
+  > * {
+    min-width: 0;
+    max-width: 100%;
+  }
 
   p,
   ul,
@@ -1131,17 +1197,21 @@
   }
 
   code {
+    max-width: 100%;
     border: 1px solid var(--border-divider-themed);
     border-radius: 6px;
     background-color: var(--bg-secondary-themed);
     color: var(--content-primary-themed);
     font-family: 'DM Mono', monospace;
     font-size: 0.88em;
+    overflow-wrap: anywhere;
     padding: 2px 6px;
   }
 
   pre {
+    min-width: 0;
     overflow-x: auto;
+    max-width: 100%;
     border: 1px solid var(--border-divider-themed);
     border-radius: 10px;
     background-color: var(--bg-secondary-themed);
@@ -1154,6 +1224,7 @@
       padding: 0;
       white-space: pre;
       font-size: var(--font-size-01);
+      overflow-wrap: normal;
     }
   }
 
@@ -1163,6 +1234,18 @@
     border-collapse: collapse;
     border-radius: 8px;
     max-width: 100%;
+  }
+
+  .katex-display {
+    overflow: auto hidden;
+    min-width: 0;
+    max-width: 100%;
+    margin: var(--spacing-03) 0;
+    padding: var(--spacing-01) 0;
+  }
+
+  .katex {
+    font-size: 1.02em;
   }
 
   th,
@@ -1176,6 +1259,13 @@
   th {
     background-color: var(--bg-secondary-themed);
     font-weight: 600;
+  }
+
+  .w-full,
+  .overflow-x-auto,
+  .overflow-hidden {
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
@@ -1478,10 +1568,71 @@
     width: 100%;
   }
 
+  .ai-assistant-message {
+    max-width: 100%;
+  }
+
+  .ai-assistant-message-header,
+  .ai-assistant-composer-footer,
+  .ai-assistant-transcript-toolbar-actions {
+    align-items: stretch;
+  }
+
+  .ai-assistant-streaming-status {
+    width: fit-content;
+  }
+
   .ai-assistant-agent-run-summary-commits {
     grid-template-columns: 1fr;
   }
 
+  .ai-assistant-agent-run-summary-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container ai-assistant-panel (width <= 430px) {
+  .ai-assistant-provider-card {
+    grid-template-columns: 1fr;
+    padding: var(--spacing-03);
+  }
+
+  .ai-assistant-workbench-bar,
+  .ai-assistant-agent-controls-main,
+  .ai-assistant-composer-footer {
+    display: grid;
+    align-items: stretch;
+  }
+
+  .ai-assistant-mode-switch {
+    width: 100%;
+  }
+
+  .ai-assistant-transcript-toolbar-actions {
+    width: 100%;
+    justify-content: stretch;
+
+    .btn {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
+
+  .ai-assistant-message,
+  .ai-assistant-message-document {
+    max-width: 100%;
+  }
+
+  .ai-assistant-message-header {
+    display: grid;
+  }
+
+  .ai-assistant-message-actions {
+    justify-content: flex-start;
+  }
+
+  .ai-assistant-agent-progress,
+  .ai-assistant-agent-run-summary-commits,
   .ai-assistant-agent-run-summary-metrics {
     grid-template-columns: 1fr;
   }

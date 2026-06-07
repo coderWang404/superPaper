@@ -405,36 +405,19 @@ describe('<AiAssistantPanel />', function () {
 
   it('shows the streamed answer while the request is still active', async function () {
     mockConfig()
-    fetchMock.post('/project/project123/ai/chat/stream', {
-      status: 200,
-      headers: { 'Content-Type': 'application/x-ndjson' },
-      body:
-        JSON.stringify({ type: 'delta', delta: 'Streaming ' }) +
-        '\n' +
-        JSON.stringify({ type: 'delta', delta: 'answer' }) +
-        '\n' +
-        JSON.stringify({
-          type: 'done',
-          providerId: 'provider-one',
-          model: 'model-one',
-          context: {
-            includedFiles: ['main.tex'],
-            selectionIncluded: false,
-            truncated: false,
-          },
-        }) +
-        '\n',
-    })
 
     renderWithEditorContext(<AiAssistantPanel />)
 
     await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    const stream = mockDelayedChatStream()
     fireEvent.change(screen.getByLabelText('Ask about this project'), {
       target: { value: 'Stream the answer.' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
     await screen.findByText('Streaming answer')
+    screen.getByRole('status', { name: 'Generating response…' })
+    stream.finish()
   })
 
   it('renders assistant Markdown while keeping user messages as text', async function () {
@@ -1188,6 +1171,51 @@ function mockChatStream(
     },
     { repeat: repeat ?? 1 }
   )
+}
+
+function mockDelayedChatStream() {
+  const encoder = new TextEncoder()
+  let controller: ReadableStreamDefaultController<Uint8Array> | null = null
+  const fetchStub = sinon.stub(globalThis, 'fetch').callsFake(async () => {
+    return new Response(
+      new ReadableStream({
+        start(nextController) {
+          controller = nextController
+          nextController.enqueue(
+            encoder.encode(
+              JSON.stringify({ type: 'delta', delta: 'Streaming answer' }) +
+                '\n'
+            )
+          )
+        },
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/x-ndjson' },
+      }
+    )
+  })
+
+  return {
+    finish() {
+      controller?.enqueue(
+        encoder.encode(
+          JSON.stringify({
+            type: 'done',
+            providerId: 'provider-one',
+            model: 'model-one',
+            context: {
+              includedFiles: ['main.tex'],
+              selectionIncluded: false,
+              truncated: false,
+            },
+          }) + '\n'
+        )
+      )
+      controller?.close()
+      fetchStub.restore()
+    },
+  }
 }
 
 function mockAgentConfig() {

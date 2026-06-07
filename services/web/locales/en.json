@@ -377,6 +377,7 @@
   "ai_assistant_start_act_hint_no_plan": "Send a Plan request first. Start Act unlocks when a plan is ready.",
   "ai_assistant_start_act_hint_planning": "The plan is still running. Start Act unlocks when it is ready.",
   "ai_assistant_starting": "Starting",
+  "ai_assistant_streaming_response": "Generating response…",
   "ai_assistant_subagents_summary": "Subagents: __state__",
   "ai_assistant_suggestion_compile": "Diagnose the latest compile error",
   "ai_assistant_suggestion_explain": "Explain the current project structure",

@@ -10,7 +10,12 @@ function defaultUrlTransform(url) {
   return null
 }
 
-function Streamdown({ children, className, urlTransform = defaultUrlTransform }) {
+function Streamdown({
+  children,
+  className,
+  plugins,
+  urlTransform = defaultUrlTransform,
+}) {
   const html = React.useMemo(() => {
     DOMPurify.addHook('afterSanitizeAttributes', node => {
       if (node.nodeName === 'A') {
@@ -35,6 +40,7 @@ function Streamdown({ children, className, urlTransform = defaultUrlTransform })
 
   return React.createElement('div', {
     className,
+    'data-plugins': plugins ? Object.keys(plugins).sort().join(',') : '',
     dangerouslySetInnerHTML: { __html: html },
   })
 }
@@ -42,6 +48,7 @@ function Streamdown({ children, className, urlTransform = defaultUrlTransform })
 Streamdown.propTypes = {
   children: PropTypes.node,
   className: PropTypes.string,
+  plugins: PropTypes.object,
   urlTransform: PropTypes.func,
 }
 

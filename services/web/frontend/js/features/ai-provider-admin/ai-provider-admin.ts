@@ -84,6 +84,8 @@ type TranslationKey =
   | 'replaceKeyFor'
   | 'replaceProviderKeyFor'
   | 'requestFailed'
+  | 'presetChannels'
+  | 'selectPreset'
   | 'syncingModels'
   | 'syncModels'
   | 'test'
@@ -144,6 +146,8 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     test: 'Test',
     testingProvider: 'Testing...',
     unknown: 'unknown',
+    presetChannels: 'Preset channels',
+    selectPreset: '-- Select preset --',
   },
   zh: {
     actions: '操作',
@@ -197,6 +201,8 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
     test: '测试',
     testingProvider: '正在测试...',
     unknown: '未知',
+    presetChannels: '预设渠道',
+    selectPreset: '-- 选择预设渠道 --',
   },
 }
 
@@ -458,6 +464,24 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       ?.addEventListener('submit', handleCreate)
 
     root
+      .querySelector<HTMLSelectElement>('[data-ai-provider-preset]')
+      ?.addEventListener('change', event => {
+        const select = event.currentTarget as HTMLSelectElement
+        const form = select.closest('form') as HTMLFormElement
+        const presetMap: Record<string, { name: string; baseURL: string; defaultModel: string; modelIds: string }> = {
+          'claudeaihub-gpt55': { name: 'ClaudeAIHub - GPT-5.5', baseURL: 'https://claudeaihub.cloud/v1', defaultModel: 'gpt-5.5', modelIds: 'gpt-5.5' },
+          'claudeaihub-opus48': { name: 'ClaudeAIHub - Claude Opus 4.8', baseURL: 'https://claudeaihub.cloud/v1', defaultModel: 'claude-opus-4-8', modelIds: 'claude-opus-4-8' },
+          'deepseek': { name: 'DeepSeek 官方', baseURL: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat', modelIds: 'deepseek-chat' },
+        }
+        const preset = presetMap[select.value]
+        if (!preset) return
+        getFormInput(form, 'name').value = preset.name
+        getFormInput(form, 'baseURL').value = preset.baseURL
+        getFormInput(form, 'defaultModel').value = preset.defaultModel
+        getFormInput(form, 'modelIds').value = preset.modelIds
+      })
+
+    root
       .querySelectorAll<HTMLButtonElement>('[data-ai-provider-sync-models]')
       .forEach(button => {
         button.addEventListener('click', () => {
@@ -526,6 +550,25 @@ export function initAiProviderAdmin(root: HTMLElement): void {
           }
         })
       })
+
+    root.querySelectorAll<HTMLSelectElement>('[data-ai-preset-select]').forEach(select => {
+      select.addEventListener('change', (event) => {
+        const selectEl = event.currentTarget as HTMLSelectElement
+        const form = selectEl.closest('form') as HTMLFormElement
+        if (!form || !selectEl.value) return
+        const presets: Record<string, {name: string, baseURL: string, defaultModel: string, modelIds: string}> = {
+          'claudeaihub-gpt5.5': {name: 'ClaudeAIHub', baseURL: 'https://claudeaihub.cloud', defaultModel: 'gpt-5.5', modelIds: 'gpt-5.5'},
+          'claudeaihub-claude': {name: 'ClaudeAIHub Claude', baseURL: 'https://claudeaihub.cloud', defaultModel: 'claude-opus-4-8', modelIds: 'claude-opus-4-8'},
+          'deepseek': {name: 'DeepSeek', baseURL: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat', modelIds: 'deepseek-chat,deepseek-reasoner'},
+        }
+        const preset = presets[selectEl.value]
+        if (!preset) return
+        getFormInput(form, 'name').value = preset.name
+        getFormInput(form, 'baseURL').value = preset.baseURL
+        getFormInput(form, 'defaultModel').value = preset.defaultModel
+        getFormInput(form, 'modelIds').value = preset.modelIds
+      })
+    })
   }
 
   render()
@@ -761,11 +804,23 @@ function renderProviderRow(
 
 function renderCreateForm(t: (key: TranslationKey) => string) {
   const modelIdsHelpId = 'ai-provider-model-ids-help'
+  const presets = [
+    { label: t('selectPreset'), value: '' },
+    { label: 'ClaudeAIHub - GPT-5.5', value: 'claudeaihub-gpt55' },
+    { label: 'ClaudeAIHub - Claude Opus 4.8', value: 'claudeaihub-opus48' },
+    { label: 'DeepSeek 官方', value: 'deepseek' },
+  ]
 
   return `
     <form class="ai-admin-form" aria-label="${escapeHtml(
       t('addProviderForm')
     )}" data-ai-provider-create-form>
+      <div class="form-group">
+        <label class="form-label" for="ai-provider-preset">${escapeHtml(t('presetChannels'))}</label>
+        <select class="form-control" id="ai-provider-preset" data-ai-provider-preset>
+          ${presets.map(p => `<option value="${escapeAttribute(p.value)}">${escapeHtml(p.label)}</option>`).join('')}
+        </select>
+      </div>
       <div class="ai-admin-form-grid">
       <div class="form-group">
         <label class="form-label" for="ai-provider-name">${escapeHtml(

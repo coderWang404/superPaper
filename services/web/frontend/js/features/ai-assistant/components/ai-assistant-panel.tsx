@@ -693,11 +693,21 @@ export default function AiAssistantPanel() {
                 ))}
               {mode === 'chat' && streamedAnswer && (
                 <div className="ai-assistant-message ai-assistant-message-assistant ai-assistant-message-document">
-                  <div className="ai-assistant-message-meta">
-                    {t('ai_assistant_response_meta', {
-                      provider: selectedProvider.name,
-                      model: selectedModel,
-                    })}
+                  <div className="ai-assistant-message-header">
+                    <div className="ai-assistant-message-meta">
+                      {t('ai_assistant_response_meta', {
+                        provider: selectedProvider.name,
+                        model: selectedModel,
+                      })}
+                    </div>
+                    <div
+                      className="ai-assistant-streaming-status"
+                      role="status"
+                      aria-label={t('ai_assistant_streaming_response')}
+                    >
+                      <span aria-hidden="true" />
+                      {t('ai_assistant_streaming_response')}
+                    </div>
                   </div>
                   <AiMarkdown content={streamedAnswer} streaming />
                 </div>
@@ -784,7 +794,7 @@ export default function AiAssistantPanel() {
             aria-describedby="ai-assistant-prompt-context"
             value={prompt}
             onChange={event => setPrompt(event.target.value)}
-            placeholder={t('ai_assistant_prompt_placeholder')}
+            placeholder={t(mode === 'agent' ? 'ai_assistant_agent_prompt_placeholder' : 'ai_assistant_prompt_placeholder')}
             rows={4}
           />
           <div className="ai-assistant-composer-footer">
@@ -794,7 +804,7 @@ export default function AiAssistantPanel() {
             <OLButton
               type="submit"
               variant="primary"
-              disabled={!prompt.trim() || submitting}
+              disabled={!prompt.trim() || submitting || (mode === 'agent' && !agentConfig)}
               isLoading={submitting}
               loadingLabel={t('ai_assistant_sending')}
             >

@@ -18,6 +18,8 @@ require('@babel/register')({
           '^streamdown$': './test/frontend/helpers/streamdown-shim.js',
           '^@streamdown/cjk$':
             './test/frontend/helpers/streamdown-cjk-shim.js',
+          '^@streamdown/math$':
+            './test/frontend/helpers/streamdown-math-shim.js',
         },
       },
     ],

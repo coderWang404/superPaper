@@ -28,6 +28,23 @@ describe('<AiMarkdown />', function () {
     screen.getByText(/\\cite\{key\}/)
   })
 
+  it('enables math rendering for LaTeX-heavy assistant answers', function () {
+    render(
+      <AiMarkdown
+        content={[
+          'Use inline math \\(E = mc^2\\).',
+          '',
+          '$$',
+          '\\int_0^1 x^2\\,dx',
+          '$$',
+        ].join('\n')}
+      />
+    )
+
+    const markdown = document.querySelector('.ai-assistant-markdown')
+    expect(markdown?.getAttribute('data-plugins')).to.equal('cjk,math')
+  })
+
   it('sanitizes dangerous HTML and links', function () {
     render(
       <AiMarkdown
@@ -45,5 +62,14 @@ describe('<AiMarkdown />', function () {
     expect(document.querySelector('script')).to.equal(null)
     expect(document.querySelector('[onerror]')).to.equal(null)
     expect(document.querySelector('a[href^="javascript:"]')).to.equal(null)
+  })
+
+  it('keeps safe relative links on the current origin', function () {
+    render(<AiMarkdown content="[compile logs](/project/123/output.log)" />)
+
+    const link = screen.getByRole('link', { name: 'compile logs' })
+    expect(link.getAttribute('href')).to.equal(
+      'https://www.test-superpaper.com/project/123/output.log'
+    )
   })
 })

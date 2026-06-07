@@ -179,6 +179,13 @@ async function ensureFilesystemAgentProject({ projectId, userId }) {
   })
   const storageBackend = project?.storageBackend || 'mongo'
   if (storageBackend === 'filesystem') {
+    const workspaceRoot = ProjectWorkspaceManager.getWorkspaceRoot(projectId)
+    const workspaceExists = await import('node:fs').then(m =>
+      m.promises.access(workspaceRoot).then(() => true, () => false)
+    )
+    if (!workspaceExists) {
+      await ProjectStorageMigrationService.migrateProjectToFilesystem({ projectId, userId })
+    }
     await ProjectWorkspaceWatcher.start(projectId.toString())
     return
   }

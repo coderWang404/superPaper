@@ -1,5 +1,7 @@
 import { Streamdown, defaultUrlTransform } from 'streamdown'
 import { cjk } from '@streamdown/cjk'
+import { math } from '@streamdown/math'
+import 'katex/dist/katex.min.css'
 
 type AiMarkdownProps = {
   content: string
@@ -10,22 +12,21 @@ const ALLOWED_TAGS = {
   kbd: ['className'],
 }
 
-function transformUrl(url: string, key: string, node: Parameters<typeof defaultUrlTransform>[2]) {
-  const transformedUrl = defaultUrlTransform(url, key, node)
-  if (!transformedUrl) {
-    return transformedUrl
-  }
-
+function transformUrl(
+  url: string,
+  key: string,
+  node: Parameters<typeof defaultUrlTransform>[2]
+) {
   if (key !== 'href') {
-    return transformedUrl
+    return defaultUrlTransform(url, key, node)
   }
 
-  if (transformedUrl.startsWith('#')) {
-    return transformedUrl
+  if (url.startsWith('#')) {
+    return url
   }
 
   try {
-    const parsedUrl = new URL(transformedUrl, window.location.origin)
+    const parsedUrl = new URL(url, window.location.origin)
     if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
       return parsedUrl.toString()
     }
@@ -49,7 +50,7 @@ export default function AiMarkdown({
       linkSafety={{ enabled: false }}
       mode={streaming ? 'streaming' : 'static'}
       parseIncompleteMarkdown={streaming}
-      plugins={{ cjk }}
+      plugins={{ cjk, math }}
       urlTransform={transformUrl}
     >
       {content}

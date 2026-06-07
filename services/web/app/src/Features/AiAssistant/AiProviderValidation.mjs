@@ -12,7 +12,9 @@ const ModelInputSchema = z.object({
 const CreateProviderInputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   providerType: z.enum(PROVIDER_TYPES).default('openai-compatible'),
-  baseURL: z.string().trim().url(),
+  baseURL: z.string().trim().refine(val => {
+    try { const u = new URL(val); return u.protocol === 'https:' || u.protocol === 'http:' } catch { return false }
+  }, { message: 'baseURL must be a valid http or https URL' }),
   apiKey: z.string().min(1),
   enabled: z.boolean().default(true),
   defaultModel: z.string().trim().min(1).max(200).nullable().optional(),
@@ -29,10 +31,7 @@ const OpenAIModelsResponseSchema = z.object({
 
 function normalizeBaseURL(baseURL) {
   const url = new URL(baseURL)
-  if (url.protocol !== 'https:') {
-    throw new Error('baseURL must use https')
-  }
-  url.pathname = url.pathname.replace(/\/+$/, '')
+url.pathname = url.pathname.replace(/\/+$/, '')
   url.search = ''
   url.hash = ''
   return url.toString().replace(/\/$/, '')
