@@ -83,6 +83,23 @@ describe('Translations', function () {
         req.i18n.translate('log_in'),
       ]).to.deep.equal(['Se connecter', 'Log in', 'Log ind', 'Log in'])
     })
+
+    it('has zh-CN translations for high-value editor and sharing labels', function () {
+      expect([
+        req.i18n.translate('sidebar', { lng: 'zh-CN' }),
+        req.i18n.translate('project_files_history', { lng: 'zh-CN' }),
+        req.i18n.translate('share_project_name', {
+          lng: 'zh-CN',
+          projectName: '论文',
+        }),
+        req.i18n.translate('invite_revoked', { lng: 'zh-CN' }),
+      ]).to.deep.equal([
+        '侧边栏',
+        '项目文件历史',
+        '分享论文',
+        '邀请已撤销。',
+      ])
+    })
   })
 
   describe('interpolation', function () {
