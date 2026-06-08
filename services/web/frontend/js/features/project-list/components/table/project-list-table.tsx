@@ -149,7 +149,7 @@ function ProjectListTable() {
           ))
         ) : (
           <tr className="no-projects">
-            <td className="text-center" colSpan={5}>
+            <td className="text-center" colSpan={7}>
               {t('no_projects')}
             </td>
           </tr>

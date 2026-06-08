@@ -77,6 +77,47 @@ describe('<CompileAndDownloadProjectPDFButton />', function () {
     })
   })
 
+  it('falls back to compile when cached output PDF has no download URL', async function () {
+    Object.assign(getMeta('ol-ExposedSettings'), {
+      isSuperPaper: true,
+    })
+    fetchMock.get(
+      `/project/${projectsData[0].id}/output/cached/output.superpaper.json`,
+      {
+        status: 'success',
+        compileGroup: 'standard',
+        clsiServerId: 'server-1',
+        outputFiles: [{ path: 'output.pdf', build: 'cached-build' }],
+        options: { draft: false },
+      },
+      { delay: 10 }
+    )
+    const compileMock = fetchMock.post(
+      `/project/${projectsData[0].id}/compile`,
+      {
+        status: 'success',
+        compileGroup: 'standard',
+        clsiServerId: 'server-1',
+        outputFiles: [{ path: 'output.pdf', build: '123-321' }],
+      },
+      { delay: 10 }
+    )
+
+    const btn = screen.getByRole('button', { name: 'Download PDF' })
+    fireEvent.click(btn)
+
+    const assignStub = this.locationWrapperStub.assign
+    await waitFor(() => {
+      expect(assignStub).to.have.been.called
+    })
+
+    expect(compileMock.callHistory.called()).to.be.true
+    expect(assignStub).to.have.been.calledOnce
+    expect(assignStub).to.have.been.calledWith(
+      `/download/project/${projectsData[0].id}/build/123-321/output/output.pdf?compileGroup=standard&popupDownload=true&editorId=${FAKE_EDITOR_ID}&clsiserverid=server-1`
+    )
+  })
+
   it('ignores cached draft PDF and downloads the project PDF when clicked', async function () {
     Object.assign(getMeta('ol-ExposedSettings'), {
       isSuperPaper: true,
@@ -172,6 +213,41 @@ describe('<CompileAndDownloadProjectPDFButton />', function () {
   it('displays a modal when the compile failed', async function () {
     fetchMock.post(`/project/${projectsData[0].id}/compile`, {
       status: 'failure',
+    })
+
+    const btn = screen.getByRole('button', {
+      name: 'Download PDF',
+    }) as HTMLButtonElement
+    fireEvent.click(btn)
+
+    await screen.findByText(
+      `${projectsData[0].name}: PDF unavailable for download`
+    )
+    expect(this.locationWrapperStub.assign).to.have.not.been.called
+  })
+
+  it('displays a modal when the compile succeeds without an output PDF', async function () {
+    fetchMock.post(`/project/${projectsData[0].id}/compile`, {
+      status: 'success',
+      compileGroup: 'standard',
+      outputFiles: [{ path: 'output.log', build: '123-321' }],
+    })
+
+    const btn = screen.getByRole('button', {
+      name: 'Download PDF',
+    }) as HTMLButtonElement
+    fireEvent.click(btn)
+
+    await screen.findByText(
+      `${projectsData[0].name}: PDF unavailable for download`
+    )
+    expect(this.locationWrapperStub.assign).to.have.not.been.called
+  })
+
+  it('displays a modal when the compile succeeds without output files', async function () {
+    fetchMock.post(`/project/${projectsData[0].id}/compile`, {
+      status: 'success',
+      compileGroup: 'standard',
     })
 
     const btn = screen.getByRole('button', {

@@ -23,6 +23,14 @@ describe('<ProjectListTable />', function () {
     screen.getByRole('table')
   })
 
+  it('spans the empty table message across all columns', function () {
+    renderWithProjectListContext(<ProjectListTable />, { projects: [] })
+
+    const emptyCell = screen.getByRole('cell', { name: 'No projects' })
+
+    expect(emptyCell.getAttribute('colspan')).to.equal('7')
+  })
+
   it('sets aria-sort on column header currently sorted', function () {
     renderWithProjectListContext(<ProjectListTable />)
     let foundSortedColumn = false

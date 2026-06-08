@@ -51,6 +51,71 @@ describe('<ModalContentNewProjectForm />', function () {
     sinon.assert.calledWith(assignStub, `/project/${projectId}`)
   })
 
+  it('trims whitespace before creating a project', async function () {
+    fetchMock.post('/project/new', {
+      status: 200,
+      body: {
+        project_id: 'ab123',
+      },
+    })
+
+    render(<ModalContentNewProjectForm onCancel={() => {}} />)
+
+    fireEvent.change(screen.getByLabelText('Project name'), {
+      target: { value: '  Test Name  ' },
+    })
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Create',
+      })
+    )
+
+    await waitFor(() => {
+      expect(fetchMock.callHistory.called('/project/new')).to.be.true
+    })
+
+    const call = fetchMock.callHistory.calls('/project/new')[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      projectName: 'Test Name',
+      template: 'none',
+    })
+  })
+
+  it('keeps create disabled for whitespace-only project names', function () {
+    render(<ModalContentNewProjectForm onCancel={() => {}} />)
+
+    const createButton = screen.getByRole('button', {
+      name: 'Create',
+    })
+
+    fireEvent.change(screen.getByLabelText('Project name'), {
+      target: { value: '   ' },
+    })
+
+    expect(createButton.getAttribute('disabled')).to.exist
+  })
+
+  it('does not submit whitespace-only project names via form submit', function () {
+    const newProjectMock = fetchMock.post('/project/new', {
+      status: 200,
+      body: {
+        project_id: 'ab123',
+      },
+    })
+
+    render(<ModalContentNewProjectForm onCancel={() => {}} />)
+
+    const projectNameInput = screen.getByLabelText('Project name')
+    fireEvent.change(projectNameInput, {
+      target: { value: '   ' },
+    })
+
+    fireEvent.submit(projectNameInput.closest('form') as HTMLFormElement)
+
+    expect(newProjectMock.callHistory.called()).to.be.false
+  })
+
   it('shows error when project name contains "/"', async function () {
     const errorMessage = 'Project name cannot contain / characters'
 

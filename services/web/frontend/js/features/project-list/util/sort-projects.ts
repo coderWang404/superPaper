@@ -7,6 +7,17 @@ const order = (order: SortingOrder, projects: Project[]) => {
   return order === 'asc' ? [...projects] : projects.reverse()
 }
 
+const compareLastUpdated = (v1: Project, v2: Project) => {
+  const value1 = new Date(v1.lastUpdated).getTime()
+  const value2 = new Date(v2.lastUpdated).getTime()
+
+  if (value1 !== value2) {
+    return value1 < value2 ? Compare.SORT_A_BEFORE_B : Compare.SORT_A_AFTER_B
+  }
+
+  return Compare.SORT_KEEP_ORDER
+}
+
 export const ownerNameComparator = (v1: Project, v2: Project) => {
   const ownerNameV1 = getOwnerName(v1)
   const ownerNameV2 = getOwnerName(v2)
@@ -14,9 +25,7 @@ export const ownerNameComparator = (v1: Project, v2: Project) => {
   // sorting by owner === 'You' is with highest precedence
   if (ownerNameV1 === 'You') {
     if (ownerNameV2 === 'You') {
-      return v1.lastUpdated < v2.lastUpdated
-        ? Compare.SORT_A_BEFORE_B
-        : Compare.SORT_A_AFTER_B
+      return compareLastUpdated(v1, v2)
     }
 
     return Compare.SORT_A_AFTER_B
@@ -25,9 +34,7 @@ export const ownerNameComparator = (v1: Project, v2: Project) => {
   // empty owner name
   if (ownerNameV1 === '') {
     if (ownerNameV2 === '') {
-      return v1.lastUpdated < v2.lastUpdated
-        ? Compare.SORT_A_BEFORE_B
-        : Compare.SORT_A_AFTER_B
+      return compareLastUpdated(v1, v2)
     }
 
     return Compare.SORT_A_BEFORE_B
@@ -57,6 +64,10 @@ export const defaultComparator = (
   v2: Project,
   key: 'name' | 'lastUpdated'
 ) => {
+  if (key === 'lastUpdated') {
+    return compareLastUpdated(v1, v2)
+  }
+
   const value1 = v1[key].toLowerCase()
   const value2 = v2[key].toLowerCase()
 

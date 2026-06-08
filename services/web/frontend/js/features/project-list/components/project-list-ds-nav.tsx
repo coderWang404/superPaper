@@ -38,6 +38,7 @@ export function ProjectListDsNav() {
   const isLibraryEnabled = isSplitTestEnabled('superpaper-library')
 
   const selectedTag = tags.find(tag => tag._id === selectedTagId)
+  const hasSelectedProjects = selectedProjects.length > 0
 
   const tableTopArea = (
     <div className="pt-2 pb-3 d-md-none d-flex gap-2">
@@ -50,9 +51,7 @@ export function ProjectListDsNav() {
             selectedTag={selectedTag}
             className="overflow-hidden flex-grow-1"
           />
-          <NewProjectButton
-            id="new-project-button-projects-table"
-          />
+          <NewProjectButton id="new-project-button-projects-table-mobile" />
         </>
       ) : (
         <>
@@ -90,20 +89,15 @@ export function ProjectListDsNav() {
               <UserNotifications />
               <main aria-labelledby="main-content">
                 <div className="project-list-header-row">
-                    <ProjectListTitle
-                      filter={filter}
-                      selectedTag={selectedTag}
-                      selectedTagId={selectedTagId}
-                      className="text-truncate d-none d-md-block"
-                    />
-                    <div className="project-tools">
-                      <div className="d-none d-md-block">
-                        {selectedProjects.length > 0 && <ProjectTools />}
-                      </div>
-                      <div className="d-md-none">
-                        {selectedProjects.length > 0 && <ProjectTools />}
-                      </div>
-                    </div>
+                  <ProjectListTitle
+                    filter={filter}
+                    selectedTag={selectedTag}
+                    selectedTagId={selectedTagId}
+                    className="text-truncate d-none d-md-block"
+                  />
+                  <div className="project-tools">
+                    {hasSelectedProjects && <ProjectTools />}
+                  </div>
                 </div>
                 <div className="project-ds-nav-project-list">
                   <OLRow className="d-none d-md-flex align-items-center">

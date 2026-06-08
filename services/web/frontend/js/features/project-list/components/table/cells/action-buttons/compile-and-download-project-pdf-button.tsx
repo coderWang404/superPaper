@@ -49,6 +49,7 @@ function CompileAndDownloadProjectPDFButton({
         if (pendingCompile) return true
         eventTracking.sendMB('project-list-page-interaction', {
           action: 'downloadPDF',
+          page: '/',
           projectId: project.id,
           isSmallDevice,
         })
@@ -63,10 +64,16 @@ function CompileAndDownloadProjectPDFButton({
               )
               if (data.options.draft) throw new Error('options changed')
 
+              const outputFile = findOutputPdf(data.outputFiles)
+              if (!outputFile) throw new Error('output.pdf missing')
+              if (
+                typeof outputFile.downloadURL !== 'string' ||
+                outputFile.downloadURL === ''
+              ) {
+                throw new Error('output.pdf downloadURL missing')
+              }
+
               setPendingCompile(false)
-              const outputFile = data.outputFiles
-                .filter((file: { path: string }) => file.path === 'output.pdf')
-                .pop()
               location.assign(outputFile.downloadURL)
               onDone?.(e)
               return
@@ -95,9 +102,11 @@ function CompileAndDownloadProjectPDFButton({
             setShowErrorModal(true)
             return
           }
-          const outputFile = data.outputFiles
-            .filter((file: { path: string }) => file.path === 'output.pdf')
-            .pop()
+          const outputFile = findOutputPdf(data.outputFiles)
+          if (!outputFile?.build || !data.compileGroup) {
+            setShowErrorModal(true)
+            return
+          }
 
           const params = new URLSearchParams({
             compileGroup: data.compileGroup,
@@ -143,6 +152,21 @@ function CompileAndDownloadProjectPDFButton({
       )}
     </>
   )
+}
+
+function findOutputPdf(outputFiles: unknown) {
+  if (!Array.isArray(outputFiles)) {
+    return null
+  }
+  return outputFiles
+    .filter(
+      (file): file is { path: string; build?: string; downloadURL?: string } =>
+        Boolean(file) &&
+        typeof file === 'object' &&
+        'path' in file &&
+        file.path === 'output.pdf'
+    )
+    .pop()
 }
 
 function CompileErrorModal({

@@ -58,6 +58,7 @@ export default function TagsList() {
               type="button"
               className="tag-name"
               translate="no"
+              aria-current={selectedTagId === tag._id ? 'page' : undefined}
               onClick={e =>
                 handleSelectTag(e as unknown as React.MouseEvent, tag._id)
               }
@@ -114,6 +115,9 @@ export default function TagsList() {
           <button
             type="button"
             className="tag-name"
+            aria-current={
+              selectedTagId === UNCATEGORIZED_KEY ? 'page' : undefined
+            }
             onClick={() => selectTag(UNCATEGORIZED_KEY)}
           >
             <span className="name fst-italic">

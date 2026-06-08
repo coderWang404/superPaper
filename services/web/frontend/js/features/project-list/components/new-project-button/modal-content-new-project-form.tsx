@@ -45,10 +45,15 @@ function ModalContentNewProjectForm({ onCancel, template = 'none' }: Props) {
   const location = useLocation()
 
   const createNewProject = () => {
+    const trimmedProjectName = projectName.trim()
+    if (trimmedProjectName === '') {
+      return
+    }
+
     runAsync(
       postJSON('/project/new', {
         body: {
-          projectName,
+          projectName: trimmedProjectName,
           template,
         },
       })

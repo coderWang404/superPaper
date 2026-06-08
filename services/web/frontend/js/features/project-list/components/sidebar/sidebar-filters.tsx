@@ -19,7 +19,11 @@ export function SidebarFilter({ filter, text }: SidebarFilterProps) {
     <ProjectsFilterMenu filter={filter}>
       {isActive => (
         <li className={isActive ? 'active' : ''}>
-          <button type="button" onClick={() => selectFilter(filter)}>
+          <button
+            type="button"
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => selectFilter(filter)}
+          >
             {text}
           </button>
         </li>

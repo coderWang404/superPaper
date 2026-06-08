@@ -64,9 +64,14 @@ describe('<TagsList />', function () {
   it('selects the tag when clicked', async function () {
     const tag1Button = screen.getByText('Tag 1')
     assert.isFalse(tag1Button.closest('li')?.classList.contains('active'))
+    expect(tag1Button.closest('button')?.getAttribute('aria-current')).to.be
+      .null
 
     fireEvent.click(tag1Button)
     assert.isTrue(tag1Button.closest('li')?.classList.contains('active'))
+    expect(tag1Button.closest('button')?.getAttribute('aria-current')).to.equal(
+      'page'
+    )
   })
 
   it('selects uncategorized when clicked', function () {
@@ -74,11 +79,16 @@ describe('<TagsList />', function () {
     assert.isFalse(
       uncategorizedButton.closest('li')?.classList.contains('active')
     )
+    expect(uncategorizedButton.closest('button')?.getAttribute('aria-current'))
+      .to.be.null
 
     fireEvent.click(uncategorizedButton)
     assert.isTrue(
       uncategorizedButton.closest('li')?.classList.contains('active')
     )
+    expect(
+      uncategorizedButton.closest('button')?.getAttribute('aria-current')
+    ).to.equal('page')
   })
 
   describe('Create modal', function () {

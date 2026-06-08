@@ -43,6 +43,22 @@ describe('sort comparators', function () {
       expect(result[1]).to.include(projectsData[2])
       expect(result[2]).to.include(projectsData[1])
     })
+
+    it('sorts `lastUpdated` by timestamp instead of string value', function () {
+      const projectsData = [
+        { lastUpdated: '2/1/2024' },
+        { lastUpdated: '12/1/2023' },
+        { lastUpdated: '1/1/2024' },
+      ] as Project[]
+
+      const result = [...projectsData].sort((v1, v2) => {
+        return defaultComparator(v1, v2, 'lastUpdated')
+      })
+
+      expect(result[0]).to.include(projectsData[1])
+      expect(result[1]).to.include(projectsData[2])
+      expect(result[2]).to.include(projectsData[0])
+    })
   })
 
   describe('owner comparator', function () {
@@ -128,6 +144,37 @@ describe('sort comparators', function () {
       expect(result[7]).to.include(projectsData[5])
       expect(result[8]).to.include(projectsData[1])
       expect(result[9]).to.include(projectsData[3])
+    })
+
+    it('sorts matching owners by timestamp instead of string value', function () {
+      const projectsData = [
+        {
+          lastUpdated: '2/1/2024',
+          accessLevel: 'owner',
+          source: 'owner',
+          owner,
+        },
+        {
+          lastUpdated: '12/1/2023',
+          accessLevel: 'owner',
+          source: 'owner',
+          owner,
+        },
+        {
+          lastUpdated: '1/1/2024',
+          accessLevel: 'owner',
+          source: 'owner',
+          owner,
+        },
+      ] as Project[]
+
+      const result = [...projectsData].sort((v1, v2) => {
+        return ownerNameComparator(v1, v2)
+      })
+
+      expect(result[0]).to.include(projectsData[1])
+      expect(result[1]).to.include(projectsData[2])
+      expect(result[2]).to.include(projectsData[0])
     })
   })
 })
