@@ -1,6 +1,7 @@
 import { expect } from 'chai'
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
+import { createElement } from 'react'
 
 import { resetMeta } from '../../helpers/reset-meta'
 import { initAiProviderAdmin } from '../../../../frontend/js/features/ai-provider-admin/ai-provider-admin'
@@ -44,6 +45,23 @@ describe('ai-provider-admin', function () {
         models: [],
       })
     ).to.be.rejectedWith('Invalid AI provider input: baseURL must use https')
+  })
+
+  it('renders the React provider admin app with redacted provider state', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+
+    const { AiProviderAdminApp } = await import(
+      '../../../../frontend/js/features/ai-provider-admin/components/ai-provider-admin-app'
+    )
+
+    render(createElement(AiProviderAdminApp, { csrfToken: 'csrf-token' }))
+
+    await screen.findByText('Provider One')
+    screen.getByText('https://provider-one.example/v1')
+    screen.getByText('API key stored')
+    expect(document.body.textContent).not.to.contain(fakeProviderKey)
   })
 
   it('loads providers from the admin endpoint and renders redacted providers', async function () {
@@ -124,6 +142,54 @@ describe('ai-provider-admin', function () {
     expect((screen.getByLabelText('API key') as HTMLInputElement).value).to.equal(
       ''
     )
+  })
+
+  it('fills the DeepSeek preset and creates the normalized model request', async function () {
+    fetchMock.get('/admin/ai/providers', { providers: [] })
+    fetchMock.post('/admin/ai/providers', {
+      provider: providerFixture({
+        name: 'DeepSeek',
+        baseURL: 'https://api.deepseek.com/v1',
+        defaultModel: 'deepseek-chat',
+      }),
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('No AI providers configured')
+
+    fireEvent.change(screen.getByLabelText('Preset channels'), {
+      target: { value: 'deepseek' },
+    })
+    fireEvent.input(screen.getByLabelText('API key'), {
+      target: { value: fakeProviderKey },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: 'Add AI provider' }))
+
+    await screen.findByText('Provider added')
+
+    const createCall = fetchMock.callHistory
+      .calls('/admin/ai/providers')
+      .find(call => call.options.method === 'post')
+    if (!createCall) {
+      throw new Error('expected AI provider create request')
+    }
+    expect(JSON.parse(createCall.options.body as string)).to.deep.equal({
+      name: 'DeepSeek',
+      providerType: 'openai-compatible',
+      baseURL: 'https://api.deepseek.com/v1',
+      apiKey: fakeProviderKey,
+      enabled: true,
+      defaultModel: 'deepseek-chat',
+      models: [
+        {
+          id: 'deepseek-chat',
+          displayName: 'deepseek-chat',
+          source: 'manual',
+          enabled: true,
+        },
+      ],
+    })
   })
 
   it('syncs models for a provider using the sync endpoint', async function () {
@@ -356,6 +422,39 @@ describe('ai-provider-admin', function () {
     expect(document.body.textContent).not.to.contain(
       'http://unsafe.example.test/private'
     )
+  })
+
+  it('does not render submitted API keys after replace validation errors', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+    fetchMock.patch('/admin/ai/providers/provider-one', {
+      status: 422,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid AI provider input',
+          fields: [{ field: 'apiKey', message: 'API key is invalid' }],
+        },
+      },
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Replace key for Provider One' })
+    )
+    fireEvent.input(screen.getByLabelText('New API key for Provider One'), {
+      target: { value: fakeProviderKey },
+    })
+    fireEvent.submit(
+      screen.getByRole('form', { name: 'Replace key for Provider One' })
+    )
+
+    await screen.findByRole('alert')
+    screen.getByText('Invalid AI provider input: API key is invalid')
+    expect(document.body.textContent).not.to.contain(fakeProviderKey)
   })
 
   it('ignores provider test responses without a provider payload', async function () {

@@ -77,7 +77,7 @@ async function requestJSON<T>(
   csrfToken: string,
   options: {
     method?: string
-    body?: Record<string, unknown>
+    body?: unknown
   } = {}
 ): Promise<T> {
   const response = await fetch(path, {
