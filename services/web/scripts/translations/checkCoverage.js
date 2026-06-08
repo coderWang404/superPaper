@@ -10,8 +10,8 @@ const EXTRACTED_TRANSLATIONS = Path.join(
   '../../frontend/extracted-translations.json'
 )
 const CHECK_BASELINES = {
-  zhCnMissing: 594,
-  extractedZhCnMissing: 459,
+  zhCnMissing: 547,
+  extractedZhCnMissing: 116,
 }
 const DRIFT_SAMPLE_LIMIT = 20
 const CHECK = process.argv.includes('--check')
