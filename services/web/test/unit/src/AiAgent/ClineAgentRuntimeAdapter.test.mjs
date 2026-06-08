@@ -62,6 +62,7 @@ describe('ClineAgentRuntimeAdapter', function () {
       }),
       abort: sinon.stub().resolves(),
       cancel: sinon.stub().resolves(),
+      stop: sinon.stub().resolves(),
       subscribe: sinon.stub().callsFake(listener => {
         ctx.clineEventListener = listener
         return ctx.unsubscribe
@@ -287,7 +288,12 @@ describe('ClineAgentRuntimeAdapter', function () {
     abortController.abort()
 
     await expect(collectPromise).to.be.rejectedWith('aborted')
-    expect(ctx.cline.abort).to.have.been.calledOnce
+    expect(ctx.cline.abort).to.have.been.calledOnceWith(
+      'session-1',
+      sinon.match.instanceOf(DOMException)
+    )
+    expect(ctx.cline.stop).to.have.been.calledOnceWith('session-1')
+    expect(ctx.cline.cancel).not.to.have.been.called
     expect(ctx.unsubscribe).to.have.been.calledOnce
     expect(ctx.cline.dispose).to.have.been.calledOnce
     expect(ctx.ProjectCheckpointService.diffWorktree).not.to.have.been.called

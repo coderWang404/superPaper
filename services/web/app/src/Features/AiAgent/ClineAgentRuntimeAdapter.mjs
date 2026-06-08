@@ -71,7 +71,12 @@ export async function* runTurn({
       eventQueue.push(mapped)
     }
   })
-  const abort = createClineAbortHandler({ cline, eventQueue, signal })
+  const abort = createClineAbortHandler({
+    cline,
+    clineSessionId,
+    eventQueue,
+    signal,
+  })
 
   try {
     abort.throwIfAborted()
@@ -188,13 +193,13 @@ export async function* runTurn({
   }
 }
 
-function createClineAbortHandler({ cline, eventQueue, signal }) {
+function createClineAbortHandler({ cline, clineSessionId, eventQueue, signal }) {
   let abortError = null
   const abort = () => {
     abortError = toAbortError(signal?.reason)
     eventQueue.close()
-    ignoreRejection(cline.abort?.(abortError))
-    ignoreRejection(cline.cancel?.(abortError))
+    ignoreRejection(cline.abort?.(clineSessionId, abortError))
+    ignoreRejection(cline.stop?.(clineSessionId))
     resolveAbort?.()
   }
   let resolveAbort

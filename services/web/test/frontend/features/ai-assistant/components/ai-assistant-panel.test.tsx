@@ -989,6 +989,84 @@ describe('<AiAssistantPanel />', function () {
     expect(summary.getAttribute('style')).to.contain('translate(40px, 25px)')
   })
 
+  it('keeps the floating agent run summary within the viewport', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStreamWithWorkspaceArtifacts()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Edit real files.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+
+    const summary = await screen.findByRole('region', {
+      name: 'Run summary',
+    })
+    sinon.stub(window, 'innerWidth').value(800)
+    sinon.stub(window, 'innerHeight').value(600)
+    sinon.stub(summary, 'getBoundingClientRect').returns({
+      x: 396,
+      y: 96,
+      left: 396,
+      top: 96,
+      right: 776,
+      bottom: 316,
+      width: 380,
+      height: 220,
+      toJSON() {
+        return {}
+      },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Float run summary' }))
+    fireEvent.mouseDown(
+      screen.getByRole('button', { name: 'Drag run summary' }),
+      { clientX: 120, clientY: 80 }
+    )
+    fireEvent.mouseMove(window, { clientX: -1000, clientY: -1000 })
+    fireEvent.mouseUp(window)
+
+    expect(summary.getAttribute('style')).to.contain('translate(-380px, -80px)')
+  })
+
+  it('bounds persisted agent events while keeping run-summary artifacts', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStreamWithManyEvents()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Inspect a noisy agent run.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+
+    await screen.findByText('Agent answer')
+    const persistedEvents = customLocalStorage.getItem(
+      'superpaper.ai-assistant.project123.agent-events'
+    ) as Array<{ id: string; type: string }>
+
+    expect(persistedEvents).to.have.length.at.most(120)
+    expect(persistedEvents.map(event => event.id)).to.include.members([
+      'checkpoint-before',
+      'workspace-diff',
+      'checkpoint-after',
+    ])
+    expect(persistedEvents.map(event => event.id)).not.to.include('tool-1')
+  })
+
   it('filters raw Cline telemetry out of the readable agent worklog', async function () {
     mockConfig()
     mockAgentConfig()
@@ -1712,6 +1790,85 @@ function mockAgentTurnStreamWithWorkspaceArtifacts() {
         answer: 'Agent answer',
       }) +
       '\n',
+  })
+}
+
+function mockAgentTurnStreamWithManyEvents() {
+  const events = [
+    {
+      type: 'event',
+      event: {
+        id: 'checkpoint-before',
+        sessionId: 'session-one',
+        sequence: 1,
+        type: 'checkpoint_created',
+        payload: {
+          phase: 'before',
+          commitHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        },
+        createdAt: null,
+      },
+    },
+    ...Array.from({ length: 150 }, (_, index) => ({
+      type: 'event',
+      event: {
+        id: `tool-${index + 1}`,
+        sessionId: 'session-one',
+        sequence: index + 2,
+        type: 'tool_call',
+        payload: { name: 'project.read_file', input: { path: 'main.tex' } },
+        createdAt: null,
+      },
+    })),
+    {
+      type: 'event',
+      event: {
+        id: 'workspace-diff',
+        sessionId: 'session-one',
+        sequence: 152,
+        type: 'workspace_diff',
+        payload: {
+          diff: [
+            'diff --git a/main.tex b/main.tex',
+            '--- a/main.tex',
+            '+++ b/main.tex',
+            '@@ -1 +1 @@',
+            '-Old sentence.',
+            '+New sentence.',
+          ].join('\n'),
+        },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'checkpoint-after',
+        sessionId: 'session-one',
+        sequence: 153,
+        type: 'checkpoint_created',
+        payload: {
+          phase: 'after',
+          commitHash: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'done',
+      session: mockAgentSessionPayload({
+        status: 'completed',
+        mode: 'act',
+        task: 'Inspect a noisy agent run.',
+      }),
+      answer: 'Agent answer',
+    },
+  ]
+
+  fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+    status: 200,
+    headers: { 'Content-Type': 'application/x-ndjson' },
+    body: events.map(event => JSON.stringify(event)).join('\n') + '\n',
   })
 }
 

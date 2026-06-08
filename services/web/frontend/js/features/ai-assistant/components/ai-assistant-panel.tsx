@@ -87,8 +87,83 @@ const AGENT_SESSION_RESTART_STATUSES = new Set(['failed', 'cancelled'])
 const READABLE_AGENT_MESSAGE_KINDS = new Set(['context', 'plan'])
 const AGENT_RESULT_PREVIEW_CHARS = 900
 const AGENT_RESULT_PREVIEW_LINES = 12
+const AGENT_EVENTS_MAX_PERSISTED = 120
 const DEFAULT_CHAT_CONVERSATION_ID = 'chat-1'
 const CHAT_TITLE_MAX_LENGTH = 58
+const FLOATING_RUN_SUMMARY_VIEWPORT_MARGIN = 16
+const AGENT_SUMMARY_EVENT_TYPES = new Set([
+  'checkpoint_created',
+  'checkpoint_restored',
+  'workspace_diff',
+  'patch_created',
+  'patch_applied',
+  'patch_rejected',
+  'patch_rolled_back',
+])
+
+function appendBoundedAgentEvent(
+  events: ProjectAiAgentEvent[],
+  event: ProjectAiAgentEvent
+) {
+  return boundAgentEvents([...events, event])
+}
+
+function boundAgentEvents(events: ProjectAiAgentEvent[]) {
+  if (events.length <= AGENT_EVENTS_MAX_PERSISTED) {
+    return events
+  }
+
+  const summaryEvents = events
+    .filter(event => AGENT_SUMMARY_EVENT_TYPES.has(event.type))
+    .slice(-AGENT_EVENTS_MAX_PERSISTED)
+  const regularSlots = AGENT_EVENTS_MAX_PERSISTED - summaryEvents.length
+  const regularEvents =
+    regularSlots > 0
+      ? events
+          .filter(event => !AGENT_SUMMARY_EVENT_TYPES.has(event.type))
+          .slice(-regularSlots)
+      : []
+  const retainedEvents = new Set([...summaryEvents, ...regularEvents])
+
+  return events.filter(event => retainedEvents.has(event))
+}
+
+function clampFloatingRunSummaryPosition(
+  desiredPosition: { x: number; y: number },
+  element: HTMLElement | null,
+  renderedPosition = { x: 0, y: 0 }
+) {
+  if (!element) {
+    return desiredPosition
+  }
+
+  const rect = element.getBoundingClientRect()
+  if (rect.width === 0 && rect.height === 0) {
+    return desiredPosition
+  }
+  const baseLeft = rect.left - renderedPosition.x
+  const baseRight = rect.right - renderedPosition.x
+  const baseTop = rect.top - renderedPosition.y
+  const baseBottom = rect.bottom - renderedPosition.y
+  const minX = FLOATING_RUN_SUMMARY_VIEWPORT_MARGIN - baseLeft
+  const maxX =
+    window.innerWidth - FLOATING_RUN_SUMMARY_VIEWPORT_MARGIN - baseRight
+  const minY = FLOATING_RUN_SUMMARY_VIEWPORT_MARGIN - baseTop
+  const maxY =
+    window.innerHeight - FLOATING_RUN_SUMMARY_VIEWPORT_MARGIN - baseBottom
+
+  return {
+    x: clampNumber(desiredPosition.x, minX, maxX),
+    y: clampNumber(desiredPosition.y, minY, maxY),
+  }
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  if (min > max) {
+    return min
+  }
+  return Math.min(Math.max(value, min), max)
+}
 
 export default function AiAssistantPanel() {
   const { t } = useTranslation()
@@ -502,7 +577,9 @@ export default function AiAssistantPanel() {
           selection,
         },
         event => {
-          setAgentEvents(currentEvents => [...currentEvents, event])
+          setAgentEvents(currentEvents =>
+            appendBoundedAgentEvent(currentEvents, event)
+          )
         },
         { signal }
       )
@@ -534,17 +611,16 @@ export default function AiAssistantPanel() {
     try {
       const response = await startProjectAiAgentAct(projectId, agentSession.id)
       setAgentSession(response.session)
-      setAgentEvents(currentEvents => [
-        ...currentEvents,
-        {
+      setAgentEvents(currentEvents =>
+        appendBoundedAgentEvent(currentEvents, {
           id: `local-mode-${Date.now()}`,
           sessionId: response.session.id,
           sequence: Number.MAX_SAFE_INTEGER,
           type: 'mode_changed',
           payload: { from: 'plan', to: 'act' },
           createdAt: null,
-        },
-      ])
+        })
+      )
     } catch (error) {
       setChatError(getErrorMessage(error))
     } finally {
@@ -565,7 +641,9 @@ export default function AiAssistantPanel() {
         commitHash
       )
       setAgentSession(response.session)
-      setAgentEvents(currentEvents => [...currentEvents, response.event])
+      setAgentEvents(currentEvents =>
+        appendBoundedAgentEvent(currentEvents, response.event)
+      )
     } catch (error) {
       setChatError(getErrorMessage(error))
     }
@@ -1637,6 +1715,7 @@ function AgentRunSummary({
   const [floating, setFloating] = useState(false)
   const [rollingBack, setRollingBack] = useState(false)
   const [position, setPosition] = useState({ x: 0, y: 0 })
+  const summaryRef = useRef<HTMLElement>(null)
   const [dragState, setDragState] = useState<{
     startX: number
     startY: number
@@ -1673,10 +1752,19 @@ function AgentRunSummary({
     }
 
     const handleMouseMove = (event: MouseEvent) => {
-      setPosition({
-        x: dragState.originX + event.clientX - dragState.startX,
-        y: dragState.originY + event.clientY - dragState.startY,
-      })
+      setPosition(
+        clampFloatingRunSummaryPosition(
+          {
+            x: dragState.originX + event.clientX - dragState.startX,
+            y: dragState.originY + event.clientY - dragState.startY,
+          },
+          summaryRef.current,
+          {
+            x: dragState.originX,
+            y: dragState.originY,
+          }
+        )
+      )
     }
     const handleMouseUp = () => setDragState(null)
 
@@ -1688,6 +1776,29 @@ function AgentRunSummary({
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [dragState])
+
+  useEffect(() => {
+    if (!floating) {
+      return
+    }
+
+    const handleResize = () => {
+      setPosition(currentPosition =>
+        clampFloatingRunSummaryPosition(
+          currentPosition,
+          summaryRef.current,
+          currentPosition
+        )
+      )
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [floating])
 
   const handleToggleFloating = () => {
     setFloating(currentFloating => {
@@ -1728,6 +1839,7 @@ function AgentRunSummary({
     <section
       aria-label={t('ai_assistant_run_summary')}
       className={className}
+      ref={summaryRef}
       style={
         floating
           ? { transform: `translate(${position.x}px, ${position.y}px)` }
