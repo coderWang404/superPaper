@@ -9,12 +9,38 @@ const ModelInputSchema = z.object({
   enabled: z.boolean().default(true),
 })
 
+export class AiProviderValidationError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'AiProviderValidationError'
+  }
+}
+
+export function isHttpsURL(val) {
+  try {
+    const url = new URL(val)
+    return url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function httpsURLSchema(fieldName) {
+  return z.string().trim().refine(isHttpsURL, {
+    message: `${fieldName} must use https`,
+  })
+}
+
+export function assertHttpsBaseURL(baseURL, fieldName = 'baseURL') {
+  if (!isHttpsURL(baseURL)) {
+    throw new AiProviderValidationError(`${fieldName} must use https`)
+  }
+}
+
 const CreateProviderInputSchema = z.object({
   name: z.string().trim().min(1).max(120),
   providerType: z.enum(PROVIDER_TYPES).default('openai-compatible'),
-  baseURL: z.string().trim().refine(val => {
-    try { const u = new URL(val); return u.protocol === 'https:' } catch { return false }
-  }, { message: 'baseURL must use https' }),
+  baseURL: httpsURLSchema('baseURL'),
   apiKey: z.string().min(1),
   enabled: z.boolean().default(true),
   defaultModel: z.string().trim().min(1).max(200).nullable().optional(),
@@ -31,7 +57,7 @@ const OpenAIModelsResponseSchema = z.object({
 
 function normalizeBaseURL(baseURL) {
   const url = new URL(baseURL)
-url.pathname = url.pathname.replace(/\/+$/, '')
+  url.pathname = url.pathname.replace(/\/+$/, '')
   url.search = ''
   url.hash = ''
   return url.toString().replace(/\/$/, '')
@@ -49,12 +75,8 @@ function normalizeModel(model) {
 const UpdateProviderInputSchema = z
   .object({
     name: z.string().trim().min(1).max(120).optional(),
-    baseUrl: z.string().trim().refine(val => {
-      try { const u = new URL(val); return u.protocol === 'https:' || u.protocol === 'http:' } catch { return false }
-    }, { message: 'baseUrl must be a valid http or https URL' }).optional(),
-    baseURL: z.string().trim().refine(val => {
-      try { const u = new URL(val); return u.protocol === 'https:' || u.protocol === 'http:' } catch { return false }
-    }, { message: 'baseURL must be a valid http or https URL' }).optional(),
+    baseUrl: httpsURLSchema('baseUrl').optional(),
+    baseURL: httpsURLSchema('baseURL').optional(),
     apiKey: z.string().min(1).optional(),
     enabled: z.boolean().optional(),
     defaultModel: z.string().trim().min(1).max(200).nullable().optional(),

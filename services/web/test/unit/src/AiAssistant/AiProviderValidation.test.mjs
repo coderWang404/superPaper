@@ -39,6 +39,19 @@ describe('AiProviderValidation', function () {
     ).to.throw('baseURL must use https')
   })
 
+  it('rejects non-https provider URLs on update', function (ctx) {
+    expect(() =>
+      ctx.Validation.parseUpdateProviderInput({
+        baseURL: 'http://localhost:11434',
+      })
+    ).to.throw('baseURL must use https')
+    expect(() =>
+      ctx.Validation.parseUpdateProviderInput({
+        baseUrl: 'http://localhost:11434',
+      })
+    ).to.throw('baseUrl must use https')
+  })
+
   it('extracts model IDs from OpenAI-compatible model list responses', function (ctx) {
     const models = ctx.Validation.parseOpenAIModelsResponse({
       object: 'list',

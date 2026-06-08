@@ -60,6 +60,8 @@ describe('ClineAgentRuntimeAdapter', function () {
           },
         }
       }),
+      abort: sinon.stub().resolves(),
+      cancel: sinon.stub().resolves(),
       subscribe: sinon.stub().callsFake(listener => {
         ctx.clineEventListener = listener
         return ctx.unsubscribe
@@ -248,6 +250,47 @@ describe('ClineAgentRuntimeAdapter', function () {
 
     expect(ctx.unsubscribe).to.have.been.calledOnce
     expect(ctx.cline.dispose).to.have.been.calledOnce
+  })
+
+  it('aborts and disposes the Cline core when the caller aborts the run', async function (ctx) {
+    const abortController = new AbortController()
+    ctx.cline.start.callsFake(async () => {
+      await new Promise((resolve, reject) => {
+        abortController.signal.addEventListener(
+          'abort',
+          () =>
+            reject(
+              new DOMException('The operation was aborted.', 'AbortError')
+            ),
+          { once: true }
+        )
+      })
+    })
+
+    const collectPromise = collect(
+      ctx.Adapter.runTurn({
+        projectId: 'project-1',
+        userId: 'user-1',
+        sessionId: 'session-1',
+        prompt: 'Improve abstract',
+        provider: {
+          baseURL: 'https://ai.example.test/v1',
+          apiKey: 'plain-key',
+          model: 'claude-sonnet-4.5',
+          providerId: 'provider-1',
+        },
+        signal: abortController.signal,
+      })
+    )
+
+    await Promise.resolve()
+    abortController.abort()
+
+    await expect(collectPromise).to.be.rejectedWith('aborted')
+    expect(ctx.cline.abort).to.have.been.calledOnce
+    expect(ctx.unsubscribe).to.have.been.calledOnce
+    expect(ctx.cline.dispose).to.have.been.calledOnce
+    expect(ctx.ProjectCheckpointService.diffWorktree).not.to.have.been.called
   })
 
   it('normalizes Mongo ObjectId-like session ids before calling Cline', async function (ctx) {
@@ -448,5 +491,57 @@ describe('ClineAgentRuntimeAdapter', function () {
       'direct workspace writes: enabled'
     )
     expect(startConfig.workspaceMetadata).not.to.contain('plain-key')
+  })
+
+  it('keeps plan mode read-only in Cline tool policy and runtime metadata', async function (ctx) {
+    await collect(
+      ctx.Adapter.runTurn({
+        projectId: 'project-1',
+        userId: 'user-1',
+        sessionId: 'session-1',
+        prompt: 'Plan a safer introduction',
+        provider: {
+          baseURL: 'https://ai.example.test/v1',
+          apiKey: 'plain-key',
+          model: 'claude-sonnet-4.5',
+          providerId: 'provider-1',
+        },
+        mode: 'plan',
+      })
+    )
+
+    const createOptions = ctx.ClineCore.create.firstCall.args[0]
+    expect(createOptions.toolPolicies['*']).to.deep.equal({
+      enabled: false,
+      autoApprove: false,
+    })
+    expect(createOptions.toolPolicies.read_files).to.deep.equal({
+      enabled: true,
+      autoApprove: true,
+    })
+    expect(createOptions.toolPolicies.search_codebase).to.deep.equal({
+      enabled: true,
+      autoApprove: true,
+    })
+    expect(createOptions.toolPolicies.skills).to.deep.equal({
+      enabled: true,
+      autoApprove: true,
+    })
+    expect(createOptions.toolPolicies.submit_and_exit).to.deep.equal({
+      enabled: true,
+      autoApprove: true,
+    })
+    expect(createOptions.toolPolicies.run_commands).to.equal(undefined)
+    expect(createOptions.toolPolicies.apply_patch).to.equal(undefined)
+    expect(createOptions.toolPolicies.editor).to.equal(undefined)
+
+    const startConfig = ctx.cline.start.firstCall.args[0].config
+    expect(startConfig.mode).to.equal('plan')
+    expect(startConfig.yolo).to.equal(false)
+    expect(startConfig.systemPrompt).to.contain('Current superPaper mode: Plan')
+    expect(startConfig.workspaceMetadata).to.contain(
+      'direct workspace writes: disabled'
+    )
+    expect(startConfig.workspaceMetadata).to.contain('shell: disabled')
   })
 })

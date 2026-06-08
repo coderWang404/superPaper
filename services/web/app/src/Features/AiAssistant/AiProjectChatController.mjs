@@ -102,6 +102,7 @@ async function chat(req, res, next) {
 
 async function chatStream(req, res, next) {
   let streamStarted = false
+  const closeAbortController = createResponseCloseAbortController(res)
   try {
     const body = ChatRequestSchema.parse(req.body)
     const result = await projectChatStream({
@@ -111,6 +112,7 @@ async function chatStream(req, res, next) {
       model: body.model,
       selection: body.selection,
       history: body.history,
+      signal: closeAbortController.signal,
     })
 
     res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8')
@@ -131,6 +133,9 @@ async function chatStream(req, res, next) {
     )
     res.end()
   } catch (err) {
+    if (closeAbortController.signal.aborted) {
+      return
+    }
     if (streamStarted) {
       res.write(
         JSON.stringify({
@@ -143,6 +148,17 @@ async function chatStream(req, res, next) {
     }
     handleControllerError(err, res, next)
   }
+}
+
+function createResponseCloseAbortController(res) {
+  const abortController = new AbortController()
+  res.on?.('close', () => {
+    if (res.writableEnded || res.finished) {
+      return
+    }
+    abortController.abort(new DOMException('Response closed', 'AbortError'))
+  })
+  return abortController
 }
 
 export default {

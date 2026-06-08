@@ -16,6 +16,12 @@ const CLINE_DIRECT_WORKSPACE_TOOLS = [
   'skills',
   'submit_and_exit',
 ]
+const CLINE_PLAN_MODE_TOOLS = [
+  'read_files',
+  'search_codebase',
+  'skills',
+  'submit_and_exit',
+]
 
 export async function* runTurn({
   projectId,
@@ -24,7 +30,10 @@ export async function* runTurn({
   prompt,
   provider,
   agentContext = {},
+  mode = 'act',
+  signal,
 }) {
+  const runtimeMode = mode === 'plan' ? 'plan' : 'act'
   const workspaceRoot = ProjectWorkspaceManager.getWorkspaceRoot(projectId)
   const before = await ProjectCheckpointService.createCheckpoint({
     projectId,
@@ -49,7 +58,7 @@ export async function* runTurn({
   const cline = await clineSdk.ClineCore.create({
     clientName: CLINE_CLIENT_NAME,
     backendMode: 'local',
-    toolPolicies: buildClineToolPolicies(agentContext, clineSdk),
+    toolPolicies: buildClineToolPolicies(agentContext, clineSdk, runtimeMode),
   })
   const unsubscribe = cline.subscribe(event => {
     if (
@@ -62,8 +71,10 @@ export async function* runTurn({
       eventQueue.push(mapped)
     }
   })
+  const abort = createClineAbortHandler({ cline, eventQueue, signal })
 
   try {
+    abort.throwIfAborted()
     let startResult
     let startError
     const startPromise = cline.start({
@@ -82,18 +93,19 @@ export async function* runTurn({
         sessionId: clineSessionId,
         cwd: workspaceRoot,
         workspaceRoot,
-        mode: 'act',
-        systemPrompt: buildClineSystemPrompt(agentContext),
+        mode: runtimeMode,
+        systemPrompt: buildClineSystemPrompt(agentContext, runtimeMode),
         enableTools: true,
         enableSpawnAgent: false,
         enableAgentTeams: false,
         disableMcpSettingsTools: true,
-        yolo: true,
+        yolo: runtimeMode === 'act',
         skills: selectedSkillIds,
         workspaceMetadata: buildClineWorkspaceMetadata({
           projectId,
           userId,
           agentContext,
+          mode: runtimeMode,
         }),
         checkpoint: { enabled: false },
         compaction: {
@@ -119,13 +131,16 @@ export async function* runTurn({
       })
 
     while (true) {
+      abort.throwIfAborted()
       const adapterEvent = await eventQueue.shift()
+      abort.throwIfAborted()
       if (!adapterEvent) {
         break
       }
       yield adapterEvent
     }
-    await startPromise
+    await Promise.race([startPromise, abort.promise])
+    abort.throwIfAborted()
     if (startError) {
       throw startError
     }
@@ -140,10 +155,13 @@ export async function* runTurn({
       }
     }
   } finally {
+    abort.clear()
     unsubscribe?.()
     await cline.dispose?.()
     eventQueue.close()
   }
+
+  abort.throwIfAborted()
 
   const diff = await ProjectCheckpointService.diffWorktree({ projectId })
   if (diff) {
@@ -170,7 +188,51 @@ export async function* runTurn({
   }
 }
 
-function buildClineSystemPrompt(agentContext) {
+function createClineAbortHandler({ cline, eventQueue, signal }) {
+  let abortError = null
+  const abort = () => {
+    abortError = toAbortError(signal?.reason)
+    eventQueue.close()
+    ignoreRejection(cline.abort?.(abortError))
+    ignoreRejection(cline.cancel?.(abortError))
+    resolveAbort?.()
+  }
+  let resolveAbort
+  const promise = new Promise(resolve => {
+    resolveAbort = resolve
+  })
+  if (signal?.aborted) {
+    abort()
+  } else if (signal) {
+    signal.addEventListener('abort', abort, { once: true })
+  }
+  return {
+    clear() {
+      signal?.removeEventListener?.('abort', abort)
+    },
+    promise,
+    throwIfAborted() {
+      if (abortError) {
+        throw abortError
+      }
+    },
+  }
+}
+
+function ignoreRejection(promise) {
+  if (promise?.catch) {
+    promise.catch(() => {})
+  }
+}
+
+function toAbortError(reason) {
+  if (reason?.name === 'AbortError') {
+    return reason
+  }
+  return new DOMException('The operation was aborted.', 'AbortError')
+}
+
+function buildClineSystemPrompt(agentContext, mode = 'act') {
   const sections = [CLINE_SYSTEM_PROMPT]
   const instructionProfiles = Array.isArray(agentContext.instructionProfiles)
     ? agentContext.instructionProfiles
@@ -182,6 +244,17 @@ function buildClineSystemPrompt(agentContext) {
   const enabledPluginIds = Array.isArray(agentContext.enabledPluginIds)
     ? agentContext.enabledPluginIds
     : []
+
+  if (mode === 'plan') {
+    sections.push(
+      [
+        'Current superPaper mode: Plan.',
+        'Inspect the project and produce a concise, reviewable plan.',
+        'Do not edit files, run shell commands, or apply patches in Plan mode.',
+        'The user must explicitly start Act mode before any workspace write.',
+      ].join(' ')
+    )
+  }
 
   if (instructionProfiles.length > 0) {
     sections.push(
@@ -248,7 +321,7 @@ function buildClineSystemPrompt(agentContext) {
   return sections.filter(Boolean).join('\n\n')
 }
 
-function buildClineToolPolicies(agentContext, clineSdk) {
+function buildClineToolPolicies(agentContext, clineSdk, mode = 'act') {
   const externalToolsEnabled =
     agentContext.permissionProfile?.externalToolsEnabled === true
   const policies = {
@@ -259,7 +332,9 @@ function buildClineToolPolicies(agentContext, clineSdk) {
     ask_question: disabledToolPolicy(),
   }
 
-  for (const toolName of CLINE_DIRECT_WORKSPACE_TOOLS) {
+  const enabledWorkspaceTools =
+    mode === 'plan' ? CLINE_PLAN_MODE_TOOLS : CLINE_DIRECT_WORKSPACE_TOOLS
+  for (const toolName of enabledWorkspaceTools) {
     policies[toolName] = autoApprovedToolPolicy()
   }
   for (const toolName of clineSdk.TEAM_TOOL_NAMES || []) {
@@ -284,7 +359,7 @@ function getSelectedClineSkillIds(agentContext) {
     .filter(skillId => typeof skillId === 'string' && skillId.trim())
 }
 
-function buildClineWorkspaceMetadata({ projectId, userId, agentContext }) {
+function buildClineWorkspaceMetadata({ projectId, userId, agentContext, mode }) {
   const skillIds = getSelectedClineSkillIds(agentContext)
   const enabledPluginIds = Array.isArray(agentContext.enabledPluginIds)
     ? agentContext.enabledPluginIds
@@ -295,8 +370,8 @@ function buildClineWorkspaceMetadata({ projectId, userId, agentContext }) {
   return [
     `superPaper project ${projectId?.toString?.() || projectId}`,
     `user ${userId?.toString?.() || userId}`,
-    'direct workspace writes: enabled',
-    'shell: enabled',
+    `direct workspace writes: ${mode === 'act' ? 'enabled' : 'disabled'}`,
+    `shell: ${mode === 'act' ? 'enabled' : 'disabled'}`,
     `external tools: ${externalToolsEnabled ? 'enabled' : 'disabled'}`,
     'mcp settings tools: disabled',
     'spawn agent: disabled',

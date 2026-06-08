@@ -103,8 +103,9 @@ export async function createOpenAICompatibleChatCompletion({
   fetchImpl = fetch,
   timeoutMs = DEFAULT_CHAT_COMPLETION_TIMEOUT_MS,
   temperature = 0.2,
+  signal,
 }) {
-  const timeout = createRequestTimeout(timeoutMs)
+  const timeout = createRequestTimeout(timeoutMs, signal)
   try {
     const response = await fetchImpl(buildChatCompletionsURL(baseURL), {
       method: 'POST',
@@ -156,8 +157,9 @@ export async function* streamOpenAICompatibleChatCompletion({
   fetchImpl = fetch,
   timeoutMs = DEFAULT_STREAM_IDLE_TIMEOUT_MS,
   temperature = 0.2,
+  signal,
 }) {
-  const timeout = createRequestTimeout(timeoutMs)
+  const timeout = createRequestTimeout(timeoutMs, signal)
   try {
     const response = await fetchImpl(buildChatCompletionsURL(baseURL), {
       method: 'POST',
@@ -221,9 +223,10 @@ function isEventStreamResponse(response) {
   return contentType.toLowerCase().includes('text/event-stream')
 }
 
-function createRequestTimeout(timeoutMs) {
+function createRequestTimeout(timeoutMs, externalSignal) {
   const controller = new AbortController()
   let timeout = null
+  let externalAbortHandler = null
   const reset = () => {
     if (timeout) {
       clearTimeout(timeout)
@@ -231,12 +234,23 @@ function createRequestTimeout(timeoutMs) {
     timeout = setTimeout(() => controller.abort(), timeoutMs)
   }
   reset()
+  if (externalSignal?.aborted) {
+    controller.abort(externalSignal.reason)
+  } else if (externalSignal) {
+    externalAbortHandler = () => controller.abort(externalSignal.reason)
+    externalSignal.addEventListener('abort', externalAbortHandler, {
+      once: true,
+    })
+  }
   return {
     signal: controller.signal,
     reset,
     clear() {
       if (timeout) {
         clearTimeout(timeout)
+      }
+      if (externalSignal && externalAbortHandler) {
+        externalSignal.removeEventListener('abort', externalAbortHandler)
       }
     },
   }

@@ -42,6 +42,18 @@ describe('AiAgentRuntime', function () {
       findOne: sinon.stub().returns({
         exec: sinon.stub().resolves(ctx.session),
       }),
+      findOneAndUpdate: sinon.stub().callsFake((query, update) => ({
+        exec: sinon.stub().callsFake(async () => {
+          if (query.status?.$in && !query.status.$in.includes(ctx.session.status)) {
+            return null
+          }
+          if (query.mode && query.mode !== ctx.session.mode) {
+            return null
+          }
+          Object.assign(ctx.session, update.$set)
+          return ctx.session
+        }),
+      })),
     }
     ctx.AgentEvent = {
       countDocuments: sinon.stub().returns({
@@ -382,6 +394,7 @@ describe('AiAgentRuntime', function () {
           apiKey: 'test-key',
           model: 'gpt-4.1',
         },
+        mode: 'plan',
       })
     )
     expect(streamedEvents.map(event => event.type)).to.deep.equal([
@@ -390,7 +403,49 @@ describe('AiAgentRuntime', function () {
     ])
     expect(streamedEvents[0].payload.kind).to.equal('context')
     expect(result.answer).to.equal('Cline changed the project.')
-    expect(result.session.status).to.equal('completed')
+    expect(result.session.status).to.equal('waiting_for_act')
+    expect(result.session.mode).to.equal('plan')
+    expect(result.session.planOutput).to.equal('Cline changed the project.')
+  })
+
+  it('passes caller abort signals through to the Cline adapter', async function (ctx) {
+    const abortController = new AbortController()
+
+    await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update the paper',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+      signal: abortController.signal,
+    })
+
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith(
+      sinon.match({
+        signal: abortController.signal,
+      })
+    )
+  })
+
+  it('marks a session cancelled when the Cline adapter is aborted', async function (ctx) {
+    ctx.ClineAgentRuntimeAdapter.runTurn.callsFake(async function* () {
+      throw new DOMException('The operation was aborted.', 'AbortError')
+    })
+
+    await expect(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update the paper',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      })
+    ).to.be.rejectedWith('The operation was aborted.')
+
+    expect(ctx.session.status).to.equal('cancelled')
+    expect(ctx.logger.error).not.to.have.been.called
   })
 
   it('migrates mongo projects before running Cline', async function (ctx) {
@@ -423,6 +478,7 @@ describe('AiAgentRuntime', function () {
           apiKey: 'test-key',
           model: 'gpt-4.1',
         },
+        mode: 'plan',
       })
     )
     expect(streamedEvents.map(event => event.type)).to.deep.equal([
@@ -431,7 +487,36 @@ describe('AiAgentRuntime', function () {
     ])
     expect(streamedEvents[0].payload.kind).to.equal('context')
     expect(result.answer).to.equal('Cline changed the project.')
+    expect(result.session.status).to.equal('waiting_for_act')
+    expect(result.session.mode).to.equal('plan')
+    expect(result.session.planOutput).to.equal('Cline changed the project.')
+  })
+
+  it('runs act turns through Cline only after Start Act', async function (ctx) {
+    ctx.session.status = 'ready_for_act'
+    ctx.session.mode = 'act'
+
+    const result = await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Apply the approved plan',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledWith(
+      sinon.match({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Apply the approved plan',
+        mode: 'act',
+      })
+    )
+    expect(result.answer).to.equal('Cline changed the project.')
     expect(result.session.status).to.equal('completed')
+    expect(result.session.mode).to.equal('act')
   })
 
   it('starts the workspace watcher after filesystem preparation so direct Cline edits refresh clients', async function (ctx) {
@@ -660,8 +745,8 @@ describe('AiAgentRuntime', function () {
     })
     expect(contextCall.args[0].payload.content).to.contain('Cline runtime')
     expect(contextCall.args[0].payload.toolPolicySummary).to.deep.equal({
-      directWorkspaceWrites: true,
-      shellEnabled: true,
+      directWorkspaceWrites: false,
+      shellEnabled: false,
       externalToolsEnabled: false,
       mcpEnabled: false,
       spawnAgentEnabled: false,
@@ -793,6 +878,76 @@ describe('AiAgentRuntime', function () {
     expect(ctx.ClineAgentRuntimeAdapter.runTurn).not.to.have.been.called
   })
 
+  it('does not claim a session before project write access is confirmed', async function (ctx) {
+    ctx.session.mode = 'plan'
+    ctx.session.status = 'planning'
+    ctx.AuthorizationManager.promises.canUserWriteProjectContent.resolves(false)
+
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update wording',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'AGENT_ACT_PERMISSION_DENIED'
+    )
+
+    expect(ctx.AgentSession.findOneAndUpdate).not.to.have.been.called
+    expect(ctx.session.status).to.equal('planning')
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).not.to.have.been.called
+  })
+
+  it('rejects a second run when the first run already claimed the session', async function (ctx) {
+    ctx.session.mode = 'plan'
+    ctx.session.status = 'planning'
+
+    await ctx.Runtime.runTurn({
+      projectId: 'project-id',
+      userId: 'user-id',
+      sessionId: 'session-id',
+      prompt: 'Update the paper',
+      providerId: 'provider-id',
+      model: 'gpt-4.1',
+    })
+
+    ctx.session.status = 'running'
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update the paper again',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'AGENT_SESSION_NOT_RUNNABLE'
+    )
+
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).to.have.been.calledOnce
+  })
+
+  it('does not run Cline with a legacy provider using a non-https base URL', async function (ctx) {
+    ctx.provider.baseURL = 'http://ai.example.test/v1'
+
+    await expectRejectsWithCode(
+      ctx.Runtime.runTurn({
+        projectId: 'project-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        prompt: 'Update the paper',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      }),
+      'AI_PROVIDER_NOT_CONFIGURED'
+    )
+
+    expect(ctx.decryptApiKey).not.to.have.been.called
+    expect(ctx.ClineAgentRuntimeAdapter.runTurn).not.to.have.been.called
+  })
+
   it('logs sanitized Cline runtime diagnostics while keeping user events generic', async function (ctx) {
     const leakedError = Object.assign(
       new Error(
@@ -902,6 +1057,7 @@ describe('AiAgentRuntime', function () {
       instructionSources: [],
       enabledSkillIds: [],
       enabledPluginIds: [],
+      planOutput: null,
       permissionProfileId: 'project-agent-default',
     })
     expect(result).to.not.have.property('encryptedApiKey')
@@ -918,6 +1074,7 @@ describe('AiAgentRuntime', function () {
         instructionSources: [],
         enabledSkillIds: [],
         enabledPluginIds: [],
+        planOutput: null,
         permissionProfileId: 'project-agent-default',
       },
       restoredCommitHash: 'a'.repeat(40),

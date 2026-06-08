@@ -9,6 +9,7 @@ import ProjectStorageMigrationService from '../Project/ProjectStorageMigrationSe
 import ProjectWorkspaceManager from '../Project/ProjectWorkspaceManager.mjs'
 import ProjectWorkspaceWatcher from '../Project/ProjectWorkspaceWatcher.mjs'
 import { decryptApiKey } from '../AiAssistant/AiProviderSecrets.mjs'
+import { isHttpsURL } from '../AiAssistant/AiProviderValidation.mjs'
 import * as ClineAgentRuntimeAdapter from './ClineAgentRuntimeAdapter.mjs'
 import { AiAgentPatchError } from './AiAgentPatchManager.mjs'
 import { getDefaultPermissionProfile } from './AiAgentPermissionManager.mjs'
@@ -58,14 +59,18 @@ export async function createSession({
 }
 
 export async function startAct({ projectId, userId, sessionId }) {
-  const session = await findSession({ sessionId, projectId, userId })
-  if (!session) {
+  await assertUserCanAct({ projectId, userId })
+
+  const existingSession = await findSession({ sessionId, projectId, userId })
+  if (!existingSession) {
     throw new AiAgentError('AGENT_SESSION_NOT_FOUND', 'Agent session not found')
   }
-  if (session.mode === 'act') {
-    return publicSession(session)
+  if (existingSession.mode === 'act') {
+    return publicSession(existingSession)
   }
-  if (!['waiting_for_act', 'completed'].includes(session.status)) {
+
+  const session = await claimSessionForAct({ sessionId, projectId, userId })
+  if (!session) {
     throw new AiAgentError(
       'AGENT_SESSION_NOT_READY_FOR_ACT',
       'Agent session is not ready for act mode'
@@ -77,15 +82,8 @@ export async function startAct({ projectId, userId, sessionId }) {
     projectId,
     userId,
   })
-  const previousMode = session.mode || 'plan'
-  session.mode = 'act'
-  session.status = 'ready_for_act'
-  session.completedAt = null
-  session.permissionProfileId =
-    session.permissionProfileId || getDefaultPermissionProfile().id
-  await persistSessionMetadata(session)
   await eventRecorder.record('mode_changed', {
-    from: previousMode,
+    from: 'plan',
     to: 'act',
   })
   return publicSession(session)
@@ -99,9 +97,12 @@ export async function runTurn({
   providerId,
   model,
   onEvent,
+  signal,
 }) {
+  await assertUserCanAct({ projectId, userId })
+
   const session = sessionId
-    ? await findSession({ sessionId, projectId, userId })
+    ? await claimSessionForRun({ sessionId, projectId, userId })
     : await AgentSession.create({
         projectId,
         userId,
@@ -114,15 +115,11 @@ export async function runTurn({
       })
 
   if (!session) {
-    throw new AiAgentError('AGENT_SESSION_NOT_FOUND', 'Agent session not found')
-  }
-  if (sessionId && !RUNNABLE_SESSION_STATUSES.has(session.status)) {
     throw new AiAgentError(
       'AGENT_SESSION_NOT_RUNNABLE',
       'Agent session is not ready for another turn'
     )
   }
-  await assertUserCanAct({ projectId, userId })
 
   await ensureFilesystemAgentProject({ projectId, userId })
   return await runClineFilesystemTurn({
@@ -133,6 +130,7 @@ export async function runTurn({
     providerId,
     model,
     onEvent,
+    signal,
   })
 }
 
@@ -212,7 +210,9 @@ async function runClineFilesystemTurn({
   providerId,
   model,
   onEvent,
+  signal,
 }) {
+  const runtimeMode = session.mode === 'act' ? 'act' : 'plan'
   const eventRecorder = await createEventRecorder({
     session,
     projectId,
@@ -238,17 +238,6 @@ async function runClineFilesystemTurn({
     const agentContext = await buildClineAgentContext({ projectId, prompt })
     session.providerId = providerConfig.id
     session.model = selectedModel
-    if (
-      session.mode !== 'act' &&
-      !session.plan &&
-      !session.planOutput
-    ) {
-      throw new AiAgentError(
-        'AGENT_PLAN_REQUIRED',
-        'Cannot enter act mode without an approved plan. Complete the planning phase first.'
-      )
-    }
-    session.mode = 'act'
     session.enabledSkillIds = agentContext.skills.map(skill => skill.id)
     session.enabledPluginIds = agentContext.enabledPluginIds
     session.instructionSources = agentContext.instructionProfiles.map(
@@ -263,7 +252,7 @@ async function runClineFilesystemTurn({
     await persistSessionMetadata(session)
     await eventRecorder.record(
       'message',
-      buildClineRuntimeContextPayload(agentContext)
+      buildClineRuntimeContextPayload(agentContext, runtimeMode)
     )
 
     let finalAnswer = ''
@@ -279,6 +268,8 @@ async function runClineFilesystemTurn({
         model: selectedModel,
       },
       agentContext,
+      mode: runtimeMode,
+      signal,
     })) {
       await eventRecorder.record(adapterEvent.type, adapterEvent.payload || {})
       if (
@@ -290,15 +281,32 @@ async function runClineFilesystemTurn({
       }
     }
     if (!finalAnswer) {
-      finalAnswer = 'Cline agent run completed.'
+      finalAnswer =
+        runtimeMode === 'plan'
+          ? 'Agent plan completed.'
+          : 'Cline agent run completed.'
     }
-    await updateSessionStatus(session, 'completed')
+    if (runtimeMode === 'plan') {
+      session.planOutput = finalAnswer
+      session.mode = 'plan'
+      await updateSessionStatus(session, 'waiting_for_act')
+    } else {
+      await updateSessionStatus(session, 'completed')
+    }
     return {
       session: publicSession(session),
       answer: finalAnswer,
       events: eventRecorder.events,
     }
   } catch (err) {
+    if (isAbortError(err)) {
+      await updateSessionStatus(session, 'cancelled')
+      await eventRecorder.record('error', {
+        code: 'AGENT_RUN_CANCELLED',
+        message: 'Agent run cancelled',
+      })
+      throw err
+    }
     await updateSessionStatus(session, 'failed')
     logClineRuntimeFailure({
       err,
@@ -314,6 +322,16 @@ async function runClineFilesystemTurn({
     })
     throw err
   }
+}
+
+function isAbortError(err) {
+  if (err?.name === 'AbortError') {
+    return true
+  }
+  if (err?.cause) {
+    return isAbortError(err.cause)
+  }
+  return false
 }
 
 async function buildClineAgentContext({ projectId, prompt }) {
@@ -346,14 +364,14 @@ async function buildClineAgentContext({ projectId, prompt }) {
   }
 }
 
-function buildClineRuntimeContextPayload(agentContext) {
+function buildClineRuntimeContextPayload(agentContext, mode = 'act') {
   const enabledSkillIds = agentContext.skills.map(skill => skill.id)
   const enabledPluginIds = agentContext.enabledPluginIds || []
   const permissionProfile = agentContext.permissionProfile || {}
   const externalToolsEnabled = permissionProfile.externalToolsEnabled === true
   const toolPolicySummary = {
-    directWorkspaceWrites: true,
-    shellEnabled: true,
+    directWorkspaceWrites: mode === 'act',
+    shellEnabled: mode === 'act',
     externalToolsEnabled,
     mcpEnabled: false,
     spawnAgentEnabled: false,
@@ -364,8 +382,12 @@ function buildClineRuntimeContextPayload(agentContext) {
     role: 'system',
     kind: 'context',
     content: [
-      'Cline runtime: direct workspace writes enabled.',
-      'Shell enabled for project-local commands.',
+      mode === 'act'
+        ? 'Cline runtime: direct workspace writes enabled.'
+        : 'Cline runtime: plan-only workspace writes disabled.',
+      mode === 'act'
+        ? 'Shell enabled for project-local commands.'
+        : 'Shell disabled until Act starts.',
       `External tools ${externalToolsEnabled ? 'enabled' : 'disabled'}.`,
       'MCP settings tools disabled.',
       'Spawn-agent and agent-team tools disabled.',
@@ -423,18 +445,26 @@ async function createEventRecorder({ session, projectId, userId, onEvent }) {
 async function resolveProvider(providerIdInput) {
   if (providerIdInput) {
     const provider = await AiProvider.findById(providerIdInput).exec()
-    if (provider?.enabled && enabledModels(provider).length > 0) {
+    if (isUsableProvider(provider)) {
       return provider
     }
     throw new AiAgentError('AI_PROVIDER_NOT_CONFIGURED', 'AI provider is not configured')
   }
 
   const providers = await AiProvider.find({ enabled: true }).sort({ name: 1 }).exec()
-  const provider = providers.find(currentProvider => enabledModels(currentProvider).length > 0)
+  const provider = providers.find(isUsableProvider)
   if (!provider) {
     throw new AiAgentError('AI_PROVIDER_NOT_CONFIGURED', 'AI provider is not configured')
   }
   return provider
+}
+
+function isUsableProvider(provider) {
+  return (
+    provider?.enabled &&
+    isHttpsURL(provider.baseURL) &&
+    enabledModels(provider).length > 0
+  )
 }
 
 function enabledModels(provider) {
@@ -461,6 +491,45 @@ async function findSession({ sessionId, projectId, userId }) {
     projectId,
     userId,
   }).exec()
+}
+
+async function claimSessionForRun({ sessionId, projectId, userId }) {
+  return AgentSession.findOneAndUpdate(
+    {
+      _id: sessionId,
+      projectId,
+      userId,
+      status: { $in: [...RUNNABLE_SESSION_STATUSES] },
+    },
+    {
+      $set: {
+        status: 'running',
+        completedAt: null,
+      },
+    },
+    { new: true }
+  ).exec()
+}
+
+async function claimSessionForAct({ sessionId, projectId, userId }) {
+  return AgentSession.findOneAndUpdate(
+    {
+      _id: sessionId,
+      projectId,
+      userId,
+      mode: 'plan',
+      status: { $in: ['waiting_for_act', 'completed'] },
+    },
+    {
+      $set: {
+        mode: 'act',
+        status: 'ready_for_act',
+        completedAt: null,
+        permissionProfileId: getDefaultPermissionProfile().id,
+      },
+    },
+    { new: true }
+  ).exec()
 }
 
 async function updateSessionStatus(session, status) {
@@ -497,6 +566,7 @@ async function persistSessionMetadata(session) {
         instructionSources: session.instructionSources,
         enabledSkillIds: session.enabledSkillIds,
         enabledPluginIds: session.enabledPluginIds,
+        planOutput: session.planOutput || null,
         mode: session.mode,
         status: session.status,
         completedAt: session.completedAt || null,
@@ -521,6 +591,7 @@ function publicSession(session) {
     instructionSources: session.instructionSources || [],
     enabledSkillIds: session.enabledSkillIds || [],
     enabledPluginIds: session.enabledPluginIds || [],
+    planOutput: session.planOutput || null,
     permissionProfileId:
       session.permissionProfileId || getDefaultPermissionProfile().id,
   }

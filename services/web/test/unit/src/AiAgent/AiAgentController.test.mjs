@@ -204,6 +204,7 @@ describe('AiAgentController', function () {
       providerId: 'provider-id',
       model: 'gpt-4.1',
       selection: { path: '/main.tex', text: 'Hello' },
+      signal: sinon.match.instanceOf(AbortSignal),
       onEvent: sinon.match.func,
     })
     expect(ctx.res.headers['Content-Type']).to.equal(
@@ -229,6 +230,38 @@ describe('AiAgentController', function () {
       }) + '\n'
     )
     expect(ctx.res.end).to.have.been.calledOnce
+  })
+
+  it('passes a response-close abort signal to agent turns', async function (ctx) {
+    let closeHandler
+    ctx.res.on = sinon.stub().callsFake((event, handler) => {
+      if (event === 'close') {
+        closeHandler = handler
+      }
+      return ctx.res
+    })
+    ctx.Runtime.runTurn.callsFake(async ({ signal }) => {
+      expect(signal).to.be.instanceOf(AbortSignal)
+      expect(signal.aborted).to.equal(false)
+      closeHandler()
+      expect(signal.aborted).to.equal(true)
+      return {
+        session: { ...ctx.session, status: 'completed' },
+        answer: 'Done',
+      }
+    })
+    ctx.req.params.sessionId = 'session-id'
+    ctx.req.body = {
+      prompt: 'Explain',
+    }
+    ctx.res.write = sinon.stub()
+    ctx.res.end = sinon.stub()
+
+    await ctx.Controller.turnStream(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Runtime.runTurn.firstCall.args[0].signal).to.be.instanceOf(
+      AbortSignal
+    )
   })
 
   it('applies a reviewed patch for the logged in user', async function (ctx) {

@@ -174,6 +174,7 @@ describe('AiProjectChatController', function () {
       model: 'gpt-4.1',
       selection: { path: '/main.tex', text: 'Hello' },
       history: [],
+      signal: sinon.match.instanceOf(AbortSignal),
     })
     expect(ctx.res.headers['Content-Type']).to.equal(
       'application/x-ndjson; charset=utf-8'
@@ -197,5 +198,33 @@ describe('AiProjectChatController', function () {
       }) + '\n'
     )
     expect(ctx.res.end).to.have.been.calledOnce
+  })
+
+  it('passes a response-close abort signal to streaming chat requests', async function (ctx) {
+    let closeHandler
+    ctx.res.on = sinon.stub().callsFake((event, handler) => {
+      if (event === 'close') {
+        closeHandler = handler
+      }
+      return ctx.res
+    })
+    ctx.Manager.chatStream.callsFake(async ({ signal }) => {
+      expect(signal).to.be.instanceOf(AbortSignal)
+      expect(signal.aborted).to.equal(false)
+      closeHandler()
+      expect(signal.aborted).to.equal(true)
+      return ctx.chatStreamResult
+    })
+    ctx.res.write = sinon.stub()
+    ctx.res.end = sinon.stub()
+    ctx.req.body = {
+      prompt: 'Explain this',
+    }
+
+    await ctx.Controller.chatStream(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Manager.chatStream.firstCall.args[0].signal).to.be.instanceOf(
+      AbortSignal
+    )
   })
 })

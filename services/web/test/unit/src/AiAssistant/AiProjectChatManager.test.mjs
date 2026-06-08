@@ -187,12 +187,14 @@ describe('AiProjectChatManager', function () {
   })
 
   it('streams answers with project context metadata', async function (ctx) {
+    const abortController = new AbortController()
     const result = await ctx.Manager.chatStream({
       projectId: 'project-id',
       prompt: 'Explain this project',
       providerId: 'provider-id',
       model: 'gpt-4.1',
       selection: { path: '/main.tex', text: 'Hello' },
+      signal: abortController.signal,
     })
 
     const chunks = []
@@ -206,6 +208,7 @@ describe('AiProjectChatManager', function () {
       baseURL: 'https://ai.example.test',
       apiKey: 'test-key',
       model: 'gpt-4.1',
+      signal: abortController.signal,
     })
     expect(streamArgs.messages[0]).to.include({ role: 'system' })
     expect(chunks).to.deep.equal(['AI ', 'answer'])
@@ -216,6 +219,23 @@ describe('AiProjectChatManager', function () {
       selectionIncluded: true,
       truncated: false,
     })
+  })
+
+  it('does not use legacy providers with non-https base URLs', async function (ctx) {
+    ctx.provider.baseURL = 'http://ai.example.test'
+
+    await expect(
+      ctx.Manager.chat({
+        projectId: 'project-id',
+        prompt: 'Explain this project',
+        providerId: 'provider-id',
+        model: 'gpt-4.1',
+      })
+    ).to.be.rejectedWith('No enabled AI provider is configured')
+
+    expect(ctx.decryptApiKey).not.to.have.been.called
+    expect(ctx.buildProjectContext).not.to.have.been.called
+    expect(ctx.createOpenAICompatibleChatCompletion).not.to.have.been.called
   })
 
   it('logs sanitized provider failures for chat requests', async function (ctx) {

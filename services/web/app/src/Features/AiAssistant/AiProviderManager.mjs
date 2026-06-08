@@ -6,6 +6,7 @@ import {
 } from './AiProviderSecrets.mjs'
 import { syncOpenAICompatibleModels } from './AiProviderClient.mjs'
 import {
+  assertHttpsBaseURL,
   parseCreateProviderInput,
   parseUpdateProviderInput,
 } from './AiProviderValidation.mjs'
@@ -60,6 +61,7 @@ export async function syncModels(providerId) {
   if (!provider) {
     return null
   }
+  assertHttpsBaseURL(provider.baseURL)
   const apiKey = await decryptApiKey(provider.encryptedApiKey)
   const models = await syncOpenAICompatibleModels({
     baseURL: provider.baseURL,

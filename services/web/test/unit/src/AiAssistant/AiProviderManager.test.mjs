@@ -111,4 +111,18 @@ describe('AiProviderManager', function () {
       hasApiKey: true,
     })
   })
+
+  it('rejects syncing legacy providers with non-https base URLs', async function (ctx) {
+    ctx.savedProvider.baseURL = 'http://ai.example.test'
+    ctx.AiProvider.findById = sinon.stub().returns({
+      exec: sinon.stub().resolves(ctx.savedProvider),
+    })
+
+    await expect(ctx.Manager.syncModels('provider-id')).to.be.rejectedWith(
+      'baseURL must use https'
+    )
+
+    expect(ctx.decryptApiKey).not.to.have.been.called
+    expect(ctx.syncOpenAICompatibleModels).not.to.have.been.called
+  })
 })

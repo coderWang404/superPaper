@@ -29,6 +29,7 @@ export const AgentSessionSchema = new Schema(
     providerId: { type: Schema.Types.ObjectId, default: null },
     model: { type: String, default: null },
     task: { type: String, required: true },
+    planOutput: { type: String, default: null },
     instructionSources: { type: Array, default: [] },
     enabledSkillIds: { type: Array, default: [] },
     enabledPluginIds: { type: Array, default: [] },

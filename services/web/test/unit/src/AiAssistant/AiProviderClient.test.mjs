@@ -171,6 +171,34 @@ describe('AiProviderClient', function () {
     expect(thrownError.cause).to.equal(networkError)
   })
 
+  it('aborts chat completion requests when the caller signal aborts', async function (ctx) {
+    const controller = new AbortController()
+    let requestSignal
+    const fetchImpl = sinon.stub().callsFake(async (_url, options) => {
+      requestSignal = options.signal
+      controller.abort()
+      return {
+        ok: true,
+        status: 200,
+        json: sinon.stub().resolves({
+          choices: [{ message: { content: 'AI answer' } }],
+        }),
+      }
+    })
+
+    await ctx.Client.createOpenAICompatibleChatCompletion({
+      baseURL: 'https://example.invalid/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      fetchImpl,
+      signal: controller.signal,
+    })
+
+    expect(requestSignal).to.be.instanceOf(AbortSignal)
+    expect(requestSignal.aborted).to.equal(true)
+  })
+
   it('adds DeepSeek V4 thinking options for the official API', async function (ctx) {
     const fetchImpl = sinon.stub().resolves({
       ok: true,
@@ -291,6 +319,47 @@ describe('AiProviderClient', function () {
       stream: true,
     })
     expect(chunks).to.deep.equal(['Visible answer'])
+  })
+
+  it('aborts streaming requests when the caller signal aborts', async function (ctx) {
+    const controller = new AbortController()
+    let requestSignal
+    const encoder = new TextEncoder()
+    const fetchImpl = sinon.stub().callsFake(async (_url, options) => {
+      requestSignal = options.signal
+      controller.abort()
+      return {
+        ok: true,
+        status: 200,
+        body: new ReadableStream({
+          start(streamController) {
+            streamController.enqueue(
+              encoder.encode(
+                'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n'
+              )
+            )
+            streamController.enqueue(encoder.encode('data: [DONE]\n\n'))
+            streamController.close()
+          },
+        }),
+      }
+    })
+
+    const chunks = []
+    for await (const chunk of ctx.Client.streamOpenAICompatibleChatCompletion({
+      baseURL: 'https://example.invalid/v1',
+      apiKey: 'test-key',
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Hello' }],
+      fetchImpl,
+      signal: controller.signal,
+    })) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).to.deep.equal(['Hello'])
+    expect(requestSignal).to.be.instanceOf(AbortSignal)
+    expect(requestSignal.aborted).to.equal(true)
   })
 
   it('refreshes stream timeout after each received chunk', async function (ctx) {

@@ -83,6 +83,7 @@ async function startAct(req, res, next) {
 
 async function turnStream(req, res, next) {
   let streamStarted = false
+  const closeAbortController = createResponseCloseAbortController(res)
   try {
     const body = TurnSchema.parse(req.body)
     res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8')
@@ -98,6 +99,7 @@ async function turnStream(req, res, next) {
       providerId: body.providerId,
       model: body.model,
       selection: body.selection,
+      signal: closeAbortController.signal,
       onEvent: event => {
         res.write(JSON.stringify({ type: 'event', event }) + '\n')
       },
@@ -112,6 +114,9 @@ async function turnStream(req, res, next) {
     )
     res.end()
   } catch (err) {
+    if (closeAbortController.signal.aborted) {
+      return
+    }
     if (streamStarted) {
       res.write(
         JSON.stringify({
@@ -124,6 +129,17 @@ async function turnStream(req, res, next) {
     }
     handleControllerError(err, res, next)
   }
+}
+
+function createResponseCloseAbortController(res) {
+  const abortController = new AbortController()
+  res.on?.('close', () => {
+    if (res.writableEnded || res.finished) {
+      return
+    }
+    abortController.abort(new DOMException('Response closed', 'AbortError'))
+  })
+  return abortController
 }
 
 async function applyPatch(req, res, next) {
