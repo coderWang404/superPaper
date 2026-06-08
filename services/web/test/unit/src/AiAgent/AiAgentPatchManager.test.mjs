@@ -838,6 +838,139 @@ describe('AiAgentPatchManager', function () {
     )
   })
 
+  it('rolls back only selected applied text hunks', async function (ctx) {
+    ctx.docs['/main.tex'].lines = ['Main old sentence.']
+    ctx.docs['/appendix.tex'] = {
+      _id: 'doc-appendix',
+      lines: ['Appendix old sentence.'],
+      rev: 3,
+    }
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Main old sentence.',
+          newText: 'Main new sentence.',
+        },
+        {
+          type: 'replace_text',
+          path: '/appendix.tex',
+          oldText: 'Appendix old sentence.',
+          newText: 'Appendix new sentence.',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/main.tex'].lines = ['Main new sentence.']
+    ctx.docs['/appendix.tex'].lines = ['Appendix new sentence.']
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.EditorController.promises.deleteEntity.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been.calledOnce
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been.calledWith(
+      'project-one',
+      'doc-main',
+      'reviewer-one',
+      ['Main old sentence.'],
+      'agent-rollback'
+    )
+    expect(ctx.EditorController.promises.deleteEntity).to.not.have.been.called
+    expect(patch.status).to.equal('partially_applied')
+    expect(patch.rollbackAvailable).to.equal(true)
+    expect(patch.operations[0].hunks[0].status).to.equal('rolled_back')
+    expect(patch.operations[1].hunks[0].status).to.equal('applied')
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'patch_rolled_back',
+        payload: sinon.match({
+          patchId: 'patch-one',
+          hunkIds: [selectedHunkId],
+        }),
+      })
+    )
+  })
+
+  it('rolls back selected hunks in reverse applied order', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/first.tex',
+          content: 'First',
+        },
+        {
+          type: 'create_doc',
+          path: '/second.tex',
+          content: 'Second',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/first.tex'] = {
+      _id: 'doc-first',
+      lines: ['First'],
+      rev: 1,
+    }
+    ctx.docs['/second.tex'] = {
+      _id: 'doc-second',
+      lines: ['Second'],
+      rev: 1,
+    }
+    ctx.patchDocument.rollbackOperations[0].docId = 'doc-first'
+    ctx.patchDocument.rollbackOperations[1].docId = 'doc-second'
+    ctx.EditorController.promises.deleteEntity.resetHistory()
+
+    await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [
+        created.operations[0].hunks[0].id,
+        created.operations[1].hunks[0].id,
+      ],
+    })
+
+    expect(ctx.EditorController.promises.deleteEntity).to.have.been.calledTwice
+    expect(ctx.EditorController.promises.deleteEntity.firstCall).to.have.been.calledWith(
+      'project-one',
+      'doc-second',
+      'doc',
+      'agent-rollback',
+      'reviewer-one'
+    )
+    expect(ctx.EditorController.promises.deleteEntity.secondCall).to.have.been.calledWith(
+      'project-one',
+      'doc-first',
+      'doc',
+      'agent-rollback',
+      'reviewer-one'
+    )
+  })
+
   it('applies create_doc patches through EditorController', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -910,6 +1043,246 @@ describe('AiAgentPatchManager', function () {
       'reviewer-one'
     )
     expect(patch.status).to.equal('rolled_back')
+  })
+
+  it('rolls back selected create_doc hunks by deleting only the selected doc', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Create sections',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/sections/methods.tex',
+          content: '\\section{Methods}',
+        },
+        {
+          type: 'create_doc',
+          path: '/sections/results.tex',
+          content: '\\section{Results}',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/sections/methods.tex'] = {
+      _id: 'doc-methods',
+      lines: ['\\section{Methods}'],
+      rev: 1,
+    }
+    ctx.docs['/sections/results.tex'] = {
+      _id: 'doc-results',
+      lines: ['\\section{Results}'],
+      rev: 1,
+    }
+    ctx.patchDocument.rollbackOperations[0].docId = 'doc-methods'
+    ctx.patchDocument.rollbackOperations[1].docId = 'doc-results'
+    ctx.EditorController.promises.deleteEntity.resetHistory()
+    const selectedHunkId = created.operations[0].hunks[0].id
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+
+    expect(ctx.EditorController.promises.deleteEntity).to.have.been.calledOnce
+    expect(ctx.EditorController.promises.deleteEntity).to.have.been.calledWith(
+      'project-one',
+      'doc-methods',
+      'doc',
+      'agent-rollback',
+      'reviewer-one'
+    )
+    expect(patch.status).to.equal('partially_applied')
+    expect(patch.operations[0].hunks[0].status).to.equal('rolled_back')
+    expect(patch.operations[1].hunks[0].status).to.equal('applied')
+  })
+
+  it('rejects unknown selected rollback hunks before writing', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/main.tex'].lines[2] = 'New sentence.'
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rollbackPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: ['op-9999:h-0001:missing'],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_HUNK_NOT_FOUND')
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.CompileManager.promises.compile).to.not.have.been.called
+  })
+
+  it('rejects duplicate selected rollback hunks before writing', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.docs['/main.tex'].lines[2] = 'New sentence.'
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rollbackPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: [selectedHunkId, selectedHunkId],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_DUPLICATE_HUNK')
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.CompileManager.promises.compile).to.not.have.been.called
+  })
+
+  it('rejects not-applied selected rollback hunks before writing', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rollbackPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: [selectedHunkId],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_HUNK_NOT_APPLIED')
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.CompileManager.promises.compile).to.not.have.been.called
+  })
+
+  it('preflights all selected rollback hunks before writing', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/first.tex',
+          content: 'First',
+        },
+        {
+          type: 'create_doc',
+          path: '/second.tex',
+          content: 'Second',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+    })
+    ctx.docs['/first.tex'] = {
+      _id: 'doc-first',
+      lines: ['First'],
+      rev: 1,
+    }
+    ctx.docs['/second.tex'] = {
+      _id: 'doc-second',
+      lines: ['Changed'],
+      rev: 2,
+    }
+    ctx.patchDocument.rollbackOperations[0].docId = 'doc-first'
+    ctx.patchDocument.rollbackOperations[1].docId = 'doc-second'
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.EditorController.promises.deleteEntity.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rollbackPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: [
+          created.operations[0].hunks[0].id,
+          created.operations[1].hunks[0].id,
+        ],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_ROLLBACK_CONFLICT')
+    expect(ctx.EditorController.promises.deleteEntity).to.not.have.been.called
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.CompileManager.promises.compile).to.not.have.been.called
   })
 
   it('applies delete_doc patches through EditorController', async function (ctx) {

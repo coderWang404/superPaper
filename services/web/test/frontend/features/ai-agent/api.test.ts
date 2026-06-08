@@ -10,6 +10,7 @@ import {
   listProjectAiAgentPlugins,
   previewProjectAiAgentPlugin,
   rejectProjectAiAgentPatch,
+  rollbackProjectAiAgentPatch,
   sendProjectAiAgentTurnStream,
   setProjectAiAgentPluginEnabled,
   startProjectAiAgentAct,
@@ -334,6 +335,53 @@ describe('ai-agent api', function () {
 
     const call = fetchMock.callHistory.calls(
       '/project/project123/ai/agent/patches/patch-one/reject'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      hunkIds: ['op-0001:h-0001:abc123def456'],
+    })
+    expect(response.patch.status).to.equal('partially_applied')
+  })
+
+  it('rolls back reviewed agent patches', async function () {
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/rollback', {
+      patch: {
+        id: 'patch-one',
+        status: 'rolled_back',
+        operations: [],
+      },
+    })
+
+    const response = await rollbackProjectAiAgentPatch(
+      'project123',
+      'patch-one'
+    )
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/rollback'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({})
+    expect(response.patch.status).to.equal('rolled_back')
+  })
+
+  it('rolls back selected agent patch hunks', async function () {
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/rollback', {
+      patch: {
+        id: 'patch-one',
+        status: 'partially_applied',
+        operations: [],
+      },
+    })
+
+    const response = await rollbackProjectAiAgentPatch(
+      'project123',
+      'patch-one',
+      {
+        hunkIds: ['op-0001:h-0001:abc123def456'],
+      }
+    )
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/rollback'
     )[0]
     expect(JSON.parse(call.options.body as string)).to.deep.equal({
       hunkIds: ['op-0001:h-0001:abc123def456'],

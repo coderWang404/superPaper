@@ -388,6 +388,40 @@ describe('AiAgentController', function () {
     })
   })
 
+  it('passes selected hunk rollback options to the patch manager', async function (ctx) {
+    ctx.req.params.patchId = 'patch-one'
+    ctx.req.body = {
+      hunkIds: ['op-0001:h-0001:abc123def456'],
+    }
+
+    await ctx.Controller.rollbackPatch(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PatchManager.rollbackPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      patchId: 'patch-one',
+      hunkIds: ['op-0001:h-0001:abc123def456'],
+    })
+  })
+
+  it('rejects invalid selected hunk rollback payloads', async function (ctx) {
+    ctx.req.params.patchId = 'patch-one'
+    ctx.req.body = {
+      hunkIds: [],
+    }
+
+    await ctx.Controller.rollbackPatch(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PatchManager.rollbackPatch).to.not.have.been.called
+    expect(ctx.res.statusCode).to.equal(422)
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid agent input',
+      },
+    })
+  })
+
   it('rolls a direct agent session back to a checkpoint for the logged in user', async function (ctx) {
     ctx.req.params.sessionId = 'session-id'
     ctx.req.body = { commitHash: 'a'.repeat(40) }

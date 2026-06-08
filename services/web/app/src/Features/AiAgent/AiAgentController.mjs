@@ -192,10 +192,12 @@ async function rejectPatch(req, res, next) {
 
 async function rollbackPatch(req, res, next) {
   try {
+    const body = PatchHunkSelectionSchema.parse(req.body || {})
     const patch = await rollbackAgentPatch({
       projectId: req.params.Project_id,
       userId: SessionManager.getLoggedInUserId(req.session),
       patchId: req.params.patchId,
+      ...(body.hunkIds ? { hunkIds: body.hunkIds } : {}),
     })
     res.json({ patch })
   } catch (err) {

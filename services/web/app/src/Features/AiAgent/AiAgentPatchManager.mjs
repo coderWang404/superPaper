@@ -280,7 +280,12 @@ export async function applyPatch({
   return publicAppliedPatch
 }
 
-export async function rollbackPatch({ projectId, userId, patchId }) {
+export async function rollbackPatch({
+  projectId,
+  userId,
+  patchId,
+  hunkIds = null,
+}) {
   const patch = await AgentPatch.findOne({
     _id: patchId,
     projectId,
@@ -289,29 +294,42 @@ export async function rollbackPatch({ projectId, userId, patchId }) {
   if (!patch) {
     throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
   }
-  if (patch.status !== 'applied') {
+  const selectedHunkIds = selectedHunkSetOrNull(hunkIds)
+  if (
+    !selectedHunkIds &&
+    patch.status !== 'applied' &&
+    patch.status !== 'partially_applied'
+  ) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_NOT_APPLIED',
       'Only applied agent patches can be rolled back'
     )
   }
 
+  patch.operations = materializePatchOperations(patch)
+  assertRequestedHunksExist(patch, selectedHunkIds)
   const rollbackOperations = patch.rollbackOperations || []
-  if (!rollbackOperations.length) {
+  const rollbackSelections = rollbackSelectionsForPatch({
+    patch,
+    rollbackOperations,
+    selectedHunkIds,
+  })
+  if (!rollbackSelections.operations.length) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_ROLLBACK_UNAVAILABLE',
       'Agent patch does not have a rollback snapshot'
     )
   }
 
-  const reversedOperations = [...rollbackOperations].reverse()
+  const reversedOperations = [...rollbackSelections.operations].reverse()
   await assertRollbackOperationsSafe({ projectId, operations: reversedOperations })
 
   for (const operation of reversedOperations) {
     await applyRollbackOperation({ projectId, userId, operation })
   }
 
-  patch.status = 'rolled_back'
+  markRolledBackOperationSelections(rollbackSelections.selections)
+  patch.status = patchStatusFromOperations(patch.operations)
   patch.rolledBackByUserId = userId
   patch.rolledBackAt = new Date()
   await patch.save()
@@ -323,7 +341,12 @@ export async function rollbackPatch({ projectId, userId, patchId }) {
     type: 'patch_rolled_back',
     payload: {
       patchId: patch._id?.toString?.() || patch.id,
-      operations: rollbackOperations.map(publicRollbackOperation),
+      operations: rollbackSelections.operations.map(publicRollbackOperation),
+      ...(selectedHunkIds
+        ? {
+            hunkIds: rollbackSelections.selections.map(({ hunk }) => hunk.id),
+          }
+        : {}),
     },
   })
 
@@ -426,7 +449,7 @@ export function publicPatch(patch) {
     appliedAt: patch.appliedAt || null,
     rolledBackAt: patch.rolledBackAt || null,
     rollbackAvailable:
-      patch.status === 'applied' && (patch.rollbackOperations || []).length > 0,
+      hasRollbackableHunks(operations, patch.rollbackOperations || []),
     compileResult: patch.compileResult || null,
   }
 }
@@ -792,6 +815,51 @@ function rejectSelectionsForPatch({ patch, selectedHunkIds }) {
   return { toReject }
 }
 
+function rollbackSelectionsForPatch({
+  patch,
+  rollbackOperations,
+  selectedHunkIds,
+}) {
+  const hunkEntries = collectPatchHunks(patch)
+  if (!selectedHunkIds) {
+    return {
+      operations: rollbackOperations,
+      selections: hunkEntries.filter(({ hunk }) => hunk.status === 'applied'),
+    }
+  }
+
+  const selectedEntries = hunkEntries.filter(({ hunk }) =>
+    selectedHunkIds.has(hunk.id)
+  )
+  for (const { hunk } of selectedEntries) {
+    if (hunk.status !== 'applied') {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_NOT_APPLIED',
+        'Agent patch hunk is not applied'
+      )
+    }
+  }
+
+  const rollbackHunkIds = new Set(
+    rollbackOperations.map(operation => operation.hunkId).filter(Boolean)
+  )
+  for (const { hunk } of selectedEntries) {
+    if (!rollbackHunkIds.has(hunk.id)) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_ROLLBACK_UNAVAILABLE',
+        'Agent patch hunk does not have a rollback snapshot'
+      )
+    }
+  }
+
+  return {
+    operations: rollbackOperations.filter(operation =>
+      selectedHunkIds.has(operation.hunkId)
+    ),
+    selections: selectedEntries,
+  }
+}
+
 function markAppliedOperationSelections(selections) {
   const appliedAt = new Date()
   for (const { operation, hunk } of selections) {
@@ -804,6 +872,15 @@ function markAppliedOperationSelections(selections) {
 function markRejectedOperationSelections(selections) {
   for (const { operation, hunk } of selections) {
     hunk.status = 'rejected'
+    operation.status = operationStatusFromHunks(operation)
+  }
+}
+
+function markRolledBackOperationSelections(selections) {
+  const rolledBackAt = new Date()
+  for (const { operation, hunk } of selections) {
+    hunk.status = 'rolled_back'
+    hunk.rolledBackAt = rolledBackAt
     operation.status = operationStatusFromHunks(operation)
   }
 }
@@ -836,6 +913,9 @@ function patchStatusFromOperations(operations) {
   if (statuses.some(status => status === 'pending')) {
     return 'pending'
   }
+  if (statuses.some(status => status === 'rolled_back')) {
+    return 'rolled_back'
+  }
   return 'pending'
 }
 
@@ -865,12 +945,31 @@ function operationStatusFromHunks(operation) {
   if (statuses.some(status => status === 'pending')) {
     return 'pending'
   }
+  if (statuses.some(status => status === 'rolled_back')) {
+    return 'rolled_back'
+  }
   return statuses[0] || 'pending'
 }
 
 function hasPendingHunks(operations) {
   return (operations || []).some(operation =>
     (operation.hunks || []).some(hunk => hunk.status === 'pending')
+  )
+}
+
+function hasRollbackableHunks(operations, rollbackOperations) {
+  if (!rollbackOperations.length) {
+    return false
+  }
+  const rollbackHunkIds = new Set(
+    rollbackOperations.map(operation => operation.hunkId).filter(Boolean)
+  )
+  return (operations || []).some(operation =>
+    (operation.hunks || []).some(
+      hunk =>
+        hunk.status === 'applied' &&
+        (rollbackHunkIds.size === 0 || rollbackHunkIds.has(hunk.id))
+    )
   )
 }
 

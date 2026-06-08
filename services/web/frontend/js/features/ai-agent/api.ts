@@ -439,6 +439,10 @@ export type RejectProjectAiAgentPatchOptions = {
   hunkIds?: string[]
 }
 
+export type RollbackProjectAiAgentPatchOptions = {
+  hunkIds?: string[]
+}
+
 export function getProjectAiAgentConfig(projectId: string) {
   return getJSON<ProjectAiAgentConfig>(`/project/${projectId}/ai/agent/config`)
 }
@@ -590,10 +594,14 @@ export function rejectProjectAiAgentPatch(
   )
 }
 
-export function rollbackProjectAiAgentPatch(projectId: string, patchId: string) {
+export function rollbackProjectAiAgentPatch(
+  projectId: string,
+  patchId: string,
+  options: RollbackProjectAiAgentPatchOptions = {}
+) {
   return postJSON<{ patch: ProjectAiAgentPatch }>(
     `/project/${projectId}/ai/agent/patches/${patchId}/rollback`,
-    { body: {} }
+    { body: options.hunkIds ? options : {} }
   )
 }
 
