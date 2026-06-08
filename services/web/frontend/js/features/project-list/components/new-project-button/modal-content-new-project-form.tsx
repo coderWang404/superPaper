@@ -107,7 +107,7 @@ function ModalContentNewProjectForm({ onCancel, template = 'none' }: Props) {
         <OLButton
           variant="primary"
           onClick={createNewProject}
-          disabled={projectName === '' || isLoading || redirecting}
+          disabled={projectName.trim() === '' || isLoading || redirecting}
           isLoading={isLoading}
           loadingLabel={t('creating')}
         >

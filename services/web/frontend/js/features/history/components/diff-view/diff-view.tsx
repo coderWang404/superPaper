@@ -17,6 +17,8 @@ function DiffView() {
   const { updateRange, selectedFile } = selection
   const { showBoundary } = useErrorBoundary()
 
+  if (!updatesInfo.updates.length) return null
+
   const isCurrentVersion =
     !!updateRange && updatesInfo.updates[0].toV === updateRange.toV
 

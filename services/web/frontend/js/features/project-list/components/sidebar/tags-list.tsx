@@ -72,7 +72,7 @@ export default function TagsList() {
               <span className="name">
                 {tag.name}{' '}
                 <span className="subdued">
-                  ({projectsPerTag[tag._id].length})
+                  ({(projectsPerTag[tag._id]?.length ?? 0)})
                 </span>
               </span>
             </button>

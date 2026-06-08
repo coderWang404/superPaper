@@ -348,6 +348,9 @@ export function initAiProviderAdmin(root: HTMLElement): void {
     event.preventDefault()
     const form = event.currentTarget as HTMLFormElement
     const apiKeyInput = getFormInput(form, 'replacementApiKey')
+    if (!apiKeyInput.value.trim()) {
+      return
+    }
     state.activeAction = `replace-key:${providerId}`
     state.statusMessage = null
     state.errorMessage = null
@@ -717,6 +720,7 @@ function renderProviderRow(
             name="replacementApiKey"
             type="password"
             autocomplete="off"
+            required
             placeholder="${escapeHtml(t('newApiKey'))}"
           >
           <button

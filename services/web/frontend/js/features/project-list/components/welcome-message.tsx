@@ -30,7 +30,7 @@ export default function WelcomeMessage() {
               {wikiEnabled && (
                 <WelcomeMessageLink
                   imgSrc={learnLatexImage}
-                  title="Learn LaTeX with a tutorial"
+                  title={t('learn_latex_with_a_tutorial')}
                   href="/learn/latex/Learn_LaTeX_in_30_minutes"
                   target="_blank"
                 />
@@ -38,7 +38,7 @@ export default function WelcomeMessage() {
               {templatesEnabled && (
                 <WelcomeMessageLink
                   imgSrc={browseTemplatesImage}
-                  title="Browse templates"
+                  title={t('browse_templates')}
                   href="/templates"
                 />
               )}

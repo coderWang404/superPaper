@@ -71,12 +71,12 @@ function RenameProjectModal({
 
       if (!isValid) return
 
-      runAsync(renameProject(project.id, newProjectName))
+      runAsync(renameProject(project.id, newProjectName.trim()))
         .then(() => {
           toggleSelectedProject(project.id, false)
           updateProjectViewData({
             ...project,
-            name: newProjectName,
+            name: newProjectName.trim(),
           })
           handleCloseModal()
         })

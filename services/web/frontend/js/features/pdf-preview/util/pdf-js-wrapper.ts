@@ -176,6 +176,8 @@ export default class PDFJSWrapper {
     }
 
     const pageView = this.viewer.getPageView(pageIndex)
+    if (!pageView?.div) return null
+
     const pageRect = pageView.div.getBoundingClientRect()
 
     const dy = containerRect.top - pageRect.top
