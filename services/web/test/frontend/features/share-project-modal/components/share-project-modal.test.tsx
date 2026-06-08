@@ -1,6 +1,12 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { screen, Screen, fireEvent, waitFor } from '@testing-library/react'
+import {
+  screen,
+  Screen,
+  fireEvent,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import fetchMock, { CallLog } from 'fetch-mock'
 import userEvent from '@testing-library/user-event'
 
@@ -1111,6 +1117,7 @@ describe('<ShareProjectModal/>', function () {
       window.metaAttributesCache.set('ol-splitTestVariants', {
         'sharing-updates': 'enabled',
       })
+      fetchMock.get(`/project/${shareModalProjectDefaults._id}/tokens`, {})
     })
 
     afterEach(function () {
@@ -1226,6 +1233,124 @@ describe('<ShareProjectModal/>', function () {
       await userEvent.click(inviteButton)
 
       await screen.findByText('Invitation(s) sent.')
+    })
+
+    async function openInvitedPeopleScreen() {
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Manage access' })
+      )
+      await screen.findByRole('heading', { name: 'Invited people' })
+    }
+
+    function rowForEmail(email: string) {
+      const row = screen
+        .getByText(email)
+        .closest('.d-flex.justify-content-between')
+
+      if (!row) {
+        throw new Error(`Could not find share modal row for ${email}`)
+      }
+
+      return within(row as HTMLElement)
+    }
+
+    it('shows an error alert when resending an invite fails', async function () {
+      fetchMock.postOnce(
+        'express:/project/:projectId/invite/:inviteId/resend',
+        500
+      )
+
+      const invites: ProjectMember[] = [
+        {
+          _id: 'invited-author' as UserId,
+          email: 'invited-author@example.com',
+          privileges: 'readAndWrite',
+          first_name: 'Invited',
+          last_name: 'Author',
+        },
+      ]
+
+      renderWithEditorContext(
+        <ShareProjectModal {...modalProps} />,
+        createContextProps({ publicAccessLevel: 'tokenBased', invites })
+      )
+
+      await openInvitedPeopleScreen()
+      await userEvent.click(
+        rowForEmail('invited-author@example.com').getByRole('button', {
+          name: 'Editor',
+        })
+      )
+      await userEvent.click(
+        await screen.findByRole('menuitem', { name: 'Resend invite' })
+      )
+
+      await screen.findByRole('alert')
+      await screen.findByText('Sorry, something went wrong')
+    })
+
+    it('shows an error alert when revoking an invite fails', async function () {
+      fetchMock.deleteOnce('express:/project/:projectId/invite/:inviteId', 500)
+
+      const invites: ProjectMember[] = [
+        {
+          _id: 'invited-author' as UserId,
+          email: 'invited-author@example.com',
+          privileges: 'readAndWrite',
+          first_name: 'Invited',
+          last_name: 'Author',
+        },
+      ]
+
+      renderWithEditorContext(
+        <ShareProjectModal {...modalProps} />,
+        createContextProps({ publicAccessLevel: 'tokenBased', invites })
+      )
+
+      await openInvitedPeopleScreen()
+      await userEvent.click(
+        rowForEmail('invited-author@example.com').getByRole('button', {
+          name: 'Editor',
+        })
+      )
+      await userEvent.click(
+        await screen.findByRole('menuitem', { name: 'Revoke Invite' })
+      )
+
+      await screen.findByRole('alert')
+      await screen.findByText('Sorry, something went wrong')
+    })
+
+    it('shows an error alert when updating member access fails', async function () {
+      fetchMock.putOnce('express:/project/:projectId/users/:userId', 500)
+
+      const members: ProjectMember[] = [
+        {
+          _id: 'member-viewer' as UserId,
+          email: 'member-viewer@example.com',
+          privileges: 'readOnly',
+          first_name: 'Member',
+          last_name: 'Viewer',
+        },
+      ]
+
+      renderWithEditorContext(
+        <ShareProjectModal {...modalProps} />,
+        createContextProps({ publicAccessLevel: 'tokenBased', members })
+      )
+
+      await openInvitedPeopleScreen()
+      await userEvent.click(
+        rowForEmail('member-viewer@example.com').getByRole('button', {
+          name: 'Viewer',
+        })
+      )
+      await userEvent.click(
+        await screen.findByRole('menuitem', { name: 'Editor' })
+      )
+
+      await screen.findByRole('alert')
+      await screen.findByText('Sorry, something went wrong')
     })
   })
 })
