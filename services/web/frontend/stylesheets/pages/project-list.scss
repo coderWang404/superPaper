@@ -351,6 +351,41 @@ ul.project-list-filters {
     }
   }
 
+  .project-list-loading-row {
+    pointer-events: none;
+
+    &:hover {
+      td {
+        box-shadow: none;
+      }
+    }
+
+    td {
+      padding-top: var(--spacing-04);
+      padding-bottom: var(--spacing-04);
+    }
+  }
+
+  .project-list-loading-row-content {
+    display: grid;
+    gap: var(--spacing-03);
+  }
+
+  .project-list-loading-bar {
+    display: block;
+    height: 12px;
+    border-radius: 999px;
+    background-color: var(--bg-light-secondary);
+  }
+
+  .project-list-loading-bar-name {
+    width: min(320px, 70%);
+  }
+
+  .project-list-loading-bar-meta {
+    width: min(180px, 45%);
+  }
+
   .table-header-sort-btn {
     border: 0;
     text-align: left;

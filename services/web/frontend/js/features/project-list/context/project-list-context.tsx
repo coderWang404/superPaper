@@ -80,6 +80,7 @@ export type ProjectListContextValue = {
   totalProjectsCount: number
   error: Error | null
   isLoading: ReturnType<typeof useAsync>['isLoading']
+  isPageLoading: boolean
   loadProgress: number
   sort: Sort
   setSort: React.Dispatch<React.SetStateAction<Sort>>
@@ -135,6 +136,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   const [totalProjectsCount, setTotalProjectsCount] = useState<number>(
     prefetchedProjectsBlob?.totalSize ?? 0
   )
+  const [isPageLoading, setIsPageLoading] = useState(false)
   const [sort, setSort] = useState<Sort>({
     by: 'lastUpdated',
     order: 'desc',
@@ -276,6 +278,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
 
     const requestGeneration = ++projectRequestGenerationRef.current
     const timeout = window.setTimeout(() => {
+      setIsPageLoading(true)
       getProjects(
         buildProjectsRequest({ size: MAX_PROJECT_PER_PAGE, offset: 0 })
       )
@@ -289,6 +292,12 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
           setSelectedProjectIds(new Set())
         })
         .catch(debugConsole.error)
+        .finally(() => {
+          if (requestGeneration !== projectRequestGenerationRef.current) {
+            return
+          }
+          setIsPageLoading(false)
+        })
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
@@ -388,6 +397,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
     if (loadedProjects.length < totalProjectsCount) {
       const requestGeneration = projectRequestGenerationRef.current
       const fetchRemainingProjects = async () => {
+        setIsPageLoading(true)
         let offset = loadedProjects.length
         let totalSize = totalProjectsCount
         const projectsToAppend: Project[] = []
@@ -422,7 +432,14 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
         setMaxVisibleProjects(totalSize)
       }
 
-      fetchRemainingProjects().catch(debugConsole.error)
+      fetchRemainingProjects()
+        .catch(debugConsole.error)
+        .finally(() => {
+          if (requestGeneration !== projectRequestGenerationRef.current) {
+            return
+          }
+          setIsPageLoading(false)
+        })
       return
     }
 
@@ -443,6 +460,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       loadedProjects.length <= maxVisibleProjects
     ) {
       const requestGeneration = projectRequestGenerationRef.current
+      setIsPageLoading(true)
       getProjects(
         buildProjectsRequest({
           size: loadMoreCount,
@@ -462,6 +480,12 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
           )
         })
         .catch(debugConsole.error)
+        .finally(() => {
+          if (requestGeneration !== projectRequestGenerationRef.current) {
+            return
+          }
+          setIsPageLoading(false)
+        })
       return
     }
 
@@ -531,14 +555,20 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   const projectsPerTag = useMemo(() => {
     return tags.reduce<Record<Tag['_id'], { length: number }>>(
       (prev, curTag) => {
+        const projectIds = new Set(curTag.project_ids || [])
         return {
           ...prev,
-          [curTag._id]: { length: curTag.project_ids?.length ?? 0 },
+          [curTag._id]: {
+            length: loadedProjects.filter(
+              project =>
+                !isArchivedOrTrashed(project) && projectIds.has(project.id)
+            ).length,
+          },
         }
       },
       {}
     )
-  }, [tags])
+  }, [tags, loadedProjects])
 
   const selectFilter = useCallback(
     (filter: Filter) => {
@@ -679,6 +709,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       hasDeletableProjectsSelected,
       hiddenProjectsCount,
       isLoading,
+      isPageLoading,
       loadMoreCount,
       loadMoreProjects,
       loadProgress,
@@ -718,6 +749,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       hasDeletableProjectsSelected,
       hiddenProjectsCount,
       isLoading,
+      isPageLoading,
       loadMoreCount,
       loadMoreProjects,
       loadProgress,

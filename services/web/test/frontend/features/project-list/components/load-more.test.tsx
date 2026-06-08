@@ -173,6 +173,65 @@ describe('<LoadMore />', function () {
     })
   })
 
+  it('keeps existing rows visible and shows loading rows while fetching the next page', async function () {
+    const firstPage = makePagedProjects(0, 20)
+    const secondPage = makePagedProjects(20, 5)
+    let resolveSecondPage: () => void = () => {}
+    fetchMock.post('express:/api/project', () => {
+      const calls = fetchMock.callHistory.calls('/api/project')
+      if (calls.length === 1) {
+        return new Response(
+          JSON.stringify({ projects: firstPage, totalSize: 25 }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      }
+
+      return new Promise<Response>(resolve => {
+        resolveSecondPage = () => {
+          resolve(
+            new Response(
+              JSON.stringify({ projects: secondPage, totalSize: 25 }),
+              {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            )
+          )
+        }
+      })
+    })
+
+    renderWithProjectListContext(
+      <>
+        <ProjectListTable />
+        <LoadMore />
+      </>,
+      { mockProjectApi: false }
+    )
+
+    await screen.findByText('Paged Project 1')
+    const loadMoreButton = await screen.findByRole('button', {
+      name: /Show 5 more projects/i,
+    })
+
+    fireEvent.click(loadMoreButton)
+
+    await screen.findByRole('status', { name: 'Loading more projects' })
+    screen.getByText('Paged Project 1')
+    expect(loadMoreButton).to.have.property('disabled', true)
+    expect(screen.getAllByTestId('project-list-loading-row')).to.have.length(3)
+
+    resolveSecondPage()
+
+    await screen.findByText('Paged Project 25')
+    expect(screen.queryByRole('status', { name: 'Loading more projects' })).to
+      .equal(null)
+    expect(screen.queryByTestId('project-list-loading-row')).to.equal(null)
+  })
+
   it('loads every remaining server page when showing all projects', async function () {
     const firstPage = makePagedProjects(0, 20)
     const secondPage = makePagedProjects(20, 100)

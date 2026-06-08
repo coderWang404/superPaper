@@ -50,6 +50,7 @@ function RenameProjectModal({
     if (showModal) {
       eventTracking.sendMB('project-list-page-interaction', {
         action: 'rename',
+        page: '/',
         projectId: project.id,
         isSmallDevice,
       })

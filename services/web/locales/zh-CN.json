@@ -1350,6 +1350,7 @@
   "loading": "正在加载",
   "loading_content": "正在创建项目",
   "loading_github_repositories": "正在读取您的GitHub存储库",
+  "loading_more_projects": "正在加载更多项目",
   "loading_prices": "加载价格",
   "loading_recent_github_commits": "正在装载最近的提交",
   "log_entry_description": "级别为__level__的日志条目",
