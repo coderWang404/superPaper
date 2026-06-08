@@ -14,6 +14,24 @@ describe('<PdfJSViewer/>', function () {
     cy.interceptEvents()
   })
 
+  it('labels the PDF.js viewer with the localized PDF preview name', function () {
+    cy.interceptCompile()
+
+    const scope = mockScope()
+
+    cy.mount(
+      <EditorProviders scope={scope}>
+        <PdfPreviewProvider>
+          <div className="pdf-viewer">
+            <PdfJsViewer url="/build/123/output.pdf?clsiserverid=foo" />
+          </div>
+        </PdfPreviewProvider>
+      </EditorProviders>
+    )
+
+    cy.findByRole('tabpanel', { name: 'PDF preview' })
+  })
+
   it('loads all PDF pages', function () {
     cy.interceptCompile()
 

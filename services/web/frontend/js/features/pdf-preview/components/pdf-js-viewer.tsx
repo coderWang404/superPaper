@@ -16,6 +16,7 @@ import usePresentationMode from '../hooks/use-presentation-mode'
 import useMouseWheelZoom from '../hooks/use-mouse-wheel-zoom'
 import { PDFJS } from '../util/pdf-js'
 import { PDFFile } from '@ol-types/compile'
+import { useTranslation } from 'react-i18next'
 
 type PdfJsViewerProps = {
   url: string
@@ -23,6 +24,7 @@ type PdfJsViewerProps = {
 }
 
 function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
+  const { t } = useTranslation()
   const { projectId } = useProjectContext()
 
   const { setError, firstRenderDone, highlights, position, setPosition } =
@@ -542,6 +544,7 @@ function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
         className="pdfjs-viewer-inner"
         tabIndex={0}
         role="tabpanel"
+        aria-label={t('pdf_preview')}
         data-testid="pdfjs-viewer-inner"
       >
         <div className="pdfViewer" />

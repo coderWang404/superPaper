@@ -50,6 +50,36 @@ describe('<FileTreeFolderList/>', function () {
     cy.findByRole('treeitem', { name: 'file.bib' })
   })
 
+  it('uses one tree role at the root and group roles for nested folders', function () {
+    cy.mount(
+      <EditorProviders>
+        <FileTreeProvider>
+          <FileTreeFolderList
+            folders={[
+              {
+                _id: 'nested-role-folder',
+                name: 'A Folder',
+                folders: [],
+                docs: [{ _id: 'nested-role-doc', name: 'nested.tex' }],
+                fileRefs: [],
+              },
+            ]}
+            docs={[]}
+            files={[]}
+          />
+        </FileTreeProvider>
+      </EditorProviders>
+    )
+
+    cy.findAllByRole('tree').should('have.length', 1)
+    cy.findByRole('treeitem', { name: 'A Folder' }).click()
+    cy.findAllByRole('tree').should('have.length', 1)
+    cy.findAllByRole('group').should('have.length', 1)
+    cy.findByRole('group').within(() => {
+      cy.findByRole('treeitem', { name: 'nested.tex' })
+    })
+  })
+
   describe('selection and multi-selection', function () {
     it('without write permissions', function () {
       const rootFolder = [
