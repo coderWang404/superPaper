@@ -14,6 +14,38 @@ describe('ai-provider-admin', function () {
     resetMeta()
   })
 
+  it('extracts safe validation field messages without rendering secrets', async function () {
+    const submittedCredential = 'test-provider-key-value'
+
+    fetchMock.post('/admin/ai/providers', {
+      status: 422,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid AI provider input',
+          fields: [{ field: 'baseURL', message: 'baseURL must use https' }],
+          apiKey: submittedCredential,
+        },
+      },
+    })
+
+    const { createProvider } = await import(
+      '../../../../frontend/js/features/ai-provider-admin/api'
+    )
+
+    await expect(
+      createProvider('csrf-token', {
+        name: 'Unsafe',
+        providerType: 'openai-compatible',
+        baseURL: 'http://example.test/v1',
+        apiKey: submittedCredential,
+        enabled: true,
+        defaultModel: null,
+        models: [],
+      })
+    ).to.be.rejectedWith('Invalid AI provider input: baseURL must use https')
+  })
+
   it('loads providers from the admin endpoint and renders redacted providers', async function () {
     fetchMock.get('/admin/ai/providers', {
       providers: [providerFixture()],
