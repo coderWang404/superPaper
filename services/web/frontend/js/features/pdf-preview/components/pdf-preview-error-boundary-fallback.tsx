@@ -16,6 +16,7 @@ function PdfPreviewErrorBoundaryFallback({
         <a
           href="/learn/how-to/Resolving_access%2C_loading%2C_and_display_problems"
           target="_blank"
+          rel="noopener noreferrer"
           key="troubleshooting-link"
         />,
       ]}

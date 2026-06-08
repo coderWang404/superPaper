@@ -16,6 +16,12 @@ describe('autoSelectFile', function () {
     },
   ]
 
+  it('returns undefined when the diff has no files', function () {
+    const selectedFile = autoSelectFile([], 1, false, undefined, null)
+
+    expect(selectedFile).to.equal(undefined)
+  })
+
   describe('for comparing version with previous', function () {
     const comparing = false
 

@@ -48,6 +48,7 @@ function PdfHybridDownloadButton() {
         download
         href={pdfDownloadUrl || '#'}
         target="_blank"
+        rel="noopener noreferrer"
         style={{ pointerEvents: 'auto' }}
         aria-label={t('download_pdf')}
       >

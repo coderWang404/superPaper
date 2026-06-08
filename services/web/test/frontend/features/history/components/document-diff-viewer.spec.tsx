@@ -1,7 +1,9 @@
 import DocumentDiffViewer from '../../../../../frontend/js/features/history/components/diff-view/document-diff-viewer'
 import { Highlight } from '../../../../../frontend/js/features/history/services/types/doc'
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import { EditorProviders } from '../../../helpers/editor-providers'
+import { EditorView } from '@codemirror/view'
+import sinon from 'sinon'
 
 const doc = `\\documentclass{article}
 
@@ -63,6 +65,31 @@ const Container: FC<React.PropsWithChildren> = ({ children }) => (
   <div style={{ width: 600, height: 400 }}>{children}</div>
 )
 
+const ToggleableViewer = ({
+  scope,
+  doc,
+  highlights,
+}: {
+  scope: ReturnType<typeof mockScope>
+  doc: string
+  highlights: Highlight[]
+}) => {
+  const [showViewer, setShowViewer] = useState(true)
+
+  return (
+    <Container>
+      <EditorProviders scope={scope}>
+        <button type="button" onClick={() => setShowViewer(false)}>
+          Hide viewer
+        </button>
+        {showViewer ? (
+          <DocumentDiffViewer doc={doc} highlights={highlights} />
+        ) : null}
+      </EditorProviders>
+    </Container>
+  )
+}
+
 const mockScope = () => {
   return {
     settings: {
@@ -75,6 +102,10 @@ const mockScope = () => {
 }
 
 describe('document diff viewer', function () {
+  afterEach(function () {
+    sinon.restore()
+  })
+
   it('displays highlights with hover tooltips', function () {
     const scope = mockScope()
 
@@ -252,5 +283,19 @@ End
             )
           })
       })
+  })
+
+  it('destroys the editor view on unmount', function () {
+    const scope = mockScope()
+    const destroy = sinon.stub(EditorView.prototype, 'destroy')
+
+    cy.mount(
+      <ToggleableViewer scope={scope} doc={doc} highlights={highlights} />
+    )
+
+    cy.findByRole('button', { name: 'Hide viewer' }).click()
+    cy.then(() => {
+      expect(destroy).to.have.been.calledOnce
+    })
   })
 })

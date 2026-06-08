@@ -12,6 +12,7 @@ export const SynctexFileErrorToast = () => {
       <OLButton
         href="/learn/how-to/SyncTeX_Errors"
         target="_blank"
+        rel="noopener noreferrer"
         variant="secondary"
         size="sm"
       >

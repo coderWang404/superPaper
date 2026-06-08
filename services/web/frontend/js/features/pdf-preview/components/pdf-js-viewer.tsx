@@ -215,7 +215,10 @@ function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
       const storePosition = debounce(pdfViewer => {
         // set position for "sync to code" button
         try {
-          setPosition(pdfViewer.currentPosition)
+          const currentPosition = pdfViewer.currentPosition
+          if (currentPosition) {
+            setPosition(currentPosition)
+          }
         } catch (error) {
           // debugConsole.error(error)
         }
@@ -225,10 +228,10 @@ function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
         storePosition(pdfJsWrapper)
       }, 100)
 
-      const scrollListener = () => {
+      const scrollListener = throttle(() => {
         storePosition(pdfJsWrapper)
         setPage(pdfJsWrapper.viewer.currentPageNumber)
-      }
+      }, 100)
 
       pdfJsWrapper.container.addEventListener('scroll', scrollListener)
 
@@ -238,7 +241,15 @@ function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
           window.clearTimeout(storePositionTimer)
         }
         storePosition.cancel()
-        setPosition(pdfJsWrapper.currentPosition)
+        scrollListener.cancel()
+        try {
+          const currentPosition = pdfJsWrapper.currentPosition
+          if (currentPosition) {
+            setPosition(currentPosition)
+          }
+        } catch (error) {
+          // debugConsole.error(error)
+        }
       }
     }
   }, [setPosition, pdfJsWrapper, initialised])
@@ -246,20 +257,28 @@ function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
   // listen for double-click events
   useEffect(() => {
     if (pdfJsWrapper) {
+      const doubleClickListeners = new Map<
+        HTMLElement,
+        (event: MouseEvent) => void
+      >()
+
       const handleTextlayerrendered = (textLayer: any) => {
         // handle both versions for backwards-compatibility
         const textLayerDiv =
           textLayer.source.textLayerDiv ?? textLayer.source.textLayer.div
 
-        if (!textLayerDiv.dataset.listeningForDoubleClick) {
-          textLayerDiv.dataset.listeningForDoubleClick = true
-
+        if (textLayerDiv && !doubleClickListeners.has(textLayerDiv)) {
           const doubleClickListener = (event: MouseEvent) => {
-            const clickPosition = pdfJsWrapper.clickPosition(
-              event,
-              textLayerDiv.closest('.page').querySelector('canvas'),
-              textLayer.pageNumber - 1
-            )
+            const canvas = textLayerDiv
+              .closest('.page')
+              ?.querySelector('canvas')
+            const clickPosition =
+              canvas &&
+              pdfJsWrapper.clickPosition(
+                event,
+                canvas,
+                textLayer.pageNumber - 1
+              )
 
             if (clickPosition) {
               window.dispatchEvent(
@@ -273,13 +292,21 @@ function PdfJsViewer({ url, pdfFile }: PdfJsViewerProps) {
             }
           }
 
+          doubleClickListeners.set(textLayerDiv, doubleClickListener)
           textLayerDiv.addEventListener('dblclick', doubleClickListener)
         }
       }
 
       pdfJsWrapper.eventBus.on('textlayerrendered', handleTextlayerrendered)
-      return () =>
+      return () => {
         pdfJsWrapper.eventBus.off('textlayerrendered', handleTextlayerrendered)
+        for (const [
+          textLayerDiv,
+          doubleClickListener,
+        ] of doubleClickListeners) {
+          textLayerDiv.removeEventListener('dblclick', doubleClickListener)
+        }
+      }
     }
   }, [pdfJsWrapper])
 

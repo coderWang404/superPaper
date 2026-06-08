@@ -106,7 +106,7 @@ export function autoSelectFile(
   comparing: boolean,
   updateForToV: LoadedUpdate | undefined,
   previouslySelectedPathname: Selection['previouslySelectedPathname']
-): FileDiff {
+): FileDiff | undefined {
   const filesWithOps = getFilesWithOps(files, toV, comparing, updateForToV)
   const previouslySelectedFile = files.find(file => {
     return file.pathname === previouslySelectedPathname

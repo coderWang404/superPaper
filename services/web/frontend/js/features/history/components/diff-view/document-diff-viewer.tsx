@@ -73,6 +73,12 @@ function DocumentDiffViewer({
     })
   })
 
+  useEffect(() => {
+    return () => {
+      view.destroy()
+    }
+  }, [view])
+
   const highlightLocations = state.field(highlightLocationsField)
 
   // Append the editor view DOM to the container node when mounted

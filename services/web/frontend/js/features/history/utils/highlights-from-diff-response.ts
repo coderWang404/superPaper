@@ -26,7 +26,7 @@ export function highlightsFromDiffResponse(
     if (isInsertion || isDeletion) {
       const meta = entry.meta
       if (!meta) {
-        throw new Error('No meta found')
+        continue
       }
       const user = meta.users?.[0]
       const name = displayNameForUser(user)

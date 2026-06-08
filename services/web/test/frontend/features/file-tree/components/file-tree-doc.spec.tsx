@@ -74,4 +74,74 @@ describe('<FileTreeDoc/>', function () {
     cy.findByRole('treeitem').click({ ctrlKey: true, cmdKey: true })
     cy.findByRole('treeitem', { selected: true })
   })
+
+  it('selects on Enter keydown and prevents browser event handling', function () {
+    const rootFolder = [
+      {
+        _id: 'root-folder-id',
+        name: 'rootFolder',
+        docs: [{ _id: '123abc' }],
+        fileRefs: [],
+        folders: [],
+      },
+    ]
+
+    cy.mount(
+      <EditorProviders rootFolder={rootFolder as any}>
+        <FileTreeProvider>
+          <FileTreeDoc name="foo.tex" id="123abc" />
+        </FileTreeProvider>
+      </EditorProviders>
+    )
+
+    cy.findByRole('treeitem', { selected: false }).then($treeItem => {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      })
+      const stopPropagation = cy.stub(event, 'stopPropagation')
+
+      $treeItem[0].dispatchEvent(event)
+
+      expect(event.defaultPrevented).to.equal(true)
+      expect(stopPropagation).to.have.been.calledOnce
+    })
+    cy.findByRole('treeitem', { selected: true })
+  })
+
+  it('selects on Space keydown and prevents browser event handling', function () {
+    const rootFolder = [
+      {
+        _id: 'root-folder-id',
+        name: 'rootFolder',
+        docs: [{ _id: '123abc' }],
+        fileRefs: [],
+        folders: [],
+      },
+    ]
+
+    cy.mount(
+      <EditorProviders rootFolder={rootFolder as any}>
+        <FileTreeProvider>
+          <FileTreeDoc name="foo.tex" id="123abc" />
+        </FileTreeProvider>
+      </EditorProviders>
+    )
+
+    cy.findByRole('treeitem', { selected: false }).then($treeItem => {
+      const event = new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+        cancelable: true,
+      })
+      const stopPropagation = cy.stub(event, 'stopPropagation')
+
+      $treeItem[0].dispatchEvent(event)
+
+      expect(event.defaultPrevented).to.equal(true)
+      expect(stopPropagation).to.have.been.calledOnce
+    })
+    cy.findByRole('treeitem', { selected: true })
+  })
 })

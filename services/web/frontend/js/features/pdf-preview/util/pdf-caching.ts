@@ -223,6 +223,7 @@ function sortBySizeDESC(a: { size: number }, b: { size: number }) {
 }
 
 function sortByStartASC(a: { start: number }, b: { start: number }) {
+  if (a.start === b.start) return 0
   return a.start > b.start ? 1 : -1
 }
 

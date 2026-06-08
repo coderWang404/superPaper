@@ -21,7 +21,7 @@ function HistoryDropdownContent({
   endTimestamp,
 }: VersionDropdownContentProps) {
   const { updatesInfo } = useHistoryContext()
-  const isCurrentVersion = version === updatesInfo.updates[0].toV
+  const isCurrentVersion = version === updatesInfo.updates[0]?.toV
 
   const closeDropdown = useCallback(() => {
     closeDropdownForItem(version, 'moreOptions')

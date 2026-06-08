@@ -110,7 +110,7 @@ function useHistory() {
       let previousUpdate = updates[updates.length - 1]
 
       const loadedUpdates: LoadedUpdate[] = cloneDeep(updatesData)
-      for (const [index, update] of loadedUpdates.entries()) {
+      for (const update of loadedUpdates) {
         for (const user of update.meta.users) {
           if (user) {
             user.hue = getHueForUserId(user.id)
@@ -255,7 +255,9 @@ function useHistory() {
             ...previousSelection,
             files: newFiles,
             selectedFile,
-            previouslySelectedPathname: selectedFile.pathname,
+            previouslySelectedPathname:
+              selectedFile?.pathname ??
+              previousSelection.previouslySelectedPathname,
           }
         })
       })

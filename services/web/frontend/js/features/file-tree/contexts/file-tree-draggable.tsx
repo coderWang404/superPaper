@@ -16,6 +16,7 @@ import { useFileTreeData } from '@/shared/context/file-tree-data-context'
 import { useFileTreeSelectable } from '../contexts/file-tree-selectable'
 import { isAcceptableFile } from '@/features/file-tree/util/is-acceptable-file'
 import { FileTreeFindResult } from '@/features/ide-react/types/file-tree'
+import { debugConsole } from '@/utils/debugging'
 
 const DRAGGABLE_TYPE = 'ENTITY'
 export const FileTreeDraggableProvider: FC<
@@ -133,6 +134,7 @@ export function useDroppable(targetEntityId: string) {
           setDroppedFiles({ files, targetFolderId: targetEntityId })
           startUploadingDocOrFile()
         })
+        .catch(debugConsole.error)
     },
     collect(monitor) {
       return {

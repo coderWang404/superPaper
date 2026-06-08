@@ -30,7 +30,15 @@ const FileViewPdf: FC<{
           return
         }
 
-        const pdf = await loadPdfDocumentFromUrl(preview.url).promise
+        let pdf
+        try {
+          pdf = await loadPdfDocumentFromUrl(preview.url).promise
+        } catch {
+          if (mountedRef.current) {
+            onError()
+          }
+          return
+        }
 
         // bail out if loading the PDF took too long
         if (!mountedRef.current) {
@@ -42,7 +50,15 @@ const FileViewPdf: FC<{
         const scale = window.devicePixelRatio || 1
 
         for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i)
+          let page
+          try {
+            page = await pdf.getPage(i)
+          } catch {
+            if (mountedRef.current) {
+              onError()
+            }
+            return
+          }
 
           // bail out if the component has been unmounted
           if (!mountedRef.current) {
@@ -59,13 +75,22 @@ const FileViewPdf: FC<{
           canvas.style.height = `${viewport.height / scale}px`
 
           element.append(canvas)
-          page.render({
-            canvasContext: canvas.getContext('2d')!,
-            viewport,
-          })
+          try {
+            await page.render({
+              canvasContext: canvas.getContext('2d')!,
+              viewport,
+            }).promise
+          } catch {
+            if (mountedRef.current) {
+              onError()
+            }
+            return
+          }
         }
 
-        onLoad()
+        if (mountedRef.current) {
+          onLoad()
+        }
       }
     },
     [mountedRef, pathInFolder, fileId, previewByPath, onLoad, onError]

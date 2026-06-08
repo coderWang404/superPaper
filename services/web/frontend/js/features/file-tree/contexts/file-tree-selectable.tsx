@@ -12,7 +12,7 @@ import {
   FC,
 } from 'react'
 import classNames from 'classnames'
-import _ from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { findInTree, findInTreeOrThrow } from '../util/find-in-tree'
 import { useFileTreeData } from '../../../shared/context/file-tree-data-context'
 import { useProjectContext } from '../../../shared/context/project-context'
@@ -179,7 +179,7 @@ export const FileTreeSelectableProvider: FC<
   // calls `onSelect` on entities selection
   const previousSelectedEntityIds = usePreviousValue(selectedEntityIds)
   useEffect(() => {
-    if (_.isEqual(selectedEntityIds, previousSelectedEntityIds)) {
+    if (isEqual(selectedEntityIds, previousSelectedEntityIds)) {
       return
     }
     const _selectedEntities = Array.from(selectedEntityIds)
@@ -360,9 +360,10 @@ export function useSelectableEntity(id: string, type: string) {
     [handleEvent, setContextMenuCoords]
   )
 
-  const handleKeyPress = useCallback(
+  const handleKeyDown = useCallback(
     (ev: any) => {
       if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault()
         handleEvent(ev)
       }
     },
@@ -387,9 +388,9 @@ export function useSelectableEntity(id: string, type: string) {
       'aria-selected': isVisuallySelected,
       onClick: handleClick,
       onContextMenu: handleContextMenu,
-      onKeyPress: handleKeyPress,
+      onKeyDown: handleKeyDown,
     }),
-    [handleClick, handleContextMenu, handleKeyPress, isVisuallySelected]
+    [handleClick, handleContextMenu, handleKeyDown, isVisuallySelected]
   )
 
   return { isSelected, props }
