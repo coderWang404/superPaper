@@ -18,6 +18,8 @@ import UserController from '../User/UserController.mjs'
 import TutorialHandler from '../Tutorial/TutorialHandler.mjs'
 import UserSettingsHelper from './UserSettingsHelper.mjs'
 
+const MAX_PROJECT_LIST_PAGE_SIZE = 100
+
 /**
  * @import { GetProjectsRequest, GetProjectsResponse, AllUsersProjects, MongoProject, FormattedProject, MongoTag } from "./types"
  * @import { Project, ProjectApi, ProjectAccessLevel, Filters, Page, Sort, UserRef } from "../../../../types/project/dashboard/api"
@@ -158,7 +160,7 @@ async function _getProjects(
   userId,
   filters = {},
   sort = { by: 'lastUpdated', order: 'desc' },
-  page = { size: 20 }
+  page
 ) {
   /** @type {[AllUsersProjects, MongoTag[]]} */
   const results = await Promise.all([
@@ -279,8 +281,35 @@ function _sortAndPaginate(projects, sort, page) {
     [sort.by || 'lastUpdated'],
     [sort.order || 'desc']
   )
-  // TODO handle pagination
-  return sortedProjects
+  if (page == null) {
+    return sortedProjects
+  }
+  const { offset, size } = _normalizePage(page)
+  return sortedProjects.slice(offset, offset + size)
+}
+
+/**
+ * @param {Page} page
+ * @returns {{ offset: number, size: number }}
+ * @private
+ */
+function _normalizePage(page) {
+  const size = Number(page.size)
+  const offset = Number(page.offset ?? 0)
+
+  if (
+    !Number.isSafeInteger(size) ||
+    size < 1 ||
+    !Number.isSafeInteger(offset) ||
+    offset < 0
+  ) {
+    throw new OError('Invalid pagination criteria', { page })
+  }
+
+  return {
+    offset,
+    size: Math.min(size, MAX_PROJECT_LIST_PAGE_SIZE),
+  }
 }
 
 /**

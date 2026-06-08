@@ -4,6 +4,7 @@ import { Source } from '../../../app/src/Features/Authorization/types'
 
 export type Page = {
   size: number
+  offset?: number
   lastId?: string
 }
 
@@ -22,9 +23,9 @@ export type Filters = {
 }
 
 export type GetProjectsRequestBody = {
-  page: Page
-  sort: Sort
-  filters: Filters
+  page?: Page
+  sort?: Sort
+  filters?: Filters
 }
 
 export type UserRef = {

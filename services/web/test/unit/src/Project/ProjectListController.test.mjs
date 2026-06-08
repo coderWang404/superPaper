@@ -16,6 +16,29 @@ vi.mock('../Telemetry/TelemetryManager.mjs', () => {
   }
 })
 
+function buildProject(id, attrs = {}) {
+  return {
+    _id: id,
+    name: `Project ${id}`,
+    lastUpdated: new Date(id),
+    owner_ref: 'user-1',
+    ...attrs,
+  }
+}
+
+function setOwnedProjects(ctx, projects) {
+  ctx.allProjects = {
+    owned: projects,
+    readAndWrite: [],
+    readOnly: [],
+    tokenReadAndWrite: [],
+    tokenReadOnly: [],
+    review: [],
+  }
+
+  ctx.ProjectGetter.promises.findAllUsersProjects.resolves(ctx.allProjects)
+}
+
 describe('ProjectListController', function () {
   beforeEach(async function (ctx) {
     ctx.project_id = new ObjectId('abcdefabcdefabcdefabcdef')
@@ -284,6 +307,91 @@ describe('ProjectListController', function () {
       await ctx.ProjectListController.projectListPage(ctx.req, ctx.res)
     })
 
+  })
+
+  describe('getProjectsJson pagination contract', function () {
+    beforeEach(function (ctx) {
+      ctx.res.json = sinon.stub()
+    })
+
+    it('returns all projects when callers omit paging parameters', async function (ctx) {
+      setOwnedProjects(
+        ctx,
+        Array.from({ length: 25 }, (_, index) => buildProject(index + 1))
+      )
+      ctx.req.body = {
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(25)
+      expect(response.projects).to.have.length(25)
+      expect(response.projects.map(project => project.id)).to.deep.equal(
+        Array.from({ length: 25 }, (_, index) => String(25 - index))
+      )
+    })
+
+    it('returns a page using page.size and page.offset after sorting', async function (ctx) {
+      setOwnedProjects(
+        ctx,
+        [1, 2, 3, 4].map(id => buildProject(id))
+      )
+      ctx.req.body = {
+        page: { size: 2, offset: 1 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(4)
+      expect(response.projects.map(project => project.id)).to.deep.equal([
+        '3',
+        '2',
+      ])
+    })
+
+    it('reports totalSize after search filtering and before pagination', async function (ctx) {
+      setOwnedProjects(ctx, [
+        buildProject(1, { name: 'Alpha Notes' }),
+        buildProject(2, { name: 'Beta Notes' }),
+        buildProject(3, { name: 'alpha Draft' }),
+      ])
+      ctx.req.body = {
+        filters: { search: 'alpha' },
+        page: { size: 1, offset: 1 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(2)
+      expect(response.projects.map(project => project.name)).to.deep.equal([
+        'Alpha Notes',
+      ])
+    })
+
+    it('caps requested page sizes to a safe maximum', async function (ctx) {
+      setOwnedProjects(
+        ctx,
+        Array.from({ length: 105 }, (_, index) => buildProject(index + 1))
+      )
+      ctx.req.body = {
+        page: { size: 150, offset: 0 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(105)
+      expect(response.projects).to.have.length(100)
+      expect(response.projects[0].id).to.equal('105')
+      expect(response.projects[99].id).to.equal('6')
+    })
   })
 
   describe('projectListReactPage with duplicate projects', function () {
