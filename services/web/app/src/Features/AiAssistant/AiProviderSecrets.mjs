@@ -5,13 +5,39 @@ const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
 const TAG_LENGTH = 16
 
+const AI_PROVIDER_DERIVE_SALT = 'ai-provider-v1'
+
+let _warnedFallback = false
+
 function getSecret(options = {}) {
-  const secret =
-    options.secret || process.env.AI_PROVIDER_SECRET || process.env.SESSION_SECRET
-  if (!secret || secret.length < 16) {
-    throw new Error('AI provider encryption secret is not configured')
+  if (options.secret) {
+    return options.secret
   }
-  return secret
+  if (process.env.AI_PROVIDER_SECRET) {
+    return process.env.AI_PROVIDER_SECRET
+  }
+  // Fallback: derive a separate key from SESSION_SECRET so that SESSION_SECRET
+  // is never used directly as the encryption key.
+  const sessionSecret = process.env.SESSION_SECRET
+  if (!sessionSecret || sessionSecret.length < 16) {
+    throw new Error(
+      'AI provider encryption secret is not configured. ' +
+        'Set AI_PROVIDER_SECRET or ensure SESSION_SECRET is at least 16 characters.'
+    )
+  }
+  if (!_warnedFallback) {
+    _warnedFallback = true
+    console.warn(
+      '[AiProviderSecrets] AI_PROVIDER_SECRET is not set. ' +
+        'Deriving encryption key from SESSION_SECRET. ' +
+        'Set a dedicated AI_PROVIDER_SECRET for production use.'
+    )
+  }
+  // Return a derived string that is distinct from SESSION_SECRET itself
+  return crypto
+    .createHmac('sha256', AI_PROVIDER_DERIVE_SALT)
+    .update(sessionSecret)
+    .digest('hex')
 }
 
 function deriveKey(secret) {

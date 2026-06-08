@@ -105,7 +105,7 @@ async function inviteToProject(req, res) {
   const sendingUserId = sendingUser._id
   req.logger.addFields({ email, sendingUserId })
 
-  if (email === sendingUser.email) {
+  if (email.toLowerCase() === sendingUser.email.toLowerCase()) {
     logger.debug(
       { projectId, email, sendingUserId },
       'cannot invite yourself to project'

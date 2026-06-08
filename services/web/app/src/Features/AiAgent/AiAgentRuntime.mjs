@@ -6,6 +6,7 @@ import AuthorizationManager from '../Authorization/AuthorizationManager.mjs'
 import ProjectGetter from '../Project/ProjectGetter.mjs'
 import ProjectCheckpointService from '../Project/ProjectCheckpointService.mjs'
 import ProjectStorageMigrationService from '../Project/ProjectStorageMigrationService.mjs'
+import ProjectWorkspaceManager from '../Project/ProjectWorkspaceManager.mjs'
 import ProjectWorkspaceWatcher from '../Project/ProjectWorkspaceWatcher.mjs'
 import { decryptApiKey } from '../AiAssistant/AiProviderSecrets.mjs'
 import * as ClineAgentRuntimeAdapter from './ClineAgentRuntimeAdapter.mjs'
@@ -237,6 +238,16 @@ async function runClineFilesystemTurn({
     const agentContext = await buildClineAgentContext({ projectId, prompt })
     session.providerId = providerConfig.id
     session.model = selectedModel
+    if (
+      session.mode !== 'act' &&
+      !session.plan &&
+      !session.planOutput
+    ) {
+      throw new AiAgentError(
+        'AGENT_PLAN_REQUIRED',
+        'Cannot enter act mode without an approved plan. Complete the planning phase first.'
+      )
+    }
     session.mode = 'act'
     session.enabledSkillIds = agentContext.skills.map(skill => skill.id)
     session.enabledPluginIds = agentContext.enabledPluginIds

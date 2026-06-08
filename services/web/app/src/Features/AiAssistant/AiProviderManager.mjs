@@ -5,7 +5,10 @@ import {
   redactProvider,
 } from './AiProviderSecrets.mjs'
 import { syncOpenAICompatibleModels } from './AiProviderClient.mjs'
-import { parseCreateProviderInput } from './AiProviderValidation.mjs'
+import {
+  parseCreateProviderInput,
+  parseUpdateProviderInput,
+} from './AiProviderValidation.mjs'
 
 export async function listProviders() {
   const providers = await AiProvider.find({}).sort({ name: 1 }).exec()
@@ -29,20 +32,17 @@ export async function createProvider(input) {
 }
 
 export async function updateProvider(providerId, input) {
+  const validated = parseUpdateProviderInput(input)
   const update = {}
-  for (const field of ['name', 'providerType', 'baseURL', 'enabled']) {
-    if (Object.hasOwn(input, field)) {
-      update[field] = input[field]
-    }
+  if (validated.name !== undefined) update.name = validated.name
+  if (validated.baseURL !== undefined) update.baseURL = validated.baseURL
+  if (validated.enabled !== undefined) update.enabled = validated.enabled
+  if (validated.apiKey) {
+    update.encryptedApiKey = await encryptApiKey(validated.apiKey)
   }
-  if (Object.hasOwn(input, 'apiKey') && input.apiKey) {
-    update.encryptedApiKey = await encryptApiKey(input.apiKey)
-  }
-  if (Object.hasOwn(input, 'models')) {
-    update.models = input.models
-  }
-  if (Object.hasOwn(input, 'defaultModel')) {
-    update.defaultModel = input.defaultModel || null
+  if (validated.models !== undefined) update.models = validated.models
+  if (validated.defaultModel !== undefined) {
+    update.defaultModel = validated.defaultModel
   }
   const provider = await AiProvider.findByIdAndUpdate(providerId, update, {
     new: true,
