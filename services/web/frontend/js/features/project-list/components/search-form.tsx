@@ -61,6 +61,7 @@ function SearchForm({
   >['onChange'] = e => {
     eventTracking.sendMB('project-list-page-interaction', {
       action: 'search',
+      page: '/',
       isSmallDevice,
     })
     setInputValue(e.target.value)

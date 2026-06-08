@@ -1,12 +1,25 @@
 import { Tag } from '../../../../../app/src/Features/Tags/types'
 import {
+  GetProjectsRequestBody,
   GetProjectsResponseBody,
   Sort,
 } from '../../../../../types/project/dashboard/api'
 import { deleteJSON, postJSON } from '../../../infrastructure/fetch-json'
 
-export function getProjects(sortBy: Sort): Promise<GetProjectsResponseBody> {
-  return postJSON('/api/project', { body: { sort: sortBy } })
+export function getProjects(
+  request: Sort | GetProjectsRequestBody
+): Promise<GetProjectsResponseBody> {
+  return postJSON('/api/project', { body: normalizeGetProjectsRequest(request) })
+}
+
+function normalizeGetProjectsRequest(
+  request: Sort | GetProjectsRequestBody
+): GetProjectsRequestBody {
+  if ('by' in request || 'order' in request) {
+    return { sort: request }
+  }
+
+  return request
 }
 
 export function createTag(name: string, color?: string): Promise<Tag> {

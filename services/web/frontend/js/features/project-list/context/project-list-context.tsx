@@ -21,6 +21,8 @@ import {
 import { Tag } from '../../../../../app/src/Features/Tags/types'
 import {
   ClonedProject,
+  Filters,
+  GetProjectsRequestBody,
   GetProjectsResponseBody,
   Project,
   Sort,
@@ -38,6 +40,7 @@ import {
 import { debugConsole } from '@/utils/debugging'
 
 const MAX_PROJECT_PER_PAGE = 20
+const SEARCH_DEBOUNCE_MS = 300
 
 export type Filter = 'all' | 'owned' | 'shared' | 'archived' | 'trashed'
 type FilterMap = {
@@ -140,6 +143,8 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
     'all'
   )
   const prevSortRef = useRef<Sort>(sort)
+  const didMountRefreshRef = useRef(false)
+  const didLoadInitialProjectsRef = useRef(false)
   const [selectedTagId, setSelectedTagId] = usePersistedState<
     string | undefined
   >('project-list-selected-tag-id', undefined)
@@ -165,10 +170,83 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   })
   const isLoading = isIdle ? true : loading
 
+  const buildProjectFilters = useCallback(
+    (search: string = searchText): Filters => {
+      const filters: Filters = {}
+      const trimmedSearch = search.trim()
+
+      if (selectedTagId !== undefined) {
+        filters.archived = false
+        filters.trashed = false
+        if (selectedTagId === UNCATEGORIZED_KEY) {
+          filters.tag = null
+        } else {
+          const selectedTag = tags.find(tag => tag._id === selectedTagId)
+          if (selectedTag) {
+            filters.tag = selectedTag._id
+          }
+        }
+      } else if (filter === 'all') {
+        filters.archived = false
+        filters.trashed = false
+      } else if (filter === 'owned') {
+        filters.ownedByUser = true
+        filters.archived = false
+        filters.trashed = false
+      } else if (filter === 'shared') {
+        filters.sharedWithUser = true
+        filters.archived = false
+        filters.trashed = false
+      } else if (filter === 'archived') {
+        filters.archived = true
+        filters.trashed = false
+      } else if (filter === 'trashed') {
+        filters.trashed = true
+      }
+
+      if (trimmedSearch.length > 0) {
+        filters.search = trimmedSearch
+      }
+
+      return filters
+    },
+    [filter, searchText, selectedTagId, tags]
+  )
+
+  const buildProjectsRequest = useCallback(
+    (page: GetProjectsRequestBody['page']): GetProjectsRequestBody => {
+      const request: GetProjectsRequestBody = {
+        sort,
+        page,
+      }
+      const filters = buildProjectFilters()
+
+      if (Object.keys(filters).length > 0) {
+        request.filters = filters
+      }
+
+      return request
+    },
+    [buildProjectFilters, sort]
+  )
+
+  const canUsePrefetchedProjects =
+    prefetchedProjectsBlob &&
+    filter === 'all' &&
+    selectedTagId === undefined &&
+    searchText.trim() === '' &&
+    sort.by === 'lastUpdated' &&
+    sort.order === 'desc'
+
   useEffect(() => {
-    if (prefetchedProjectsBlob) return
+    if (prefetchedProjectsBlob || didLoadInitialProjectsRef.current) return
+    didLoadInitialProjectsRef.current = true
     setLoadProgress(40)
-    runAsync(getProjects({ by: 'lastUpdated', order: 'desc' }))
+    runAsync(
+      getProjects(
+        buildProjectsRequest({ size: MAX_PROJECT_PER_PAGE, offset: 0 })
+      )
+    )
       .then(data => {
         setLoadedProjects(data.projects)
         setTotalProjectsCount(data.totalSize)
@@ -177,7 +255,33 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       .finally(() => {
         setLoadProgress(100)
       })
-  }, [prefetchedProjectsBlob, runAsync])
+  }, [buildProjectsRequest, prefetchedProjectsBlob, runAsync])
+
+  useEffect(() => {
+    if (!didMountRefreshRef.current) {
+      didMountRefreshRef.current = true
+      if (!prefetchedProjectsBlob || canUsePrefetchedProjects) {
+        return
+      }
+    }
+
+    const timeout = window.setTimeout(() => {
+      getProjects(
+        buildProjectsRequest({ size: MAX_PROJECT_PER_PAGE, offset: 0 })
+      )
+        .then(data => {
+          setLoadedProjects(data.projects)
+          setTotalProjectsCount(data.totalSize)
+          setMaxVisibleProjects(MAX_PROJECT_PER_PAGE)
+          setSelectedProjectIds(new Set())
+        })
+        .catch(debugConsole.error)
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [buildProjectsRequest])
 
   useEffect(() => {
     let filteredProjects = [...loadedProjects]
@@ -217,6 +321,11 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       setLoadedProjects(loadedProjectsSorted)
     }
 
+    const serverHiddenProjectsCount = Math.max(
+      totalProjectsCount - loadedProjects.length,
+      0
+    )
+
     if (filteredProjects.length > maxVisibleProjects) {
       const visibleFilteredProjects = filteredProjects.slice(
         0,
@@ -234,6 +343,12 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       } else {
         setLoadMoreCount(hiddenFilteredProjectsCount)
       }
+    } else if (serverHiddenProjectsCount > 0) {
+      setVisibleProjects(filteredProjects)
+      setHiddenProjectsCount(serverHiddenProjectsCount)
+      setLoadMoreCount(
+        Math.min(serverHiddenProjectsCount, MAX_PROJECT_PER_PAGE)
+      )
     } else {
       setVisibleProjects(filteredProjects)
       setLoadMoreCount(0)
@@ -242,6 +357,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   }, [
     loadedProjects,
     maxVisibleProjects,
+    totalProjectsCount,
     tags,
     filter,
     setFilter,
@@ -256,14 +372,69 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   }, [sort])
 
   const showAllProjects = useCallback(() => {
+    if (loadedProjects.length < totalProjectsCount) {
+      getProjects(
+        buildProjectsRequest({
+          size: hiddenProjectsCount,
+          offset: loadedProjects.length,
+        })
+      )
+        .then(data => {
+          setLoadedProjects(loadedProjects =>
+            uniqBy([...loadedProjects, ...data.projects], 'id')
+          )
+          setTotalProjectsCount(data.totalSize)
+          setMaxVisibleProjects(maxVisibleProjects =>
+            maxVisibleProjects + data.projects.length
+          )
+        })
+        .catch(debugConsole.error)
+      return
+    }
+
     setLoadMoreCount(0)
     setHiddenProjectsCount(0)
     setMaxVisibleProjects(maxVisibleProjects + hiddenProjectsCount)
-  }, [hiddenProjectsCount, maxVisibleProjects])
+  }, [
+    buildProjectsRequest,
+    hiddenProjectsCount,
+    loadedProjects.length,
+    maxVisibleProjects,
+    totalProjectsCount,
+  ])
 
   const loadMoreProjects = useCallback(() => {
+    if (
+      loadedProjects.length < totalProjectsCount &&
+      loadedProjects.length <= maxVisibleProjects
+    ) {
+      getProjects(
+        buildProjectsRequest({
+          size: loadMoreCount,
+          offset: loadedProjects.length,
+        })
+      )
+        .then(data => {
+          setLoadedProjects(loadedProjects =>
+            uniqBy([...loadedProjects, ...data.projects], 'id')
+          )
+          setTotalProjectsCount(data.totalSize)
+          setMaxVisibleProjects(maxVisibleProjects =>
+            maxVisibleProjects + data.projects.length
+          )
+        })
+        .catch(debugConsole.error)
+      return
+    }
+
     setMaxVisibleProjects(maxVisibleProjects + loadMoreCount)
-  }, [maxVisibleProjects, loadMoreCount])
+  }, [
+    buildProjectsRequest,
+    loadedProjects.length,
+    loadMoreCount,
+    maxVisibleProjects,
+    totalProjectsCount,
+  ])
 
   const [selectedProjectIds, setSelectedProjectIds] = useState(
     () => new Set<string>()

@@ -120,6 +120,8 @@ describe('ProjectListController', function () {
       isArchived: sinon.stub(),
       isTrashed: sinon.stub(),
     }
+    ctx.ProjectHelper.isArchived.callsFake(project => Boolean(project.archived))
+    ctx.ProjectHelper.isTrashed.callsFake(project => Boolean(project.trashed))
     ctx.SessionManager = {
       getLoggedInUserId: sinon.stub().returns(ctx.user._id),
     }
@@ -307,6 +309,22 @@ describe('ProjectListController', function () {
       await ctx.ProjectListController.projectListPage(ctx.req, ctx.res)
     })
 
+    it('should prefetch only the first page of projects for the React dashboard', async function (ctx) {
+      setOwnedProjects(
+        ctx,
+        Array.from({ length: 25 }, (_, index) => buildProject(index + 1))
+      )
+
+      ctx.res.render = (pageName, opts) => {
+        opts.prefetchedProjectsBlob.totalSize.should.equal(25)
+        opts.prefetchedProjectsBlob.projects.length.should.equal(20)
+        opts.prefetchedProjectsBlob.projects[0].id.should.equal('25')
+        opts.prefetchedProjectsBlob.projects[19].id.should.equal('6')
+      }
+
+      await ctx.ProjectListController.projectListPage(ctx.req, ctx.res)
+    })
+
   })
 
   describe('getProjectsJson pagination contract', function () {
@@ -371,6 +389,72 @@ describe('ProjectListController', function () {
       expect(response.totalSize).to.equal(2)
       expect(response.projects.map(project => project.name)).to.deep.equal([
         'Alpha Notes',
+      ])
+    })
+
+    it('applies boolean status filters before pagination', async function (ctx) {
+      setOwnedProjects(ctx, [
+        buildProject(1, { name: 'Current One' }),
+        buildProject(2, { name: 'Archived One', archived: true }),
+        buildProject(3, { name: 'Trashed One', trashed: true }),
+        buildProject(4, { name: 'Current Two' }),
+      ])
+      ctx.req.body = {
+        filters: { archived: false, trashed: false },
+        page: { size: 10, offset: 0 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(2)
+      expect(response.projects.map(project => project.name)).to.deep.equal([
+        'Current Two',
+        'Current One',
+      ])
+    })
+
+    it('filters by tag id and supports uncategorized filtering', async function (ctx) {
+      ctx.tags = [
+        {
+          _id: 'tag-a',
+          name: 'Alpha tag',
+          project_ids: ['1', '3'],
+        },
+      ]
+      ctx.TagsHandler.promises.getAllTags.resolves(ctx.tags)
+      setOwnedProjects(ctx, [
+        buildProject(1, { name: 'Tagged One' }),
+        buildProject(2, { name: 'Untagged One' }),
+        buildProject(3, { name: 'Tagged Two' }),
+      ])
+
+      ctx.req.body = {
+        filters: { tag: 'tag-a', archived: false, trashed: false },
+        page: { size: 10, offset: 0 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+      const taggedResponse = ctx.res.json.firstCall.args[0]
+
+      ctx.res.json.resetHistory()
+      ctx.req.body = {
+        filters: { tag: null, archived: false, trashed: false },
+        page: { size: 10, offset: 0 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+      const untaggedResponse = ctx.res.json.firstCall.args[0]
+
+      expect(taggedResponse.totalSize).to.equal(2)
+      expect(taggedResponse.projects.map(project => project.name)).to.deep.equal([
+        'Tagged Two',
+        'Tagged One',
+      ])
+      expect(untaggedResponse.totalSize).to.equal(1)
+      expect(untaggedResponse.projects.map(project => project.name)).to.deep.equal([
+        'Untagged One',
       ])
     })
 

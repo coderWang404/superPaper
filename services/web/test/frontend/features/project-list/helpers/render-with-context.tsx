@@ -10,22 +10,25 @@ import { UserProvider } from '@/shared/context/user-context'
 
 type Options = {
   projects?: Project[]
+  mockProjectApi?: boolean
 }
 
 export function renderWithProjectListContext(
   component: React.ReactElement,
   options: Options = {}
 ) {
-  let { projects } = options
+  let { projects, mockProjectApi = true } = options
 
   if (!projects) {
     projects = projectsData
   }
 
-  fetchMock.post('express:/api/project', {
-    status: 200,
-    body: { projects, totalSize: projects.length },
-  })
+  if (mockProjectApi) {
+    fetchMock.post('express:/api/project', {
+      status: 200,
+      body: { projects, totalSize: projects.length },
+    })
+  }
 
   fetchMock.get('express:/system/messages', {
     status: 200,

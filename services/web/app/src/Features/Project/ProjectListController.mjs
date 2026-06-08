@@ -18,6 +18,7 @@ import UserController from '../User/UserController.mjs'
 import TutorialHandler from '../Tutorial/TutorialHandler.mjs'
 import UserSettingsHelper from './UserSettingsHelper.mjs'
 
+const DEFAULT_PROJECT_LIST_PAGE_SIZE = 20
 const MAX_PROJECT_LIST_PAGE_SIZE = 100
 
 /**
@@ -51,7 +52,12 @@ async function projectListPage(req, res, next) {
 
   const userId = SessionManager.getLoggedInUserId(req.session)
 
-  const projectsBlobPending = _getProjects(userId).catch(err => {
+  const projectsBlobPending = _getProjects(
+    userId,
+    { archived: false, trashed: false },
+    { by: 'lastUpdated', order: 'desc' },
+    { size: DEFAULT_PROJECT_LIST_PAGE_SIZE, offset: 0 }
+  ).catch(err => {
     logger.err({ err, userId }, 'projects listing in background failed')
     return undefined
   })
@@ -406,21 +412,34 @@ function _matchesFilters(project, tags, filters) {
   if (filters.sharedWithUser && project.accessLevel === 'owner') {
     return false
   }
-  if (filters.archived && !project.archived) {
-    return false
-  }
-  if (filters.trashed && !project.trashed) {
+  if (
+    typeof filters.archived === 'boolean' &&
+    project.archived !== filters.archived
+  ) {
     return false
   }
   if (
-    filters.tag &&
-    !_.find(
-      tags,
-      tag =>
-        filters.tag === tag.name && (tag.project_ids || []).includes(project.id)
-    )
+    typeof filters.trashed === 'boolean' &&
+    project.trashed !== filters.trashed
   ) {
     return false
+  }
+  if (filters.tag === null) {
+    const taggedProjectIds = new Set(
+      tags.flatMap(tag => tag.project_ids || [])
+    )
+    if (taggedProjectIds.has(project.id)) {
+      return false
+    }
+  } else if (filters.tag?.length) {
+    const tag = _.find(
+      tags,
+      tag =>
+        filters.tag === tag._id?.toString() || filters.tag === String(tag.name)
+    )
+    if (!tag || !(tag.project_ids || []).includes(project.id)) {
+      return false
+    }
   }
   if (
     filters.search?.length &&
@@ -440,8 +459,8 @@ function _hasActiveFilter(filters) {
   return Boolean(
     filters.ownedByUser ||
     filters.sharedWithUser ||
-    filters.archived ||
-    filters.trashed ||
+    typeof filters.archived === 'boolean' ||
+    typeof filters.trashed === 'boolean' ||
     filters.tag === null ||
     filters.tag?.length ||
     filters.search?.length

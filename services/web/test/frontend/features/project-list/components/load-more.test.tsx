@@ -6,8 +6,43 @@ import {
   projectsData,
   makeLongProjectList,
   currentProjects,
+  copyableProject,
 } from '../fixtures/projects-data'
 import { renderWithProjectListContext } from '../helpers/render-with-context'
+import ProjectListTable from '../../../../../frontend/js/features/project-list/components/table/project-list-table'
+
+function makePagedProjects(offset: number, count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const projectNumber = offset + index + 1
+    return {
+      ...copyableProject,
+      id: `paged-project-${projectNumber}`,
+      name: `Paged Project ${projectNumber}`,
+      lastUpdated: new Date(projectNumber).toISOString(),
+      archived: false,
+      trashed: false,
+    }
+  })
+}
+
+function mockProjectPageResponses(
+  responses: Array<{ projects: ReturnType<typeof makePagedProjects>; totalSize: number }>
+) {
+  fetchMock.post('express:/api/project', () => {
+    const response = responses.shift()
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  })
+}
+
+function getProjectApiRequestBodies() {
+  return fetchMock.callHistory
+    .calls()
+    .filter(call => call.url.endsWith('/api/project'))
+    .map(call => JSON.parse(call.options.body as string))
+}
 
 describe('<LoadMore />', function () {
   afterEach(function () {
@@ -96,6 +131,45 @@ describe('<LoadMore />', function () {
       screen.getByText(
         `Showing ${currentList.length} out of ${currentList.length} projects.`
       )
+    })
+  })
+
+  it('requests the next page and appends projects when loading more', async function () {
+    const firstPage = makePagedProjects(0, 20)
+    const secondPage = makePagedProjects(20, 5)
+    mockProjectPageResponses([
+      { projects: firstPage, totalSize: 25 },
+      { projects: secondPage, totalSize: 25 },
+    ])
+
+    renderWithProjectListContext(
+      <>
+        <ProjectListTable />
+        <LoadMore />
+      </>,
+      { mockProjectApi: false }
+    )
+
+    await screen.findByText('Paged Project 1')
+    const loadMoreButton = await screen.findByRole('button', {
+      name: /Show 5 more projects/i,
+    })
+
+    fireEvent.click(loadMoreButton)
+
+    await screen.findByText('Paged Project 25')
+    screen.getByText('Showing 25 out of 25 projects.')
+
+    const requestBodies = getProjectApiRequestBodies()
+    expect(requestBodies[0]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false },
+      page: { size: 20, offset: 0 },
+    })
+    expect(requestBodies[1]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false },
+      page: { size: 5, offset: 20 },
     })
   })
 })

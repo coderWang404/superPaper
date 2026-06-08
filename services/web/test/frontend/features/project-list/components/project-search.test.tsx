@@ -1,11 +1,67 @@
 import sinon from 'sinon'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { expect } from 'chai'
 import SearchForm from '../../../../../frontend/js/features/project-list/components/search-form'
 import * as eventTracking from '@/infrastructure/event-tracking'
 import fetchMock from 'fetch-mock'
 import { Filter } from '../../../../../frontend/js/features/project-list/context/project-list-context'
 import { Tag } from '../../../../../app/src/Features/Tags/types'
+import {
+  copyableProject,
+  projectsData,
+} from '../fixtures/projects-data'
+import { renderWithProjectListContext } from '../helpers/render-with-context'
+import {
+  useProjectListContext,
+} from '../../../../../frontend/js/features/project-list/context/project-list-context'
+import ProjectListTable from '../../../../../frontend/js/features/project-list/components/table/project-list-table'
+
+function makeSearchProject(id: string, name: string) {
+  return {
+    ...copyableProject,
+    id,
+    name,
+    archived: false,
+    trashed: false,
+  }
+}
+
+function mockProjectPageResponses(
+  responses: Array<{ projects: typeof projectsData; totalSize: number }>
+) {
+  fetchMock.post('express:/api/project', () => {
+    const response = responses.shift()
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  })
+}
+
+function getProjectApiRequestBodies() {
+  return fetchMock.callHistory
+    .calls()
+    .filter(call => call.url.endsWith('/api/project'))
+    .map(call => JSON.parse(call.options.body as string))
+}
+
+function SearchHarness() {
+  const { searchText, setSearchText, filter, tags, selectedTagId } =
+    useProjectListContext()
+  const selectedTag = tags.find(tag => tag._id === selectedTagId)
+
+  return (
+    <>
+      <SearchForm
+        inputValue={searchText}
+        setInputValue={setSearchText}
+        filter={filter}
+        selectedTag={selectedTag}
+      />
+      <ProjectListTable />
+    </>
+  )
+}
 
 describe('Project list search form', function () {
   let sendMBSpy: sinon.SinonSpy
@@ -18,6 +74,7 @@ describe('Project list search form', function () {
   afterEach(function () {
     fetchMock.removeRoutes().clearHistory()
     sendMBSpy.restore()
+    sinon.restore()
   })
 
   it('renders the search form', function () {
@@ -152,4 +209,60 @@ describe('Project list search form', function () {
       })
     })
   }
+
+  it('debounces search requests and resets to the first page when search is cleared', async function () {
+    const initialProjects = [
+      makeSearchProject('first-1', 'Initial Project 1'),
+      makeSearchProject('first-2', 'Initial Project 2'),
+    ]
+    const searchProjects = [makeSearchProject('search-1', 'Alpha Result')]
+    const resetProjects = [
+      makeSearchProject('reset-1', 'Reset Project 1'),
+      makeSearchProject('reset-2', 'Reset Project 2'),
+    ]
+    mockProjectPageResponses([
+      { projects: initialProjects, totalSize: 40 },
+      { projects: searchProjects, totalSize: 1 },
+      { projects: resetProjects, totalSize: 40 },
+    ])
+
+    renderWithProjectListContext(<SearchHarness />, { mockProjectApi: false })
+
+    await screen.findByText('Initial Project 1')
+    const input = screen.getByRole('textbox', {
+      name: /search in all projects/i,
+    })
+
+    let clock = sinon.useFakeTimers()
+    fireEvent.change(input, { target: { value: 'alpha' } })
+    expect(getProjectApiRequestBodies()).to.have.length(1)
+
+    clock.tick(299)
+    expect(getProjectApiRequestBodies()).to.have.length(1)
+
+    clock.tick(1)
+    await fetchMock.callHistory.flush(true)
+    clock.restore()
+    await waitFor(() => expect(getProjectApiRequestBodies()).to.have.length(2))
+    await screen.findByText('Alpha Result')
+
+    clock = sinon.useFakeTimers()
+    fireEvent.change(input, { target: { value: '' } })
+    clock.tick(300)
+    await fetchMock.callHistory.flush(true)
+    clock.restore()
+    await waitFor(() => expect(getProjectApiRequestBodies()).to.have.length(3))
+    await screen.findByText('Reset Project 1')
+
+    expect(getProjectApiRequestBodies()[1]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false, search: 'alpha' },
+      page: { size: 20, offset: 0 },
+    })
+    expect(getProjectApiRequestBodies()[2]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false },
+      page: { size: 20, offset: 0 },
+    })
+  })
 })
