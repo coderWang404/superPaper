@@ -7,6 +7,7 @@ import {
   buildCoverageReport,
   evaluateCoverageChecks,
 } from '../../../../scripts/translations/checkCoverage.js'
+import { evaluateUnusedKeyChecks } from '../../../../scripts/translations/cleanupUnusedLocales.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const WEB_ROOT = Path.join(__dirname, '../../../../')
@@ -94,5 +95,24 @@ describe('translation coverage script', function () {
     expect(lintLocales).toContain(
       'node scripts/translations/checkCoverage.js --check'
     )
+    expect(lintLocales).toContain(
+      'node scripts/translations/cleanupUnusedLocales.js --check'
+    )
+  })
+
+  it('allows the current unused-key debt baseline without allowing regressions', function () {
+    expect(evaluateUnusedKeyChecks(['unused_a', 'unused_b'], 2)).toMatchObject({
+      ok: true,
+      failures: [],
+      warnings: ['unused translation key debt is at the baseline: 2/2.'],
+    })
+
+    expect(evaluateUnusedKeyChecks(['unused_a', 'unused_b', 'unused_c'], 2))
+      .toMatchObject({
+        ok: false,
+        failures: [
+          'unused translation key debt is 3 keys, which exceeds the baseline of 2.',
+        ],
+      })
   })
 })

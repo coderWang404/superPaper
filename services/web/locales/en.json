@@ -240,7 +240,7 @@
   "agent_settings_tab_skills": "Skills",
   "agent_settings_unknown_source": "Unknown source",
   "agent_settings_uploaded_zip": "Uploaded zip",
-  "agent_settings_view_only": "You can view this project's Agent settings, but only project owners can change rules, skills, and plugins.",
+  "agent_settings_view_only": "You can view this project’s Agent settings, but only project owners can change rules, skills, and plugins.",
   "agent_settings_workspace_description": "Project-level Agent rules, Skills, and Plugins. AI providers stay in the admin console.",
   "agent_settings_workspace_title": "Project Agent Workbench",
   "agent_settings_zip_url": "Zip URL",
