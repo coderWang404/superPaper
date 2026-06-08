@@ -60,6 +60,9 @@ describe('<HistoryFileTreeFolderList/>', function () {
     cy.findByRole('treeitem', { name: 'chapters' }).click()
     cy.findAllByRole('tree').should('have.length', 1)
     cy.findAllByRole('group').should('have.length', 1)
+    cy.findByRole('treeitem', { name: 'chapters' }).within(() => {
+      cy.findByRole('group')
+    })
     cy.findByRole('group').within(() => {
       cy.findByRole('treeitem', { name: 'intro.tex' })
     })

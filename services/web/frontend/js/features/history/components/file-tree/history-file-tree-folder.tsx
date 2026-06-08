@@ -56,25 +56,23 @@ function HistoryFileTreeFolder({
   )
 
   return (
-    <>
-      <li
-        // FIXME
-        // eslint-disable-next-line jsx-a11y/role-has-required-aria-props
-        role="treeitem"
-        aria-expanded={expanded}
-        aria-label={name}
-        tabIndex={0}
-        onClick={() => setExpanded(!expanded)}
-        onKeyDown={event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            setExpanded(!expanded)
-          }
-        }}
-        translate="no"
-      >
-        <HistoryFileTreeItem name={name} icons={icons} />
-      </li>
+    <li
+      // FIXME
+      // eslint-disable-next-line jsx-a11y/role-has-required-aria-props
+      role="treeitem"
+      aria-expanded={expanded}
+      aria-label={name}
+      tabIndex={0}
+      onClick={() => setExpanded(!expanded)}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          setExpanded(!expanded)
+        }
+      }}
+      translate="no"
+    >
+      <HistoryFileTreeItem name={name} icons={icons} />
       {expanded ? (
         <HistoryFileTreeFolderList
           folders={folders}
@@ -82,7 +80,7 @@ function HistoryFileTreeFolder({
           rootClassName="history-file-tree-list-inner"
         />
       ) : null}
-    </>
+    </li>
   )
 }
 

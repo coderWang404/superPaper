@@ -72,9 +72,15 @@ describe('<FileTreeFolderList/>', function () {
     )
 
     cy.findAllByRole('tree').should('have.length', 1)
+    cy.findByRole('tree')
+      .children('.file-tree-folder-list-inner')
+      .should('have.attr', 'role', 'none')
     cy.findByRole('treeitem', { name: 'A Folder' }).click()
     cy.findAllByRole('tree').should('have.length', 1)
     cy.findAllByRole('group').should('have.length', 1)
+    cy.findByRole('group')
+      .children('.file-tree-folder-list-inner')
+      .should('have.attr', 'role', 'none')
     cy.findByRole('group').within(() => {
       cy.findByRole('treeitem', { name: 'nested.tex' })
     })
