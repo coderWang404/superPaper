@@ -32,6 +32,48 @@ function send401WithChallenge(res) {
   res.sendStatus(401)
 }
 
+function isObject(error) {
+  return error != null && typeof error === 'object'
+}
+
+function getOauthErrorStatusCode(error) {
+  if (!isObject(error)) {
+    return 500
+  }
+
+  for (const property of ['code', 'status', 'statusCode']) {
+    const statusCode = error[property]
+    if (
+      Number.isInteger(statusCode) &&
+      statusCode >= 400 &&
+      statusCode <= 599
+    ) {
+      return statusCode
+    }
+  }
+
+  return 500
+}
+
+function getOauthErrorResponse(error, statusCode) {
+  if (!isObject(error)) {
+    return {
+      error: 'Error',
+      error_description: 'Internal Server Error',
+    }
+  }
+
+  return {
+    error: typeof error.name === 'string' && error.name ? error.name : 'Error',
+    error_description:
+      typeof error.message === 'string' && error.message
+        ? error.message
+        : statusCode === 500
+          ? 'Internal Server Error'
+          : '',
+  }
+}
+
 function checkCredentials(userDetailsMap, user, password) {
   const expectedPassword = userDetailsMap.get(user)
   const userExists = userDetailsMap.has(user) && expectedPassword // user exists with a non-null password
@@ -379,16 +421,16 @@ const AuthenticationController = {
         req.oauth_user = token.user
         next()
       } catch (err) {
+        let statusCode = getOauthErrorStatusCode(err)
         if (
-          err.code === 400 &&
+          statusCode === 400 &&
+          isObject(err) &&
           err.message === 'Invalid request: malformed authorization header'
         ) {
-          err.code = 401
+          statusCode = 401
         }
         // send all other errors
-        res
-          .status(err.code)
-          .json({ error: err.name, error_description: err.message })
+        res.status(statusCode).json(getOauthErrorResponse(err, statusCode))
       }
     }
     return expressify(middleware)

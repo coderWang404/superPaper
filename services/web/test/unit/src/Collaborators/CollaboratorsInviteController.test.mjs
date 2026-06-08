@@ -701,6 +701,147 @@ describe('CollaboratorsInviteController', function () {
       })
     })
 
+    describe('when the user invites themselves with different email casing', function () {
+      beforeEach(function (ctx) {
+        ctx.req.body.email = ctx.currentUser.email.toUpperCase()
+        ctx.CollaboratorsInviteController._checkShouldInviteEmail = sinon
+          .stub()
+          .resolves(true)
+        ctx.CollaboratorsInviteController._checkRateLimit = sinon
+          .stub()
+          .resolves(true)
+        ctx.CollaboratorsInviteController.inviteToProject(
+          ctx.req,
+          ctx.res,
+          ctx.next
+        )
+      })
+
+      it('should reject action, return json response with error code', function (ctx) {
+        expect(ctx.res.json).toHaveBeenCalledTimes(1)
+        expect(ctx.res.json.mock.calls[0][0]).to.deep.equal({
+          invite: null,
+          error: 'cannot_invite_self',
+        })
+      })
+
+      it('should not have called canAddXEditCollaborators', function (ctx) {
+        ctx.LimitationsManager.promises.canAddXEditCollaborators.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called _checkShouldInviteEmail', function (ctx) {
+        ctx.CollaboratorsInviteController._checkShouldInviteEmail.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called inviteToProject', function (ctx) {
+        ctx.CollaboratorsInviteHandler.promises.inviteToProject.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called emitToRoom', function (ctx) {
+        ctx.EditorRealTimeController.emitToRoom.callCount.should.equal(0)
+      })
+    })
+
+    describe('when the user invites themselves with a display name', function () {
+      beforeEach(function (ctx) {
+        ctx.req.body.email = `Current User <${ctx.currentUser.email}>`
+        ctx.CollaboratorsInviteController._checkShouldInviteEmail = sinon
+          .stub()
+          .resolves(true)
+        ctx.CollaboratorsInviteController._checkRateLimit = sinon
+          .stub()
+          .resolves(true)
+        ctx.CollaboratorsInviteController.inviteToProject(
+          ctx.req,
+          ctx.res,
+          ctx.next
+        )
+      })
+
+      it('should reject action, return json response with error code', function (ctx) {
+        expect(ctx.res.json).toHaveBeenCalledTimes(1)
+        expect(ctx.res.json.mock.calls[0][0]).to.deep.equal({
+          invite: null,
+          error: 'cannot_invite_self',
+        })
+      })
+
+      it('should not have called canAddXEditCollaborators', function (ctx) {
+        ctx.LimitationsManager.promises.canAddXEditCollaborators.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called _checkShouldInviteEmail', function (ctx) {
+        ctx.CollaboratorsInviteController._checkShouldInviteEmail.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called inviteToProject', function (ctx) {
+        ctx.CollaboratorsInviteHandler.promises.inviteToProject.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called emitToRoom', function (ctx) {
+        ctx.EditorRealTimeController.emitToRoom.callCount.should.equal(0)
+      })
+    })
+
+    describe('when the user invites themselves with surrounding whitespace', function () {
+      beforeEach(function (ctx) {
+        ctx.req.body.email = `  ${ctx.currentUser.email}  `
+        ctx.CollaboratorsInviteController._checkShouldInviteEmail = sinon
+          .stub()
+          .resolves(true)
+        ctx.CollaboratorsInviteController._checkRateLimit = sinon
+          .stub()
+          .resolves(true)
+        ctx.CollaboratorsInviteController.inviteToProject(
+          ctx.req,
+          ctx.res,
+          ctx.next
+        )
+      })
+
+      it('should reject action, return json response with error code', function (ctx) {
+        expect(ctx.res.json).toHaveBeenCalledTimes(1)
+        expect(ctx.res.json.mock.calls[0][0]).to.deep.equal({
+          invite: null,
+          error: 'cannot_invite_self',
+        })
+      })
+
+      it('should not have called canAddXEditCollaborators', function (ctx) {
+        ctx.LimitationsManager.promises.canAddXEditCollaborators.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called _checkShouldInviteEmail', function (ctx) {
+        ctx.CollaboratorsInviteController._checkShouldInviteEmail.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called inviteToProject', function (ctx) {
+        ctx.CollaboratorsInviteHandler.promises.inviteToProject.callCount.should.equal(
+          0
+        )
+      })
+
+      it('should not have called emitToRoom', function (ctx) {
+        ctx.EditorRealTimeController.emitToRoom.callCount.should.equal(0)
+      })
+    })
+
     describe('when _checkRateLimit returns false', function () {
       beforeEach(async function (ctx) {
         ctx.CollaboratorsInviteController._checkShouldInviteEmail = sinon

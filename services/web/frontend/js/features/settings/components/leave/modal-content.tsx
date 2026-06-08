@@ -61,7 +61,7 @@ function LeaveModalContent({
       </OLModalHeader>
 
       <OLModalBody>
-        <p>
+        <p id="delete-account-warning">
           <Trans
             i18nKey="delete_account_warning_message_3"
             components={{ strong: <strong /> }}
@@ -84,6 +84,7 @@ function LeaveModalContent({
           type="submit"
           variant="danger"
           disabled={inFlight || !isFormValid}
+          {...{ 'aria-describedby': 'delete-account-warning' }}
         >
           {inFlight ? <>{t('deleting')}…</> : t('delete')}
         </OLButton>

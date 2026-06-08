@@ -73,7 +73,7 @@ function LeaveModalForm({
 
   return (
     <form id="leave-form" onSubmit={handleSubmit}>
-      <OLFormGroup controlId="email-input">
+      <OLFormGroup controlId="delete-account-email-input">
         <OLFormLabel>{t('email')}</OLFormLabel>
         <OLFormControl
           type="text"
@@ -82,7 +82,7 @@ function LeaveModalForm({
           onChange={handleEmailChange}
         />
       </OLFormGroup>
-      <OLFormGroup controlId="password-input">
+      <OLFormGroup controlId="delete-account-password-input">
         <OLFormLabel>{t('password')}</OLFormLabel>
         <OLFormControl
           type="password"

@@ -1,10 +1,10 @@
+import { useState } from 'react'
 import useWaitForI18n from '@/shared/hooks/use-wait-for-i18n'
 import getMeta from '@/utils/meta'
 import Invite from '@/features/share-project/invite'
 import useAsync from '@/shared/hooks/use-async'
 import { postJSON } from '@/infrastructure/fetch-json'
 import { useLocation } from '@/shared/hooks/use-location'
-import { debugConsole } from '@/utils/debugging'
 
 export default function InviteRoot() {
   const user = getMeta('ol-user')
@@ -13,12 +13,14 @@ export default function InviteRoot() {
   const token = getMeta('ol-inviteToken')
   const location = useLocation()
   const { isLoading, runAsync } = useAsync()
+  const [acceptError, setAcceptError] = useState(false)
   const { isReady } = useWaitForI18n()
 
   const handleSubmit = () => {
+    setAcceptError(false)
     runAsync(postJSON(`/project/${projectId}/invite/token/${token}/accept`))
       .then(() => location.assign(`/project/${projectId}`))
-      .catch(debugConsole.error)
+      .catch(() => setAcceptError(true))
   }
 
   if (!isReady) {
@@ -31,6 +33,7 @@ export default function InviteRoot() {
       email={user.email}
       submitHandler={handleSubmit}
       isLoading={isLoading}
+      acceptError={acceptError}
     />
   )
 }

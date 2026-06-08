@@ -2,6 +2,8 @@ import { expect } from 'chai'
 import { fireEvent, screen, render } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
 import PasswordSection from '../../../../../frontend/js/features/settings/components/password-section'
+import enTranslations from '../../../../../locales/en.json'
+import zhCnTranslations from '../../../../../locales/zh-CN.json'
 
 describe('<PasswordSection />', function () {
   beforeEach(function () {
@@ -80,6 +82,7 @@ describe('<PasswordSection />', function () {
     window.metaAttributesCache.set('ol-passwordStrengthOptions', {
       length: {
         min: 3,
+        max: 12,
       },
     })
     render(<PasswordSection />)
@@ -95,6 +98,8 @@ describe('<PasswordSection />', function () {
     ) as HTMLInputElement
 
     expect(newPassword1Input.minLength).to.equal(3)
+    expect(newPassword1Input.maxLength).to.equal(12)
+    expect(newPassword2Input.maxLength).to.equal(12)
 
     // not required before changes
     expect(currentPasswordInput.required).to.be.false
@@ -140,6 +145,16 @@ describe('<PasswordSection />', function () {
       name: 'Change',
     })
     screen.getByText('Password changed')
+
+    expect(
+      (screen.getByLabelText('Current password') as HTMLInputElement).value
+    ).to.equal('')
+    expect(
+      (screen.getByLabelText('New password') as HTMLInputElement).value
+    ).to.equal('')
+    expect(
+      (screen.getByLabelText('Confirm new password') as HTMLInputElement).value
+    ).to.equal('')
   })
 
   it('shows server error', async function () {
@@ -171,6 +186,33 @@ describe('<PasswordSection />', function () {
       { exact: false }
     )
     screen.getByRole('link', { name: 'single sign-on (SSO)' })
+  })
+
+  it('links to the SSO page in the cannot-change-password message', async function () {
+    window.metaAttributesCache.set('ol-cannot-change-password', true)
+    render(<PasswordSection />)
+
+    const link = await screen.findByRole('link', {
+      name: 'single sign-on (SSO)',
+    })
+
+    expect(link.getAttribute('href')).to.equal('/user/sso')
+    expect(link.getAttribute('target')).to.equal('_blank')
+  })
+
+  it('has locale entries for the cannot-change-password SSO message', function () {
+    expect(
+      enTranslations
+        .you_cant_add_or_change_password_because_your_group_or_organization_uses_sso
+    ).to.equal(
+      'You can’t add or change your password because your group or organization uses <0>single sign-on (SSO)</0>.'
+    )
+    expect(
+      zhCnTranslations
+        .you_cant_add_or_change_password_because_your_group_or_organization_uses_sso
+    ).to.equal(
+      '您无法添加或更改密码，因为您的群组或组织使用<0>单点登录 (SSO)</0>。'
+    )
   })
 })
 

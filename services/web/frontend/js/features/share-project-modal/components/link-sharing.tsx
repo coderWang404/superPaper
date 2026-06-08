@@ -152,15 +152,33 @@ function PrivateSharing({
 function useProjectTokens() {
   const { projectId } = useProjectContext()
   const [tokens, setTokens] = useState<Tokens | null>(null)
+  const [error, setError] = useState(false)
   const { signal } = useAbortController()
 
   useEffect(() => {
+    let isCurrentRequest = true
+    setTokens(null)
+    setError(false)
     getJSON(`/project/${projectId}/tokens`, { signal })
-      .then(data => setTokens(data))
-      .catch(debugConsole.error)
+      .then(data => {
+        if (!isCurrentRequest || signal.aborted) {
+          return
+        }
+        setTokens(data)
+      })
+      .catch(error => {
+        if (!isCurrentRequest || signal.aborted || isAbortError(error)) {
+          return
+        }
+        debugConsole.error(error)
+        setError(true)
+      })
+    return () => {
+      isCurrentRequest = false
+    }
   }, [projectId, signal])
 
-  return tokens
+  return { tokens, error }
 }
 
 function TokenBasedSharing({
@@ -175,7 +193,7 @@ function TokenBasedSharing({
   showLinks: boolean
 }) {
   const { t } = useTranslation()
-  const tokens = useProjectTokens()
+  const { tokens, error } = useProjectTokens()
 
   return (
     <OLRow className="public-access-level">
@@ -204,8 +222,7 @@ function TokenBasedSharing({
       </OLCol>
       {showLinks && (
         <OLCol xs={12} className="access-token-display-area">
-          <AccessTokenEditDisplayArea tokens={tokens} />
-          <AccessTokenViewDisplayArea tokens={tokens} />
+          <AccessTokenDisplayArea tokens={tokens} error={error} />
         </OLCol>
       )}
     </OLRow>
@@ -247,25 +264,28 @@ function LegacySharing({
 }
 
 export function ReadAndWriteTokenLinks() {
-  const tokens = useProjectTokens()
+  const { tokens, error } = useProjectTokens()
 
   return (
     <OLRow className="public-access-level">
       <OLCol className="access-token-display-area">
-        <AccessTokenEditDisplayArea tokens={tokens} />
-        <AccessTokenViewDisplayArea tokens={tokens} />
+        <AccessTokenDisplayArea tokens={tokens} error={error} />
       </OLCol>
     </OLRow>
   )
 }
 
 export function ReadOnlyTokenLink() {
-  const tokens = useProjectTokens()
+  const { tokens, error } = useProjectTokens()
 
   return (
     <OLRow className="public-access-level">
       <OLCol className="access-token-display-area">
-        <AccessTokenViewDisplayArea tokens={tokens} />
+        {error ? (
+          <AccessTokenError />
+        ) : (
+          <AccessTokenViewDisplayArea tokens={tokens} />
+        )}
       </OLCol>
     </OLRow>
   )
@@ -328,6 +348,35 @@ function LinkSharingInfo() {
   )
 }
 
+function AccessTokenDisplayArea({
+  tokens,
+  error,
+}: {
+  tokens: Tokens | null
+  error: boolean
+}) {
+  if (error) {
+    return <AccessTokenError />
+  }
+
+  return (
+    <>
+      <AccessTokenEditDisplayArea tokens={tokens} />
+      <AccessTokenViewDisplayArea tokens={tokens} />
+    </>
+  )
+}
+
+function AccessTokenError() {
+  const { t } = useTranslation()
+
+  return (
+    <div className="alert alert-danger" role="alert">
+      {t('generic_something_went_wrong')}
+    </div>
+  )
+}
+
 function AccessTokenEditDisplayArea({ tokens }: { tokens: Tokens | null }) {
   const { t } = useTranslation()
 
@@ -362,4 +411,17 @@ function AccessTokenViewDisplayArea({ tokens }: { tokens: Tokens | null }) {
       />
     </div>
   )
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+  if ('name' in error && error.name === 'AbortError') {
+    return true
+  }
+  if ('cause' in error) {
+    return isAbortError(error.cause)
+  }
+  return false
 }

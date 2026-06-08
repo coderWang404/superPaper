@@ -31,6 +31,28 @@ describe('<LeaveModalContent />', function () {
     expect(deleteButton.hasAttribute('disabled')).to.be.true
   })
 
+  it('describes the destructive delete action with the warning text', function () {
+    render(
+      <LeaveModalContent
+        handleHide={() => {}}
+        inFlight={false}
+        setInFlight={() => {}}
+      />
+    )
+
+    const deleteButton = screen.getByRole('button', {
+      name: 'Delete',
+    })
+    const warning = document.getElementById('delete-account-warning')
+
+    expect(deleteButton.getAttribute('aria-describedby')).to.equal(
+      'delete-account-warning'
+    )
+    expect(warning?.textContent).to.contain(
+      'permanently delete all of your account data'
+    )
+  })
+
   it('shows no password message', function () {
     window.metaAttributesCache.set('ol-hasPassword', false)
     render(

@@ -20,6 +20,7 @@ import {
 } from '@/shared/context/types/project-metadata'
 import { UserId } from '@ol-types/user'
 import { PublicAccessLevel } from '@ol-types/public-access-level'
+import { debugConsole } from '@/utils/debugging'
 
 async function changePrivilegeLevel(
   screen: Screen,
@@ -188,6 +189,72 @@ describe('<ShareProjectModal/>', function () {
     screen.getByText(
       `https://www.test-superpaper.com/read/${tokens.readOnly}#${tokens.readOnlyHashPrefix}`
     )
+  })
+
+  it('shows an error if token links could not be loaded', async function () {
+    fetchMock.get(`/project/${shareModalProjectDefaults._id}/tokens`, 500)
+    renderWithEditorContext(
+      <ShareProjectModal {...modalProps} />,
+      createContextProps({ publicAccessLevel: 'tokenBased' })
+    )
+
+    await screen.findByText('Link sharing is on')
+    await screen.findByRole('alert')
+    await screen.findByText('Sorry, something went wrong')
+
+    expect(screen.queryByText('Loading…')).to.be.null
+  })
+
+  it('ignores errors from stale token link requests after the project changes', async function () {
+    const debugConsoleError = sinon.spy(debugConsole, 'error')
+    const staleProjectId = shareModalProjectDefaults._id
+    const nextProjectId = 'next-test-project'
+    let updateProjectId = function (_projectId: string) {}
+    let rejectStaleRequest: (error: Error) => void = () => {}
+    const nextTokens = {
+      readAndWrite: 'next-read-write-token',
+      readAndWritePrefix: 'next-read-write-prefix',
+      readOnly: 'next-read-only-token',
+      readAndWriteHashPrefix: 'next-read-write-hash',
+      readOnlyHashPrefix: 'next-read-only-hash',
+    }
+
+    fetchMock.get(
+      `/project/${staleProjectId}/tokens`,
+      new Promise((_resolve, reject) => {
+        rejectStaleRequest = reject
+      })
+    )
+    fetchMock.get(`/project/${nextProjectId}/tokens`, nextTokens)
+
+    function WrappedModal() {
+      const { updateProject } = useProjectContext()
+      updateProjectId = (projectId: string) => {
+        updateProject({ _id: projectId })
+      }
+      return <ShareProjectModal {...modalProps} />
+    }
+
+    renderWithEditorContext(
+      <WrappedModal />,
+      createContextProps({ publicAccessLevel: 'tokenBased' })
+    )
+
+    await screen.findByText('Link sharing is on')
+
+    updateProjectId(nextProjectId)
+
+    await screen.findByText(
+      `https://www.test-superpaper.com/read/${nextTokens.readOnly}#${nextTokens.readOnlyHashPrefix}`
+    )
+
+    rejectStaleRequest(new Error('stale token request failed'))
+    await new Promise(resolve => window.setTimeout(resolve, 0))
+
+    expect(screen.queryByRole('alert')).to.be.null
+    expect(debugConsoleError).not.to.have.been.called
+
+    debugConsoleError.restore()
   })
 
   it('handles legacy access level "readAndWrite"', async function () {

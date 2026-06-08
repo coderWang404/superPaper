@@ -184,6 +184,9 @@ describe('AuthenticationController', function () {
     vi.doMock('../../../../modules/oauth2-server/app/src/Oauth2Server', () => ({
       default: ctx.Oauth2Server,
     }))
+    vi.doMock('/modules/oauth2-server/app/src/Oauth2Server.mjs', () => ({
+      default: ctx.Oauth2Server,
+    }))
 
     vi.doMock('../../../../app/src/Features/Helpers/UrlHelper', () => ({
       default: (ctx.UrlHelper = {
@@ -708,6 +711,140 @@ describe('AuthenticationController', function () {
 
       it('should not call next', function (ctx) {
         ctx.next.should.have.not.been.calledOnce
+      })
+    })
+
+    describe('when Oauth2Server returns an error with numeric status', function () {
+      beforeEach(async function (ctx) {
+        await new Promise(resolve => {
+          ctx.res.json.callsFake(() => resolve())
+          ctx.Oauth2Server.server.authenticate.rejects({
+            status: 403,
+            name: 'forbidden',
+            message: 'Forbidden',
+          })
+          ctx.middleware(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('should return the status error', function (ctx) {
+        ctx.res.status.should.have.been.calledWith(403)
+      })
+
+      it('should not call next', function (ctx) {
+        ctx.next.should.have.not.been.calledOnce
+      })
+    })
+
+    describe('when Oauth2Server returns an error with numeric statusCode', function () {
+      beforeEach(async function (ctx) {
+        await new Promise(resolve => {
+          ctx.res.json.callsFake(() => resolve())
+          ctx.Oauth2Server.server.authenticate.rejects({
+            statusCode: 429,
+            name: 'rate_limited',
+            message: 'Rate limited',
+          })
+          ctx.middleware(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('should return the statusCode error', function (ctx) {
+        ctx.res.status.should.have.been.calledWith(429)
+      })
+
+      it('should not call next', function (ctx) {
+        ctx.next.should.have.not.been.calledOnce
+      })
+    })
+
+    describe('when Oauth2Server returns a malformed authorization header error', function () {
+      beforeEach(async function (ctx) {
+        await new Promise(resolve => {
+          ctx.res.json.callsFake(() => resolve())
+          ctx.Oauth2Server.server.authenticate.rejects({
+            statusCode: 400,
+            name: 'invalid_request',
+            message: 'Invalid request: malformed authorization header',
+          })
+          ctx.middleware(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('should remap the status to 401', function (ctx) {
+        ctx.res.status.should.have.been.calledWith(401)
+      })
+
+      it('should not call next', function (ctx) {
+        ctx.next.should.have.not.been.calledOnce
+      })
+    })
+
+    describe('when Oauth2Server returns an error without a valid HTTP status code', function () {
+      beforeEach(async function (ctx) {
+        await new Promise(resolve => {
+          ctx.res.json.callsFake(() => resolve())
+          ctx.Oauth2Server.server.authenticate.rejects({
+            code: 'invalid_grant',
+            name: 'invalid_grant',
+            message: 'Invalid grant',
+          })
+          ctx.middleware(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('should return 500 error', function (ctx) {
+        ctx.res.status.should.have.been.calledWith(500)
+      })
+
+      it('should not call next', function (ctx) {
+        ctx.next.should.have.not.been.calledOnce
+      })
+    })
+
+    describe('when Oauth2Server throws null', function () {
+      beforeEach(async function (ctx) {
+        await new Promise(resolve => {
+          ctx.res.json.callsFake(() => resolve())
+          ctx.Oauth2Server.server.authenticate.callsFake(() =>
+            Promise.reject(null)
+          )
+          ctx.middleware(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('should return 500 error', function (ctx) {
+        ctx.res.status.should.have.been.calledWith(500)
+      })
+
+      it('should return a safe error response', function (ctx) {
+        ctx.res.json.should.have.been.calledWith({
+          error: 'Error',
+          error_description: 'Internal Server Error',
+        })
+      })
+    })
+
+    describe('when Oauth2Server throws a primitive value', function () {
+      beforeEach(async function (ctx) {
+        await new Promise(resolve => {
+          ctx.res.json.callsFake(() => resolve())
+          ctx.Oauth2Server.server.authenticate.callsFake(() =>
+            Promise.reject('invalid token')
+          )
+          ctx.middleware(ctx.req, ctx.res, ctx.next)
+        })
+      })
+
+      it('should return 500 error', function (ctx) {
+        ctx.res.status.should.have.been.calledWith(500)
+      })
+
+      it('should return a safe error response', function (ctx) {
+        ctx.res.json.should.have.been.calledWith({
+          error: 'Error',
+          error_description: 'Internal Server Error',
+        })
       })
     })
   })

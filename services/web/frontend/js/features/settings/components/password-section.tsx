@@ -33,6 +33,7 @@ function PasswordSection() {
 function PasswordInnerSection() {
   const { t } = useTranslation()
   const hasPassword = getMeta('ol-hasPassword')
+  const cannotChangePassword = getMeta('ol-cannot-change-password')
 
   if (!hasPassword) {
     return (
@@ -40,6 +41,20 @@ function PasswordInnerSection() {
         <a href="/user/password/reset" target="_blank">
           {t('no_existing_password')}
         </a>
+      </p>
+    )
+  }
+
+  if (cannotChangePassword) {
+    return (
+      <p>
+        <Trans
+          i18nKey="you_cant_add_or_change_password_because_your_group_or_organization_uses_sso"
+          components={[
+            /* eslint-disable-next-line jsx-a11y/anchor-has-content, react/jsx-key */
+            <a href="/user/sso" target="_blank" rel="noreferrer noopener" />,
+          ]}
+        />
       </p>
     )
   }
@@ -58,6 +73,7 @@ function PasswordForm() {
     useAsync<PasswordUpdateResult>()
   const [isNewPasswordValid, setIsNewPasswordValid] = useState(false)
   const [isFormValid, setIsFormValid] = useState(false)
+  const maxLength = passwordStrengthOptions?.length?.max || 72
 
   const handleCurrentPasswordChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -97,7 +113,14 @@ function PasswordForm() {
           newPassword2,
         },
       })
-    ).catch(() => {})
+    )
+      .then(() => {
+        setCurrentPassword('')
+        setNewPassword1('')
+        setNewPassword2('')
+        setIsNewPasswordValid(false)
+      })
+      .catch(() => {})
   }
 
   return (
@@ -115,6 +138,7 @@ function PasswordForm() {
         value={newPassword1}
         handleChange={handleNewPassword1Change}
         minLength={passwordStrengthOptions?.length?.min || 8}
+        maxLength={maxLength}
         autoComplete="new-password"
       />
       <PasswordFormGroup
@@ -122,6 +146,7 @@ function PasswordForm() {
         label={t('confirm_new_password')}
         value={newPassword2}
         handleChange={handleNewPassword2Change}
+        maxLength={maxLength}
         validationMessage={
           newPassword1 !== newPassword2 ? t('doesnt_match') : ''
         }
@@ -191,6 +216,7 @@ type PasswordFormGroupProps = {
   value: string
   handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void
   minLength?: number
+  maxLength?: number
   validationMessage?: string
   autoComplete?: string
 }
@@ -201,6 +227,7 @@ function PasswordFormGroup({
   value,
   handleChange,
   minLength,
+  maxLength,
   validationMessage: parentValidationMessage,
   autoComplete,
 }: PasswordFormGroupProps) {
@@ -236,6 +263,7 @@ function PasswordFormGroup({
         onInvalid={handleInvalid}
         required={hadInteraction}
         minLength={minLength}
+        maxLength={maxLength}
         isInvalid={isInvalid}
       />
       {isInvalid && (

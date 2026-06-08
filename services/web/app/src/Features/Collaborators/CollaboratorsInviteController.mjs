@@ -104,8 +104,13 @@ async function inviteToProject(req, res) {
   const sendingUser = SessionManager.getSessionUser(req.session)
   const sendingUserId = sendingUser._id
   req.logger.addFields({ email, sendingUserId })
+  const normalizedEmail = EmailHelper.parseEmail(email, true)
+  const normalizedSendingUserEmail = EmailHelper.parseEmail(sendingUser.email)
 
-  if (email.toLowerCase() === sendingUser.email.toLowerCase()) {
+  if (
+    normalizedEmail != null &&
+    normalizedEmail === normalizedSendingUserEmail
+  ) {
     logger.debug(
       { projectId, email, sendingUserId },
       'cannot invite yourself to project'
@@ -134,7 +139,7 @@ async function inviteToProject(req, res) {
     return res.json({ invite: null })
   }
 
-  email = EmailHelper.parseEmail(email, true)
+  email = normalizedEmail
   if (email == null || email === '') {
     logger.debug({ projectId, email, sendingUserId }, 'invalid email address')
     return res.status(400).json({ errorReason: 'invalid_email' })

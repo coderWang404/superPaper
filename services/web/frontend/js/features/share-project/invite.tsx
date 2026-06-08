@@ -10,9 +10,16 @@ type InviteProps = {
   email: string
   submitHandler: () => void
   isLoading?: boolean
+  acceptError?: boolean
 }
 
-function Invite({ projectName, email, submitHandler, isLoading }: InviteProps) {
+function Invite({
+  projectName,
+  email,
+  submitHandler,
+  isLoading,
+  acceptError,
+}: InviteProps) {
   const { t } = useTranslation()
   const { appName } = getMeta('ol-ExposedSettings')
 
@@ -30,6 +37,11 @@ function Invite({ projectName, email, submitHandler, isLoading }: InviteProps) {
                 'your_name_and_email_address_will_be_visible_to_project_editors'
               )}
             </div>
+            {acceptError && (
+              <div className="alert alert-danger" role="alert">
+                {t('something_went_wrong_server')}
+              </div>
+            )}
             <OLButton
               variant="primary"
               size="lg"

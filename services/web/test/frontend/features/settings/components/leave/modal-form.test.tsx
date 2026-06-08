@@ -47,6 +47,23 @@ describe('<LeaveModalForm />', function () {
     }
   })
 
+  it('uses account deletion specific input ids', function () {
+    render(
+      <LeaveModalForm
+        setInFlight={() => {}}
+        isFormValid={false}
+        setIsFormValid={() => {}}
+      />
+    )
+
+    expect(screen.getByLabelText('Email').getAttribute('id')).to.equal(
+      'delete-account-email-input'
+    )
+    expect(screen.getByLabelText('Password').getAttribute('id')).to.equal(
+      'delete-account-password-input'
+    )
+  })
+
   describe('submits', async function () {
     let setInFlight: sinon.SinonStub
     let setIsFormValid: sinon.SinonStub
