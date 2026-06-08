@@ -746,20 +746,6 @@ export default function AiAssistantPanel() {
                         : 'ai_assistant_welcome_description'
                     )}
                   </p>
-                  <div className="ai-assistant-suggestions">
-                    {(mode === 'agent'
-                      ? AGENT_PROMPT_SUGGESTION_KEYS
-                      : PROMPT_SUGGESTION_KEYS
-                    ).map(key => (
-                      <button
-                        type="button"
-                        key={key}
-                        onClick={() => setPrompt(t(key))}
-                      >
-                        {t(key)}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>
@@ -773,6 +759,12 @@ export default function AiAssistantPanel() {
           </>
         )}
       </div>
+
+      {selectedProvider && selectedModel && (showChatWelcome || showAgentWelcome) && (
+        <div className="ai-assistant-prompt-suggestion-bar">
+          <PromptSuggestions mode={mode} t={t} onSelect={setPrompt} />
+        </div>
+      )}
 
       {selectedProvider && selectedModel && (
         <form
@@ -794,7 +786,11 @@ export default function AiAssistantPanel() {
             aria-describedby="ai-assistant-prompt-context"
             value={prompt}
             onChange={event => setPrompt(event.target.value)}
-            placeholder={t(mode === 'agent' ? 'ai_assistant_agent_prompt_placeholder' : 'ai_assistant_prompt_placeholder')}
+            placeholder={t(
+              mode === 'agent'
+                ? 'ai_assistant_agent_prompt_placeholder'
+                : 'ai_assistant_prompt_placeholder'
+            )}
             rows={4}
           />
           <div className="ai-assistant-composer-footer">
@@ -815,6 +811,28 @@ export default function AiAssistantPanel() {
           </div>
         </form>
       )}
+    </div>
+  )
+}
+
+function PromptSuggestions({
+  mode,
+  t,
+  onSelect,
+}: {
+  mode: AssistantMode
+  t: TFunction
+  onSelect: (prompt: string) => void
+}) {
+  const keys = mode === 'agent' ? AGENT_PROMPT_SUGGESTION_KEYS : PROMPT_SUGGESTION_KEYS
+
+  return (
+    <div className="ai-assistant-suggestions">
+      {keys.map(key => (
+        <button type="button" key={key} onClick={() => onSelect(t(key))}>
+          {t(key)}
+        </button>
+      ))}
     </div>
   )
 }

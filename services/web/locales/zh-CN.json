@@ -251,6 +251,7 @@
   "ai_assistant_agent_suggestion_compile": "规划如何修复最近一次编译阻塞",
   "ai_assistant_agent_suggestion_improve": "为当前论文规划一次干净修改",
   "ai_assistant_agent_suggestion_review": "检查此项目并提出安全修改计划",
+  "ai_assistant_agent_prompt_placeholder": "描述希望 Agent 规划的项目修改。",
   "ai_assistant_agent_task": "任务",
   "ai_assistant_agent_welcome_description": "先发送规划请求。Agent 会检查项目并写出计划，计划就绪后才能开始执行真实文件修改。",
   "ai_assistant_agent_welcome_title": "先规划，再执行",

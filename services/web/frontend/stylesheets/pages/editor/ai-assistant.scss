@@ -42,6 +42,7 @@
 .ai-assistant-provider-card,
 .ai-assistant-agent-controls,
 .ai-assistant-transcript-toolbar,
+.ai-assistant-prompt-suggestion-bar,
 .ai-assistant-agent-run-summary,
 .ai-assistant-agent-artifact-card,
 .ai-assistant-agent-result,
@@ -1266,6 +1267,25 @@
   .overflow-hidden {
     min-width: 0;
     max-width: 100%;
+  }
+}
+
+.ai-assistant-prompt-suggestion-bar {
+  display: grid;
+  flex: 0 0 auto;
+  gap: var(--spacing-02);
+  max-height: min(30vh, 180px);
+  overflow-y: auto;
+  margin: 0 12px 8px;
+  padding: var(--spacing-03);
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: var(--border-divider-themed);
   }
 }
 

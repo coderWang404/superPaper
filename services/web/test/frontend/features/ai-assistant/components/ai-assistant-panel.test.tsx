@@ -72,6 +72,100 @@ describe('<AiAssistantPanel />', function () {
     expect(zhCnTranslations.ai_assistant_subagents_summary).to.equal(
       '子 Agent：__state__'
     )
+    expect(zhCnTranslations.ai_assistant_agent_prompt_placeholder).to.equal(
+      '描述希望 Agent 规划的项目修改。'
+    )
+  })
+
+  it('keeps empty-state prompt suggestions above the composer', async function () {
+    mockConfig()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+
+    const suggestionBar = document.querySelector('.ai-assistant-prompt-suggestion-bar')
+    const transcript = document.querySelector('.ai-assistant-transcript')
+    const composer = screen.getByTestId('ai-assistant-composer')
+    const panel = document.querySelector('.ai-assistant-panel')
+
+    expect(suggestionBar).not.to.equal(null)
+    expect(transcript).not.to.equal(null)
+    expect(panel).not.to.equal(null)
+    expect(transcript?.contains(suggestionBar as Element)).to.equal(false)
+    expect(
+      document
+        .querySelector('.ai-assistant-panel-body')
+        ?.compareDocumentPosition(suggestionBar as Element)
+    ).to.equal(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(
+      (suggestionBar as Element).compareDocumentPosition(composer)
+    ).to.equal(Node.DOCUMENT_POSITION_FOLLOWING)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Diagnose the latest compile error' })
+    )
+    expect(screen.getByLabelText('Ask about this project')).to.have.property(
+      'value',
+      'Diagnose the latest compile error'
+    )
+  })
+
+  it('localizes Agent prompt suggestions above the composer', async function () {
+    mockConfig()
+    mockAgentConfig()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+
+    const prompt = screen.getByLabelText('Ask about this project')
+    expect(prompt).to.have.property(
+      'placeholder',
+      'Describe the project change for the agent to plan'
+    )
+    expect(prompt).not.to.have.property(
+      'placeholder',
+      'ai_assistant_agent_prompt_placeholder'
+    )
+
+    const suggestionBar = document.querySelector('.ai-assistant-prompt-suggestion-bar')
+    const transcript = document.querySelector('.ai-assistant-transcript')
+    expect(suggestionBar).not.to.equal(null)
+    expect(transcript?.contains(suggestionBar as Element)).to.equal(false)
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Review this project and propose a safe edit plan',
+      })
+    )
+    expect(prompt).to.have.property(
+      'value',
+      'Review this project and propose a safe edit plan'
+    )
+    screen.getByRole('button', { name: 'Plan' })
+  })
+
+  it('removes empty-state prompt suggestions after chat content appears', async function () {
+    mockConfig()
+    mockChatStream()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    expect(document.querySelector('.ai-assistant-prompt-suggestion-bar')).not.to.equal(null)
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Make this easy to read.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText(/Use \\cite\{\} here\./)
+
+    expect(document.querySelector('.ai-assistant-prompt-suggestion-bar')).to.equal(null)
+    expect(
+      document.querySelector('.ai-assistant-transcript')?.getAttribute('data-scroll-owner')
+    ).to.equal('panel')
   })
 
   it('fills the composer from a suggested prompt', async function () {

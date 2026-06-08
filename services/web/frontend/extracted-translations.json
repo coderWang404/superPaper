@@ -257,6 +257,7 @@
   "ai_assistant_agent_suggestion_compile": "Plan how to fix the latest compile blocker",
   "ai_assistant_agent_suggestion_improve": "Plan a clean edit for the current paper",
   "ai_assistant_agent_suggestion_review": "Review this project and propose a safe edit plan",
+  "ai_assistant_agent_prompt_placeholder": "Describe the project change for the agent to plan",
   "ai_assistant_agent_task": "Task",
   "ai_assistant_agent_welcome_description": "Send a Plan request first. The agent inspects the project, writes a plan, then Start Act unlocks for real file edits.",
   "ai_assistant_agent_welcome_title": "Plan first, then Act",
