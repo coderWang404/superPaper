@@ -172,4 +172,43 @@ describe('<LoadMore />', function () {
       page: { size: 5, offset: 20 },
     })
   })
+
+  it('loads every remaining server page when showing all projects', async function () {
+    const firstPage = makePagedProjects(0, 20)
+    const secondPage = makePagedProjects(20, 100)
+    const thirdPage = makePagedProjects(120, 20)
+    mockProjectPageResponses([
+      { projects: firstPage, totalSize: 140 },
+      { projects: secondPage, totalSize: 140 },
+      { projects: thirdPage, totalSize: 140 },
+    ])
+
+    renderWithProjectListContext(
+      <>
+        <ProjectListTable />
+        <LoadMore />
+      </>,
+      { mockProjectApi: false }
+    )
+
+    await screen.findByText('Paged Project 1')
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Show all projects/i })
+    )
+
+    await screen.findByText('Paged Project 140')
+    screen.getByText('Showing 140 out of 140 projects.')
+
+    const requestBodies = getProjectApiRequestBodies()
+    expect(requestBodies[1]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false },
+      page: { size: 100, offset: 20 },
+    })
+    expect(requestBodies[2]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false },
+      page: { size: 20, offset: 120 },
+    })
+  })
 })

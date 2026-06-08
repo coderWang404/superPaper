@@ -263,7 +263,8 @@ export function initAiProviderAdmin(root: HTMLElement): void {
           body: providerInputFromForm(form),
         }
       )
-      state.providers = [response.provider, ...state.providers]
+      const provider = requireProvider(response)
+      state.providers = [provider, ...state.providers]
       state.statusMessage = 'providerAdded'
       state.errorMessage = null
       form.reset()
@@ -287,7 +288,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         csrfToken,
         { method: 'POST' }
       )
-      replaceProvider(response.provider)
+      replaceProvider(requireProvider(response))
       state.statusMessage = 'modelsSynced'
       state.errorMessage = null
     } catch (error) {
@@ -338,8 +339,9 @@ export function initAiProviderAdmin(root: HTMLElement): void {
           body: { enabled: !provider.enabled },
         }
       )
-      replaceProvider(response.provider)
-      state.statusMessage = response.provider.enabled
+      const updatedProvider = requireProvider(response)
+      replaceProvider(updatedProvider)
+      state.statusMessage = updatedProvider.enabled
         ? 'providerEnabled'
         : 'providerDisabled'
       state.errorMessage = null
@@ -372,7 +374,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
           body: { apiKey: apiKeyInput.value },
         }
       )
-      replaceProvider(response.provider)
+      replaceProvider(requireProvider(response))
       state.statusMessage = 'apiKeyReplaced'
       state.errorMessage = null
       state.expandedKeyProviderId = null
@@ -415,6 +417,13 @@ export function initAiProviderAdmin(root: HTMLElement): void {
     state.providers = state.providers.map(existingProvider =>
       existingProvider.id === provider.id ? provider : existingProvider
     )
+  }
+
+  function requireProvider(response: ProviderResponse) {
+    if (!response.provider?.id) {
+      throw new AiProviderAdminRequestError(t('requestFailed'))
+    }
+    return response.provider
   }
 
   function showSafeError(error?: unknown) {

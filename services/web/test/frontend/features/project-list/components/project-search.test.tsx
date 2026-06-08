@@ -38,6 +38,24 @@ function mockProjectPageResponses(
   })
 }
 
+function deferredProjectPage(projects: typeof projectsData, totalSize: number) {
+  let resolve!: () => void
+  const waitForResolve = new Promise<void>(innerResolve => {
+    resolve = innerResolve
+  })
+
+  return {
+    resolve,
+    response: async () => {
+      await waitForResolve
+      return new Response(JSON.stringify({ projects, totalSize }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    },
+  }
+}
+
 function getProjectApiRequestBodies() {
   return fetchMock.callHistory
     .calls()
@@ -263,6 +281,59 @@ describe('Project list search form', function () {
       sort: { by: 'lastUpdated', order: 'desc' },
       filters: { archived: false, trashed: false },
       page: { size: 20, offset: 0 },
+    })
+  })
+
+  it('ignores stale search responses when a newer request finishes first', async function () {
+    const initialProjects = [makeSearchProject('first-1', 'Initial Project')]
+    const alphaProjects = [makeSearchProject('alpha-1', 'Alpha Result')]
+    const betaProjects = [makeSearchProject('beta-1', 'Beta Result')]
+    const alphaPage = deferredProjectPage(alphaProjects, 1)
+
+    fetchMock.post('express:/api/project', call => {
+      const body = JSON.parse(call.options.body as string)
+      if (body.filters?.search === 'alpha') {
+        return alphaPage.response()
+      }
+      if (body.filters?.search === 'beta') {
+        return new Response(
+          JSON.stringify({ projects: betaProjects, totalSize: 1 }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      }
+      return new Response(
+        JSON.stringify({ projects: initialProjects, totalSize: 20 }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    })
+
+    renderWithProjectListContext(<SearchHarness />, { mockProjectApi: false })
+
+    await screen.findByText('Initial Project')
+    const input = screen.getByRole('textbox', {
+      name: /search in all projects/i,
+    })
+
+    fireEvent.change(input, { target: { value: 'alpha' } })
+    await waitFor(() => expect(getProjectApiRequestBodies()).to.have.length(2))
+
+    fireEvent.change(input, { target: { value: 'beta' } })
+    await waitFor(() => expect(getProjectApiRequestBodies()).to.have.length(3))
+
+    await screen.findByText('Beta Result')
+
+    alphaPage.resolve()
+    await fetchMock.callHistory.flush(true)
+
+    await waitFor(() => {
+      screen.getByText('Beta Result')
+      expect(screen.queryByText('Alpha Result')).to.equal(null)
     })
   })
 })

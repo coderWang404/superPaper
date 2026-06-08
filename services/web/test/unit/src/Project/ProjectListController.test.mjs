@@ -329,6 +329,7 @@ describe('ProjectListController', function () {
 
   describe('getProjectsJson pagination contract', function () {
     beforeEach(function (ctx) {
+      ctx.res.status = sinon.stub().returns(ctx.res)
       ctx.res.json = sinon.stub()
     })
 
@@ -369,6 +370,74 @@ describe('ProjectListController', function () {
         '3',
         '2',
       ])
+    })
+
+    it('sorts by title before pagination', async function (ctx) {
+      setOwnedProjects(ctx, [
+        buildProject(1, { name: 'Zulu' }),
+        buildProject(2, { name: 'Alpha' }),
+        buildProject(3, { name: 'Mike' }),
+      ])
+      ctx.req.body = {
+        page: { size: 1, offset: 1 },
+        sort: { by: 'title', order: 'asc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(3)
+      expect(response.projects.map(project => project.name)).to.deep.equal([
+        'Mike',
+      ])
+    })
+
+    it('sorts by owner before pagination', async function (ctx) {
+      ctx.allProjects = {
+        owned: [buildProject(3, { name: 'Owned Project' })],
+        readAndWrite: [
+          buildProject(1, { name: 'Shared Henry', owner_ref: 'user-2' }),
+          buildProject(2, { name: 'Shared James', owner_ref: 'user-1' }),
+        ],
+        readOnly: [],
+        tokenReadAndWrite: [],
+        tokenReadOnly: [],
+        review: [],
+      }
+      ctx.ProjectGetter.promises.findAllUsersProjects.resolves(ctx.allProjects)
+      ctx.req.body = {
+        page: { size: 1, offset: 1 },
+        sort: { by: 'owner', order: 'asc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(3)
+      expect(response.projects.map(project => project.name)).to.deep.equal([
+        'Shared James',
+      ])
+    })
+
+    it('returns 400 for malformed pagination request bodies', async function (ctx) {
+      setOwnedProjects(ctx, [buildProject(1)])
+
+      for (const body of [
+        { sort: null },
+        { filters: null },
+        { page: { size: 0, offset: 0 } },
+      ]) {
+        ctx.res.status.resetHistory()
+        ctx.res.json.resetHistory()
+        ctx.req.body = body
+
+        await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+        expect(ctx.res.status).to.have.been.calledWith(400)
+        expect(ctx.res.json.firstCall.args[0]).to.deep.equal({
+          error: 'invalid_project_list_request',
+        })
+      }
     })
 
     it('reports totalSize after search filtering and before pagination', async function (ctx) {

@@ -15,11 +15,17 @@ export function getProjects(
 function normalizeGetProjectsRequest(
   request: Sort | GetProjectsRequestBody
 ): GetProjectsRequestBody {
-  if ('by' in request || 'order' in request) {
+  if (isSortRequest(request)) {
     return { sort: request }
   }
 
   return request
+}
+
+function isSortRequest(
+  request: Sort | GetProjectsRequestBody
+): request is Sort {
+  return 'by' in request || 'order' in request
 }
 
 export function createTag(name: string, color?: string): Promise<Tag> {

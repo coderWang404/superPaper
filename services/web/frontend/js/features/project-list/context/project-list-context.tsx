@@ -40,6 +40,7 @@ import {
 import { debugConsole } from '@/utils/debugging'
 
 const MAX_PROJECT_PER_PAGE = 20
+const MAX_PROJECTS_PER_SERVER_PAGE = 100
 const SEARCH_DEBOUNCE_MS = 300
 
 export type Filter = 'all' | 'owned' | 'shared' | 'archived' | 'trashed'
@@ -84,7 +85,7 @@ export type ProjectListContextValue = {
   setSort: React.Dispatch<React.SetStateAction<Sort>>
   tags: Tag[]
   untaggedProjectsCount: number
-  projectsPerTag: Record<Tag['_id'], Project[]>
+  projectsPerTag: Record<Tag['_id'], { length: number }>
   filter: Filter
   selectFilter: (filter: Filter) => void
   selectedTagId?: string | undefined
@@ -145,6 +146,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   const prevSortRef = useRef<Sort>(sort)
   const didMountRefreshRef = useRef(false)
   const didLoadInitialProjectsRef = useRef(false)
+  const projectRequestGenerationRef = useRef(0)
   const [selectedTagId, setSelectedTagId] = usePersistedState<
     string | undefined
   >('project-list-selected-tag-id', undefined)
@@ -241,6 +243,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   useEffect(() => {
     if (prefetchedProjectsBlob || didLoadInitialProjectsRef.current) return
     didLoadInitialProjectsRef.current = true
+    const requestGeneration = ++projectRequestGenerationRef.current
     setLoadProgress(40)
     runAsync(
       getProjects(
@@ -248,11 +251,17 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       )
     )
       .then(data => {
+        if (requestGeneration !== projectRequestGenerationRef.current) {
+          return
+        }
         setLoadedProjects(data.projects)
         setTotalProjectsCount(data.totalSize)
       })
       .catch(debugConsole.error)
       .finally(() => {
+        if (requestGeneration !== projectRequestGenerationRef.current) {
+          return
+        }
         setLoadProgress(100)
       })
   }, [buildProjectsRequest, prefetchedProjectsBlob, runAsync])
@@ -265,11 +274,15 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       }
     }
 
+    const requestGeneration = ++projectRequestGenerationRef.current
     const timeout = window.setTimeout(() => {
       getProjects(
         buildProjectsRequest({ size: MAX_PROJECT_PER_PAGE, offset: 0 })
       )
         .then(data => {
+          if (requestGeneration !== projectRequestGenerationRef.current) {
+            return
+          }
           setLoadedProjects(data.projects)
           setTotalProjectsCount(data.totalSize)
           setMaxVisibleProjects(MAX_PROJECT_PER_PAGE)
@@ -373,22 +386,43 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
 
   const showAllProjects = useCallback(() => {
     if (loadedProjects.length < totalProjectsCount) {
-      getProjects(
-        buildProjectsRequest({
-          size: hiddenProjectsCount,
-          offset: loadedProjects.length,
-        })
-      )
-        .then(data => {
-          setLoadedProjects(loadedProjects =>
-            uniqBy([...loadedProjects, ...data.projects], 'id')
+      const requestGeneration = projectRequestGenerationRef.current
+      const fetchRemainingProjects = async () => {
+        let offset = loadedProjects.length
+        let totalSize = totalProjectsCount
+        const projectsToAppend: Project[] = []
+
+        while (offset < totalSize) {
+          const pageSize = Math.min(
+            MAX_PROJECTS_PER_SERVER_PAGE,
+            totalSize - offset
           )
-          setTotalProjectsCount(data.totalSize)
-          setMaxVisibleProjects(maxVisibleProjects =>
-            maxVisibleProjects + data.projects.length
+          const data = await getProjects(
+            buildProjectsRequest({
+              size: pageSize,
+              offset,
+            })
           )
-        })
-        .catch(debugConsole.error)
+          if (requestGeneration !== projectRequestGenerationRef.current) {
+            return
+          }
+          projectsToAppend.push(...data.projects)
+          offset += data.projects.length
+          totalSize = data.totalSize
+
+          if (data.projects.length === 0) {
+            break
+          }
+        }
+
+        setLoadedProjects(loadedProjects =>
+          uniqBy([...loadedProjects, ...projectsToAppend], 'id')
+        )
+        setTotalProjectsCount(totalSize)
+        setMaxVisibleProjects(totalSize)
+      }
+
+      fetchRemainingProjects().catch(debugConsole.error)
       return
     }
 
@@ -408,6 +442,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       loadedProjects.length < totalProjectsCount &&
       loadedProjects.length <= maxVisibleProjects
     ) {
+      const requestGeneration = projectRequestGenerationRef.current
       getProjects(
         buildProjectsRequest({
           size: loadMoreCount,
@@ -415,6 +450,9 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
         })
       )
         .then(data => {
+          if (requestGeneration !== projectRequestGenerationRef.current) {
+            return
+          }
           setLoadedProjects(loadedProjects =>
             uniqBy([...loadedProjects, ...data.projects], 'id')
           )
@@ -491,13 +529,16 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   }, [tags, loadedProjects])
 
   const projectsPerTag = useMemo(() => {
-    return tags.reduce<Record<Tag['_id'], Project[]>>((prev, curTag) => {
-      const tagProjects = loadedProjects.filter(p => {
-        return !isArchivedOrTrashed(p) && curTag.project_ids?.includes(p.id)
-      })
-      return { ...prev, [curTag._id]: tagProjects }
-    }, {})
-  }, [tags, loadedProjects])
+    return tags.reduce<Record<Tag['_id'], { length: number }>>(
+      (prev, curTag) => {
+        return {
+          ...prev,
+          [curTag._id]: { length: curTag.project_ids?.length ?? 0 },
+        }
+      },
+      {}
+    )
+  }, [tags])
 
   const selectFilter = useCallback(
     (filter: Filter) => {

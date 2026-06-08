@@ -17,7 +17,7 @@ describe('<TagsList />', function () {
       {
         _id: 'bcd234efg567',
         name: 'Another tag',
-        project_ids: [projectsData[0].id, projectsData[1].id],
+        project_ids: [projectsData[0].id, projectsData[1].id, 'server-page-2'],
       },
     ])
     window.metaAttributesCache.set('ol-ExposedSettings', { isSuperPaper: true })
@@ -54,7 +54,7 @@ describe('<TagsList />', function () {
       name: 'Tag 1 (1)',
     })
     await screen.findByRole('button', {
-      name: 'Another tag (2)',
+      name: 'Another tag (3)',
     })
     await screen.findByRole('button', {
       name: 'Uncategorized (3)',

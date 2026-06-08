@@ -148,7 +148,11 @@ async function projectListPage(req, res, next) {
  * @returns {Promise<void>}
  */
 async function getProjectsJson(req, res) {
-  const { filters, page, sort } = req.body
+  const request = _normalizeGetProjectsRequest(req.body)
+  if (request == null) {
+    return res.status(400).json({ error: 'invalid_project_list_request' })
+  }
+  const { filters, page, sort } = request
   const userId = SessionManager.getLoggedInUserId(req.session)
   const projectsPage = await _getProjects(userId, filters, sort, page)
   res.json(projectsPage)
@@ -184,6 +188,15 @@ async function _getProjects(
     filters,
     userId
   )
+  if (sort.by === 'owner') {
+    const projectsWithUsers = await _injectProjectUsers(filteredProjects)
+    const pagedProjects = _sortAndPaginate(projectsWithUsers, sort, page)
+    return {
+      totalSize: filteredProjects.length,
+      projects: pagedProjects,
+    }
+  }
+
   const pagedProjects = _sortAndPaginate(filteredProjects, sort, page)
 
   const projects = await _injectProjectUsers(pagedProjects)
@@ -191,6 +204,131 @@ async function _getProjects(
   return {
     totalSize: filteredProjects.length,
     projects,
+  }
+}
+
+/**
+ * @param {any} body
+ * @returns {{filters: Filters, sort: Sort, page?: Page} | null}
+ * @private
+ */
+function _normalizeGetProjectsRequest(body) {
+  if (body == null || typeof body !== 'object' || Array.isArray(body)) {
+    return null
+  }
+
+  const sort = _normalizeSort(body.sort)
+  const filters = _normalizeFilters(body.filters)
+  const page = _normalizePageRequest(body.page)
+
+  if (sort == null || filters == null || page === null) {
+    return null
+  }
+
+  return {
+    filters,
+    sort,
+    ...(page === undefined ? {} : { page }),
+  }
+}
+
+/**
+ * @param {any} sort
+ * @returns {Sort | null}
+ * @private
+ */
+function _normalizeSort(sort) {
+  if (sort === undefined) {
+    return { by: 'lastUpdated', order: 'desc' }
+  }
+  if (sort == null || typeof sort !== 'object' || Array.isArray(sort)) {
+    return null
+  }
+  const normalizedSort = {
+    by: sort.by ?? 'lastUpdated',
+    order: sort.order ?? 'desc',
+  }
+  if (
+    !['lastUpdated', 'title', 'owner'].includes(normalizedSort.by) ||
+    !['asc', 'desc'].includes(normalizedSort.order)
+  ) {
+    return null
+  }
+  return normalizedSort
+}
+
+/**
+ * @param {any} filters
+ * @returns {Filters | null}
+ * @private
+ */
+function _normalizeFilters(filters) {
+  if (filters === undefined) {
+    return {}
+  }
+  if (filters == null || typeof filters !== 'object' || Array.isArray(filters)) {
+    return null
+  }
+
+  /** @type {Filters} */
+  const normalizedFilters = {}
+
+  for (const key of [
+    'ownedByUser',
+    'sharedWithUser',
+    'archived',
+    'trashed',
+  ]) {
+    if (filters[key] !== undefined) {
+      if (typeof filters[key] !== 'boolean') {
+        return null
+      }
+      normalizedFilters[key] = filters[key]
+    }
+  }
+
+  if (filters.tag !== undefined) {
+    if (filters.tag !== null && typeof filters.tag !== 'string') {
+      return null
+    }
+    normalizedFilters.tag = filters.tag
+  }
+
+  if (filters.search !== undefined) {
+    if (typeof filters.search !== 'string') {
+      return null
+    }
+    normalizedFilters.search = filters.search
+  }
+
+  return normalizedFilters
+}
+
+/**
+ * @param {any} page
+ * @returns {Page | undefined | null}
+ * @private
+ */
+function _normalizePageRequest(page) {
+  if (page === undefined) {
+    return undefined
+  }
+  if (page == null || typeof page !== 'object' || Array.isArray(page)) {
+    return null
+  }
+  const size = Number(page.size)
+  const offset = Number(page.offset ?? 0)
+  if (
+    !Number.isSafeInteger(size) ||
+    size < 1 ||
+    !Number.isSafeInteger(offset) ||
+    offset < 0
+  ) {
+    return null
+  }
+  return {
+    size,
+    offset,
   }
 }
 
@@ -276,15 +414,9 @@ function _applyFilters(projects, tags, filters, userId) {
  * @private
  */
 function _sortAndPaginate(projects, sort, page) {
-  if (
-    (sort.by && !['lastUpdated', 'title', 'owner'].includes(sort.by)) ||
-    (sort.order && !['asc', 'desc'].includes(sort.order))
-  ) {
-    throw new OError('Invalid sorting criteria', { sort })
-  }
   const sortedProjects = _.orderBy(
     projects,
-    [sort.by || 'lastUpdated'],
+    [_getProjectSortValue(sort.by || 'lastUpdated')],
     [sort.order || 'desc']
   )
   if (page == null) {
@@ -292,6 +424,38 @@ function _sortAndPaginate(projects, sort, page) {
   }
   const { offset, size } = _normalizePage(page)
   return sortedProjects.slice(offset, offset + size)
+}
+
+/**
+ * @param {Sort['by']} sortBy
+ * @returns {(project: FormattedProject | Project) => string | number}
+ * @private
+ */
+function _getProjectSortValue(sortBy) {
+  if (sortBy === 'title') {
+    return project => project.name.toLowerCase()
+  }
+  if (sortBy === 'owner') {
+    return project => _getProjectOwnerSortValue(project)
+  }
+  return project => new Date(project.lastUpdated).getTime()
+}
+
+/**
+ * @param {FormattedProject | Project} project
+ * @returns {string}
+ * @private
+ */
+function _getProjectOwnerSortValue(project) {
+  if (project.accessLevel === 'owner') {
+    return 'You'
+  }
+  if (project.owner == null) {
+    return ''
+  }
+  const owner = project.owner
+  const ownerName = [owner.firstName, owner.lastName].filter(Boolean).join(' ')
+  return ownerName || owner.email || ''
 }
 
 /**
