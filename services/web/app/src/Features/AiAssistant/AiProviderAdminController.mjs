@@ -10,6 +10,8 @@ import {
   updateProvider,
 } from './AiProviderManager.mjs'
 
+const PROVIDER_SECRET_FIELDS = new Set(['apiKey', 'encryptedApiKey'])
+
 function validationFieldsFromIssues(issues = []) {
   return issues
     .map(issue => {
@@ -25,11 +27,32 @@ function validationFieldsFromIssues(issues = []) {
     .filter(Boolean)
 }
 
+function sanitizeValidationField(field) {
+  if (!field || typeof field !== 'object') {
+    return null
+  }
+  const fieldName =
+    typeof field.field === 'string' ? field.field : String(field.field ?? '')
+  if (!fieldName) {
+    return null
+  }
+  const message =
+    typeof field.message === 'string' && field.message
+      ? field.message
+      : 'Invalid AI provider input'
+  return {
+    field: fieldName,
+    message,
+  }
+}
+
 function validationFieldsFromError(err) {
   if (err instanceof ZodError || err.name === 'ZodError') {
     return validationFieldsFromIssues(err.issues)
   }
-  return Array.isArray(err.fields) ? err.fields : []
+  return Array.isArray(err.fields)
+    ? err.fields.map(sanitizeValidationField).filter(Boolean)
+    : []
 }
 
 function sendValidationError(err, res) {
@@ -55,6 +78,20 @@ function sendProviderError(res) {
   })
 }
 
+function scrubProviderSecrets(value) {
+  if (Array.isArray(value)) {
+    return value.map(scrubProviderSecrets)
+  }
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !PROVIDER_SECRET_FIELDS.has(key))
+      .map(([key, nestedValue]) => [key, scrubProviderSecrets(nestedValue)])
+  )
+}
+
 function handleControllerError(err, res, next) {
   if (err instanceof ZodError || err.name === 'ZodError') {
     return sendValidationError(err, res)
@@ -73,7 +110,7 @@ function handleControllerError(err, res, next) {
 
 async function list(req, res, next) {
   try {
-    res.json({ providers: await listProviders() })
+    res.json(scrubProviderSecrets({ providers: await listProviders() }))
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -81,7 +118,9 @@ async function list(req, res, next) {
 
 async function create(req, res, next) {
   try {
-    res.status(201).json({ provider: await createProvider(req.body) })
+    res
+      .status(201)
+      .json(scrubProviderSecrets({ provider: await createProvider(req.body) }))
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -93,7 +132,7 @@ async function update(req, res, next) {
     if (!provider) {
       return res.sendStatus(404)
     }
-    res.json({ provider })
+    res.json(scrubProviderSecrets({ provider }))
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -117,7 +156,7 @@ async function syncModelsController(req, res, next) {
     if (!provider) {
       return res.sendStatus(404)
     }
-    res.json({ provider })
+    res.json(scrubProviderSecrets({ provider }))
   } catch (err) {
     handleControllerError(err, res, next)
   }
@@ -129,7 +168,7 @@ async function testProviderController(req, res, next) {
     if (!result) {
       return res.sendStatus(404)
     }
-    res.json(result)
+    res.json(scrubProviderSecrets(result))
   } catch (err) {
     handleControllerError(err, res, next)
   }
