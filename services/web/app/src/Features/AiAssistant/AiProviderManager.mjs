@@ -77,8 +77,11 @@ export async function syncModels(providerId) {
 
 export async function testProvider(providerId) {
   const provider = await syncModels(providerId)
+  if (!provider) {
+    return null
+  }
   return {
-    ok: Boolean(provider),
+    ok: true,
     provider,
   }
 }

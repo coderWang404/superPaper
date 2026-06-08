@@ -1,5 +1,6 @@
 import { ZodError } from 'zod'
 import { AiProviderError } from './AiProviderClient.mjs'
+import { AiProviderValidationError } from './AiProviderValidation.mjs'
 import {
   createProvider,
   deleteProvider,
@@ -9,12 +10,39 @@ import {
   updateProvider,
 } from './AiProviderManager.mjs'
 
-function sendValidationError(res) {
+function validationFieldsFromIssues(issues = []) {
+  return issues
+    .map(issue => {
+      const field = issue.path?.join('.')
+      if (!field || !issue.message) {
+        return null
+      }
+      return {
+        field,
+        message: issue.message,
+      }
+    })
+    .filter(Boolean)
+}
+
+function validationFieldsFromError(err) {
+  if (err instanceof ZodError || err.name === 'ZodError') {
+    return validationFieldsFromIssues(err.issues)
+  }
+  return Array.isArray(err.fields) ? err.fields : []
+}
+
+function sendValidationError(err, res) {
+  const error = {
+    code: 'VALIDATION_ERROR',
+    message: 'Invalid AI provider input',
+  }
+  const fields = validationFieldsFromError(err)
+  if (fields.length > 0) {
+    error.fields = fields
+  }
   res.status(422).json({
-    error: {
-      code: 'VALIDATION_ERROR',
-      message: 'Invalid AI provider input',
-    },
+    error,
   })
 }
 
@@ -29,7 +57,13 @@ function sendProviderError(res) {
 
 function handleControllerError(err, res, next) {
   if (err instanceof ZodError || err.name === 'ZodError') {
-    return sendValidationError(res)
+    return sendValidationError(err, res)
+  }
+  if (
+    err instanceof AiProviderValidationError ||
+    err.name === 'AiProviderValidationError'
+  ) {
+    return sendValidationError(err, res)
   }
   if (err instanceof AiProviderError || err.name === 'AiProviderError') {
     return sendProviderError(res)
@@ -91,7 +125,11 @@ async function syncModelsController(req, res, next) {
 
 async function testProviderController(req, res, next) {
   try {
-    res.json(await testProvider(req.params.providerId))
+    const result = await testProvider(req.params.providerId)
+    if (!result) {
+      return res.sendStatus(404)
+    }
+    res.json(result)
   } catch (err) {
     handleControllerError(err, res, next)
   }

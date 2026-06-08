@@ -52,6 +52,22 @@ describe('AiProviderValidation', function () {
     ).to.throw('baseUrl must use https')
   })
 
+  it('adds field summaries to AI provider validation errors', function (ctx) {
+    try {
+      ctx.Validation.assertHttpsBaseURL('http://localhost:11434', 'baseURL')
+      throw new Error('expected assertHttpsBaseURL to throw')
+    } catch (error) {
+      expect(error).to.be.instanceOf(ctx.Validation.AiProviderValidationError)
+      expect(error).to.have.property('message', 'baseURL must use https')
+      expect(error).to.have.property('fields').that.deep.equals([
+        {
+          field: 'baseURL',
+          message: 'baseURL must use https',
+        },
+      ])
+    }
+  })
+
   it('extracts model IDs from OpenAI-compatible model list responses', function (ctx) {
     const models = ctx.Validation.parseOpenAIModelsResponse({
       object: 'list',

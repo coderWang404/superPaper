@@ -286,6 +286,75 @@ describe('ai-provider-admin', function () {
     screen.getByText('AI provider request failed')
   })
 
+  it('shows the safe API error message from the response body', async function () {
+    fetchMock.get('/admin/ai/providers', { providers: [] })
+    fetchMock.post('/admin/ai/providers', {
+      status: 422,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid AI provider input',
+          fields: [
+            {
+              field: 'baseURL',
+              message: 'baseURL must use https',
+            },
+          ],
+        },
+      },
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('No AI providers configured')
+    fireEvent.input(screen.getByLabelText('Provider name'), {
+      target: { value: 'Provider One' },
+    })
+    fireEvent.input(screen.getByLabelText('Base URL'), {
+      target: { value: 'http://unsafe.example.test/private' },
+    })
+    fireEvent.input(screen.getByLabelText('API key'), {
+      target: { value: fakeProviderKey },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: 'Add AI provider' }))
+
+    await screen.findByRole('alert')
+    screen.getByText('Invalid AI provider input: baseURL must use https')
+    expect(document.body.textContent).not.to.contain(fakeProviderKey)
+    expect(document.body.textContent).not.to.contain(
+      'http://unsafe.example.test/private'
+    )
+  })
+
+  it('ignores provider test responses without a provider payload', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture({ healthStatus: 'unknown' })],
+    })
+    fetchMock.post('/admin/ai/providers/provider-one/test', {
+      ok: false,
+      provider: null,
+    })
+    const uncaughtErrors: Error[] = []
+    const handleError = (event: ErrorEvent) => {
+      uncaughtErrors.push(event.error || new Error(event.message))
+      event.preventDefault()
+    }
+    window.addEventListener('error', handleError)
+
+    try {
+      initAiProviderAdmin(renderRoot())
+
+      await screen.findByText('Provider One')
+      fireEvent.click(screen.getByRole('button', { name: 'Test' }))
+
+      await screen.findByText('Provider test failed')
+      screen.getByText('unknown')
+      expect(uncaughtErrors).to.deep.equal([])
+    } finally {
+      window.removeEventListener('error', handleError)
+    }
+  })
+
   it('uses the system language for provider administration copy', async function () {
     window.metaAttributesCache.set('ol-i18n', { currentLangCode: 'zh-CN' })
     fetchMock.get('/admin/ai/providers', {

@@ -25,7 +25,7 @@ type ProviderState = {
   activeAction: string | null
   expandedKeyProviderId: string | null
   statusMessage: TranslationKey | null
-  errorMessage: TranslationKey | null
+  errorMessage: string | null
 }
 
 type ProviderListResponse = {
@@ -33,7 +33,7 @@ type ProviderListResponse = {
 }
 
 type ProviderResponse = {
-  provider: AiProvider
+  provider?: AiProvider | null
 }
 
 type AdminLanguage = 'en' | 'zh'
@@ -208,6 +208,13 @@ const TRANSLATIONS: Record<AdminLanguage, Record<TranslationKey, string>> = {
 
 const SAFE_ERROR_MESSAGE = 'AI provider request failed'
 
+class AiProviderAdminRequestError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AiProviderAdminRequestError'
+  }
+}
+
 export function initAiProviderAdmin(root: HTMLElement): void {
   const csrfToken = root.dataset.csrfToken || ''
   const language = getAdminLanguage()
@@ -238,7 +245,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       state.loading = false
       render()
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     }
   }
 
@@ -264,7 +271,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       apiKeyInput.value = ''
       render()
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     }
   }
 
@@ -284,7 +291,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       state.statusMessage = 'modelsSynced'
       state.errorMessage = null
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     } finally {
       state.activeAction = null
       render()
@@ -309,7 +316,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         : 'providerTestFailed'
       state.errorMessage = null
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     } finally {
       state.activeAction = null
       render()
@@ -337,7 +344,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
         : 'providerDisabled'
       state.errorMessage = null
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     } finally {
       state.activeAction = null
       render()
@@ -372,7 +379,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       apiKeyInput.value = ''
       render()
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     } finally {
       state.activeAction = null
       render()
@@ -397,20 +404,23 @@ export function initAiProviderAdmin(root: HTMLElement): void {
       state.errorMessage = null
       render()
     } catch (error) {
-      showSafeError()
+      showSafeError(error)
     }
   }
 
-  function replaceProvider(provider: AiProvider) {
+  function replaceProvider(provider?: AiProvider | null) {
+    if (!provider?.id) {
+      return
+    }
     state.providers = state.providers.map(existingProvider =>
       existingProvider.id === provider.id ? provider : existingProvider
     )
   }
 
-  function showSafeError() {
+  function showSafeError(error?: unknown) {
     state.loading = false
     state.activeAction = null
-    state.errorMessage = 'requestFailed'
+    state.errorMessage = safeUserMessageFromError(error, t('requestFailed'))
     state.statusMessage = null
     render()
   }
@@ -430,7 +440,7 @@ export function initAiProviderAdmin(root: HTMLElement): void {
           ${
             state.errorMessage
               ? `<div class="alert alert-danger" role="alert">${escapeHtml(
-                  t(state.errorMessage)
+                  state.errorMessage
                 )}</div>`
               : ''
           }
@@ -598,7 +608,9 @@ async function requestJSON<T>(
   })
 
   if (!response.ok) {
-    throw new Error(SAFE_ERROR_MESSAGE)
+    throw new AiProviderAdminRequestError(
+      await safeMessageFromErrorResponse(response)
+    )
   }
 
   if (response.status === 204) {
@@ -606,6 +618,54 @@ async function requestJSON<T>(
   }
 
   return response.json()
+}
+
+async function safeMessageFromErrorResponse(response: Response) {
+  try {
+    return safeMessageFromErrorBody(await response.json()) || SAFE_ERROR_MESSAGE
+  } catch {
+    return SAFE_ERROR_MESSAGE
+  }
+}
+
+function safeMessageFromErrorBody(body: unknown) {
+  if (!body || typeof body !== 'object') {
+    return null
+  }
+  const errorBody = 'error' in body ? body.error : body
+  if (!errorBody || typeof errorBody !== 'object') {
+    return null
+  }
+  const message =
+    'message' in errorBody && typeof errorBody.message === 'string'
+      ? errorBody.message
+      : ''
+  const fields =
+    'fields' in errorBody && Array.isArray(errorBody.fields)
+      ? errorBody.fields
+      : []
+  const fieldMessages = fields
+    .map(field =>
+      field &&
+      typeof field === 'object' &&
+      'message' in field &&
+      typeof field.message === 'string'
+        ? field.message
+        : null
+    )
+    .filter(Boolean)
+
+  if (message && fieldMessages.length > 0) {
+    return `${message}: ${fieldMessages.join('; ')}`
+  }
+  return message || fieldMessages.join('; ') || null
+}
+
+function safeUserMessageFromError(error: unknown, fallback: string) {
+  if (error instanceof AiProviderAdminRequestError && error.message) {
+    return error.message
+  }
+  return fallback
 }
 
 function renderProviderOverview(

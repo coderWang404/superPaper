@@ -73,8 +73,19 @@ describe('AiProviderAdminController', function () {
   it('returns validation errors without leaking input secrets', async function (ctx) {
     const err = new Error('invalid input')
     err.name = 'ZodError'
+    err.issues = [
+      {
+        path: ['baseURL'],
+        message: 'baseURL must use https',
+      },
+      {
+        path: ['apiKey'],
+        message: 'Required',
+      },
+    ]
     ctx.Manager.createProvider.rejects(err)
     ctx.req.body = {
+      baseURL: 'http://unsafe.example.test/sensitive-path',
       apiKey: 'test-key',
     }
 
@@ -85,9 +96,75 @@ describe('AiProviderAdminController', function () {
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Invalid AI provider input',
+        fields: [
+          {
+            field: 'baseURL',
+            message: 'baseURL must use https',
+          },
+          {
+            field: 'apiKey',
+            message: 'Required',
+          },
+        ],
       },
     })
     expect(ctx.res.body).not.to.include('test-key')
+    expect(ctx.res.body).not.to.include('unsafe.example.test')
+  })
+
+  it('maps AI provider validation errors to 422 without leaking secrets', async function (ctx) {
+    const err = new Error('baseURL must use https')
+    err.name = 'AiProviderValidationError'
+    err.fields = [
+      {
+        field: 'baseURL',
+        message: 'baseURL must use https',
+      },
+    ]
+    ctx.Manager.syncModels.rejects(err)
+    ctx.req.params.providerId = 'provider-id'
+    ctx.req.body = {
+      baseURL: 'http://unsafe.example.test/private',
+      apiKey: 'test-key',
+      encryptedApiKey: 'encrypted-test-key',
+    }
+
+    await ctx.Controller.syncModels(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.res.statusCode).to.equal(422)
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid AI provider input',
+        fields: [
+          {
+            field: 'baseURL',
+            message: 'baseURL must use https',
+          },
+        ],
+      },
+    })
+    expect(ctx.res.body).not.to.include('test-key')
+    expect(ctx.res.body).not.to.include('encrypted-test-key')
+    expect(ctx.res.body).not.to.include('unsafe.example.test')
+  })
+
+  it('maps provider client errors to 502 without leaking secrets', async function (ctx) {
+    const err = new Error('upstream saw sk-provider-secret')
+    err.name = 'AiProviderError'
+    ctx.Manager.syncModels.rejects(err)
+    ctx.req.params.providerId = 'provider-id'
+
+    await ctx.Controller.syncModels(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.res.statusCode).to.equal(502)
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      error: {
+        code: 'PROVIDER_ERROR',
+        message: 'AI provider request failed',
+      },
+    })
+    expect(ctx.res.body).not.to.include('sk-provider-secret')
   })
 
   it('syncs provider models', async function (ctx) {
@@ -111,5 +188,16 @@ describe('AiProviderAdminController', function () {
       ok: true,
       provider: ctx.provider,
     })
+  })
+
+  it('returns 404 when testing a missing provider', async function (ctx) {
+    ctx.Manager.testProvider.resolves(null)
+    ctx.req.params.providerId = 'missing-provider'
+
+    await ctx.Controller.testProvider(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.Manager.testProvider).to.have.been.calledWith('missing-provider')
+    expect(ctx.res.statusCode).to.equal(404)
+    expect(ctx.res.body).to.equal(undefined)
   })
 })

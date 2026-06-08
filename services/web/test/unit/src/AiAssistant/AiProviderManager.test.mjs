@@ -125,4 +125,16 @@ describe('AiProviderManager', function () {
     expect(ctx.decryptApiKey).not.to.have.been.called
     expect(ctx.syncOpenAICompatibleModels).not.to.have.been.called
   })
+
+  it('returns null when testing a missing provider', async function (ctx) {
+    ctx.AiProvider.findById = sinon.stub().returns({
+      exec: sinon.stub().resolves(null),
+    })
+
+    const result = await ctx.Manager.testProvider('missing-provider')
+
+    expect(result).to.equal(null)
+    expect(ctx.decryptApiKey).not.to.have.been.called
+    expect(ctx.syncOpenAICompatibleModels).not.to.have.been.called
+  })
 })

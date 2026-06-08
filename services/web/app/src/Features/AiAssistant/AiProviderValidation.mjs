@@ -10,9 +10,10 @@ const ModelInputSchema = z.object({
 })
 
 export class AiProviderValidationError extends Error {
-  constructor(message) {
+  constructor(message, fields = []) {
     super(message)
     this.name = 'AiProviderValidationError'
+    this.fields = fields
   }
 }
 
@@ -33,7 +34,13 @@ function httpsURLSchema(fieldName) {
 
 export function assertHttpsBaseURL(baseURL, fieldName = 'baseURL') {
   if (!isHttpsURL(baseURL)) {
-    throw new AiProviderValidationError(`${fieldName} must use https`)
+    const message = `${fieldName} must use https`
+    throw new AiProviderValidationError(message, [
+      {
+        field: fieldName,
+        message,
+      },
+    ])
   }
 }
 
