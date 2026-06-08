@@ -56,8 +56,33 @@ function _sendSecurityAlertPasswordChanged(user) {
     })
 }
 
+const passwordUpdateRequiredFields = [
+  'currentPassword',
+  'newPassword1',
+  'newPassword2',
+]
+
+function validatePasswordUpdateRequest(req, res) {
+  const body = req.body || {}
+  for (const field of passwordUpdateRequiredFields) {
+    if (typeof body[field] !== 'string' || body[field] === '') {
+      HttpErrorHandler.badRequest(
+        req,
+        res,
+        req.i18n.translate('this_field_is_required'),
+        { field }
+      )
+      return false
+    }
+  }
+  return true
+}
+
 async function changePassword(req, res, next) {
   metrics.inc('user.password-change')
+  if (!validatePasswordUpdateRequest(req, res)) {
+    return
+  }
   const userId = SessionManager.getLoggedInUserId(req.session)
 
   const { user } = await AuthenticationManager.promises.authenticate(

@@ -837,16 +837,22 @@ describe('UserController', function () {
   })
 
   describe('changePassword', function () {
+    function validPasswordRequest(overrides = {}) {
+      return {
+        currentPassword: 'oldpasshere',
+        newPassword1: 'newpass',
+        newPassword2: 'newpass',
+        ...overrides,
+      }
+    }
+
     describe('success', function () {
       beforeEach(function (ctx) {
         ctx.AuthenticationManager.promises.authenticate.resolves({
           user: ctx.user,
         })
         ctx.AuthenticationManager.promises.setUserPassword.resolves()
-        ctx.req.body = {
-          newPassword1: 'newpass',
-          newPassword2: 'newpass',
-        }
+        ctx.req.body = validPasswordRequest()
       })
       it('should set the new password if they do match', function (ctx) {
         return new Promise(resolve => {
@@ -914,7 +920,7 @@ describe('UserController', function () {
       it('should check the old password is the current one at the moment', function (ctx) {
         return new Promise(resolve => {
           ctx.AuthenticationManager.promises.authenticate.resolves({})
-          ctx.req.body = { currentPassword: 'oldpasshere' }
+          ctx.req.body = validPasswordRequest()
           ctx.HttpErrorHandler.badRequest.callsFake(() => {
             expect(ctx.HttpErrorHandler.badRequest).to.have.been.calledWith(
               ctx.req,
@@ -939,10 +945,10 @@ describe('UserController', function () {
           ctx.AuthenticationManager.promises.authenticate.resolves({
             user: ctx.user,
           })
-          ctx.req.body = {
+          ctx.req.body = validPasswordRequest({
             newPassword1: '1',
             newPassword2: '2',
-          }
+          })
           ctx.HttpErrorHandler.badRequest.callsFake(() => {
             expect(ctx.HttpErrorHandler.badRequest).to.have.been.calledWith(
               ctx.req,
@@ -976,10 +982,7 @@ describe('UserController', function () {
           ctx.AuthenticationManager.promises.authenticate.resolves({
             user: ctx.user,
           })
-          ctx.req.body = {
-            newPassword1: 'newpass',
-            newPassword2: 'newpass',
-          }
+          ctx.req.body = validPasswordRequest()
           ctx.res.json.callsFake(result => {
             expect(result.message).to.deep.equal(message)
             ctx.AuthenticationManager.promises.setUserPassword.callCount.should.equal(
@@ -999,10 +1002,7 @@ describe('UserController', function () {
               user: ctx.user,
             })
             ctx.AuthenticationManager.promises.setUserPassword.resolves()
-            ctx.req.body = {
-              newPassword1: 'newpass',
-              newPassword2: 'newpass',
-            }
+            ctx.req.body = validPasswordRequest()
 
             ctx.UserController.changePassword(ctx.req, ctx.res, error => {
               expect(error).to.be.instanceof(Error)
@@ -1022,10 +1022,7 @@ describe('UserController', function () {
             user: ctx.user,
           })
           ctx.AuthenticationManager.promises.setUserPassword.resolves()
-          ctx.req.body = {
-            newPassword1: 'newpass',
-            newPassword2: 'newpass',
-          }
+          ctx.req.body = validPasswordRequest()
           ctx.EmailHandler.promises.sendEmail.rejects(anError)
         })
 
@@ -1047,6 +1044,44 @@ describe('UserController', function () {
           })
         })
       })
+
+      for (const field of [
+        'currentPassword',
+        'newPassword1',
+        'newPassword2',
+      ]) {
+        for (const value of [undefined, '']) {
+          const description =
+            value === undefined ? `missing ${field}` : `empty ${field}`
+
+          it(`should return a validation error for ${description}`, async function (ctx) {
+            ctx.req.body = validPasswordRequest()
+            if (value === undefined) {
+              delete ctx.req.body[field]
+            } else {
+              ctx.req.body[field] = value
+            }
+            ctx.AuthenticationManager.promises.authenticate.rejects(
+              new Error('authenticate should not be called')
+            )
+
+            await ctx.UserController.changePassword(ctx.req, ctx.res, ctx.next)
+
+            expect(ctx.HttpErrorHandler.badRequest).to.have.been.calledWith(
+              ctx.req,
+              ctx.res,
+              'this_field_is_required',
+              { field }
+            )
+            expect(
+              ctx.AuthenticationManager.promises.authenticate.callCount
+            ).to.equal(0)
+            expect(
+              ctx.AuthenticationManager.promises.setUserPassword.callCount
+            ).to.equal(0)
+          })
+        }
+      }
     })
   })
 })

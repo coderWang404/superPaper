@@ -45,25 +45,55 @@ describe('PasswordUpdate', function () {
     })
   })
   describe('errors', function () {
-    describe('missing current password', function () {
-      beforeEach(async function () {
-        response = await userHelper.fetch('/user/password/update', {
-          method: 'POST',
-          body: new URLSearchParams({
-            newPassword1: 'new-password',
-            newPassword2: 'new-password',
-          }),
+    for (const field of [
+      'currentPassword',
+      'newPassword1',
+      'newPassword2',
+    ]) {
+      for (const value of [undefined, '']) {
+        const description =
+          value === undefined ? `missing ${field}` : `empty ${field}`
+
+        describe(description, function () {
+          beforeEach(async function () {
+            const body = {
+              currentPassword: password,
+              newPassword1: 'new-password',
+              newPassword2: 'new-password',
+            }
+            if (value === undefined) {
+              delete body[field]
+            } else {
+              body[field] = value
+            }
+
+            response = await userHelper.fetch('/user/password/update', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+              },
+              body: JSON.stringify(body),
+            })
+            userHelper = await UserHelper.getUser({ email })
+          })
+          it('should return 400', async function () {
+            expect(response.status).to.equal(400)
+          })
+          it('should return a validation error message', async function () {
+            const body = await response.json()
+            expect(body).to.deep.equal({
+              message: 'This field is required',
+              field,
+            })
+          })
+          it('should not update audit log', async function () {
+            const auditLog = userHelper.getAuditLogWithoutNoise()
+            expect(auditLog).to.deep.equal([])
+          })
         })
-        userHelper = await UserHelper.getUser({ email })
-      })
-      it('should return 500', async function () {
-        expect(response.status).to.equal(500)
-      })
-      it('should not update audit log', async function () {
-        const auditLog = userHelper.getAuditLogWithoutNoise()
-        expect(auditLog).to.deep.equal([])
-      })
-    })
+      }
+    }
     describe('wrong current password', function () {
       beforeEach(async function () {
         response = await userHelper.fetch('/user/password/update', {

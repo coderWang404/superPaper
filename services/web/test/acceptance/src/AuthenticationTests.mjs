@@ -14,6 +14,32 @@ describe('Authentication', function () {
   })
 
   describe('CSRF regeneration on login', function () {
+    it('should rotate the session cookie on login', function (done) {
+      user.logout(err => {
+        if (err) {
+          return done(err)
+        }
+        user.getCsrfToken(err => {
+          if (err) {
+            return done(err)
+          }
+          const preLoginSessionCookie = user.sessionCookie({ raw: true })?.value
+          expect(preLoginSessionCookie).to.be.a('string')
+          user.login(err => {
+            if (err) {
+              return done(err)
+            }
+            const postLoginSessionCookie = user.sessionCookie({
+              raw: true,
+            })?.value
+            expect(postLoginSessionCookie).to.be.a('string')
+            expect(postLoginSessionCookie).to.not.equal(preLoginSessionCookie)
+            done()
+          })
+        })
+      })
+    })
+
     it('should prevent use of csrf token from before login', function (done) {
       user.logout(err => {
         if (err) {
