@@ -419,6 +419,9 @@ describe('ai-provider-admin', function () {
     await screen.findByRole('alert')
     screen.getByText('Invalid AI provider input: baseURL must use https')
     expect(document.body.textContent).not.to.contain(fakeProviderKey)
+    expect((screen.getByLabelText('API key') as HTMLInputElement).value).to.equal(
+      ''
+    )
     expect(document.body.textContent).not.to.contain(
       'http://unsafe.example.test/private'
     )
@@ -455,6 +458,29 @@ describe('ai-provider-admin', function () {
     await screen.findByRole('alert')
     screen.getByText('Invalid AI provider input: API key is invalid')
     expect(document.body.textContent).not.to.contain(fakeProviderKey)
+    expect(
+      (screen.getByLabelText('New API key for Provider One') as HTMLInputElement)
+        .value
+    ).to.equal('')
+  })
+
+  it('strips unexpected provider secret fields before storing client state', async function () {
+    const { initialProviderAdminState, providerAdminReducer } = await import(
+      '../../../../frontend/js/features/ai-provider-admin/state'
+    )
+
+    const state = providerAdminReducer(initialProviderAdminState, {
+      type: 'load:success',
+      providers: [
+        providerFixture({
+          apiKey: fakeProviderKey,
+          encryptedApiKey: 'encrypted-provider-key-value',
+        }),
+      ],
+    })
+
+    expect(JSON.stringify(state.providers)).not.to.contain(fakeProviderKey)
+    expect(JSON.stringify(state.providers)).not.to.contain('encryptedApiKey')
   })
 
   it('ignores provider test responses without a provider payload', async function () {

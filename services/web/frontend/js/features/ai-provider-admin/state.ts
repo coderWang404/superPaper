@@ -47,7 +47,9 @@ export function providerAdminReducer(
     case 'load:success':
       return {
         ...state,
-        providers: action.providers,
+        providers: action.providers
+          .map(sanitizeProvider)
+          .filter((provider): provider is AiProvider => Boolean(provider)),
         loading: false,
         error: null,
       }
@@ -63,19 +65,31 @@ export function providerAdminReducer(
       if (!action.provider?.id) {
         return state
       }
-      return {
-        ...state,
-        providers: [action.provider, ...state.providers],
+      {
+        const provider = sanitizeProvider(action.provider)
+        if (!provider) {
+          return state
+        }
+        return {
+          ...state,
+          providers: [provider, ...state.providers],
+        }
       }
     case 'provider:replace':
       if (!action.provider?.id) {
         return state
       }
-      return {
-        ...state,
-        providers: state.providers.map(provider =>
-          provider.id === action.provider?.id ? action.provider : provider
-        ),
+      {
+        const provider = sanitizeProvider(action.provider)
+        if (!provider) {
+          return state
+        }
+        return {
+          ...state,
+          providers: state.providers.map(existingProvider =>
+            existingProvider.id === provider.id ? provider : existingProvider
+          ),
+        }
       }
     case 'provider:remove':
       return {
@@ -124,4 +138,19 @@ export function providerAdminReducer(
     default:
       return state
   }
+}
+
+function sanitizeProvider(provider?: AiProvider | null) {
+  if (!provider?.id) {
+    return null
+  }
+  const {
+    apiKey: _apiKey,
+    encryptedApiKey: _encryptedApiKey,
+    ...safeProvider
+  } = provider as AiProvider & {
+    apiKey?: unknown
+    encryptedApiKey?: unknown
+  }
+  return safeProvider
 }

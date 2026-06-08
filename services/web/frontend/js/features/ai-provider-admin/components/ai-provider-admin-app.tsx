@@ -78,15 +78,16 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = event.currentTarget
+    const input = providerInputFromForm(form)
+    getFormInput(form, 'apiKey').value = ''
 
     try {
-      const response = await createProvider(csrfToken, providerInputFromForm(form))
+      const response = await createProvider(csrfToken, input)
       const provider = requireProvider(response, t('requestFailed'))
       dispatch({ type: 'provider:add', provider })
       dispatch({ type: 'feedback:status', statusMessage: 'providerAdded' })
       form.reset()
       getFormInput(form, 'enabled').checked = true
-      getFormInput(form, 'apiKey').value = ''
     } catch (error) {
       showError(error)
     }
@@ -157,9 +158,11 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
     event.preventDefault()
     const form = event.currentTarget
     const apiKeyInput = getFormInput(form, 'replacementApiKey')
-    if (!apiKeyInput.value.trim()) {
+    const apiKey = apiKeyInput.value
+    if (!apiKey.trim()) {
       return
     }
+    apiKeyInput.value = ''
 
     dispatch({
       type: 'action:start',
@@ -168,7 +171,7 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
 
     try {
       const response = await updateProvider(csrfToken, providerId, {
-        apiKey: apiKeyInput.value,
+        apiKey,
       })
       dispatch({
         type: 'provider:replace',
@@ -176,7 +179,6 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
       })
       dispatch({ type: 'feedback:status', statusMessage: 'apiKeyReplaced' })
       dispatch({ type: 'replace-key:collapse' })
-      apiKeyInput.value = ''
     } catch (error) {
       showError(error)
     } finally {
