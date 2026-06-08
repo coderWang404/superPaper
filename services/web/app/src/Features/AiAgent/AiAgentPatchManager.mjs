@@ -101,6 +101,8 @@ export async function createPatch({
     summary: String(summary || '').slice(0, 1000),
     riskLevel: riskLevelForOperations(normalizedOperations),
   })
+  patch.operations = materializePatchOperations(patch)
+  await patch.save()
 
   return publicPatch(patch)
 }
@@ -332,6 +334,7 @@ export async function rejectPatch({ projectId, userId, patchId }) {
 }
 
 export function publicPatch(patch) {
+  const operations = materializePatchOperations(patch)
   return {
     id: patch._id?.toString?.() || patch.id,
     sessionId: patch.sessionId?.toString?.() || patch.sessionId,
@@ -340,7 +343,7 @@ export function publicPatch(patch) {
       patch.createdByUserId?.toString?.() || patch.createdByUserId,
     status: patch.status,
     baseRevision: patch.baseRevision || {},
-    operations: (patch.operations || []).map(publicOperation),
+    operations: operations.map(publicOperation),
     summary: patch.summary || '',
     riskLevel: patch.riskLevel || 'low',
     createdAt: patch.createdAt || null,
@@ -562,7 +565,9 @@ function normalizeMoveEntityOperation(operation, { docs, files }) {
 
 function publicOperation(operation) {
   return {
+    id: operation.id,
     type: operation.type,
+    status: operation.status || 'pending',
     entityType: operation.entityType,
     path: operation.path,
     newName: operation.newName,
@@ -576,7 +581,236 @@ function publicOperation(operation) {
     proposedSha256: operation.proposedSha256,
     baseRev: operation.baseRev ?? null,
     diff: operation.diff,
+    hunks: (operation.hunks || []).map(publicHunk),
   }
+}
+
+function publicHunk(hunk) {
+  return {
+    id: hunk.id,
+    operationId: hunk.operationId,
+    operationIndex: hunk.operationIndex,
+    hunkIndex: hunk.hunkIndex,
+    type: hunk.type,
+    path: hunk.path,
+    newPath: hunk.newPath,
+    oldStart: hunk.oldStart,
+    oldLines: hunk.oldLines,
+    newStart: hunk.newStart,
+    newLines: hunk.newLines,
+    oldText: hunk.oldText || '',
+    newText: hunk.newText || '',
+    baseSha256: hunk.baseSha256,
+    proposedSha256: hunk.proposedSha256,
+    status: hunk.status || 'pending',
+    appliedAt: hunk.appliedAt || null,
+    rolledBackAt: hunk.rolledBackAt || null,
+    conflict: hunk.conflict || null,
+    diff: hunk.diff,
+  }
+}
+
+function materializePatchOperations(patch) {
+  return (patch.operations || []).map((operation, operationIndex) => {
+    const operationId = operation.id || operationIdForIndex(operationIndex)
+    const operationStatus = operationStatusForPatch({
+      patchStatus: patch.status,
+      operationStatus: operation.status,
+    })
+    const operationWithId = {
+      ...operation,
+      id: operationId,
+      status: operationStatus,
+    }
+
+    return {
+      ...operationWithId,
+      hunks: materializeOperationHunks({
+        patch,
+        operation: operationWithId,
+        operationIndex,
+      }),
+    }
+  })
+}
+
+function operationIdForIndex(index) {
+  return `op-${String(index + 1).padStart(4, '0')}`
+}
+
+function materializeOperationHunks({ patch, operation, operationIndex }) {
+  const existingHunks = Array.isArray(operation.hunks) ? operation.hunks : []
+  if (existingHunks.length > 0) {
+    return existingHunks.map((hunk, hunkIndex) =>
+      materializeHunk({
+        patch,
+        operation,
+        operationIndex,
+        hunk,
+        hunkIndex,
+      })
+    )
+  }
+
+  return [
+    materializeHunk({
+      patch,
+      operation,
+      operationIndex,
+      hunk: hunkFromOperation(operation),
+      hunkIndex: 0,
+    }),
+  ]
+}
+
+function materializeHunk({ patch, operation, operationIndex, hunk, hunkIndex }) {
+  const operationId = operation.id || operationIdForIndex(operationIndex)
+  const status = hunkStatusForPatch({
+    patchStatus: patch.status,
+    operationStatus: operation.status,
+    hunkStatus: hunk.status,
+  })
+  const materialized = {
+    ...hunk,
+    operationId,
+    operationIndex,
+    hunkIndex,
+    type: hunk.type || hunkTypeForOperation(operation),
+    path: hunk.path || operation.path,
+    newPath: hunk.newPath || operation.newPath,
+    oldStart: hunk.oldStart ?? operation.diff?.oldStart ?? 1,
+    oldLines: hunk.oldLines ?? operation.diff?.oldLines ?? 0,
+    newStart: hunk.newStart ?? operation.diff?.newStart ?? 1,
+    newLines: hunk.newLines ?? operation.diff?.newLines ?? 0,
+    oldText: hunk.oldText ?? hunkTextBeforeOperation(operation),
+    newText: hunk.newText ?? hunkTextAfterOperation(operation),
+    baseSha256: hunk.baseSha256 || operation.baseSha256,
+    proposedSha256: hunk.proposedSha256 || operation.proposedSha256,
+    status,
+    appliedAt: hunk.appliedAt || null,
+    rolledBackAt: hunk.rolledBackAt || null,
+    conflict: hunk.conflict || null,
+    diff: hunk.diff || operation.diff,
+  }
+  return {
+    ...materialized,
+    id:
+      materialized.id ||
+      hunkIdFor({
+        patch,
+        operation,
+        operationIndex,
+        hunk: materialized,
+        hunkIndex,
+      }),
+  }
+}
+
+function hunkFromOperation(operation) {
+  return {
+    type: hunkTypeForOperation(operation),
+    path: operation.path,
+    newPath: operation.newPath,
+    oldStart: operation.diff?.oldStart ?? 1,
+    oldLines: operation.diff?.oldLines ?? 0,
+    newStart: operation.diff?.newStart ?? 1,
+    newLines: operation.diff?.newLines ?? 0,
+    oldText: hunkTextBeforeOperation(operation),
+    newText: hunkTextAfterOperation(operation),
+    baseSha256: operation.baseSha256,
+    proposedSha256: operation.proposedSha256,
+    diff: operation.diff,
+  }
+}
+
+function hunkTypeForOperation(operation) {
+  return operation.type === 'replace_text' ? 'text' : operation.type
+}
+
+function hunkTextBeforeOperation(operation) {
+  if (operation.type === 'replace_text') {
+    return operation.oldText || ''
+  }
+  if (operation.type === 'delete_doc') {
+    return removedTextFromDiff(operation.diff)
+  }
+  if (
+    operation.type === 'rename_entity' ||
+    operation.type === 'move_entity'
+  ) {
+    return operation.path || ''
+  }
+  return ''
+}
+
+function hunkTextAfterOperation(operation) {
+  if (operation.type === 'replace_text') {
+    return operation.newText || ''
+  }
+  if (operation.type === 'create_doc') {
+    return operation.content || ''
+  }
+  if (
+    operation.type === 'rename_entity' ||
+    operation.type === 'move_entity'
+  ) {
+    return operation.newPath || ''
+  }
+  return ''
+}
+
+function removedTextFromDiff(diff) {
+  return (diff?.lines || [])
+    .filter(line => line.type === 'remove')
+    .map(line => line.content)
+    .join('\n')
+}
+
+function operationStatusForPatch({ patchStatus, operationStatus }) {
+  if (isTerminalPatchStatus(patchStatus)) {
+    return patchStatus
+  }
+  return operationStatus || 'pending'
+}
+
+function hunkStatusForPatch({ patchStatus, operationStatus, hunkStatus }) {
+  if (isTerminalPatchStatus(patchStatus)) {
+    return patchStatus
+  }
+  return hunkStatus || operationStatus || 'pending'
+}
+
+function isTerminalPatchStatus(status) {
+  if (
+    status === 'applied' ||
+    status === 'rejected' ||
+    status === 'conflicted' ||
+    status === 'rolled_back'
+  ) {
+    return true
+  }
+  return false
+}
+
+function hunkIdFor({ patch, operation, operationIndex, hunk, hunkIndex }) {
+  const operationId = operation.id || operationIdForIndex(operationIndex)
+  const patchId = patch._id?.toString?.() || patch.id || 'new'
+  const content = [
+    patchId,
+    operationId,
+    operation.type,
+    operation.path || '',
+    operation.newPath || '',
+    hunk.oldStart,
+    hunk.oldLines,
+    hunk.newStart,
+    hunk.newLines,
+    hunk.oldText || '',
+    hunk.newText || '',
+  ].join('\u001f')
+  return `${operationId}:h-${String(hunkIndex + 1).padStart(4, '0')}:${sha256(
+    content
+  ).slice(0, 12)}`
 }
 
 function riskLevelForOperations(operations) {

@@ -154,6 +154,46 @@ describe('AiAgentPatchManager', function () {
     )
   })
 
+  it('returns stable hunk ids for pending text patches', async function (ctx) {
+    const patch = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      summary: 'Update intro',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+
+    const firstPublicPatch = ctx.PatchManager.publicPatch(ctx.patchDocument)
+    const secondPublicPatch = ctx.PatchManager.publicPatch(ctx.patchDocument)
+
+    expect(patch.operations[0].id).to.equal('op-0001')
+    expect(patch.operations[0]).to.include({ status: 'pending' })
+    expect(patch.operations[0].hunks).to.have.length(1)
+    expect(patch.operations[0].hunks[0].id).to.match(
+      /^op-0001:h-0001:[a-f0-9]{12}$/
+    )
+    expect(patch.operations[0].hunks[0]).to.deep.include({
+      operationId: 'op-0001',
+      operationIndex: 0,
+      hunkIndex: 0,
+      type: 'text',
+      path: '/main.tex',
+      status: 'pending',
+      oldText: 'Old sentence.',
+      newText: 'New sentence.',
+    })
+    expect(secondPublicPatch.operations[0].hunks[0].id).to.equal(
+      firstPublicPatch.operations[0].hunks[0].id
+    )
+  })
+
   it('blocks patches to sensitive paths', async function (ctx) {
     await expect(
       ctx.PatchManager.createPatch({
@@ -200,6 +240,37 @@ describe('AiAgentPatchManager', function () {
     expect(patch.operations[0].diff.lines).to.deep.include({
       type: 'add',
       content: '\\section{Methods}',
+    })
+  })
+
+  it('represents structural operations as single hunks', async function (ctx) {
+    const patch = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'create_doc',
+          path: '/appendix.tex',
+          content: 'Appendix text',
+        },
+      ],
+    })
+
+    expect(patch.operations[0]).to.include({
+      id: 'op-0001',
+      status: 'pending',
+    })
+    expect(patch.operations[0].hunks).to.have.length(1)
+    expect(patch.operations[0].hunks[0]).to.deep.include({
+      operationId: 'op-0001',
+      operationIndex: 0,
+      hunkIndex: 0,
+      type: 'create_doc',
+      path: '/appendix.tex',
+      status: 'pending',
+      oldText: '',
+      newText: 'Appendix text',
     })
   })
 
@@ -321,6 +392,7 @@ describe('AiAgentPatchManager', function () {
         },
       ],
     })
+    ctx.patchDocument.save.resetHistory()
 
     const patch = await ctx.PatchManager.applyPatch({
       projectId: 'project-one',
@@ -342,6 +414,8 @@ describe('AiAgentPatchManager', function () {
     )
     expect(ctx.patchDocument.save).to.have.been.calledOnce
     expect(patch.status).to.equal('applied')
+    expect(patch.operations[0].status).to.equal('applied')
+    expect(patch.operations[0].hunks[0].status).to.equal('applied')
     expect(patch.rollbackAvailable).to.equal(true)
     expect(ctx.patchDocument.rollbackOperations).to.have.length(1)
     expect(ctx.CompileManager.promises.compile).to.have.been.calledWith(
