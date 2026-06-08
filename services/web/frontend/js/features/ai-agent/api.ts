@@ -220,6 +220,60 @@ export type ProjectAiAgentPatchDiffLine = {
   content: string
 }
 
+export type ProjectAiAgentPatchStatus =
+  | 'pending'
+  | 'approved'
+  | 'applied'
+  | 'partially_applied'
+  | 'rejected'
+  | 'conflicted'
+  | 'rolled_back'
+
+export type ProjectAiAgentPatchHunkStatus =
+  | 'pending'
+  | 'applied'
+  | 'rejected'
+  | 'conflicted'
+  | 'rolled_back'
+
+export type ProjectAiAgentPatchDiff = {
+  path: string
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  lines: ProjectAiAgentPatchDiffLine[]
+}
+
+export type ProjectAiAgentPatchHunk = {
+  id: string
+  operationId: string
+  operationIndex: number
+  hunkIndex: number
+  type: 'text' | 'create_doc' | 'delete_doc' | 'rename_entity' | 'move_entity'
+  path: string
+  newPath?: string
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  oldText: string
+  newText: string
+  baseSha256?: string
+  proposedSha256?: string
+  status: ProjectAiAgentPatchHunkStatus
+  appliedAt?: string | null
+  rolledBackAt?: string | null
+  conflict?: { code: string; message: string } | null
+  diff: ProjectAiAgentPatchDiff
+}
+
+type ProjectAiAgentPatchOperationReviewState = {
+  id?: string
+  status?: ProjectAiAgentPatchStatus
+  hunks?: ProjectAiAgentPatchHunk[]
+}
+
 export type ProjectAiAgentPatchReplaceTextOperation = {
   type: 'replace_text'
   path: string
@@ -237,7 +291,7 @@ export type ProjectAiAgentPatchReplaceTextOperation = {
     newLines: number
     lines: ProjectAiAgentPatchDiffLine[]
   }
-}
+} & ProjectAiAgentPatchOperationReviewState
 
 export type ProjectAiAgentPatchCreateDocOperation = {
   type: 'create_doc'
@@ -252,7 +306,7 @@ export type ProjectAiAgentPatchCreateDocOperation = {
     newLines: number
     lines: ProjectAiAgentPatchDiffLine[]
   }
-}
+} & ProjectAiAgentPatchOperationReviewState
 
 export type ProjectAiAgentPatchDeleteDocOperation = {
   type: 'delete_doc'
@@ -268,7 +322,7 @@ export type ProjectAiAgentPatchDeleteDocOperation = {
     newLines: number
     lines: ProjectAiAgentPatchDiffLine[]
   }
-}
+} & ProjectAiAgentPatchOperationReviewState
 
 export type ProjectAiAgentPatchRenameEntityOperation = {
   type: 'rename_entity'
@@ -287,7 +341,7 @@ export type ProjectAiAgentPatchRenameEntityOperation = {
     newLines: number
     lines: ProjectAiAgentPatchDiffLine[]
   }
-}
+} & ProjectAiAgentPatchOperationReviewState
 
 export type ProjectAiAgentPatchMoveEntityOperation = {
   type: 'move_entity'
@@ -306,7 +360,7 @@ export type ProjectAiAgentPatchMoveEntityOperation = {
     newLines: number
     lines: ProjectAiAgentPatchDiffLine[]
   }
-}
+} & ProjectAiAgentPatchOperationReviewState
 
 export type ProjectAiAgentPatchOperation =
   | ProjectAiAgentPatchReplaceTextOperation
@@ -320,13 +374,7 @@ export type ProjectAiAgentPatch = {
   sessionId: string
   projectId: string
   createdByUserId: string
-  status:
-    | 'pending'
-    | 'approved'
-    | 'applied'
-    | 'rejected'
-    | 'conflicted'
-    | 'rolled_back'
+  status: ProjectAiAgentPatchStatus
   baseRevision: Record<string, unknown>
   operations: ProjectAiAgentPatchOperation[]
   summary: string
@@ -380,6 +428,11 @@ type ProjectAiAgentStreamOptions = {
 
 type ProjectAiAgentRequestOptions = {
   signal?: AbortSignal
+}
+
+export type ApplyProjectAiAgentPatchOptions = {
+  hunkIds?: string[]
+  rejectUnselected?: boolean
 }
 
 export function getProjectAiAgentConfig(projectId: string) {
@@ -511,10 +564,14 @@ export function startProjectAiAgentAct(projectId: string, sessionId: string) {
   )
 }
 
-export function applyProjectAiAgentPatch(projectId: string, patchId: string) {
+export function applyProjectAiAgentPatch(
+  projectId: string,
+  patchId: string,
+  options: ApplyProjectAiAgentPatchOptions = {}
+) {
   return postJSON<{ patch: ProjectAiAgentPatch }>(
     `/project/${projectId}/ai/agent/patches/${patchId}/apply`,
-    { body: {} }
+    { body: options.hunkIds ? options : {} }
   )
 }
 

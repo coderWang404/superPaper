@@ -107,7 +107,13 @@ export async function createPatch({
   return publicPatch(patch)
 }
 
-export async function applyPatch({ projectId, userId, patchId }) {
+export async function applyPatch({
+  projectId,
+  userId,
+  patchId,
+  hunkIds = null,
+  rejectUnselected = false,
+}) {
   const patch = await AgentPatch.findOne({
     _id: patchId,
     projectId,
@@ -116,24 +122,43 @@ export async function applyPatch({ projectId, userId, patchId }) {
   if (!patch) {
     throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
   }
-  if (patch.status !== 'pending' && patch.status !== 'approved') {
+  if (
+    patch.status !== 'pending' &&
+    patch.status !== 'approved' &&
+    patch.status !== 'partially_applied'
+  ) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_NOT_PENDING',
       'Agent patch is not pending approval'
     )
   }
+  const selectedHunkIds = selectedHunkSetOrNull(hunkIds)
+  patch.operations = materializePatchOperations(patch)
+  assertRequestedHunksExist(patch, selectedHunkIds)
+  const operationSelections = applySelectionsForPatch({
+    patch,
+    selectedHunkIds,
+    rejectUnselected,
+  })
 
   const [docs, files] = await Promise.all([
     ProjectEntityHandler.promises.getAllDocs(projectId),
     ProjectEntityHandler.promises.getAllFiles(projectId),
   ])
+  await assertApplySelectionsSafe({
+    patch,
+    selections: operationSelections.toApply,
+    docs,
+    files,
+  })
   const appliedOperations = []
   const rollbackOperations = []
 
-  for (const operation of patch.operations || []) {
+  for (const { operation, hunk } of operationSelections.toApply) {
     if (operation.type === 'replace_text') {
       await applyReplaceTextOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -144,6 +169,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'create_doc') {
       await applyCreateDocOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -155,6 +181,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'delete_doc') {
       await applyDeleteDocOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -165,6 +192,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'rename_entity') {
       await applyRenameEntityOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -176,6 +204,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'move_entity') {
       await applyMoveEntityOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -192,13 +221,23 @@ export async function applyPatch({ projectId, userId, patchId }) {
     }
   }
 
-  patch.status = 'applied'
+  markAppliedOperationSelections(operationSelections.toApply)
+  markRejectedOperationSelections(operationSelections.toReject)
+  patch.status = patchStatusFromOperations(patch.operations)
   patch.approvedByUserId = userId
-  patch.appliedByUserId = userId
+  if (operationSelections.toApply.length > 0) {
+    patch.appliedByUserId = userId
+    patch.appliedAt = new Date()
+  }
   patch.approvedAt = patch.approvedAt || new Date()
-  patch.appliedAt = new Date()
-  patch.appliedOperations = appliedOperations
-  patch.rollbackOperations = rollbackOperations
+  patch.appliedOperations = [
+    ...(patch.appliedOperations || []),
+    ...appliedOperations,
+  ]
+  patch.rollbackOperations = [
+    ...(patch.rollbackOperations || []),
+    ...rollbackOperations,
+  ]
   await patch.save()
   const publicAppliedPatch = publicPatch(patch)
 
@@ -220,6 +259,9 @@ export async function applyPatch({ projectId, userId, patchId }) {
     payload: {
       patchId: patch._id?.toString?.() || patch.id,
       operations: appliedOperations,
+      ...(selectedHunkIds
+        ? { hunkIds: operationSelections.toApply.map(({ hunk }) => hunk.id) }
+        : {}),
     },
   })
   publicAppliedPatch.compileResult = await compileAfterPatch({
@@ -228,10 +270,12 @@ export async function applyPatch({ projectId, userId, patchId }) {
     userId,
     patchId: patch._id?.toString?.() || patch.id,
   })
-  await AgentSession.updateOne(
-    { _id: patch.sessionId, projectId },
-    { $set: { status: 'completed', completedAt: new Date() } }
-  ).exec()
+  if (!hasPendingHunks(patch.operations)) {
+    await AgentSession.updateOne(
+      { _id: patch.sessionId, projectId },
+      { $set: { status: 'completed', completedAt: new Date() } }
+    ).exec()
+  }
 
   return publicAppliedPatch
 }
@@ -610,6 +654,148 @@ function publicHunk(hunk) {
   }
 }
 
+function selectedHunkSetOrNull(hunkIds) {
+  if (hunkIds == null) {
+    return null
+  }
+  const unique = new Set(hunkIds)
+  if (unique.size !== hunkIds.length) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_DUPLICATE_HUNK',
+      'Agent patch hunk ids must be unique'
+    )
+  }
+  return unique
+}
+
+function collectPatchHunks(patch) {
+  return (patch.operations || []).flatMap(operation =>
+    (operation.hunks || []).map(hunk => ({ operation, hunk }))
+  )
+}
+
+function assertRequestedHunksExist(patch, selectedHunkIds) {
+  if (!selectedHunkIds) {
+    return
+  }
+  const existingHunkIds = new Set(
+    collectPatchHunks(patch).map(({ hunk }) => hunk.id)
+  )
+  for (const hunkId of selectedHunkIds) {
+    if (!existingHunkIds.has(hunkId)) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_NOT_FOUND',
+        'Agent patch hunk was not found'
+      )
+    }
+  }
+}
+
+function applySelectionsForPatch({
+  patch,
+  selectedHunkIds,
+  rejectUnselected,
+}) {
+  const toApply = []
+  const toReject = []
+  for (const operation of patch.operations || []) {
+    if ((operation.hunks || []).length > 1) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_UNSUPPORTED',
+        'Agent patch operation has multiple hunks'
+      )
+    }
+    for (const hunk of operation.hunks || []) {
+      const isSelected = !selectedHunkIds || selectedHunkIds.has(hunk.id)
+      if (selectedHunkIds && isSelected && hunk.status !== 'pending') {
+        throw new AiAgentPatchError(
+          'AGENT_PATCH_HUNK_NOT_PENDING',
+          'Agent patch hunk is not pending approval'
+        )
+      }
+      if (isSelected && hunk.status === 'pending') {
+        toApply.push({ operation, hunk })
+      } else if (selectedHunkIds && rejectUnselected && hunk.status === 'pending') {
+        toReject.push({ operation, hunk })
+      }
+    }
+  }
+  if (selectedHunkIds && toApply.length === 0) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_HUNK_NOT_PENDING',
+      'Agent patch hunk is not pending approval'
+    )
+  }
+  return { toApply, toReject }
+}
+
+function markAppliedOperationSelections(selections) {
+  const appliedAt = new Date()
+  for (const { operation, hunk } of selections) {
+    hunk.status = 'applied'
+    hunk.appliedAt = appliedAt
+    operation.status = operationStatusFromHunks(operation)
+  }
+}
+
+function markRejectedOperationSelections(selections) {
+  for (const { operation, hunk } of selections) {
+    hunk.status = 'rejected'
+    operation.status = operationStatusFromHunks(operation)
+  }
+}
+
+function patchStatusFromOperations(operations) {
+  const statuses = (operations || []).flatMap(operation =>
+    (operation.hunks || []).map(hunk => hunk.status || operation.status)
+  )
+  if (statuses.length === 0 || statuses.every(status => status === 'pending')) {
+    return 'pending'
+  }
+  if (statuses.every(status => status === 'rejected')) {
+    return 'rejected'
+  }
+  if (statuses.every(status => status === 'rolled_back')) {
+    return 'rolled_back'
+  }
+  if (statuses.some(status => status === 'conflicted')) {
+    return 'conflicted'
+  }
+  if (statuses.some(status => status === 'pending')) {
+    return 'partially_applied'
+  }
+  if (statuses.some(status => status === 'applied')) {
+    return 'applied'
+  }
+  return 'pending'
+}
+
+function operationStatusFromHunks(operation) {
+  const statuses = (operation.hunks || []).map(hunk => hunk.status)
+  if (statuses.length === 0 || statuses.every(status => status === 'pending')) {
+    return 'pending'
+  }
+  if (statuses.every(status => status === 'applied')) {
+    return 'applied'
+  }
+  if (statuses.every(status => status === 'rejected')) {
+    return 'rejected'
+  }
+  if (statuses.some(status => status === 'conflicted')) {
+    return 'conflicted'
+  }
+  if (statuses.some(status => status === 'pending')) {
+    return 'partially_applied'
+  }
+  return statuses[0] || 'pending'
+}
+
+function hasPendingHunks(operations) {
+  return (operations || []).some(operation =>
+    (operation.hunks || []).some(hunk => hunk.status === 'pending')
+  )
+}
+
 function materializePatchOperations(patch) {
   return (patch.operations || []).map((operation, operationIndex) => {
     const operationId = operation.id || operationIdForIndex(operationIndex)
@@ -767,17 +953,20 @@ function removedTextFromDiff(diff) {
 }
 
 function operationStatusForPatch({ patchStatus, operationStatus }) {
-  if (isTerminalPatchStatus(patchStatus)) {
-    return patchStatus
+  if (operationStatus) {
+    return operationStatus
   }
-  return operationStatus || 'pending'
+  return isTerminalPatchStatus(patchStatus) ? patchStatus : 'pending'
 }
 
 function hunkStatusForPatch({ patchStatus, operationStatus, hunkStatus }) {
-  if (isTerminalPatchStatus(patchStatus)) {
-    return patchStatus
+  if (hunkStatus) {
+    return hunkStatus
   }
-  return hunkStatus || operationStatus || 'pending'
+  if (operationStatus) {
+    return operationStatus
+  }
+  return isTerminalPatchStatus(patchStatus) ? patchStatus : 'pending'
 }
 
 function isTerminalPatchStatus(status) {
@@ -828,8 +1017,82 @@ function riskLevelForOperations(operations) {
   return operations.length === 1 ? 'low' : 'medium'
 }
 
+async function assertApplySelectionsSafe({ patch, selections, docs, files }) {
+  for (const { operation } of selections) {
+    if (operation.type === 'replace_text') {
+      await assertReplaceTextOperationSafe({ operation, patch, docs })
+    } else if (operation.type === 'create_doc') {
+      await assertCreateDocOperationSafe({ operation, patch, docs, files })
+    } else if (operation.type === 'delete_doc') {
+      await assertExistingDocOperationSafe({ operation, patch, docs })
+    } else if (
+      operation.type === 'rename_entity' ||
+      operation.type === 'move_entity'
+    ) {
+      await assertPathChangingOperationSafe({ operation, patch, docs, files })
+    }
+  }
+}
+
+async function assertReplaceTextOperationSafe({ operation, patch, docs }) {
+  const currentContent = await assertExistingDocOperationSafe({
+    operation,
+    patch,
+    docs,
+  })
+  assertSingleOccurrence(currentContent, operation.oldText, operation.path)
+}
+
+async function assertCreateDocOperationSafe({ operation, patch, docs, files }) {
+  if (docs[operation.path] || files[operation.path]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+}
+
+async function assertPathChangingOperationSafe({
+  operation,
+  patch,
+  docs,
+  files,
+}) {
+  await assertExistingDocOperationSafe({ operation, patch, docs })
+  if (docs[operation.newPath] || files[operation.newPath]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+}
+
+async function assertExistingDocOperationSafe({ operation, patch, docs }) {
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+
+  const currentContent = getDocText(doc)
+  if (sha256(currentContent) !== operation.baseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+  return currentContent
+}
+
 async function applyReplaceTextOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -870,6 +1133,8 @@ async function applyReplaceTextOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     baseSha256: operation.baseSha256,
@@ -877,6 +1142,8 @@ async function applyReplaceTextOperation({
   })
   rollbackOperations.push({
     type: 'restore_doc_text',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     beforeText: currentContent,
@@ -887,6 +1154,7 @@ async function applyReplaceTextOperation({
 
 async function applyCreateDocOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -912,12 +1180,16 @@ async function applyCreateDocOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: doc?._id?.toString?.() || doc?._id || null,
     appliedSha256: sha256(operation.content || ''),
   })
   rollbackOperations.push({
     type: 'delete_created_doc',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: doc?._id?.toString?.() || doc?._id || null,
     afterSha256: sha256(operation.content || ''),
@@ -926,6 +1198,7 @@ async function applyCreateDocOperation({
 
 async function applyDeleteDocOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -960,12 +1233,16 @@ async function applyDeleteDocOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     baseSha256: operation.baseSha256,
   })
   rollbackOperations.push({
     type: 'restore_deleted_doc',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     beforeText: currentContent,
@@ -975,6 +1252,7 @@ async function applyDeleteDocOperation({
 
 async function applyRenameEntityOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -1018,6 +1296,8 @@ async function applyRenameEntityOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     entityType: 'doc',
     path: operation.path,
     newPath: operation.newPath,
@@ -1026,6 +1306,8 @@ async function applyRenameEntityOperation({
   })
   rollbackOperations.push({
     type: 'rename_entity_back',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     currentPath: operation.newPath,
     docId: operation.docId,
@@ -1036,6 +1318,7 @@ async function applyRenameEntityOperation({
 
 async function applyMoveEntityOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -1084,6 +1367,8 @@ async function applyMoveEntityOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     entityType: 'doc',
     path: operation.path,
     newPath: operation.newPath,
@@ -1093,6 +1378,8 @@ async function applyMoveEntityOperation({
   })
   rollbackOperations.push({
     type: 'move_entity_back',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     currentPath: operation.newPath,
     docId: operation.docId,

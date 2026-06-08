@@ -36,6 +36,13 @@ const TurnSchema = z.object({
   selection: SelectionSchema,
 })
 
+const ApplyPatchSchema = z
+  .object({
+    hunkIds: z.array(z.string().trim().min(1).max(160)).nonempty().optional(),
+    rejectUnselected: z.boolean().optional(),
+  })
+  .strict()
+
 const RollbackSessionCheckpointSchema = z.object({
   commitHash: z.string().trim().regex(/^[a-f0-9]{40}$/i),
 })
@@ -144,10 +151,17 @@ function createResponseCloseAbortController(res) {
 
 async function applyPatch(req, res, next) {
   try {
+    const body = ApplyPatchSchema.parse(req.body || {})
     const patch = await applyAgentPatch({
       projectId: req.params.Project_id,
       userId: SessionManager.getLoggedInUserId(req.session),
       patchId: req.params.patchId,
+      ...(body.hunkIds
+        ? {
+            hunkIds: body.hunkIds,
+            rejectUnselected: body.rejectUnselected || false,
+          }
+        : {}),
     })
     res.json({ patch })
   } catch (err) {

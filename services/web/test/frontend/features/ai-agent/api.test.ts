@@ -273,6 +273,34 @@ describe('ai-agent api', function () {
     expect(response.patch.status).to.equal('applied')
   })
 
+  it('applies selected agent patch hunks', async function () {
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/apply', {
+      patch: {
+        id: 'patch-one',
+        status: 'partially_applied',
+        operations: [],
+      },
+    })
+
+    const response = await applyProjectAiAgentPatch(
+      'project123',
+      'patch-one',
+      {
+        hunkIds: ['op-0001:h-0001:abc123def456'],
+        rejectUnselected: true,
+      }
+    )
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/apply'
+    )[0]
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      hunkIds: ['op-0001:h-0001:abc123def456'],
+      rejectUnselected: true,
+    })
+    expect(response.patch.status).to.equal('partially_applied')
+  })
+
   it('rejects reviewed agent patches', async function () {
     fetchMock.post('/project/project123/ai/agent/patches/patch-one/reject', {
       patch: {

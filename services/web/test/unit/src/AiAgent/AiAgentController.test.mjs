@@ -282,6 +282,42 @@ describe('AiAgentController', function () {
     })
   })
 
+  it('passes selected hunk apply options to the patch manager', async function (ctx) {
+    ctx.req.params.patchId = 'patch-one'
+    ctx.req.body = {
+      hunkIds: ['op-0001:h-0001:abc123def456'],
+      rejectUnselected: true,
+    }
+
+    await ctx.Controller.applyPatch(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PatchManager.applyPatch).to.have.been.calledWith({
+      projectId: 'project-id',
+      userId: 'user-id',
+      patchId: 'patch-one',
+      hunkIds: ['op-0001:h-0001:abc123def456'],
+      rejectUnselected: true,
+    })
+  })
+
+  it('rejects invalid selected hunk apply payloads', async function (ctx) {
+    ctx.req.params.patchId = 'patch-one'
+    ctx.req.body = {
+      hunkIds: [],
+    }
+
+    await ctx.Controller.applyPatch(ctx.req, ctx.res, ctx.next)
+
+    expect(ctx.PatchManager.applyPatch).to.not.have.been.called
+    expect(ctx.res.statusCode).to.equal(422)
+    expect(jsonBody(ctx.res)).to.deep.equal({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid agent input',
+      },
+    })
+  })
+
   it('rejects a reviewed patch for the logged in user', async function (ctx) {
     ctx.req.params.patchId = 'patch-one'
 
