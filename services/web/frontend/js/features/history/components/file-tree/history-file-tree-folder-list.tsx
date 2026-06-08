@@ -2,7 +2,7 @@ import classNames from 'classnames'
 
 import HistoryFileTreeDoc from './history-file-tree-doc'
 import HistoryFileTreeFolder from './history-file-tree-folder'
-import { ReactNode, useCallback } from 'react'
+import { createContext, ReactNode, useCallback, useContext } from 'react'
 import type { HistoryFileTree, HistoryDoc } from '../../utils/file-tree'
 import { useHistoryContext } from '../../context/history-context'
 import { FileDiff } from '../../services/types/file'
@@ -15,12 +15,15 @@ type HistoryFileTreeFolderListProps = {
   children?: ReactNode
 }
 
+const HistoryFileTreeFolderListContext = createContext(false)
+
 function HistoryFileTreeFolderList({
   folders,
   docs,
   rootClassName,
   children,
 }: HistoryFileTreeFolderListProps) {
+  const isNestedList = useContext(HistoryFileTreeFolderListContext)
   const { selection, setSelection } = useHistoryContext()
 
   const handleEvent = useCallback(
@@ -57,30 +60,35 @@ function HistoryFileTreeFolderList({
   )
 
   return (
-    <ul className={classNames('list-unstyled', rootClassName)} role="tree">
-      {folders.map(folder => (
-        <HistoryFileTreeFolder
-          key={folder.name}
-          name={folder.name}
-          folders={folder.folders}
-          docs={folder.docs ?? []}
-        />
-      ))}
-      {docs.map(doc => (
-        <HistoryFileTreeDoc
-          key={doc.pathname}
-          name={doc.name}
-          file={doc}
-          selected={
-            !!selection.selectedFile &&
-            fileFinalPathname(selection.selectedFile) === doc.pathname
-          }
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-        />
-      ))}
-      {children}
-    </ul>
+    <HistoryFileTreeFolderListContext.Provider value>
+      <ul
+        className={classNames('list-unstyled', rootClassName)}
+        role={isNestedList ? 'group' : 'tree'}
+      >
+        {folders.map(folder => (
+          <HistoryFileTreeFolder
+            key={folder.name}
+            name={folder.name}
+            folders={folder.folders}
+            docs={folder.docs ?? []}
+          />
+        ))}
+        {docs.map(doc => (
+          <HistoryFileTreeDoc
+            key={doc.pathname}
+            name={doc.name}
+            file={doc}
+            selected={
+              !!selection.selectedFile &&
+              fileFinalPathname(selection.selectedFile) === doc.pathname
+            }
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+          />
+        ))}
+        {children}
+      </ul>
+    </HistoryFileTreeFolderListContext.Provider>
   )
 }
 
