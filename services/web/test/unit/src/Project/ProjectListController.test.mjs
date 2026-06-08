@@ -426,6 +426,8 @@ describe('ProjectListController', function () {
         { sort: null },
         { filters: null },
         { page: { size: 0, offset: 0 } },
+        { page: { size: true, offset: false } },
+        { page: { size: [20], offset: [0] } },
       ]) {
         ctx.res.status.resetHistory()
         ctx.res.json.resetHistory()

@@ -316,8 +316,14 @@ function _normalizePageRequest(page) {
   if (page == null || typeof page !== 'object' || Array.isArray(page)) {
     return null
   }
-  const size = Number(page.size)
-  const offset = Number(page.offset ?? 0)
+  if (
+    typeof page.size !== 'number' ||
+    (page.offset !== undefined && typeof page.offset !== 'number')
+  ) {
+    return null
+  }
+  const { size } = page
+  const offset = page.offset ?? 0
   if (
     !Number.isSafeInteger(size) ||
     size < 1 ||
