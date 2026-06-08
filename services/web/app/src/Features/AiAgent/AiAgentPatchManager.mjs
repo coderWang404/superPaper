@@ -338,7 +338,7 @@ export async function rollbackPatch({ projectId, userId, patchId }) {
   return publicRolledBackPatch
 }
 
-export async function rejectPatch({ projectId, userId, patchId }) {
+export async function rejectPatch({ projectId, userId, patchId, hunkIds = null }) {
   const patch = await AgentPatch.findOne({
     _id: patchId,
     projectId,
@@ -347,14 +347,31 @@ export async function rejectPatch({ projectId, userId, patchId }) {
   if (!patch) {
     throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
   }
-  if (patch.status !== 'pending' && patch.status !== 'approved') {
+  const selectedHunkIds = selectedHunkSetOrNull(hunkIds)
+  if (
+    patch.status !== 'pending' &&
+    patch.status !== 'approved' &&
+    patch.status !== 'partially_applied' &&
+    !(selectedHunkIds && patch.status === 'applied')
+  ) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_NOT_PENDING',
       'Agent patch is not pending approval'
     )
   }
 
-  patch.status = 'rejected'
+  patch.operations = materializePatchOperations(patch)
+  assertRequestedHunksExist(patch, selectedHunkIds)
+  const operationSelections = rejectSelectionsForPatch({
+    patch,
+    selectedHunkIds,
+  })
+  markRejectedOperationSelections(operationSelections.toReject)
+
+  patch.status =
+    selectedHunkIds || (patch.operations || []).length > 0
+      ? patchStatusFromOperations(patch.operations)
+      : 'rejected'
   patch.rejectedByUserId = userId
   patch.rejectedAt = new Date()
   await patch.save()
@@ -367,12 +384,27 @@ export async function rejectPatch({ projectId, userId, patchId }) {
     payload: {
       patchId: patch._id?.toString?.() || patch.id,
       status: 'rejected',
+      ...(selectedHunkIds
+        ? { hunkIds: operationSelections.toReject.map(({ hunk }) => hunk.id) }
+        : {}),
     },
   })
-  await AgentSession.updateOne(
-    { _id: patch.sessionId, projectId },
-    { $set: { status: 'completed', completedAt: new Date() } }
-  ).exec()
+  await recordPatchEvent({
+    sessionId: patch.sessionId,
+    projectId,
+    userId,
+    type: 'patch_rejected',
+    payload: {
+      patchId: patch._id?.toString?.() || patch.id,
+      hunkIds: operationSelections.toReject.map(({ hunk }) => hunk.id),
+    },
+  })
+  if (!hasPendingHunks(patch.operations)) {
+    await AgentSession.updateOne(
+      { _id: patch.sessionId, projectId },
+      { $set: { status: 'completed', completedAt: new Date() } }
+    ).exec()
+  }
 
   return publicPatch(patch)
 }
@@ -729,6 +761,37 @@ function applySelectionsForPatch({
   return { toApply, toReject }
 }
 
+function rejectSelectionsForPatch({ patch, selectedHunkIds }) {
+  const toReject = []
+  for (const operation of patch.operations || []) {
+    if ((operation.hunks || []).length > 1) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_UNSUPPORTED',
+        'Agent patch operation has multiple hunks'
+      )
+    }
+    for (const hunk of operation.hunks || []) {
+      const isSelected = !selectedHunkIds || selectedHunkIds.has(hunk.id)
+      if (selectedHunkIds && isSelected && hunk.status !== 'pending') {
+        throw new AiAgentPatchError(
+          'AGENT_PATCH_HUNK_NOT_PENDING',
+          'Agent patch hunk is not pending approval'
+        )
+      }
+      if (isSelected && hunk.status === 'pending') {
+        toReject.push({ operation, hunk })
+      }
+    }
+  }
+  if (selectedHunkIds && toReject.length === 0) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_HUNK_NOT_PENDING',
+      'Agent patch hunk is not pending approval'
+    )
+  }
+  return { toReject }
+}
+
 function markAppliedOperationSelections(selections) {
   const appliedAt = new Date()
   for (const { operation, hunk } of selections) {
@@ -761,11 +824,17 @@ function patchStatusFromOperations(operations) {
   if (statuses.some(status => status === 'conflicted')) {
     return 'conflicted'
   }
-  if (statuses.some(status => status === 'pending')) {
+  if (
+    statuses.some(status => status === 'applied') &&
+    statuses.some(status => status !== 'applied')
+  ) {
     return 'partially_applied'
   }
   if (statuses.some(status => status === 'applied')) {
     return 'applied'
+  }
+  if (statuses.some(status => status === 'pending')) {
+    return 'pending'
   }
   return 'pending'
 }
@@ -784,8 +853,17 @@ function operationStatusFromHunks(operation) {
   if (statuses.some(status => status === 'conflicted')) {
     return 'conflicted'
   }
-  if (statuses.some(status => status === 'pending')) {
+  if (
+    statuses.some(status => status === 'applied') &&
+    statuses.some(status => status !== 'applied')
+  ) {
     return 'partially_applied'
+  }
+  if (statuses.some(status => status === 'applied')) {
+    return 'applied'
+  }
+  if (statuses.some(status => status === 'pending')) {
+    return 'pending'
   }
   return statuses[0] || 'pending'
 }

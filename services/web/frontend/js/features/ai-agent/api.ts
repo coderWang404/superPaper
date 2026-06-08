@@ -435,6 +435,10 @@ export type ApplyProjectAiAgentPatchOptions = {
   rejectUnselected?: boolean
 }
 
+export type RejectProjectAiAgentPatchOptions = {
+  hunkIds?: string[]
+}
+
 export function getProjectAiAgentConfig(projectId: string) {
   return getJSON<ProjectAiAgentConfig>(`/project/${projectId}/ai/agent/config`)
 }
@@ -575,10 +579,14 @@ export function applyProjectAiAgentPatch(
   )
 }
 
-export function rejectProjectAiAgentPatch(projectId: string, patchId: string) {
+export function rejectProjectAiAgentPatch(
+  projectId: string,
+  patchId: string,
+  options: RejectProjectAiAgentPatchOptions = {}
+) {
   return postJSON<{ patch: ProjectAiAgentPatch }>(
     `/project/${projectId}/ai/agent/patches/${patchId}/reject`,
-    { body: {} }
+    { body: options.hunkIds ? options : {} }
   )
 }
 

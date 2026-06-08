@@ -672,7 +672,7 @@ describe('AiAgentPatchManager', function () {
       rejectUnselected: true,
     })
 
-    expect(patch.status).to.equal('applied')
+    expect(patch.status).to.equal('partially_applied')
     expect(patch.operations[0].hunks[0].status).to.equal('applied')
     expect(patch.operations[1].status).to.equal('rejected')
     expect(patch.operations[1].hunks[0].status).to.equal('rejected')
@@ -1199,6 +1199,14 @@ describe('AiAgentPatchManager', function () {
         },
       })
     )
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'patch_rejected',
+        payload: sinon.match({
+          patchId: 'patch-one',
+        }),
+      })
+    )
     expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
       .called
     expect(ctx.EditorController.promises.upsertDocWithPath).to.not.have.been
@@ -1208,5 +1216,229 @@ describe('AiAgentPatchManager', function () {
     expect(ctx.EditorController.promises.moveEntity).to.not.have.been.called
     expect(ctx.CompileManager.promises.compile).to.not.have.been.called
     expect(patch.status).to.equal('rejected')
+  })
+
+  it('rejects only selected pending hunks', async function (ctx) {
+    ctx.docs['/appendix.tex'] = {
+      _id: 'doc-appendix',
+      lines: ['Appendix old sentence.'],
+      rev: 3,
+    }
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+        {
+          type: 'replace_text',
+          path: '/appendix.tex',
+          oldText: 'Appendix old sentence.',
+          newText: 'Appendix new sentence.',
+        },
+      ],
+    })
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const patch = await ctx.PatchManager.rejectPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+
+    expect(patch.status).to.equal('pending')
+    expect(patch.operations[0].status).to.equal('rejected')
+    expect(patch.operations[0].hunks[0].status).to.equal('rejected')
+    expect(patch.operations[1].status).to.equal('pending')
+    expect(patch.operations[1].hunks[0].status).to.equal('pending')
+    expect(ctx.patchDocument.rejectedByUserId).to.equal('reviewer-one')
+    expect(ctx.patchDocument.save).to.have.been.calledOnce
+    expect(ctx.AgentSession.updateOne).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'approval_response',
+        payload: {
+          patchId: 'patch-one',
+          status: 'rejected',
+          hunkIds: [selectedHunkId],
+        },
+      })
+    )
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'patch_rejected',
+        payload: {
+          patchId: 'patch-one',
+          hunkIds: [selectedHunkId],
+        },
+      })
+    )
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(ctx.EditorController.promises.upsertDocWithPath).to.not.have.been
+      .called
+  })
+
+  it('completes the session after rejecting the last pending hunk', async function (ctx) {
+    ctx.docs['/appendix.tex'] = {
+      _id: 'doc-appendix',
+      lines: ['Appendix old sentence.'],
+      rev: 3,
+    }
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+        {
+          type: 'replace_text',
+          path: '/appendix.tex',
+          oldText: 'Appendix old sentence.',
+          newText: 'Appendix new sentence.',
+        },
+      ],
+    })
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [created.operations[0].hunks[0].id],
+    })
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const patch = await ctx.PatchManager.rejectPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [created.operations[1].hunks[0].id],
+    })
+
+    expect(patch.status).to.equal('partially_applied')
+    expect(patch.operations[0].hunks[0].status).to.equal('applied')
+    expect(patch.operations[1].hunks[0].status).to.equal('rejected')
+    expect(ctx.AgentSession.updateOne).to.have.been.calledOnce
+  })
+
+  it('rejects unknown selected reject hunks before saving', async function (ctx) {
+    await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rejectPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: ['op-9999:h-0001:missing'],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_HUNK_NOT_FOUND')
+    expect(ctx.patchDocument.status).to.equal('pending')
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.AgentSession.updateOne).to.not.have.been.called
+  })
+
+  it('rejects duplicate selected reject hunks before saving', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rejectPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: [selectedHunkId, selectedHunkId],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_DUPLICATE_HUNK')
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.AgentSession.updateOne).to.not.have.been.called
+  })
+
+  it('rejects already applied selected hunks before saving', async function (ctx) {
+    const created = await ctx.PatchManager.createPatch({
+      projectId: 'project-one',
+      userId: 'user-one',
+      sessionId: 'session-one',
+      operations: [
+        {
+          type: 'replace_text',
+          path: '/main.tex',
+          oldText: 'Old sentence.',
+          newText: 'New sentence.',
+        },
+      ],
+    })
+    const selectedHunkId = created.operations[0].hunks[0].id
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentEvent.create.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const error = await expect(
+      ctx.PatchManager.rejectPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: [selectedHunkId],
+      })
+    ).to.be.rejectedWith(ctx.PatchManager.AiAgentPatchError)
+
+    expect(error.code).to.equal('AGENT_PATCH_HUNK_NOT_PENDING')
+    expect(ctx.patchDocument.save).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.not.have.been.called
+    expect(ctx.AgentSession.updateOne).to.not.have.been.called
   })
 })

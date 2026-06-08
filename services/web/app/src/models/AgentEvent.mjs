@@ -18,6 +18,8 @@ export const AgentEventSchema = new Schema(
         'approval_response',
         'patch_created',
         'patch_applied',
+        'patch_rejected',
+        'patch_rolled_back',
         'compile_started',
         'compile_result',
         'checkpoint_created',
