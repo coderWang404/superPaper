@@ -124,4 +124,119 @@ describe('ai-assistant api', function () {
       },
     })
   })
+
+  it('skips malformed chat stream lines and continues parsing deltas', async function () {
+    fetchMock.post('/project/project123/ai/chat/stream', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        '{not-json}\n' +
+        JSON.stringify({ type: 'delta', delta: 'Use ' }) +
+        '\n' +
+        'also not json\n' +
+        JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
+        '\n' +
+        JSON.stringify({
+          type: 'done',
+          providerId: 'provider-one',
+          model: 'model-one',
+          context: {
+            includedFiles: ['main.tex'],
+            selectionIncluded: true,
+            truncated: false,
+          },
+        }) +
+        '\n',
+    })
+    const deltas: string[] = []
+
+    const response = await sendProjectAiChatStream(
+      'project123',
+      {
+        prompt: 'How should I cite this?',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      delta => deltas.push(delta)
+    )
+
+    expect(deltas).to.deep.equal(['Use ', '\\\\cite{} here.'])
+    expect(response.answer).to.equal('Use \\\\cite{} here.')
+  })
+
+  it('skips non-object and unknown chat stream events', async function () {
+    fetchMock.post('/project/project123/ai/chat/stream', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        'null\n' +
+        '[]\n' +
+        JSON.stringify({ type: 'unknown', message: 'ignore me' }) +
+        '\n' +
+        JSON.stringify({ type: 'delta', delta: 'Use ' }) +
+        '\n' +
+        JSON.stringify({ type: 'delta', delta: '\\\\cite{} here.' }) +
+        '\n' +
+        JSON.stringify({
+          type: 'done',
+          providerId: 'provider-one',
+          model: 'model-one',
+          context: {
+            includedFiles: ['main.tex'],
+            selectionIncluded: true,
+            truncated: false,
+          },
+        }) +
+        '\n',
+    })
+    const deltas: string[] = []
+
+    const response = await sendProjectAiChatStream(
+      'project123',
+      {
+        prompt: 'How should I cite this?',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      delta => deltas.push(delta)
+    )
+
+    expect(deltas).to.deep.equal(['Use ', '\\\\cite{} here.'])
+    expect(response.answer).to.equal('Use \\\\cite{} here.')
+  })
+
+  it('passes an AbortSignal to the project chat stream request', async function () {
+    fetchMock.post('/project/project123/ai/chat/stream', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        JSON.stringify({
+          type: 'done',
+          providerId: 'provider-one',
+          model: 'model-one',
+          context: {
+            includedFiles: [],
+            selectionIncluded: false,
+            truncated: false,
+          },
+        }) + '\n',
+    })
+    const controller = new AbortController()
+
+    await sendProjectAiChatStream(
+      'project123',
+      {
+        prompt: 'How should I cite this?',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      () => {},
+      { signal: controller.signal }
+    )
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/chat/stream'
+    )[0]
+    expect(call.options.signal).to.equal(controller.signal)
+  })
 })

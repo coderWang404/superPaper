@@ -70,10 +70,15 @@ type ProjectAiStreamEvent =
     }
   | { type: 'error'; message: string }
 
+type ProjectAiChatStreamOptions = {
+  signal?: AbortSignal
+}
+
 export async function sendProjectAiChatStream(
   projectId: string,
   body: ProjectAiChatRequest,
-  onDelta: (delta: string) => void
+  onDelta: (delta: string) => void,
+  streamOptions: ProjectAiChatStreamOptions = {}
 ): Promise<ProjectAiChatResponse> {
   const path = `/project/${projectId}/ai/chat/stream`
   const options: RequestInit = {
@@ -85,6 +90,7 @@ export async function sendProjectAiChatStream(
       'X-Csrf-Token': getMeta('ol-csrfToken'),
     },
     body: JSON.stringify(body),
+    signal: streamOptions.signal,
   }
   const response = await fetch(path, options)
 
@@ -158,10 +164,9 @@ function* parseCompleteNDJSONLines<T>(
     const line = buffer.slice(0, newlineIndex).trim()
     buffer = buffer.slice(newlineIndex + 1)
     if (line) {
-      try {
-        yield JSON.parse(line) as T
-      } catch (e) {
-        console.warn('AI stream: skipping malformed NDJSON line', line)
+      const event = parseNDJSONLine<T>(line)
+      if (event) {
+        yield event
       }
     }
     newlineIndex = buffer.indexOf('\n')
@@ -173,11 +178,27 @@ function* parseNDJSON<T>(text: string) {
   for (const line of text.split('\n')) {
     const trimmedLine = line.trim()
     if (trimmedLine) {
-      try {
-        yield JSON.parse(trimmedLine) as T
-      } catch (e) {
-        console.warn('AI stream: skipping malformed NDJSON line', trimmedLine)
+      const event = parseNDJSONLine<T>(trimmedLine)
+      if (event) {
+        yield event
       }
     }
   }
+}
+
+function parseNDJSONLine<T>(line: string): T | null {
+  try {
+    const parsed = JSON.parse(line)
+    if (isStreamEventObject(parsed)) {
+      return parsed as T
+    }
+    console.warn('AI stream: skipping non-object NDJSON line', line)
+  } catch (e) {
+    console.warn('AI stream: skipping malformed NDJSON line', line)
+  }
+  return null
+}
+
+function isStreamEventObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }

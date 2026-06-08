@@ -168,6 +168,7 @@ export default function AiAssistantPanel() {
   )
 
   const transcriptEndRef = useRef<HTMLDivElement>(null)
+  const submitAbortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -350,11 +351,17 @@ export default function AiAssistantPanel() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
+    if (submitting) {
+      return
+    }
+
     const trimmedPrompt = prompt.trim()
     if (!trimmedPrompt || !selectedProvider || !selectedModel) {
       return
     }
 
+    const submitAbortController = new AbortController()
+    submitAbortControllerRef.current = submitAbortController
     setSubmitting(true)
     setChatError(null)
     setStreamedAnswer('')
@@ -395,7 +402,8 @@ export default function AiAssistantPanel() {
           delta => {
             streamedText += delta
             setStreamedAnswer(currentAnswer => currentAnswer + delta)
-          }
+          },
+          { signal: submitAbortController.signal }
         )
         updateChatConversation(
           targetConversationId,
@@ -415,6 +423,7 @@ export default function AiAssistantPanel() {
         setStreamedAnswer('')
         setPrompt('')
       } catch (error) {
+        setStreamedAnswer('')
         updateChatConversation(
           targetConversationId,
           conversation =>
@@ -424,32 +433,55 @@ export default function AiAssistantPanel() {
             ),
           setChatConversations
         )
-        setChatError(getErrorMessage(error))
+        if (!isAbortError(error)) {
+          setChatError(getErrorMessage(error))
+        }
+      } finally {
+        if (submitAbortControllerRef.current === submitAbortController) {
+          submitAbortControllerRef.current = null
+        }
+        setSubmitting(false)
       }
-      setSubmitting(false)
       return
     }
 
     try {
-      await runAgent(trimmedPrompt)
+      await runAgent(trimmedPrompt, submitAbortController.signal)
     } catch (error) {
-      setChatError(getErrorMessage(error))
+      if (!isAbortError(error)) {
+        setChatError(getErrorMessage(error))
+      }
     } finally {
+      if (submitAbortControllerRef.current === submitAbortController) {
+        submitAbortControllerRef.current = null
+      }
       setSubmitting(false)
     }
   }
 
-  async function runAgent(trimmedPrompt: string) {
+  function handleStopSubmitting() {
+    submitAbortControllerRef.current?.abort()
+  }
+
+  async function runAgent(trimmedPrompt: string, signal: AbortSignal) {
     const shouldStartNewSession = shouldStartNewAgentSession(agentSession)
     const session = shouldStartNewSession
       ? (
-          await createProjectAiAgentSession(projectId, {
-            task: trimmedPrompt,
-            providerId: selectedProvider?.id,
-            model: selectedModel ?? undefined,
-          })
+          await createProjectAiAgentSession(
+            projectId,
+            {
+              task: trimmedPrompt,
+              providerId: selectedProvider?.id,
+              model: selectedModel ?? undefined,
+            },
+            { signal }
+          )
         ).session
       : agentSession
+
+    if (signal.aborted) {
+      throw new DOMException('The operation was aborted.', 'AbortError')
+    }
 
     if (shouldStartNewSession) {
       setAgentEvents([])
@@ -471,7 +503,8 @@ export default function AiAssistantPanel() {
         },
         event => {
           setAgentEvents(currentEvents => [...currentEvents, event])
-        }
+        },
+        { signal }
       )
       setAgentSession(response.session)
       setAgentAnswer(response.answer)
@@ -481,7 +514,10 @@ export default function AiAssistantPanel() {
     } catch (error) {
       setAgentSession(currentSession =>
         currentSession?.id === session.id
-          ? { ...currentSession, status: 'failed' }
+          ? {
+              ...currentSession,
+              status: isAbortError(error) ? 'cancelled' : 'failed',
+            }
           : currentSession
       )
       throw error
@@ -615,6 +651,7 @@ export default function AiAssistantPanel() {
             <div className="ai-assistant-workbench-bar">
               <div
                 className="ai-assistant-mode-switch"
+                role="group"
                 aria-label={t('ai_assistant_mode')}
               >
                 <button
@@ -760,7 +797,7 @@ export default function AiAssistantPanel() {
             </div>
 
             {chatError && (
-              <div className="ai-assistant-error">
+              <div className="ai-assistant-error" role="alert">
                 <h5>{t('ai_assistant_request_failed')}</h5>
                 <p>{chatError}</p>
               </div>
@@ -792,7 +829,8 @@ export default function AiAssistantPanel() {
           <textarea
             id="ai-assistant-prompt"
             aria-label={t('ai_assistant_prompt_label')}
-            aria-describedby="ai-assistant-prompt-context"
+            aria-describedby="ai-assistant-prompt-context ai-assistant-keyboard-hint"
+            aria-keyshortcuts="Meta+Enter Control+Enter"
             value={prompt}
             onChange={event => setPrompt(event.target.value)}
             onKeyDown={e => {
@@ -809,21 +847,37 @@ export default function AiAssistantPanel() {
             rows={4}
           />
           <div className="ai-assistant-composer-footer">
-            <span className="ai-assistant-keyboard-hint">⌘↵ to send</span>
+            <span
+              id="ai-assistant-keyboard-hint"
+              className="ai-assistant-keyboard-hint"
+            >
+              {t('ai_assistant_keyboard_hint')}
+            </span>
             <span className="ai-assistant-current-model">
               {selectedProvider.name} · {selectedModelName}
             </span>
-            <OLButton
-              type="submit"
-              variant="primary"
-              disabled={!prompt.trim() || submitting || (mode === 'agent' && !agentConfig)}
-              isLoading={submitting}
-              loadingLabel={t('ai_assistant_sending')}
-            >
-              {mode === 'agent'
-                ? agentSubmitLabel(agentSession, t)
-                : t('send')}
-            </OLButton>
+            {submitting ? (
+              <OLButton
+                type="button"
+                variant="secondary"
+                onClick={handleStopSubmitting}
+              >
+                <MaterialIcon type="stop" />
+                {t('stop')}
+              </OLButton>
+            ) : (
+              <OLButton
+                type="submit"
+                variant="primary"
+                disabled={
+                  !prompt.trim() || (mode === 'agent' && !agentConfig)
+                }
+              >
+                {mode === 'agent'
+                  ? agentSubmitLabel(agentSession, t)
+                  : t('send')}
+              </OLButton>
+            )}
           </div>
         </form>
       )}
@@ -2793,7 +2847,10 @@ function getStartActHint(
   if (session.status === 'planning') {
     return t('ai_assistant_start_act_hint_planning')
   }
-  if (session.status === 'failed' || session.status === 'cancelled') {
+  if (session.status === 'cancelled') {
+    return t('ai_assistant_start_act_hint_cancelled')
+  }
+  if (session.status === 'failed') {
     return t('ai_assistant_start_act_hint_failed')
   }
   if (session.mode === 'act' && session.status === 'completed') {
@@ -2823,7 +2880,10 @@ function getAgentStatusLabel(
   if (session.status === 'waiting_for_approval') {
     return t('ai_assistant_agent_status_review')
   }
-  if (session.status === 'failed' || session.status === 'cancelled') {
+  if (session.status === 'cancelled') {
+    return t('ai_assistant_agent_status_cancelled')
+  }
+  if (session.status === 'failed') {
     return t('ai_assistant_agent_status_failed')
   }
   if (session.status === 'completed') {
@@ -3010,4 +3070,17 @@ function getErrorMessage(error: unknown) {
   }
 
   return 'Something went wrong. Please try again.'
+}
+
+function isAbortError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+  if ('name' in error && error.name === 'AbortError') {
+    return true
+  }
+  if ('cause' in error) {
+    return isAbortError(error.cause)
+  }
+  return false
 }

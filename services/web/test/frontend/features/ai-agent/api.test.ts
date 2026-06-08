@@ -209,6 +209,31 @@ describe('ai-agent api', function () {
     expect(response.session.id).to.equal('session-one')
   })
 
+  it('passes an AbortSignal to the project agent session create request', async function () {
+    fetchMock.post('/project/project123/ai/agent/sessions', {
+      session: {
+        id: 'session-one',
+        status: 'planning',
+      },
+    })
+    const controller = new AbortController()
+
+    await createProjectAiAgentSession(
+      'project123',
+      {
+        task: 'Explain the project',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      { signal: controller.signal }
+    )
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/sessions'
+    )[0]
+    expect(call.options.signal).to.equal(controller.signal)
+  })
+
   it('starts act mode for project agent sessions', async function () {
     fetchMock.post(
       '/project/project123/ai/agent/sessions/session-one/start-act',
@@ -311,6 +336,125 @@ describe('ai-agent api', function () {
       providerId: 'provider-one',
       model: 'model-one',
     })
+    expect(events.map(event => event.type)).to.deep.equal(['tool_call'])
+    expect(response.answer).to.equal('Agent answer')
+  })
+
+  it('passes an AbortSignal to the project agent turn stream request', async function () {
+    fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        JSON.stringify({
+          type: 'done',
+          session: { id: 'session-one', status: 'completed' },
+          answer: 'Agent answer',
+        }) + '\n',
+    })
+    const controller = new AbortController()
+
+    await sendProjectAiAgentTurnStream(
+      'project123',
+      'session-one',
+      {
+        prompt: 'Explain the project',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      () => {},
+      { signal: controller.signal }
+    )
+
+    const call = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/sessions/session-one/turns'
+    )[0]
+    expect(call.options.signal).to.equal(controller.signal)
+  })
+
+  it('skips malformed agent stream lines and continues parsing events', async function () {
+    fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        '{not-json}\n' +
+        JSON.stringify({
+          type: 'event',
+          event: {
+            id: 'event-one',
+            sessionId: 'session-one',
+            sequence: 1,
+            type: 'tool_call',
+            payload: { name: 'project.read_file' },
+            createdAt: null,
+          },
+        }) +
+        '\n' +
+        'also not json\n' +
+        JSON.stringify({
+          type: 'done',
+          session: { id: 'session-one', status: 'completed' },
+          answer: 'Agent answer',
+        }) +
+        '\n',
+    })
+    const events: Array<{ type: string }> = []
+
+    const response = await sendProjectAiAgentTurnStream(
+      'project123',
+      'session-one',
+      {
+        prompt: 'Explain the project',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      event => events.push(event)
+    )
+
+    expect(events.map(event => event.type)).to.deep.equal(['tool_call'])
+    expect(response.answer).to.equal('Agent answer')
+  })
+
+  it('skips non-object and unknown agent stream events', async function () {
+    fetchMock.post('/project/project123/ai/agent/sessions/session-one/turns', {
+      status: 200,
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body:
+        'null\n' +
+        '[]\n' +
+        JSON.stringify({ type: 'unknown', message: 'ignore me' }) +
+        '\n' +
+        JSON.stringify({
+          type: 'event',
+          event: {
+            id: 'event-one',
+            sessionId: 'session-one',
+            sequence: 1,
+            type: 'tool_call',
+            payload: { name: 'project.read_file' },
+            createdAt: null,
+          },
+        }) +
+        '\n' +
+        JSON.stringify({
+          type: 'done',
+          session: { id: 'session-one', status: 'completed' },
+          answer: 'Agent answer',
+        }) +
+        '\n',
+    })
+    const events: Array<{ type: string }> = []
+
+    const response = await sendProjectAiAgentTurnStream(
+      'project123',
+      'session-one',
+      {
+        prompt: 'Explain the project',
+        providerId: 'provider-one',
+        model: 'model-one',
+      },
+      event => events.push(event)
+    )
+
     expect(events.map(event => event.type)).to.deep.equal(['tool_call'])
     expect(response.answer).to.equal('Agent answer')
   })

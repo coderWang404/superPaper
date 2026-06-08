@@ -374,6 +374,14 @@ type ProjectAiAgentStreamEvent =
   | { type: 'done'; session: ProjectAiAgentSession; answer: string }
   | { type: 'error'; error: { code: string; message: string } }
 
+type ProjectAiAgentStreamOptions = {
+  signal?: AbortSignal
+}
+
+type ProjectAiAgentRequestOptions = {
+  signal?: AbortSignal
+}
+
 export function getProjectAiAgentConfig(projectId: string) {
   return getJSON<ProjectAiAgentConfig>(`/project/${projectId}/ai/agent/config`)
 }
@@ -477,11 +485,16 @@ export async function uploadProjectAiAgentPluginZip(
 
 export function createProjectAiAgentSession(
   projectId: string,
-  body: CreateProjectAiAgentSessionRequest
+  body: CreateProjectAiAgentSessionRequest,
+  requestOptions: ProjectAiAgentRequestOptions = {}
 ) {
   return postJSON<{ session: ProjectAiAgentSession }>(
     `/project/${projectId}/ai/agent/sessions`,
-    { body }
+    {
+      body,
+      signal: requestOptions.signal,
+      swallowAbortError: false,
+    }
   )
 }
 
@@ -534,7 +547,8 @@ export async function sendProjectAiAgentTurnStream(
   projectId: string,
   sessionId: string,
   body: ProjectAiAgentTurnRequest,
-  onEvent: (event: ProjectAiAgentEvent) => void
+  onEvent: (event: ProjectAiAgentEvent) => void,
+  streamOptions: ProjectAiAgentStreamOptions = {}
 ): Promise<ProjectAiAgentTurnResponse> {
   const path = `/project/${projectId}/ai/agent/sessions/${sessionId}/turns`
   const options: RequestInit = {
@@ -546,6 +560,7 @@ export async function sendProjectAiAgentTurnStream(
       'X-Csrf-Token': getMeta('ol-csrfToken'),
     },
     body: JSON.stringify(body),
+    signal: streamOptions.signal,
   }
   const response = await fetch(path, options)
 
@@ -615,7 +630,10 @@ function* parseCompleteNDJSONLines<T>(
     const line = buffer.slice(0, newlineIndex).trim()
     buffer = buffer.slice(newlineIndex + 1)
     if (line) {
-      yield JSON.parse(line) as T
+      const event = parseNDJSONLine<T>(line)
+      if (event) {
+        yield event
+      }
     }
     newlineIndex = buffer.indexOf('\n')
   }
@@ -626,7 +644,27 @@ function* parseNDJSON<T>(text: string) {
   for (const line of text.split('\n')) {
     const trimmedLine = line.trim()
     if (trimmedLine) {
-      yield JSON.parse(trimmedLine) as T
+      const event = parseNDJSONLine<T>(trimmedLine)
+      if (event) {
+        yield event
+      }
     }
   }
+}
+
+function parseNDJSONLine<T>(line: string): T | null {
+  try {
+    const parsed = JSON.parse(line)
+    if (isStreamEventObject(parsed)) {
+      return parsed as T
+    }
+    console.warn('Agent stream: skipping non-object NDJSON line', line)
+  } catch (e) {
+    console.warn('Agent stream: skipping malformed NDJSON line', line)
+  }
+  return null
+}
+
+function isStreamEventObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }

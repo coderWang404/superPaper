@@ -60,6 +60,16 @@ describe('<AiAssistantPanel />', function () {
     screen.getByRole('button', { name: 'Chat' })
     screen.getByRole('button', { name: 'Agent' })
     screen.getByLabelText('Model')
+    const prompt = screen.getByLabelText('Ask about this project')
+    const keyboardHint = screen.getByText('Cmd/Ctrl + Enter to send')
+    expect(prompt.getAttribute('aria-keyshortcuts')).to.equal(
+      'Meta+Enter Control+Enter'
+    )
+    expect(prompt.getAttribute('aria-describedby')?.split(' ')).to.have.members([
+      'ai-assistant-prompt-context',
+      'ai-assistant-keyboard-hint',
+    ])
+    expect(keyboardHint.id).to.equal('ai-assistant-keyboard-hint')
   })
 
   it('keeps zh-CN Agent runtime summary copy localized', function () {
@@ -494,7 +504,8 @@ describe('<AiAssistantPanel />', function () {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
 
-    await screen.findByText('AI request failed')
+    await screen.findByRole('alert')
+    screen.getByText('AI request failed')
   })
 
   it('shows the streamed answer while the request is still active', async function () {
@@ -512,6 +523,30 @@ describe('<AiAssistantPanel />', function () {
     await screen.findByText('Streaming answer')
     screen.getByRole('status', { name: 'Generating response…' })
     stream.finish()
+  })
+
+  it('stops an active chat stream without rendering an error', async function () {
+    mockConfig()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    const stream = mockAbortableChatStream()
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Stream until stopped.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    await screen.findByText('Streaming answer')
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }))
+
+    await screen.findByRole('button', { name: 'Send' })
+    expect(stream.aborted()).to.equal(true)
+    expect(screen.queryByText('AI request failed')).to.equal(null)
+    expect(screen.queryByText('The operation was aborted.')).to.equal(null)
+    expect(screen.queryByText('Streaming answer')).to.equal(null)
+
+    stream.restore()
   })
 
   it('renders assistant Markdown while keeping user messages as text', async function () {
@@ -615,6 +650,42 @@ describe('<AiAssistantPanel />', function () {
       providerId: 'provider-one',
       model: 'model-one',
     })
+  })
+
+  it('stops an active agent stream without rendering an error', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+    const stream = mockAbortableAgentTurnStream()
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Plan until stopped.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+
+    await screen.findByText('Tool call: project.read_file')
+    fireEvent.click(screen.getByRole('button', { name: 'Stop' }))
+
+    await screen.findByRole('button', { name: 'Plan' })
+    expect(stream.aborted()).to.equal(true)
+    expect(screen.queryByText('AI request failed')).to.equal(null)
+    expect(screen.queryByText('The operation was aborted.')).to.equal(null)
+    screen.getByText('Stopped')
+    screen.getByText(
+      'The last plan was stopped. Send a new Plan request before starting Act.'
+    )
+    expect(screen.getByRole('button', { name: 'Start Act' })).to.have.property(
+      'disabled',
+      true
+    )
+    expect(screen.queryByText('Needs retry')).to.equal(null)
+
+    stream.restore()
   })
 
   it('keeps the agent composer after Plan and clears it after Act run', async function () {
@@ -1308,6 +1379,93 @@ function mockDelayedChatStream() {
       )
       controller?.close()
       fetchStub.restore()
+    },
+  }
+}
+
+function mockAbortableChatStream() {
+  return mockAbortableStream({
+    path: '/project/project123/ai/chat/stream',
+    firstEvent:
+      JSON.stringify({ type: 'delta', delta: 'Streaming answer' }) + '\n',
+  })
+}
+
+function mockAbortableAgentTurnStream() {
+  return mockAbortableStream({
+    path: '/project/project123/ai/agent/sessions/session-one/turns',
+    firstEvent:
+      JSON.stringify({
+        type: 'event',
+        event: {
+          id: 'event-one',
+          sessionId: 'session-one',
+          sequence: 1,
+          type: 'tool_call',
+          payload: { name: 'project.read_file' },
+          createdAt: null,
+        },
+      }) + '\n',
+  })
+}
+
+function mockAbortableStream({
+  path,
+  firstEvent,
+}: {
+  path: string
+  firstEvent: string
+}) {
+  const originalFetch = globalThis.fetch
+  const encoder = new TextEncoder()
+  let aborted = false
+  let signal: AbortSignal | undefined
+  const fetchStub = sinon
+    .stub(globalThis, 'fetch')
+    .callsFake(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const requestPath =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.pathname
+            : input.url
+      if (!requestPath.includes(path)) {
+        return originalFetch(input, init)
+      }
+
+      signal =
+        init?.signal ?? (input instanceof Request ? input.signal : undefined)
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode(firstEvent))
+            signal?.addEventListener(
+              'abort',
+              () => {
+                aborted = true
+                controller.error(
+                  new DOMException('The operation was aborted.', 'AbortError')
+                )
+              },
+              { once: true }
+            )
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/x-ndjson' },
+        }
+      )
+    })
+
+  return {
+    aborted() {
+      return aborted
+    },
+    restore() {
+      if (!fetchStub.notCalled || globalThis.fetch === fetchStub) {
+        fetchStub.restore()
+      }
     },
   }
 }
