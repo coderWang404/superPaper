@@ -1570,6 +1570,12 @@
   white-space: nowrap;
 }
 
+.ai-assistant-keyboard-hint {
+  font-size: 11px;
+  color: var(--content-secondary);
+  opacity: 0.7;
+}
+
 .ai-assistant-muted {
   color: var(--content-secondary-themed);
   font-size: var(--font-size-02);

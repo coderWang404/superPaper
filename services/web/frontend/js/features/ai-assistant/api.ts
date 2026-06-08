@@ -158,7 +158,11 @@ function* parseCompleteNDJSONLines<T>(
     const line = buffer.slice(0, newlineIndex).trim()
     buffer = buffer.slice(newlineIndex + 1)
     if (line) {
-      yield JSON.parse(line) as T
+      try {
+        yield JSON.parse(line) as T
+      } catch (e) {
+        console.warn('AI stream: skipping malformed NDJSON line', line)
+      }
     }
     newlineIndex = buffer.indexOf('\n')
   }
@@ -169,7 +173,11 @@ function* parseNDJSON<T>(text: string) {
   for (const line of text.split('\n')) {
     const trimmedLine = line.trim()
     if (trimmedLine) {
-      yield JSON.parse(trimmedLine) as T
+      try {
+        yield JSON.parse(trimmedLine) as T
+      } catch (e) {
+        console.warn('AI stream: skipping malformed NDJSON line', trimmedLine)
+      }
     }
   }
 }

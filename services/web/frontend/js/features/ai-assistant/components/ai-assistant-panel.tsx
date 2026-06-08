@@ -6,6 +6,7 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import type { TFunction } from 'i18next'
@@ -165,6 +166,12 @@ export default function AiAssistantPanel() {
     `${storagePrefix}.mode`,
     'chat'
   )
+
+  const transcriptEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages, streamedAnswer, agentEvents, agentAnswer])
 
   useEffect(() => {
     function applyPrefill(prefill: AiAssistantPrefill | null) {
@@ -719,6 +726,7 @@ export default function AiAssistantPanel() {
                 <AgentEventList
                   events={agentEvents}
                   projectId={projectId}
+                  session={agentSession}
                   t={t}
                   onCheckpointRollback={handleRollbackAgentCheckpoint}
                   onSessionStatusChange={status => {
@@ -748,6 +756,7 @@ export default function AiAssistantPanel() {
                   </p>
                 </div>
               )}
+              <div ref={transcriptEndRef} />
             </div>
 
             {chatError && (
@@ -786,6 +795,12 @@ export default function AiAssistantPanel() {
             aria-describedby="ai-assistant-prompt-context"
             value={prompt}
             onChange={event => setPrompt(event.target.value)}
+            onKeyDown={e => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                if (prompt.trim() && !submitting) handleSubmit(e as any)
+              }
+            }}
             placeholder={t(
               mode === 'agent'
                 ? 'ai_assistant_agent_prompt_placeholder'
@@ -794,6 +809,7 @@ export default function AiAssistantPanel() {
             rows={4}
           />
           <div className="ai-assistant-composer-footer">
+            <span className="ai-assistant-keyboard-hint">⌘↵ to send</span>
             <span className="ai-assistant-current-model">
               {selectedProvider.name} · {selectedModelName}
             </span>
@@ -1315,12 +1331,14 @@ function AgentStatusOverview({
 function AgentEventList({
   events,
   projectId,
+  session,
   t,
   onCheckpointRollback,
   onSessionStatusChange,
 }: {
   events: ProjectAiAgentEvent[]
   projectId: string
+  session: ProjectAiAgentSession | null
   t: TFunction
   onCheckpointRollback: (commitHash: string) => Promise<void>
   onSessionStatusChange: (status: ProjectAiAgentSession['status']) => void
@@ -1346,6 +1364,7 @@ function AgentEventList({
       {runSummary && (
         <AgentRunSummary
           summary={runSummary}
+          session={session}
           t={t}
           onRollbackBefore={
             runSummary.before
@@ -1541,15 +1560,25 @@ function getAgentAnswerPreview(answer: string) {
 
   return `${linePreview.slice(0, AGENT_RESULT_PREVIEW_CHARS).trim()}...`
 }
-
 function AgentRunSummary({
   summary,
+  session,
   t,
   onRollbackBefore,
 }: {
   summary: AgentRunSummaryData
+  session: ProjectAiAgentSession | null
   t: TFunction
   onRollbackBefore?: () => Promise<void>
+
+
+
+
+
+
+
+
+
 }) {
   const [floating, setFloating] = useState(false)
   const [rollingBack, setRollingBack] = useState(false)
@@ -1703,7 +1732,7 @@ function AgentRunSummary({
           <span className="ai-assistant-agent-run-summary-eyebrow">
             {t('ai_assistant_run_summary_status')}
           </span>
-          <strong>{t('ai_assistant_run_summary_completed')}</strong>
+          <strong>{getAgentStatusLabel(session, t)}</strong>
         </div>
         <p>{t('ai_assistant_run_summary_guidance')}</p>
       </div>

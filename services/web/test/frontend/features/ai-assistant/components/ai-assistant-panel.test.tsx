@@ -843,7 +843,7 @@ describe('<AiAssistantPanel />', function () {
     const summary = await screen.findByRole('region', {
       name: 'Run summary',
     })
-    expect(summary.textContent).to.contain('Run completed')
+    expect(summary.textContent).to.contain('Completed')
     expect(summary.textContent).to.contain('Workspace impact')
     expect(summary.textContent).to.contain(
       'Review or roll back before continuing.'
