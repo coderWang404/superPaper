@@ -13,6 +13,7 @@ import logger from '@superpaper/logger'
 import NotificationsHandler from '../Notifications/NotificationsHandler.mjs'
 import { OError, V1ConnectionError } from '../Errors/Errors.js'
 import { User } from '../../models/User.mjs'
+import Settings from '@superpaper/settings'
 import UserPrimaryEmailCheckHandler from '../User/UserPrimaryEmailCheckHandler.mjs'
 import UserController from '../User/UserController.mjs'
 import TutorialHandler from '../Tutorial/TutorialHandler.mjs'
@@ -20,6 +21,7 @@ import UserSettingsHelper from './UserSettingsHelper.mjs'
 
 const DEFAULT_PROJECT_LIST_PAGE_SIZE = 20
 const MAX_PROJECT_LIST_PAGE_SIZE = 100
+const MAX_PROJECT_LIST_SEARCH_LENGTH = 200
 
 /**
  * @import { GetProjectsRequest, GetProjectsResponse, AllUsersProjects, MongoProject, FormattedProject, MongoTag } from "./types"
@@ -177,6 +179,16 @@ async function _getProjects(
   sort = { by: 'lastUpdated', order: 'desc' },
   page
 ) {
+  if (Settings.enableProjectListDbPagination && page != null) {
+    const tags = await TagsHandler.promises.getAllTags(userId)
+    return await ProjectGetter.promises.findUsersProjectListPage(userId, {
+      filters,
+      sort,
+      page: _normalizePage(page),
+      tags,
+    })
+  }
+
   /** @type {[AllUsersProjects, MongoTag[]]} */
   const results = await Promise.all([
     ProjectGetter.promises.findAllUsersProjects(
@@ -314,7 +326,10 @@ function _normalizeFilters(filters) {
   }
 
   if (filters.search !== undefined) {
-    if (typeof filters.search !== 'string') {
+    if (
+      typeof filters.search !== 'string' ||
+      filters.search.length > MAX_PROJECT_LIST_SEARCH_LENGTH
+    ) {
       return null
     }
     normalizedFilters.search = filters.search

@@ -114,6 +114,7 @@ describe('ProjectListController', function () {
     ctx.ProjectGetter = {
       promises: {
         findAllUsersProjects: sinon.stub(),
+        findUsersProjectListPage: sinon.stub(),
       },
     }
     ctx.ProjectHelper = {
@@ -377,6 +378,62 @@ describe('ProjectListController', function () {
       ])
     })
 
+    it('uses the Mongo-backed page query when enabled and page criteria are present', async function (ctx) {
+      ctx.settings.enableProjectListDbPagination = true
+      const dbResponse = {
+        totalSize: 42,
+        projects: [{ id: 'db-project', name: 'DB Project' }],
+        page: { size: 100, offset: 0, nextOffset: null },
+        tagCounts: { untagged: 0, byTagId: {} },
+      }
+      ctx.ProjectGetter.promises.findUsersProjectListPage.resolves(dbResponse)
+      ctx.req.body = {
+        filters: { archived: false, trashed: false, search: 'alpha' },
+        page: { size: 150, offset: 0 },
+        sort: { by: 'title', order: 'asc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      expect(ctx.res.json.firstCall.args[0]).to.equal(dbResponse)
+      expect(
+        ctx.ProjectGetter.promises.findAllUsersProjects
+      ).not.to.have.been.called
+      expect(
+        ctx.ProjectGetter.promises.findUsersProjectListPage
+      ).to.have.been.calledOnceWith(ctx.user._id, {
+        filters: { archived: false, trashed: false, search: 'alpha' },
+        sort: { by: 'title', order: 'asc' },
+        page: { size: 100, offset: 0 },
+        tags: ctx.tags,
+      })
+    })
+
+    it('keeps the legacy full-list path when Mongo-backed pagination is enabled but page criteria are omitted', async function (ctx) {
+      ctx.settings.enableProjectListDbPagination = true
+      setOwnedProjects(
+        ctx,
+        Array.from({ length: 3 }, (_, index) => buildProject(index + 1))
+      )
+      ctx.req.body = {
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(3)
+      expect(response.projects.map(project => project.id)).to.deep.equal([
+        '3',
+        '2',
+        '1',
+      ])
+      expect(
+        ctx.ProjectGetter.promises.findUsersProjectListPage
+      ).not.to.have.been.called
+      expect(ctx.ProjectGetter.promises.findAllUsersProjects).to.have.been.called
+    })
+
     it('reports null nextOffset on the final page', async function (ctx) {
       setOwnedProjects(
         ctx,
@@ -452,6 +509,10 @@ describe('ProjectListController', function () {
       for (const body of [
         { sort: null },
         { filters: null },
+        { filters: { search: 123 } },
+        { filters: { search: null } },
+        { filters: { search: ['alpha'] } },
+        { filters: { search: 'a'.repeat(201) } },
         { page: { size: 0, offset: 0 } },
         { page: { size: true, offset: false } },
         { page: { size: [20], offset: [0] } },
