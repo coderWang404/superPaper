@@ -50,7 +50,7 @@ describe('translation coverage script', function () {
     ])
   })
 
-  it('fails check mode only when current zh-CN debt baselines are exceeded', function () {
+  it('fails check mode when current zh-CN debt baselines or key drift are exceeded', function () {
     const report = buildCoverageReport({
       locales: new Map([
         ['en', { a: 'A', b: 'B' }],
@@ -65,8 +65,8 @@ describe('translation coverage script', function () {
         extractedZhCnMissing: 2,
       })
     ).toMatchObject({
-      ok: true,
-      warnings: [
+      ok: false,
+      failures: [
         'zh-CN has 1 key not present in en.json.',
         'frontend/extracted-translations.json has 1 key not present in en.json.',
       ],
@@ -82,6 +82,8 @@ describe('translation coverage script', function () {
       failures: [
         'zh-CN is missing 1 en.json key, which exceeds the baseline of 0.',
         'frontend extracted translations are missing 2 zh-CN keys, which exceeds the baseline of 1.',
+        'zh-CN has 1 key not present in en.json.',
+        'frontend/extracted-translations.json has 1 key not present in en.json.',
       ],
     })
   })

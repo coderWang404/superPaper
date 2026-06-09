@@ -92,7 +92,7 @@ export function evaluateCoverageChecks(
     )
   }
   if (zhCnExtraneous > 0) {
-    warnings.push(
+    failures.push(
       `zh-CN has ${zhCnExtraneous} ${pluralize(
         zhCnExtraneous,
         'key'
@@ -100,7 +100,7 @@ export function evaluateCoverageChecks(
     )
   }
   if (extractedMissingEn > 0) {
-    warnings.push(
+    failures.push(
       `frontend/extracted-translations.json has ${extractedMissingEn} ${pluralize(
         extractedMissingEn,
         'key'

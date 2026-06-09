@@ -1036,6 +1036,58 @@ describe('<AiAssistantPanel />', function () {
     expect(summary.getAttribute('style')).to.contain('translate(-380px, -80px)')
   })
 
+  it('reclamps the floating agent run summary when the viewport resizes', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStreamWithWorkspaceArtifacts()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Edit real files.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+
+    const summary = await screen.findByRole('region', {
+      name: 'Run summary',
+    })
+    const innerWidthStub = sinon.stub(window, 'innerWidth').value(900)
+    const innerHeightStub = sinon.stub(window, 'innerHeight').value(700)
+    sinon.stub(summary, 'getBoundingClientRect').returns({
+      x: 400,
+      y: 150,
+      left: 400,
+      top: 150,
+      right: 780,
+      bottom: 370,
+      width: 380,
+      height: 220,
+      toJSON() {
+        return {}
+      },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Float run summary' }))
+    fireEvent.mouseDown(
+      screen.getByRole('button', { name: 'Drag run summary' }),
+      { clientX: 120, clientY: 80 }
+    )
+    fireEvent.mouseMove(window, { clientX: 220, clientY: 180 })
+    fireEvent.mouseUp(window)
+    expect(summary.getAttribute('style')).to.contain('translate(100px, 100px)')
+
+    innerWidthStub.value(700)
+    innerHeightStub.value(350)
+    fireEvent.resize(window)
+
+    expect(summary.getAttribute('style')).to.contain('translate(4px, 64px)')
+  })
+
   it('bounds persisted agent events while keeping run-summary artifacts', async function () {
     mockConfig()
     mockAgentConfig()
@@ -1063,6 +1115,10 @@ describe('<AiAssistantPanel />', function () {
       'checkpoint-before',
       'workspace-diff',
       'checkpoint-after',
+      'patch-created',
+      'patch-applied',
+      'patch-rejected',
+      'patch-rolled-back',
     ])
     expect(persistedEvents.map(event => event.id)).not.to.include('tool-1')
   })
@@ -1986,9 +2042,53 @@ function mockAgentTurnStreamWithManyEvents() {
     {
       type: 'event',
       event: {
-        id: 'workspace-diff',
+        id: 'patch-created',
         sessionId: 'session-one',
         sequence: 152,
+        type: 'patch_created',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'patch-applied',
+        sessionId: 'session-one',
+        sequence: 153,
+        type: 'patch_applied',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'patch-rejected',
+        sessionId: 'session-one',
+        sequence: 154,
+        type: 'patch_rejected',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'patch-rolled-back',
+        sessionId: 'session-one',
+        sequence: 155,
+        type: 'patch_rolled_back',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'workspace-diff',
+        sessionId: 'session-one',
+        sequence: 156,
         type: 'workspace_diff',
         payload: {
           diff: [
@@ -2008,7 +2108,7 @@ function mockAgentTurnStreamWithManyEvents() {
       event: {
         id: 'checkpoint-after',
         sessionId: 'session-one',
-        sequence: 153,
+        sequence: 157,
         type: 'checkpoint_created',
         payload: {
           phase: 'after',
