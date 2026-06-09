@@ -101,6 +101,36 @@ describe('ProjectHelper', function () {
         ).to.equal(false)
       })
     })
+
+    describe('project.archived being a legacy boolean', function () {
+      it('returns the boolean value', function (ctx) {
+        ctx.project.archived = true
+        expect(
+          ctx.ProjectHelper.isArchived(ctx.project, ctx.user._id)
+        ).to.equal(true)
+
+        ctx.project.archived = false
+        expect(
+          ctx.ProjectHelper.isArchived(ctx.project, ctx.user._id)
+        ).to.equal(false)
+      })
+    })
+
+    describe('project.archived being a legacy scalar user id', function () {
+      it('returns true if the scalar user id matches', function (ctx) {
+        ctx.project.archived = new ObjectId(ctx.user._id)
+        expect(
+          ctx.ProjectHelper.isArchived(ctx.project, ctx.user._id)
+        ).to.equal(true)
+      })
+
+      it('returns false if the scalar user id does not match', function (ctx) {
+        ctx.project.archived = new ObjectId('5c41deb2b4ca500153340809')
+        expect(
+          ctx.ProjectHelper.isArchived(ctx.project, ctx.user._id)
+        ).to.equal(false)
+      })
+    })
   })
 
   describe('isTrashed', function () {
@@ -124,6 +154,36 @@ describe('ProjectHelper', function () {
     describe('project.trashed being undefined', function () {
       it('returns false if trashed is undefined', function (ctx) {
         ctx.project.trashed = undefined
+        expect(ctx.ProjectHelper.isTrashed(ctx.project, ctx.user._id)).to.equal(
+          false
+        )
+      })
+    })
+
+    describe('project.trashed being a legacy boolean', function () {
+      it('returns the boolean value', function (ctx) {
+        ctx.project.trashed = true
+        expect(ctx.ProjectHelper.isTrashed(ctx.project, ctx.user._id)).to.equal(
+          true
+        )
+
+        ctx.project.trashed = false
+        expect(ctx.ProjectHelper.isTrashed(ctx.project, ctx.user._id)).to.equal(
+          false
+        )
+      })
+    })
+
+    describe('project.trashed being a legacy scalar user id', function () {
+      it('returns true if the scalar user id matches', function (ctx) {
+        ctx.project.trashed = new ObjectId(ctx.user._id)
+        expect(ctx.ProjectHelper.isTrashed(ctx.project, ctx.user._id)).to.equal(
+          true
+        )
+      })
+
+      it('returns false if the scalar user id does not match', function (ctx) {
+        ctx.project.trashed = new ObjectId('5c41deb2b4ca500153340809')
         expect(ctx.ProjectHelper.isTrashed(ctx.project, ctx.user._id)).to.equal(
           false
         )

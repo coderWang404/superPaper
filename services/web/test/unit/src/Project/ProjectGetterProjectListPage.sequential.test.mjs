@@ -327,6 +327,87 @@ describe('ProjectGetter.findUsersProjectListPage', function () {
     expect(names(activeResult.projects)).to.deep.equal(['Other User Archived'])
   })
 
+  it('keeps legacy boolean and scalar archived and trashed projects out of active DB pages', async function (ctx) {
+    await db.projects.insertMany([
+      buildProject({
+        name: 'Legacy Boolean Archived',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-01T00:00:00Z'),
+        archived: true,
+      }),
+      buildProject({
+        name: 'Legacy Boolean Trashed',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-02T00:00:00Z'),
+        trashed: true,
+      }),
+      buildProject({
+        name: 'Legacy Scalar Archived',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-03T00:00:00Z'),
+        archived: ctx.userId,
+      }),
+      buildProject({
+        name: 'Legacy Scalar Trashed',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-04T00:00:00Z'),
+        trashed: ctx.userId,
+      }),
+      buildProject({
+        name: 'Other User Scalar Archived',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-05T00:00:00Z'),
+        archived: ctx.otherUserId,
+      }),
+      buildProject({
+        name: 'Active',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-06T00:00:00Z'),
+      }),
+    ])
+
+    const activeResult = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: { archived: false, trashed: false },
+        sort: { by: 'lastUpdated', order: 'asc' },
+        page: { size: 20, offset: 0 },
+        tags: [],
+      }
+    )
+    const archivedResult = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: { archived: true, trashed: false },
+        sort: { by: 'lastUpdated', order: 'asc' },
+        page: { size: 20, offset: 0 },
+        tags: [],
+      }
+    )
+    const trashedResult = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: { trashed: true },
+        sort: { by: 'lastUpdated', order: 'asc' },
+        page: { size: 20, offset: 0 },
+        tags: [],
+      }
+    )
+
+    expect(names(activeResult.projects)).to.deep.equal([
+      'Other User Scalar Archived',
+      'Active',
+    ])
+    expect(names(archivedResult.projects)).to.deep.equal([
+      'Legacy Boolean Archived',
+      'Legacy Scalar Archived',
+    ])
+    expect(names(trashedResult.projects)).to.deep.equal([
+      'Legacy Boolean Trashed',
+      'Legacy Scalar Trashed',
+    ])
+  })
+
   it('applies owned and shared filters with the current boolean semantics', async function (ctx) {
     await db.projects.insertMany([
       buildProject({

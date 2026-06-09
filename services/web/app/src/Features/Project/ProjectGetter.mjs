@@ -306,9 +306,11 @@ function buildProjectListDerivedFieldStages(userObjectId) {
         dashboardArchivedRefs: {
           $cond: [{ $isArray: '$archived' }, '$archived', []],
         },
+        dashboardLegacyArchived: { $eq: ['$archived', true] },
         dashboardTrashedRefs: {
           $cond: [{ $isArray: '$trashed' }, '$trashed', []],
         },
+        dashboardLegacyTrashed: { $eq: ['$trashed', true] },
       },
     },
     {
@@ -369,10 +371,18 @@ function buildProjectListDerivedFieldStages(userObjectId) {
           },
         },
         dashboardArchived: {
-          $in: [userObjectId, '$dashboardArchivedRefs'],
+          $or: [
+            '$dashboardLegacyArchived',
+            { $eq: ['$archived', userObjectId] },
+            { $in: [userObjectId, '$dashboardArchivedRefs'] },
+          ],
         },
         dashboardTrashedRaw: {
-          $in: [userObjectId, '$dashboardTrashedRefs'],
+          $or: [
+            '$dashboardLegacyTrashed',
+            { $eq: ['$trashed', userObjectId] },
+            { $in: [userObjectId, '$dashboardTrashedRefs'] },
+          ],
         },
       },
     },

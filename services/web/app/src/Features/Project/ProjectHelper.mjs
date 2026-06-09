@@ -37,9 +37,7 @@ function compilerFromV1Engine(engine) {
  * @returns {boolean}
  */
 function isArchived(project, rawUserId) {
-  const userId = new ObjectId(rawUserId)
-
-  return (project.archived || []).some(id => id.equals(userId))
+  return includesUserOrLegacyBoolean(project.archived, rawUserId)
 }
 
 /**
@@ -48,9 +46,7 @@ function isArchived(project, rawUserId) {
  * @returns {boolean}
  */
 function isTrashed(project, rawUserId) {
-  const userId = new ObjectId(rawUserId)
-
-  return (project.trashed || []).some(id => id.equals(userId))
+  return includesUserOrLegacyBoolean(project.trashed, rawUserId)
 }
 
 /**
@@ -60,6 +56,22 @@ function isTrashed(project, rawUserId) {
  */
 function isArchivedOrTrashed(project, userId) {
   return isArchived(project, userId) || isTrashed(project, userId)
+}
+
+function includesUserOrLegacyBoolean(value, rawUserId) {
+  if (typeof value === 'boolean') {
+    return value
+  }
+  if (value == null) {
+    return false
+  }
+
+  const userId = new ObjectId(rawUserId)
+  if (Array.isArray(value)) {
+    return value.some(id => id.equals(userId))
+  }
+
+  return value.equals?.(userId) || false
 }
 
 /**
