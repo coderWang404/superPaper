@@ -262,6 +262,8 @@ describe('ai-provider-admin', function () {
     screen.getByRole('button', { name: 'Sync models for Provider Two' })
     screen.getByRole('button', { name: 'Test Provider One' })
     screen.getByRole('button', { name: 'Test Provider Two' })
+    screen.getByRole('button', { name: 'Edit Provider One' })
+    screen.getByRole('button', { name: 'Edit Provider Two' })
     screen.getByRole('button', { name: 'Disable Provider One' })
     screen.getByRole('button', { name: 'Enable Provider Two' })
   })
@@ -322,6 +324,120 @@ describe('ai-provider-admin', function () {
     expect(JSON.parse(call.options.body as string)).to.deep.equal({
       enabled: false,
     })
+  })
+
+  it('edits provider metadata without requiring an API key', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+    fetchMock.patch('/admin/ai/providers/provider-one', {
+      provider: providerFixture({
+        name: 'Provider One Edited',
+        baseURL: 'https://provider-one-edited.example/v1',
+        defaultModel: 'model-two',
+        models: [
+          {
+            id: 'model-one',
+            displayName: 'model-one',
+            source: 'manual',
+            enabled: true,
+          },
+          {
+            id: 'model-two',
+            displayName: 'model-two',
+            source: 'manual',
+            enabled: true,
+          },
+        ],
+      }),
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Provider One' }))
+    fireEvent.input(screen.getByLabelText('Provider name for Provider One'), {
+      target: { value: 'Provider One Edited' },
+    })
+    fireEvent.input(screen.getByLabelText('Base URL for Provider One'), {
+      target: { value: 'https://provider-one-edited.example/v1' },
+    })
+    fireEvent.input(screen.getByLabelText('Model IDs for Provider One'), {
+      target: { value: 'model-one, model-two' },
+    })
+    fireEvent.input(screen.getByLabelText('Default model for Provider One'), {
+      target: { value: 'model-two' },
+    })
+    fireEvent.submit(
+      screen.getByRole('form', { name: 'Edit provider Provider One' })
+    )
+
+    await screen.findByText('Provider updated')
+    await screen.findByText('Provider One Edited')
+    screen.getByText('https://provider-one-edited.example/v1')
+    screen.getByText('model-one, model-two')
+    screen.getByText('model-two')
+    expect(
+      screen.queryByRole('form', { name: 'Edit provider Provider One' })
+    ).to.equal(null)
+
+    const call = fetchMock.callHistory.calls(
+      '/admin/ai/providers/provider-one'
+    )[0]
+    expect(call.options.method).to.equal('patch')
+    expect(JSON.parse(call.options.body as string)).to.deep.equal({
+      name: 'Provider One Edited',
+      baseURL: 'https://provider-one-edited.example/v1',
+      models: [
+        {
+          id: 'model-one',
+          displayName: 'model-one',
+          source: 'manual',
+          enabled: true,
+        },
+        {
+          id: 'model-two',
+          displayName: 'model-two',
+          source: 'manual',
+          enabled: true,
+        },
+      ],
+      defaultModel: 'model-two',
+    })
+  })
+
+  it('does not render submitted provider metadata after edit validation errors', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+    fetchMock.patch('/admin/ai/providers/provider-one', {
+      status: 422,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid AI provider input',
+          fields: [{ field: 'baseURL', message: 'baseURL must use https' }],
+        },
+      },
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Provider One' }))
+    fireEvent.input(screen.getByLabelText('Base URL for Provider One'), {
+      target: { value: 'http://unsafe-provider.example/private' },
+    })
+    fireEvent.submit(
+      screen.getByRole('form', { name: 'Edit provider Provider One' })
+    )
+
+    await screen.findByRole('alert')
+    screen.getByText('Invalid AI provider input: baseURL must use https')
+    screen.getByText('https://provider-one.example/v1')
+    expect(document.body.textContent).not.to.contain(
+      'http://unsafe-provider.example/private'
+    )
   })
 
   it('replaces a provider API key and clears the replacement field', async function () {

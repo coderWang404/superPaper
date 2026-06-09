@@ -25,6 +25,7 @@ import {
   getFormInput,
   ProviderCreateForm,
   providerInputFromForm,
+  providerMetadataInputFromForm,
 } from './provider-create-form'
 import { ProviderTable } from './provider-table'
 
@@ -186,6 +187,33 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
     }
   }
 
+  async function handleEditProvider(
+    event: FormEvent<HTMLFormElement>,
+    providerId: string
+  ) {
+    event.preventDefault()
+    const input = providerMetadataInputFromForm(event.currentTarget)
+
+    dispatch({
+      type: 'action:start',
+      activeAction: `edit:${providerId}`,
+    })
+
+    try {
+      const response = await updateProvider(csrfToken, providerId, input)
+      dispatch({
+        type: 'provider:replace',
+        provider: requireProvider(response, t('requestFailed')),
+      })
+      dispatch({ type: 'feedback:status', statusMessage: 'providerUpdated' })
+      dispatch({ type: 'edit-provider:collapse' })
+    } catch (error) {
+      showError(error)
+    } finally {
+      dispatch({ type: 'action:finish' })
+    }
+  }
+
   async function handleDeleteProvider(provider: AiProvider) {
     if (!window.confirm(`${t('confirmDelete')} ${provider.name}?`)) {
       return
@@ -221,6 +249,7 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
           loading={state.loading}
           activeAction={state.activeAction}
           expandedKeyProviderId={state.expandedKeyProviderId}
+          expandedEditProviderId={state.expandedEditProviderId}
           t={t}
           onSyncModels={providerId => {
             handleSyncModels(providerId).catch(showError)
@@ -239,6 +268,15 @@ export function AiProviderAdminApp({ csrfToken }: { csrfToken: string }) {
           }}
           onReplaceKey={(event, providerId) => {
             handleReplaceKey(event, providerId).catch(showError)
+          }}
+          onShowEditProvider={providerId => {
+            dispatch({ type: 'edit-provider:expand', providerId })
+          }}
+          onCancelEditProvider={() => {
+            dispatch({ type: 'edit-provider:collapse' })
+          }}
+          onEditProvider={(event, providerId) => {
+            handleEditProvider(event, providerId).catch(showError)
           }}
           onDeleteProvider={provider => {
             handleDeleteProvider(provider).catch(showError)

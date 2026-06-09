@@ -8,6 +8,7 @@ type ProviderTableProps = {
   loading: boolean
   activeAction: string | null
   expandedKeyProviderId: string | null
+  expandedEditProviderId: string | null
   t: (key: TranslationKey) => string
   onSyncModels: (providerId: string) => void
   onTestProvider: (providerId: string) => void
@@ -15,6 +16,12 @@ type ProviderTableProps = {
   onShowReplaceKey: (providerId: string) => void
   onCancelReplaceKey: () => void
   onReplaceKey: (
+    event: FormEvent<HTMLFormElement>,
+    providerId: string
+  ) => void
+  onShowEditProvider: (providerId: string) => void
+  onCancelEditProvider: () => void
+  onEditProvider: (
     event: FormEvent<HTMLFormElement>,
     providerId: string
   ) => void
@@ -26,6 +33,7 @@ export function ProviderTable({
   loading,
   activeAction,
   expandedKeyProviderId,
+  expandedEditProviderId,
   t,
   onSyncModels,
   onTestProvider,
@@ -33,6 +41,9 @@ export function ProviderTable({
   onShowReplaceKey,
   onCancelReplaceKey,
   onReplaceKey,
+  onShowEditProvider,
+  onCancelEditProvider,
+  onEditProvider,
   onDeleteProvider,
 }: ProviderTableProps) {
   if (loading) {
@@ -64,6 +75,7 @@ export function ProviderTable({
               provider={provider}
               activeAction={activeAction}
               expandedKeyProviderId={expandedKeyProviderId}
+              expandedEditProviderId={expandedEditProviderId}
               t={t}
               onSyncModels={onSyncModels}
               onTestProvider={onTestProvider}
@@ -71,6 +83,9 @@ export function ProviderTable({
               onShowReplaceKey={onShowReplaceKey}
               onCancelReplaceKey={onCancelReplaceKey}
               onReplaceKey={onReplaceKey}
+              onShowEditProvider={onShowEditProvider}
+              onCancelEditProvider={onCancelEditProvider}
+              onEditProvider={onEditProvider}
               onDeleteProvider={onDeleteProvider}
             />
           ))}
@@ -84,6 +99,7 @@ function ProviderRow({
   provider,
   activeAction,
   expandedKeyProviderId,
+  expandedEditProviderId,
   t,
   onSyncModels,
   onTestProvider,
@@ -91,6 +107,9 @@ function ProviderRow({
   onShowReplaceKey,
   onCancelReplaceKey,
   onReplaceKey,
+  onShowEditProvider,
+  onCancelEditProvider,
+  onEditProvider,
   onDeleteProvider,
 }: Omit<ProviderTableProps, 'providers' | 'loading'> & {
   provider: AiProvider
@@ -100,97 +119,240 @@ function ProviderRow({
   const isSyncing = activeAction === `sync:${provider.id}`
   const isTesting = activeAction === `test:${provider.id}`
   const isReplacingKey = activeAction === `replace-key:${provider.id}`
+  const isEditing = activeAction === `edit:${provider.id}`
   const isReplaceKeyExpanded = expandedKeyProviderId === provider.id
+  const isEditExpanded = expandedEditProviderId === provider.id
 
   return (
-    <tr>
-      <td>
-        <strong>{provider.name}</strong>
-        <div className="ai-admin-row-subtitle">
-          {provider.hasApiKey ? t('apiKeyStored') : t('noApiKeyStored')}
-        </div>
-        {isReplaceKeyExpanded ? (
-          <ReplaceKeyForm
-            provider={provider}
-            activeAction={activeAction}
-            isReplacingKey={isReplacingKey}
-            t={t}
-            onCancelReplaceKey={onCancelReplaceKey}
-            onReplaceKey={onReplaceKey}
+    <>
+      <tr>
+        <td>
+          <strong>{provider.name}</strong>
+          <div className="ai-admin-row-subtitle">
+            {provider.hasApiKey ? t('apiKeyStored') : t('noApiKeyStored')}
+          </div>
+          {isReplaceKeyExpanded ? (
+            <ReplaceKeyForm
+              provider={provider}
+              activeAction={activeAction}
+              isReplacingKey={isReplacingKey}
+              t={t}
+              onCancelReplaceKey={onCancelReplaceKey}
+              onReplaceKey={onReplaceKey}
+            />
+          ) : (
+            <button
+              type="button"
+              className="btn btn-secondary btn-xs ai-provider-admin-replace-key-toggle"
+              aria-label={`${t('replaceProviderKeyFor')} ${provider.name}`}
+              disabled={Boolean(activeAction)}
+              onClick={() => onShowReplaceKey(provider.id)}
+            >
+              {t('replaceKey')}
+            </button>
+          )}
+        </td>
+        <td>{provider.baseURL}</td>
+        <td>{models}</td>
+        <td>{provider.defaultModel || t('none')}</td>
+        <td>
+          <StatusBadge
+            label={healthLabel(provider.healthStatus, t)}
+            tone={provider.healthStatus}
           />
-        ) : (
-          <button
-            type="button"
-            className="btn btn-secondary btn-xs ai-provider-admin-replace-key-toggle"
-            aria-label={`${t('replaceProviderKeyFor')} ${provider.name}`}
-            disabled={Boolean(activeAction)}
-            onClick={() => onShowReplaceKey(provider.id)}
-          >
-            {t('replaceKey')}
-          </button>
-        )}
-      </td>
-      <td>{provider.baseURL}</td>
-      <td>{models}</td>
-      <td>{provider.defaultModel || t('none')}</td>
-      <td>
-        <StatusBadge
-          label={healthLabel(provider.healthStatus, t)}
-          tone={provider.healthStatus}
-        />
-      </td>
-      <td>
-        <StatusBadge
-          label={provider.enabled ? t('enabled') : t('disabled')}
-          tone={provider.enabled ? 'enabled' : 'disabled'}
-        />
-      </td>
-      <td>
-        <div className="ai-admin-actions">
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            aria-label={t('syncModelsFor').replace(
-              '__provider__',
-              provider.name
-            )}
-            disabled={Boolean(activeAction)}
-            onClick={() => onSyncModels(provider.id)}
-          >
-            {t(isSyncing ? 'syncingModels' : 'syncModels')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            aria-label={`${t('test')} ${provider.name}`}
-            disabled={Boolean(activeAction)}
-            onClick={() => onTestProvider(provider.id)}
-          >
-            {t(isTesting ? 'testingProvider' : 'test')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            aria-label={`${provider.enabled ? t('disable') : t('enable')} ${
-              provider.name
-            }`}
-            disabled={Boolean(activeAction)}
-            onClick={() => onToggleProvider(provider)}
-          >
-            {provider.enabled ? t('disable') : t('enable')}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger btn-sm"
-            aria-label={`${t('delete')} ${provider.name}`}
-            disabled={Boolean(activeAction)}
-            onClick={() => onDeleteProvider(provider)}
-          >
-            {t('delete')}
-          </button>
+        </td>
+        <td>
+          <StatusBadge
+            label={provider.enabled ? t('enabled') : t('disabled')}
+            tone={provider.enabled ? 'enabled' : 'disabled'}
+          />
+        </td>
+        <td>
+          <div className="ai-admin-actions">
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              aria-label={t('syncModelsFor').replace(
+                '__provider__',
+                provider.name
+              )}
+              disabled={Boolean(activeAction)}
+              onClick={() => onSyncModels(provider.id)}
+            >
+              {t(isSyncing ? 'syncingModels' : 'syncModels')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              aria-label={`${t('test')} ${provider.name}`}
+              disabled={Boolean(activeAction)}
+              onClick={() => onTestProvider(provider.id)}
+            >
+              {t(isTesting ? 'testingProvider' : 'test')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              aria-label={`${t('edit')} ${provider.name}`}
+              disabled={Boolean(activeAction)}
+              onClick={() => onShowEditProvider(provider.id)}
+            >
+              {t('edit')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              aria-label={`${provider.enabled ? t('disable') : t('enable')} ${
+                provider.name
+              }`}
+              disabled={Boolean(activeAction)}
+              onClick={() => onToggleProvider(provider)}
+            >
+              {provider.enabled ? t('disable') : t('enable')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              aria-label={`${t('delete')} ${provider.name}`}
+              disabled={Boolean(activeAction)}
+              onClick={() => onDeleteProvider(provider)}
+            >
+              {t('delete')}
+            </button>
+          </div>
+        </td>
+      </tr>
+      {isEditExpanded && (
+        <tr className="ai-provider-admin-edit-row">
+          <td colSpan={7}>
+            <ProviderEditForm
+              provider={provider}
+              activeAction={activeAction}
+              isEditing={isEditing}
+              t={t}
+              onCancelEditProvider={onCancelEditProvider}
+              onEditProvider={onEditProvider}
+            />
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
+function ProviderEditForm({
+  provider,
+  activeAction,
+  isEditing,
+  t,
+  onCancelEditProvider,
+  onEditProvider,
+}: {
+  provider: AiProvider
+  activeAction: string | null
+  isEditing: boolean
+  t: (key: TranslationKey) => string
+  onCancelEditProvider: () => void
+  onEditProvider: (
+    event: FormEvent<HTMLFormElement>,
+    providerId: string
+  ) => void
+}) {
+  const safeProviderId = safeId(provider.id)
+  const nameId = `ai-provider-edit-name-${safeProviderId}`
+  const baseUrlId = `ai-provider-edit-base-url-${safeProviderId}`
+  const modelIdsId = `ai-provider-edit-model-ids-${safeProviderId}`
+  const defaultModelId = `ai-provider-edit-default-model-${safeProviderId}`
+  const modelIdsHelpId = `ai-provider-edit-model-ids-help-${safeProviderId}`
+  const labelForProvider = (field: TranslationKey) =>
+    t('fieldForProvider')
+      .replace('__field__', t(field))
+      .replace('__provider__', provider.name)
+
+  return (
+    <form
+      className="ai-provider-admin-edit-form"
+      aria-label={`${t('editProvider')} ${provider.name}`}
+      onSubmit={event => onEditProvider(event, provider.id)}
+    >
+      <div className="ai-admin-form-grid">
+        <div className="form-group">
+          <label className="form-label" htmlFor={nameId}>
+            {t('providerName')}
+          </label>
+          <input
+            className="form-control"
+            id={nameId}
+            name="name"
+            type="text"
+            required
+            aria-label={labelForProvider('providerName')}
+            defaultValue={provider.name}
+          />
         </div>
-      </td>
-    </tr>
+        <div className="form-group">
+          <label className="form-label" htmlFor={baseUrlId}>
+            {t('baseURL')}
+          </label>
+          <input
+            className="form-control"
+            id={baseUrlId}
+            name="baseURL"
+            type="url"
+            required
+            aria-label={labelForProvider('baseURL')}
+            defaultValue={provider.baseURL}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label" htmlFor={modelIdsId}>
+            {t('modelIds')}
+          </label>
+          <input
+            className="form-control"
+            id={modelIdsId}
+            name="modelIds"
+            type="text"
+            defaultValue={provider.models.map(model => model.id).join(', ')}
+            aria-label={labelForProvider('modelIds')}
+            aria-describedby={modelIdsHelpId}
+          />
+          <p className="ai-admin-help-text" id={modelIdsHelpId}>
+            {t('modelIdsHelp')}
+          </p>
+        </div>
+        <div className="form-group">
+          <label className="form-label" htmlFor={defaultModelId}>
+            {t('defaultModel')}
+          </label>
+          <input
+            className="form-control"
+            id={defaultModelId}
+            name="defaultModel"
+            type="text"
+            aria-label={labelForProvider('defaultModel')}
+            defaultValue={provider.defaultModel || ''}
+          />
+        </div>
+      </div>
+      <div className="ai-admin-form-footer">
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={Boolean(activeAction)}
+        >
+          {t(isEditing ? 'savingProvider' : 'saveProvider')}
+        </button>
+        <button
+          className="btn btn-link"
+          type="button"
+          disabled={Boolean(activeAction)}
+          onClick={onCancelEditProvider}
+        >
+          {t('cancel')}
+        </button>
+      </div>
+    </form>
   )
 }
 

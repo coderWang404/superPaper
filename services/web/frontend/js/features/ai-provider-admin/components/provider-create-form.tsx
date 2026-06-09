@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import type { ProviderInput } from '../types'
+import type { ProviderInput, ProviderPatchInput } from '../types'
 import type { TranslationKey } from '../translations'
 
 type ProviderCreateFormProps = {
@@ -168,6 +168,19 @@ export function ProviderCreateForm({ t, onSubmit }: ProviderCreateFormProps) {
 }
 
 export function providerInputFromForm(form: HTMLFormElement): ProviderInput {
+  const metadata = providerMetadataInputFromForm(form)
+
+  return {
+    ...metadata,
+    providerType: 'openai-compatible',
+    apiKey: getFormInput(form, 'apiKey').value,
+    enabled: getFormInput(form, 'enabled').checked,
+  }
+}
+
+export function providerMetadataInputFromForm(
+  form: HTMLFormElement
+): ProviderPatchInput {
   const modelIds = getFormInput(form, 'modelIds')
     .value.split(/[,\n]/)
     .map(modelId => modelId.trim())
@@ -175,10 +188,7 @@ export function providerInputFromForm(form: HTMLFormElement): ProviderInput {
 
   return {
     name: getFormInput(form, 'name').value,
-    providerType: 'openai-compatible',
     baseURL: getFormInput(form, 'baseURL').value,
-    apiKey: getFormInput(form, 'apiKey').value,
-    enabled: getFormInput(form, 'enabled').checked,
     defaultModel: getFormInput(form, 'defaultModel').value || null,
     models: modelIds.map(modelId => ({
       id: modelId,

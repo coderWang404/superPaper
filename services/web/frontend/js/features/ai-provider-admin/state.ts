@@ -6,6 +6,7 @@ export type ProviderAdminState = {
   loading: boolean
   activeAction: string | null
   expandedKeyProviderId: string | null
+  expandedEditProviderId: string | null
   statusMessage: TranslationKey | null
   error: SafeApiError | null
 }
@@ -21,6 +22,8 @@ export type ProviderAdminAction =
   | { type: 'action:finish' }
   | { type: 'replace-key:expand'; providerId: string }
   | { type: 'replace-key:collapse' }
+  | { type: 'edit-provider:expand'; providerId: string }
+  | { type: 'edit-provider:collapse' }
   | { type: 'feedback:status'; statusMessage: TranslationKey | null }
   | { type: 'feedback:error'; error: SafeApiError }
 
@@ -29,6 +32,7 @@ export const initialProviderAdminState: ProviderAdminState = {
   loading: true,
   activeAction: null,
   expandedKeyProviderId: null,
+  expandedEditProviderId: null,
   statusMessage: null,
   error: null,
 }
@@ -114,6 +118,7 @@ export function providerAdminReducer(
       return {
         ...state,
         expandedKeyProviderId: action.providerId,
+        expandedEditProviderId: null,
         statusMessage: null,
         error: null,
       }
@@ -121,6 +126,19 @@ export function providerAdminReducer(
       return {
         ...state,
         expandedKeyProviderId: null,
+      }
+    case 'edit-provider:expand':
+      return {
+        ...state,
+        expandedEditProviderId: action.providerId,
+        expandedKeyProviderId: null,
+        statusMessage: null,
+        error: null,
+      }
+    case 'edit-provider:collapse':
+      return {
+        ...state,
+        expandedEditProviderId: null,
       }
     case 'feedback:status':
       return {

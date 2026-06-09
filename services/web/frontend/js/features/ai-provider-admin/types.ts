@@ -28,7 +28,10 @@ export type ProviderInput = {
 }
 
 export type ProviderPatchInput = Partial<
-  Pick<ProviderInput, 'apiKey' | 'enabled' | 'defaultModel' | 'models'>
+  Pick<
+    ProviderInput,
+    'name' | 'baseURL' | 'apiKey' | 'enabled' | 'defaultModel' | 'models'
+  >
 >
 
 export type ProviderListResponse = {

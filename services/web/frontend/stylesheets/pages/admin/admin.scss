@@ -479,6 +479,15 @@
   margin-top: var(--spacing-05);
 }
 
+.ai-provider-admin-edit-row > td {
+  background: var(--bg-light-secondary);
+}
+
+.ai-provider-admin-edit-form {
+  max-width: 960px;
+  padding: var(--spacing-03) 0;
+}
+
 .ai-agent-plugin-preview {
   max-width: 960px;
   margin-top: var(--spacing-06);

@@ -18,6 +18,12 @@ export type TranslationKey =
   | 'delete'
   | 'disabled'
   | 'disable'
+  | 'edit'
+  | 'editProvider'
+  | 'fieldForProvider'
+  | 'providerUpdated'
+  | 'savingProvider'
+  | 'saveProvider'
   | 'enabled'
   | 'enable'
   | 'health'
@@ -78,6 +84,9 @@ export const TRANSLATIONS: Record<
     delete: 'Delete',
     disabled: 'Disabled',
     disable: 'Disable',
+    edit: 'Edit',
+    editProvider: 'Edit provider',
+    fieldForProvider: '__field__ for __provider__',
     enabled: 'Enabled',
     enable: 'Enable',
     health: 'Health',
@@ -99,6 +108,7 @@ export const TRANSLATIONS: Record<
     providerDeleted: 'Provider deleted',
     providerDisabled: 'Provider disabled',
     providerEnabled: 'Provider enabled',
+    providerUpdated: 'Provider updated',
     providerName: 'Provider name',
     providers: 'AI providers',
     providersDescription:
@@ -110,6 +120,8 @@ export const TRANSLATIONS: Record<
     replaceKeyFor: 'Replace',
     replaceProviderKeyFor: 'Replace key for',
     requestFailed: 'AI provider request failed',
+    savingProvider: 'Saving...',
+    saveProvider: 'Save provider',
     syncingModels: 'Syncing...',
     syncModels: 'Sync models',
     syncModelsFor: 'Sync models for __provider__',
@@ -136,6 +148,9 @@ export const TRANSLATIONS: Record<
     delete: '删除',
     disabled: '已禁用',
     disable: '禁用',
+    edit: '编辑',
+    editProvider: '编辑供应商',
+    fieldForProvider: '__field__：__provider__',
     enabled: '已启用',
     enable: '启用',
     health: '健康状态',
@@ -156,6 +171,7 @@ export const TRANSLATIONS: Record<
     providerDeleted: '供应商已删除',
     providerDisabled: '供应商已禁用',
     providerEnabled: '供应商已启用',
+    providerUpdated: '供应商已更新',
     providerName: '供应商名称',
     providers: 'AI 供应商',
     providersDescription: '管理项目聊天和 Agent 模式使用的模型网关。',
@@ -166,6 +182,8 @@ export const TRANSLATIONS: Record<
     replaceKeyFor: '替换',
     replaceProviderKeyFor: '替换密钥：',
     requestFailed: 'AI 供应商请求失败',
+    savingProvider: '正在保存...',
+    saveProvider: '保存供应商',
     syncingModels: '正在同步...',
     syncModels: '同步模型',
     syncModelsFor: '同步 __provider__ 的模型',
