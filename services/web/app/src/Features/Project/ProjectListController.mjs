@@ -163,7 +163,12 @@ async function getProjectsJson(req, res) {
  * @param {Filters} filters
  * @param {Sort} sort
  * @param {Page} page
- * @returns {Promise<{totalSize: number, projects: Project[]}>}
+ * @returns {Promise<{
+ *   totalSize: number,
+ *   projects: Project[],
+ *   page?: { size: number, offset: number, nextOffset: number | null },
+ *   tagCounts: { untagged: number, byTagId: Record<string, number> },
+ * }>}
  * @private
  */
 async function _getProjects(
@@ -188,12 +193,25 @@ async function _getProjects(
     filters,
     userId
   )
+  const responseMeta = {
+    page: _buildPageResponse(page, filteredProjects.length),
+    tagCounts: _buildTagCounts(
+      _applyFilters(
+        formattedProjects,
+        tags,
+        _getTagCountFilters(filters),
+        userId
+      ),
+      tags
+    ),
+  }
   if (sort.by === 'owner') {
     const projectsWithUsers = await _injectProjectUsers(filteredProjects)
     const pagedProjects = _sortAndPaginate(projectsWithUsers, sort, page)
     return {
       totalSize: filteredProjects.length,
       projects: pagedProjects,
+      ...responseMeta,
     }
   }
 
@@ -204,6 +222,7 @@ async function _getProjects(
   return {
     totalSize: filteredProjects.length,
     projects,
+    ...responseMeta,
   }
 }
 
@@ -485,6 +504,81 @@ function _normalizePage(page) {
   return {
     offset,
     size: Math.min(size, MAX_PROJECT_LIST_PAGE_SIZE),
+  }
+}
+
+/**
+ * @param {Page | undefined} page
+ * @param {number} totalSize
+ * @returns {{ size: number, offset: number, nextOffset: number | null } | undefined}
+ * @private
+ */
+function _buildPageResponse(page, totalSize) {
+  if (page == null) {
+    return undefined
+  }
+  const normalizedPage = _normalizePage(page)
+  const nextOffset = normalizedPage.offset + normalizedPage.size
+  return {
+    size: normalizedPage.size,
+    offset: normalizedPage.offset,
+    nextOffset: nextOffset < totalSize ? nextOffset : null,
+  }
+}
+
+/**
+ * Tag counts describe the active dashboard scope, not the currently selected
+ * tag. This keeps the sidebar stable while a tag filter is active.
+ *
+ * @param {Filters} filters
+ * @returns {Filters}
+ * @private
+ */
+function _getTagCountFilters(filters) {
+  return {
+    ...filters,
+    archived: false,
+    trashed: false,
+    tag: undefined,
+  }
+}
+
+/**
+ * @param {FormattedProject[]} projects
+ * @param {MongoTag[]} tags
+ * @returns {{ untagged: number, byTagId: Record<string, number> }}
+ * @private
+ */
+function _buildTagCounts(projects, tags) {
+  const activeProjectIds = new Set(
+    projects
+      .filter(project => !project.archived && !project.trashed)
+      .map(project => project.id)
+  )
+  const taggedActiveProjectIds = new Set()
+  /** @type {Record<string, number>} */
+  const byTagId = {}
+
+  for (const tag of tags) {
+    const tagId = tag._id?.toString()
+    if (!tagId) {
+      continue
+    }
+
+    let count = 0
+    for (const projectId of tag.project_ids || []) {
+      if (!activeProjectIds.has(projectId)) {
+        continue
+      }
+      count += 1
+      taggedActiveProjectIds.add(projectId)
+    }
+    byTagId[tagId] = count
+  }
+
+  return {
+    untagged: activeProjectIds.size - taggedActiveProjectIds.size,
+    byTagId,
   }
 }
 

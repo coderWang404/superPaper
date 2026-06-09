@@ -62,9 +62,22 @@ export type Project = MergeAndOverride<
   }
 >
 
+export type ProjectListPage = {
+  size: number
+  offset: number
+  nextOffset: number | null
+}
+
+export type ProjectTagCounts = {
+  untagged: number
+  byTagId: Record<string, number>
+}
+
 export type GetProjectsResponseBody = {
   totalSize: number
   projects: Project[]
+  page?: ProjectListPage
+  tagCounts?: ProjectTagCounts
 }
 
 export type ClonedProject = {

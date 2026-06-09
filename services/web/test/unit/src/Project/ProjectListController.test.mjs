@@ -366,10 +366,37 @@ describe('ProjectListController', function () {
 
       const response = ctx.res.json.firstCall.args[0]
       expect(response.totalSize).to.equal(4)
+      expect(response.page).to.deep.equal({
+        size: 2,
+        offset: 1,
+        nextOffset: 3,
+      })
       expect(response.projects.map(project => project.id)).to.deep.equal([
         '3',
         '2',
       ])
+    })
+
+    it('reports null nextOffset on the final page', async function (ctx) {
+      setOwnedProjects(
+        ctx,
+        [1, 2, 3].map(id => buildProject(id))
+      )
+      ctx.req.body = {
+        page: { size: 2, offset: 2 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(3)
+      expect(response.projects.map(project => project.id)).to.deep.equal(['1'])
+      expect(response.page).to.deep.equal({
+        size: 2,
+        offset: 2,
+        nextOffset: null,
+      })
     })
 
     it('sorts by title before pagination', async function (ctx) {
@@ -527,6 +554,48 @@ describe('ProjectListController', function () {
       expect(untaggedResponse.projects.map(project => project.name)).to.deep.equal([
         'Untagged One',
       ])
+    })
+
+    it('reports tag counts from all active filtered projects, not only the current page', async function (ctx) {
+      ctx.tags = [
+        {
+          _id: 'tag-a',
+          name: 'Alpha tag',
+          project_ids: ['1', '3'],
+        },
+        {
+          _id: 'tag-b',
+          name: 'Archived tag',
+          project_ids: ['4'],
+        },
+      ]
+      ctx.TagsHandler.promises.getAllTags.resolves(ctx.tags)
+      setOwnedProjects(ctx, [
+        buildProject(1, { name: 'Report One' }),
+        buildProject(2, { name: 'Report Two' }),
+        buildProject(3, { name: 'Report Three' }),
+        buildProject(4, { name: 'Archived Report', archived: true }),
+      ])
+      ctx.req.body = {
+        filters: { archived: false, trashed: false, search: 'Report' },
+        page: { size: 1, offset: 0 },
+        sort: { by: 'lastUpdated', order: 'desc' },
+      }
+
+      await ctx.ProjectListController.getProjectsJson(ctx.req, ctx.res)
+
+      const response = ctx.res.json.firstCall.args[0]
+      expect(response.totalSize).to.equal(3)
+      expect(response.projects.map(project => project.name)).to.deep.equal([
+        'Report Three',
+      ])
+      expect(response.tagCounts).to.deep.equal({
+        untagged: 1,
+        byTagId: {
+          'tag-a': 2,
+          'tag-b': 0,
+        },
+      })
     })
 
     it('caps requested page sizes to a safe maximum', async function (ctx) {
