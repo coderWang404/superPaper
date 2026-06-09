@@ -150,6 +150,7 @@ function ProviderRow({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
+            aria-label={`${t('syncModels')} for ${provider.name}`}
             disabled={Boolean(activeAction)}
             onClick={() => onSyncModels(provider.id)}
           >
@@ -158,6 +159,7 @@ function ProviderRow({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
+            aria-label={`${t('test')} ${provider.name}`}
             disabled={Boolean(activeAction)}
             onClick={() => onTestProvider(provider.id)}
           >
@@ -166,6 +168,9 @@ function ProviderRow({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
+            aria-label={`${provider.enabled ? t('disable') : t('enable')} ${
+              provider.name
+            }`}
             disabled={Boolean(activeAction)}
             onClick={() => onToggleProvider(provider)}
           >

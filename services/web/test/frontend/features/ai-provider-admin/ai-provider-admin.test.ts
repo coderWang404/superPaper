@@ -220,12 +220,13 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: 'Sync models' }))
-    await screen.findByRole('button', { name: 'Syncing...' })
-    expect(screen.getByRole('button', { name: 'Syncing...' })).to.have.property(
-      'disabled',
-      true
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sync models for Provider One' })
     )
+    await screen.findByText('Syncing...')
+    expect(
+      screen.getByRole('button', { name: 'Sync models for Provider One' })
+    ).to.have.property('disabled', true)
 
     await screen.findByText('Models synced')
     screen.getByText('model-one, model-two')
@@ -237,6 +238,32 @@ describe('ai-provider-admin', function () {
     expect(call.options.headers).to.include({
       'x-csrf-token': 'csrf-token',
     })
+  })
+
+  it('names provider action buttons with their provider', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [
+        providerFixture(),
+        providerFixture({
+          id: 'provider-two',
+          name: 'Provider Two',
+          baseURL: 'https://provider-two.example/v1',
+          enabled: false,
+        }),
+      ],
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    await screen.findByText('Provider Two')
+
+    screen.getByRole('button', { name: 'Sync models for Provider One' })
+    screen.getByRole('button', { name: 'Sync models for Provider Two' })
+    screen.getByRole('button', { name: 'Test Provider One' })
+    screen.getByRole('button', { name: 'Test Provider Two' })
+    screen.getByRole('button', { name: 'Disable Provider One' })
+    screen.getByRole('button', { name: 'Enable Provider Two' })
   })
 
   it('tests provider connectivity using the test endpoint', async function () {
@@ -253,12 +280,13 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: 'Test' }))
-    await screen.findByRole('button', { name: 'Testing...' })
-    expect(screen.getByRole('button', { name: 'Testing...' })).to.have.property(
-      'disabled',
-      true
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Test Provider One' })
     )
+    await screen.findByText('Testing...')
+    expect(
+      screen.getByRole('button', { name: 'Test Provider One' })
+    ).to.have.property('disabled', true)
 
     await screen.findByText('Provider test passed')
     screen.getByText('ok')
@@ -280,7 +308,9 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: 'Disable' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Disable Provider One' })
+    )
 
     await screen.findByText('Provider disabled')
     screen.getByText('Disabled')
@@ -502,7 +532,9 @@ describe('ai-provider-admin', function () {
       initAiProviderAdmin(renderRoot())
 
       await screen.findByText('Provider One')
-      fireEvent.click(screen.getByRole('button', { name: 'Test' }))
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Test Provider One' })
+      )
 
       await screen.findByText('Provider test failed')
       screen.getByText('unknown')
