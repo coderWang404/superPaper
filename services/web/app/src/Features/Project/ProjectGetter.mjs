@@ -127,9 +127,11 @@ const ProjectGetter = {
   ) {
     const userObjectId = new ObjectId(userId)
     const normalizedPage = normalizeProjectListPage(page)
+    const filterContext = buildProjectListFilterContext({ filters, tags })
     const pipeline = buildProjectListPagePipeline({
       userObjectId,
       filters,
+      filterContext,
       sort,
       page: normalizedPage,
     })
@@ -207,7 +209,13 @@ function normalizeProjectListPage(page) {
   }
 }
 
-function buildProjectListPagePipeline({ userObjectId, filters, sort, page }) {
+function buildProjectListPagePipeline({
+  userObjectId,
+  filters,
+  filterContext,
+  sort,
+  page,
+}) {
   const accessMatch = {
     $or: [
       { owner_ref: userObjectId },
@@ -228,9 +236,10 @@ function buildProjectListPagePipeline({ userObjectId, filters, sort, page }) {
     { $match: accessMatch },
     ...buildProjectListDerivedFieldStages(userObjectId),
   ]
-  const filterStages = buildProjectListFilterStages(filters)
+  const filterStages = buildProjectListFilterStages(filters, filterContext)
   const tagCountFilterStages = buildProjectListFilterStages(
-    buildProjectListTagCountFilters(filters)
+    buildProjectListTagCountFilters(filters),
+    filterContext
   )
 
   if (sort.by === 'title') {
@@ -421,7 +430,39 @@ function buildProjectListDerivedFieldStages(userObjectId) {
   ]
 }
 
-function buildProjectListFilterStages(filters) {
+function buildProjectListFilterContext({ filters, tags }) {
+  const taggedProjectIds = new Set()
+  for (const tag of tags) {
+    for (const projectId of tag.project_ids || []) {
+      if (ObjectId.isValid(projectId)) {
+        taggedProjectIds.add(projectId)
+      }
+    }
+  }
+
+  let selectedTagProjectIds
+  if (typeof filters.tag === 'string' && filters.tag.length > 0) {
+    const selectedTag = tags.find(
+      tag =>
+        filters.tag === tag._id?.toString() || filters.tag === String(tag.name)
+    )
+    selectedTagProjectIds = selectedTag
+      ? (selectedTag.project_ids || []).filter(projectId =>
+          ObjectId.isValid(projectId)
+        )
+      : []
+  }
+
+  return {
+    taggedProjectIds: [...taggedProjectIds].map(
+      projectId => new ObjectId(projectId)
+    ),
+    selectedTagProjectIds:
+      selectedTagProjectIds?.map(projectId => new ObjectId(projectId)),
+  }
+}
+
+function buildProjectListFilterStages(filters, filterContext) {
   if (filters.ownedByUser && filters.sharedWithUser) {
     return [{ $match: { $expr: { $eq: [1, 0] } } }]
   }
@@ -447,6 +488,11 @@ function buildProjectListFilterStages(filters) {
       $regex: escapeRegExp(filters.search),
       $options: 'i',
     }
+  }
+  if (filters.tag === null) {
+    match._id = { $nin: filterContext.taggedProjectIds }
+  } else if (filters.tag?.length) {
+    match._id = { $in: filterContext.selectedTagProjectIds || [] }
   }
   return Object.keys(match).length ? [{ $match: match }] : []
 }

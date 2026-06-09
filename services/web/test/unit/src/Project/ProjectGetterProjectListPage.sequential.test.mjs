@@ -438,4 +438,159 @@ describe('ProjectGetter.findUsersProjectListPage', function () {
       },
     })
   })
+
+  it('filters by tag id, tag name, and uncategorized project ids', async function (ctx) {
+    const tagProjectId1 = new ObjectId()
+    const tagProjectId2 = new ObjectId()
+    const untaggedProjectId = new ObjectId()
+    const staleProjectId = new ObjectId()
+
+    await db.projects.insertMany([
+      buildProject({
+        _id: tagProjectId1,
+        name: 'Tagged One',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-01T00:00:00Z'),
+      }),
+      buildProject({
+        _id: tagProjectId2,
+        name: 'Tagged Two',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-02T00:00:00Z'),
+      }),
+      buildProject({
+        _id: untaggedProjectId,
+        name: 'Untagged',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-03T00:00:00Z'),
+      }),
+    ])
+
+    const tags = [
+      {
+        _id: 'tag-a',
+        name: 'Alpha tag',
+        project_ids: [
+          tagProjectId1.toString(),
+          tagProjectId2.toString(),
+          staleProjectId.toString(),
+          'not-a-valid-object-id',
+        ],
+      },
+    ]
+    const byIdResult = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: { tag: 'tag-a', archived: false, trashed: false },
+        sort: { by: 'lastUpdated', order: 'desc' },
+        page: { size: 20, offset: 0 },
+        tags,
+      }
+    )
+    const byNameResult = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: { tag: 'Alpha tag', archived: false, trashed: false },
+        sort: { by: 'lastUpdated', order: 'desc' },
+        page: { size: 20, offset: 0 },
+        tags,
+      }
+    )
+    const uncategorizedResult =
+      await ProjectGetter.promises.findUsersProjectListPage(
+        ctx.userId.toString(),
+        {
+          filters: { tag: null, archived: false, trashed: false },
+          sort: { by: 'lastUpdated', order: 'desc' },
+          page: { size: 20, offset: 0 },
+          tags,
+        }
+      )
+
+    expect(names(byIdResult.projects)).to.deep.equal([
+      'Tagged Two',
+      'Tagged One',
+    ])
+    expect(names(byNameResult.projects)).to.deep.equal([
+      'Tagged Two',
+      'Tagged One',
+    ])
+    expect(names(uncategorizedResult.projects)).to.deep.equal(['Untagged'])
+  })
+
+  it('treats search text as a case-insensitive literal substring before pagination', async function (ctx) {
+    await db.projects.insertMany([
+      buildProject({
+        name: 'Alpha [v1] Notes',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-01T00:00:00Z'),
+      }),
+      buildProject({
+        name: 'ALPHA [v1] Draft',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-02T00:00:00Z'),
+      }),
+      buildProject({
+        name: 'Alpha v1 False Positive',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-03T00:00:00Z'),
+      }),
+    ])
+
+    const result = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: { search: '[v1]' },
+        sort: { by: 'lastUpdated', order: 'desc' },
+        page: { size: 1, offset: 1 },
+        tags: [],
+      }
+    )
+
+    expect(result.totalSize).to.equal(2)
+    expect(names(result.projects)).to.deep.equal(['Alpha [v1] Notes'])
+    expect(result.page).to.deep.equal({
+      size: 1,
+      offset: 1,
+      nextOffset: null,
+    })
+  })
+
+  it('sorts titles case-insensitively before pagination', async function (ctx) {
+    await db.projects.insertMany([
+      buildProject({
+        name: 'bravo',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-01T00:00:00Z'),
+      }),
+      buildProject({
+        name: 'Alpha',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-02T00:00:00Z'),
+      }),
+      buildProject({
+        name: 'charlie',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-03T00:00:00Z'),
+      }),
+    ])
+
+    const result = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: {},
+        sort: { by: 'title', order: 'asc' },
+        page: { size: 1, offset: 1 },
+        tags: [],
+      }
+    )
+
+    expect(result.totalSize).to.equal(3)
+    expect(names(result.projects)).to.deep.equal(['bravo'])
+    expect(result.page).to.deep.equal({
+      size: 1,
+      offset: 1,
+      nextOffset: 2,
+    })
+  })
 })
