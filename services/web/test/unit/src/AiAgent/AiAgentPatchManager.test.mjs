@@ -4,6 +4,70 @@ import sinon from 'sinon'
 const modulePath =
   '../../../../app/src/Features/AiAgent/AiAgentPatchManager.mjs'
 
+async function createMultiHunkReplacePatch(ctx) {
+  ctx.docs['/main.tex'].lines = [
+    'First old sentence.',
+    '',
+    'Second old sentence.',
+  ]
+  await ctx.PatchManager.createPatch({
+    projectId: 'project-one',
+    userId: 'user-one',
+    sessionId: 'session-one',
+    operations: [
+      {
+        type: 'replace_text',
+        path: '/main.tex',
+        oldText: 'First old sentence.\n\nSecond old sentence.',
+        newText: 'First new sentence.\n\nSecond new sentence.',
+      },
+    ],
+  })
+  ctx.patchDocument.operations[0].hunks = [
+    {
+      type: 'text',
+      path: '/main.tex',
+      oldStart: 1,
+      oldLines: 1,
+      newStart: 1,
+      newLines: 1,
+      oldText: 'First old sentence.',
+      newText: 'First new sentence.',
+      diff: {
+        oldStart: 1,
+        oldLines: 1,
+        newStart: 1,
+        newLines: 1,
+        lines: [
+          { type: 'remove', content: 'First old sentence.' },
+          { type: 'add', content: 'First new sentence.' },
+        ],
+      },
+    },
+    {
+      type: 'text',
+      path: '/main.tex',
+      oldStart: 3,
+      oldLines: 1,
+      newStart: 3,
+      newLines: 1,
+      oldText: 'Second old sentence.',
+      newText: 'Second new sentence.',
+      diff: {
+        oldStart: 3,
+        oldLines: 1,
+        newStart: 3,
+        newLines: 1,
+        lines: [
+          { type: 'remove', content: 'Second old sentence.' },
+          { type: 'add', content: 'Second new sentence.' },
+        ],
+      },
+    },
+  ]
+  return ctx.PatchManager.publicPatch(ctx.patchDocument)
+}
+
 describe('AiAgentPatchManager', function () {
   beforeEach(async function (ctx) {
     ctx.docs = {
@@ -506,6 +570,144 @@ describe('AiAgentPatchManager', function () {
     )
   })
 
+  it('applies one selected text hunk from a multi-hunk operation', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.patchDocument.save.resetHistory()
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been
+      .calledOnce
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument.firstCall.args[3])
+      .to.deep.equal(['First new sentence.', '', 'Second old sentence.'])
+    expect(patch.status).to.equal('partially_applied')
+    expect(patch.operations[0].status).to.equal('partially_applied')
+    expect(patch.operations[0].hunks[0].status).to.equal('applied')
+    expect(patch.operations[0].hunks[1].status).to.equal('pending')
+    expect(ctx.patchDocument.rollbackOperations[0]).to.include({
+      hunkId: selectedHunkId,
+      operationId: 'op-0001',
+    })
+  })
+
+  it('applies all pending text hunks from a multi-hunk operation in order', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    ctx.patchDocument.save.resetHistory()
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: created.operations[0].hunks.map(hunk => hunk.id),
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been
+      .calledTwice
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument.firstCall.args[3])
+      .to.deep.equal(['First new sentence.', '', 'Second old sentence.'])
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument.secondCall.args[3])
+      .to.deep.equal(['First new sentence.', '', 'Second new sentence.'])
+    expect(patch.status).to.equal('applied')
+    expect(patch.operations[0].status).to.equal('applied')
+    expect(patch.operations[0].hunks.map(hunk => hunk.status)).to.deep.equal([
+      'applied',
+      'applied',
+    ])
+    expect(ctx.patchDocument.rollbackOperations.map(operation => operation.hunkId))
+      .to.deep.equal(created.operations[0].hunks.map(hunk => hunk.id))
+  })
+
+  it('applies a remaining text hunk from a partially applied multi-hunk operation', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    const firstHunkId = created.operations[0].hunks[0].id
+    const secondHunkId = created.operations[0].hunks[1].id
+
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [firstHunkId],
+    })
+    expect(ctx.patchDocument.status).to.equal('partially_applied')
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [secondHunkId],
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been
+      .calledOnce
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument.firstCall.args[3])
+      .to.deep.equal(['First new sentence.', '', 'Second new sentence.'])
+    expect(patch.status).to.equal('applied')
+    expect(patch.operations[0].hunks.map(hunk => hunk.status)).to.deep.equal([
+      'applied',
+      'applied',
+    ])
+    expect(ctx.patchDocument.rollbackOperations.map(operation => operation.hunkId))
+      .to.deep.equal([firstHunkId, secondHunkId])
+    expect(ctx.AgentSession.updateOne).to.have.been.calledOnce
+  })
+
+  it('applies a later pending text hunk after an earlier hunk from the operation was rolled back', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    const firstHunkId = created.operations[0].hunks[0].id
+    const secondHunkId = created.operations[0].hunks[1].id
+
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [firstHunkId],
+    })
+    ctx.docs['/main.tex'].lines = [
+      'First new sentence.',
+      '',
+      'Second old sentence.',
+    ]
+    await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [firstHunkId],
+    })
+    ctx.docs['/main.tex'].lines = [
+      'First old sentence.',
+      '',
+      'Second old sentence.',
+    ]
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const patch = await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [secondHunkId],
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been
+      .calledOnce
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument.firstCall.args[3])
+      .to.deep.equal(['First old sentence.', '', 'Second new sentence.'])
+    expect(patch.status).to.equal('partially_applied')
+    expect(patch.operations[0].hunks[0].status).to.equal('rolled_back')
+    expect(patch.operations[0].hunks[1].status).to.equal('applied')
+    expect(ctx.AgentSession.updateOne).to.have.been.calledOnce
+  })
+
   it('rejects unknown hunk ids before applying writes', async function (ctx) {
     await ctx.PatchManager.createPatch({
       projectId: 'project-one',
@@ -905,6 +1107,80 @@ describe('AiAgentPatchManager', function () {
         }),
       })
     )
+  })
+
+  it('rolls back the last selected text hunk from a multi-hunk operation', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: created.operations[0].hunks.map(hunk => hunk.id),
+    })
+    ctx.docs['/main.tex'].lines = [
+      'First new sentence.',
+      '',
+      'Second new sentence.',
+    ]
+    const selectedHunkId = created.operations[0].hunks[1].id
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.CompileManager.promises.compile.resetHistory()
+
+    const patch = await ctx.PatchManager.rollbackPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.have.been
+      .calledOnce
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument.firstCall.args[3])
+      .to.deep.equal(['First new sentence.', '', 'Second old sentence.'])
+    expect(patch.status).to.equal('partially_applied')
+    expect(patch.operations[0].status).to.equal('partially_applied')
+    expect(patch.operations[0].hunks[0].status).to.equal('applied')
+    expect(patch.operations[0].hunks[1].status).to.equal('rolled_back')
+    expect(patch.rollbackAvailable).to.equal(true)
+  })
+
+  it('blocks rolling back an earlier text hunk while later hunks from the operation remain applied', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    await ctx.PatchManager.applyPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: created.operations[0].hunks.map(hunk => hunk.id),
+    })
+    ctx.docs['/main.tex'].lines = [
+      'First new sentence.',
+      '',
+      'Second new sentence.',
+    ]
+    const selectedHunkId = created.operations[0].hunks[0].id
+    ctx.DocumentUpdaterHandler.promises.setDocument.resetHistory()
+    ctx.patchDocument.save.resetHistory()
+
+    let error
+    try {
+      await ctx.PatchManager.rollbackPatch({
+        projectId: 'project-one',
+        userId: 'reviewer-one',
+        patchId: 'patch-one',
+        hunkIds: [selectedHunkId],
+      })
+    } catch (err) {
+      error = err
+    }
+
+    expect(error).to.be.instanceOf(ctx.PatchManager.AiAgentPatchError)
+    expect(error).to.include({
+      code: 'AGENT_PATCH_HUNK_DEPENDENCY',
+    })
+
+    expect(ctx.DocumentUpdaterHandler.promises.setDocument).to.not.have.been
+      .called
+    expect(ctx.patchDocument.save).to.not.have.been.called
   })
 
   it('rolls back selected hunks in reverse applied order', async function (ctx) {
@@ -1658,6 +1934,36 @@ describe('AiAgentPatchManager', function () {
       .called
     expect(ctx.EditorController.promises.upsertDocWithPath).to.not.have.been
       .called
+  })
+
+  it('rejects one selected pending hunk from a multi-hunk operation', async function (ctx) {
+    const created = await createMultiHunkReplacePatch(ctx)
+    const selectedHunkId = created.operations[0].hunks[1].id
+    ctx.patchDocument.save.resetHistory()
+    ctx.AgentSession.updateOne.resetHistory()
+
+    const patch = await ctx.PatchManager.rejectPatch({
+      projectId: 'project-one',
+      userId: 'reviewer-one',
+      patchId: 'patch-one',
+      hunkIds: [selectedHunkId],
+    })
+
+    expect(patch.status).to.equal('pending')
+    expect(patch.operations[0].status).to.equal('pending')
+    expect(patch.operations[0].hunks[0].status).to.equal('pending')
+    expect(patch.operations[0].hunks[1].status).to.equal('rejected')
+    expect(ctx.patchDocument.save).to.have.been.calledOnce
+    expect(ctx.AgentSession.updateOne).to.not.have.been.called
+    expect(ctx.AgentEvent.create).to.have.been.calledWith(
+      sinon.match({
+        type: 'patch_rejected',
+        payload: {
+          patchId: 'patch-one',
+          hunkIds: [selectedHunkId],
+        },
+      })
+    )
   })
 
   it('completes the session after rejecting the last pending hunk', async function (ctx) {

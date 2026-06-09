@@ -145,7 +145,7 @@ export async function applyPatch({
     ProjectEntityHandler.promises.getAllDocs(projectId),
     ProjectEntityHandler.promises.getAllFiles(projectId),
   ])
-  await assertApplySelectionsSafe({
+  const applyPlan = await assertApplySelectionsSafe({
     patch,
     selections: operationSelections.toApply,
     docs,
@@ -163,6 +163,7 @@ export async function applyPatch({
         userId,
         patch,
         docs,
+        textPlan: applyPlan.textPlans.get(hunk.id),
         appliedOperations,
         rollbackOperations,
       })
@@ -729,6 +730,22 @@ function collectPatchHunks(patch) {
   )
 }
 
+function latestAppliedTextSnapshotForOperation(patch, operation) {
+  const appliedHunkIds = new Set(
+    (operation.hunks || [])
+      .filter(hunk => hunk.status === 'applied')
+      .map(hunk => hunk.id)
+  )
+  return [...(patch.rollbackOperations || [])]
+    .reverse()
+    .find(
+      rollbackOperation =>
+        rollbackOperation.operationId === operation.id &&
+        rollbackOperation.type === 'restore_doc_text' &&
+        appliedHunkIds.has(rollbackOperation.hunkId)
+    )
+}
+
 function assertRequestedHunksExist(patch, selectedHunkIds) {
   if (!selectedHunkIds) {
     return
@@ -754,7 +771,7 @@ function applySelectionsForPatch({
   const toApply = []
   const toReject = []
   for (const operation of patch.operations || []) {
-    if ((operation.hunks || []).length > 1) {
+    if (operation.type !== 'replace_text' && (operation.hunks || []).length > 1) {
       throw new AiAgentPatchError(
         'AGENT_PATCH_HUNK_UNSUPPORTED',
         'Agent patch operation has multiple hunks'
@@ -787,7 +804,7 @@ function applySelectionsForPatch({
 function rejectSelectionsForPatch({ patch, selectedHunkIds }) {
   const toReject = []
   for (const operation of patch.operations || []) {
-    if ((operation.hunks || []).length > 1) {
+    if (operation.type !== 'replace_text' && (operation.hunks || []).length > 1) {
       throw new AiAgentPatchError(
         'AGENT_PATCH_HUNK_UNSUPPORTED',
         'Agent patch operation has multiple hunks'
@@ -851,12 +868,37 @@ function rollbackSelectionsForPatch({
       )
     }
   }
+  assertNoAppliedHunkRollbackDependencies({
+    selectedEntries,
+    selectedHunkIds,
+  })
 
   return {
     operations: rollbackOperations.filter(operation =>
       selectedHunkIds.has(operation.hunkId)
     ),
     selections: selectedEntries,
+  }
+}
+
+function assertNoAppliedHunkRollbackDependencies({
+  selectedEntries,
+  selectedHunkIds,
+}) {
+  for (const { operation, hunk } of selectedEntries) {
+    for (const candidate of operation.hunks || []) {
+      if (
+        candidate.operationId === hunk.operationId &&
+        candidate.hunkIndex > hunk.hunkIndex &&
+        candidate.status === 'applied' &&
+        !selectedHunkIds.has(candidate.id)
+      ) {
+        throw new AiAgentPatchError(
+          'AGENT_PATCH_HUNK_DEPENDENCY',
+          'Agent patch hunk has later applied hunks'
+        )
+      }
+    }
   }
 }
 
@@ -1195,9 +1237,17 @@ function riskLevelForOperations(operations) {
 }
 
 async function assertApplySelectionsSafe({ patch, selections, docs, files }) {
-  for (const { operation } of selections) {
+  const textPlans = new Map()
+  const textSelectionsByPath = new Map()
+
+  for (const selection of selections) {
+    const { operation } = selection
     if (operation.type === 'replace_text') {
-      await assertReplaceTextOperationSafe({ operation, patch, docs })
+      const key = operation.path
+      if (!textSelectionsByPath.has(key)) {
+        textSelectionsByPath.set(key, [])
+      }
+      textSelectionsByPath.get(key).push(selection)
     } else if (operation.type === 'create_doc') {
       await assertCreateDocOperationSafe({ operation, patch, docs, files })
     } else if (operation.type === 'delete_doc') {
@@ -1209,6 +1259,17 @@ async function assertApplySelectionsSafe({ patch, selections, docs, files }) {
       await assertPathChangingOperationSafe({ operation, patch, docs, files })
     }
   }
+
+  for (const textSelections of textSelectionsByPath.values()) {
+    await planTextHunkApplications({
+      patch,
+      selections: textSelections,
+      docs,
+      textPlans,
+    })
+  }
+
+  return { textPlans }
 }
 
 async function assertReplaceTextOperationSafe({ operation, patch, docs }) {
@@ -1218,6 +1279,61 @@ async function assertReplaceTextOperationSafe({ operation, patch, docs }) {
     docs,
   })
   assertSingleOccurrence(currentContent, operation.oldText, operation.path)
+}
+
+async function planTextHunkApplications({
+  patch,
+  selections,
+  docs,
+  textPlans,
+}) {
+  const orderedSelections = [...selections].sort(compareOperationHunkOrder)
+  const [firstSelection] = orderedSelections
+  const { operation } = firstSelection
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+  const currentContent = getDocText(doc)
+  const previousSnapshot = latestAppliedTextSnapshotForOperation(patch, operation)
+  const expectedBaseSha256 = previousSnapshot?.afterSha256 || operation.baseSha256
+  if (sha256(currentContent) !== expectedBaseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+  let workingContent = currentContent
+
+  for (const { operation, hunk } of orderedSelections) {
+    assertSingleOccurrence(workingContent, hunk.oldText, operation.path)
+    const nextContent = workingContent.replace(hunk.oldText, hunk.newText)
+    textPlans.set(hunk.id, {
+      beforeText: workingContent,
+      afterText: nextContent,
+      beforeSha256: sha256(workingContent),
+      afterSha256: sha256(nextContent),
+    })
+    workingContent = nextContent
+  }
+}
+
+function compareOperationHunkOrder(
+  { operation: operationA, hunk: hunkA },
+  { operation: operationB, hunk: hunkB }
+) {
+  const operationOrder =
+    (operationA.operationIndex ?? hunkA.operationIndex ?? 0) -
+    (operationB.operationIndex ?? hunkB.operationIndex ?? 0)
+  if (operationOrder !== 0) {
+    return operationOrder
+  }
+  return (hunkA.hunkIndex ?? 0) - (hunkB.hunkIndex ?? 0)
 }
 
 async function assertCreateDocOperationSafe({ operation, patch, docs, files }) {
@@ -1274,6 +1390,7 @@ async function applyReplaceTextOperation({
   userId,
   patch,
   docs,
+  textPlan,
   appliedOperations,
   rollbackOperations,
 }) {
@@ -1286,8 +1403,9 @@ async function applyReplaceTextOperation({
     )
   }
 
-  const currentContent = getDocText(doc)
-  if (sha256(currentContent) !== operation.baseSha256) {
+  const currentContent = textPlan?.beforeText ?? getDocText(doc)
+  const expectedBeforeSha256 = textPlan?.beforeSha256 ?? operation.baseSha256
+  if (sha256(currentContent) !== expectedBeforeSha256) {
     await markConflicted(patch)
     throw new AiAgentPatchError(
       'AGENT_PATCH_CONFLICT',
@@ -1295,11 +1413,11 @@ async function applyReplaceTextOperation({
     )
   }
 
-  assertSingleOccurrence(currentContent, operation.oldText, operation.path)
-  const nextContent = currentContent.replace(
-    operation.oldText,
-    operation.newText
-  )
+  const oldText = hunk?.oldText ?? operation.oldText
+  const newText = hunk?.newText ?? operation.newText
+  assertSingleOccurrence(currentContent, oldText, operation.path)
+  const nextContent = textPlan?.afterText ?? currentContent.replace(oldText, newText)
+  const afterSha256 = textPlan?.afterSha256 ?? sha256(nextContent)
 
   await DocumentUpdaterHandler.promises.setDocument(
     projectId,
@@ -1308,14 +1426,15 @@ async function applyReplaceTextOperation({
     splitDocText(nextContent),
     'agent'
   )
+  doc.lines = splitDocText(nextContent)
   appliedOperations.push({
     type: operation.type,
     operationId: operation.id,
     hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
-    baseSha256: operation.baseSha256,
-    appliedSha256: sha256(nextContent),
+    baseSha256: expectedBeforeSha256,
+    appliedSha256: afterSha256,
   })
   rollbackOperations.push({
     type: 'restore_doc_text',
@@ -1324,8 +1443,8 @@ async function applyReplaceTextOperation({
     path: operation.path,
     docId: operation.docId,
     beforeText: currentContent,
-    beforeSha256: operation.baseSha256,
-    afterSha256: sha256(nextContent),
+    beforeSha256: expectedBeforeSha256,
+    afterSha256,
   })
 }
 
