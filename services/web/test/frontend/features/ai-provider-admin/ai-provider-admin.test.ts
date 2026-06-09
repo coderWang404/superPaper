@@ -1,6 +1,7 @@
 import { expect } from 'chai'
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import fetchMock from 'fetch-mock'
+import { createElement } from 'react'
 
 import { resetMeta } from '../../helpers/reset-meta'
 import { initAiProviderAdmin } from '../../../../frontend/js/features/ai-provider-admin/ai-provider-admin'
@@ -12,6 +13,55 @@ describe('ai-provider-admin', function () {
     fetchMock.removeRoutes().clearHistory()
     document.body.innerHTML = ''
     resetMeta()
+  })
+
+  it('extracts safe validation field messages without rendering secrets', async function () {
+    const submittedCredential = 'test-provider-key-value'
+
+    fetchMock.post('/admin/ai/providers', {
+      status: 422,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid AI provider input',
+          fields: [{ field: 'baseURL', message: 'baseURL must use https' }],
+          apiKey: submittedCredential,
+        },
+      },
+    })
+
+    const { createProvider } = await import(
+      '../../../../frontend/js/features/ai-provider-admin/api'
+    )
+
+    await expect(
+      createProvider('csrf-token', {
+        name: 'Unsafe',
+        providerType: 'openai-compatible',
+        baseURL: 'http://example.test/v1',
+        apiKey: submittedCredential,
+        enabled: true,
+        defaultModel: null,
+        models: [],
+      })
+    ).to.be.rejectedWith('Invalid AI provider input: baseURL must use https')
+  })
+
+  it('renders the React provider admin app with redacted provider state', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+
+    const { AiProviderAdminApp } = await import(
+      '../../../../frontend/js/features/ai-provider-admin/components/ai-provider-admin-app'
+    )
+
+    render(createElement(AiProviderAdminApp, { csrfToken: 'csrf-token' }))
+
+    await screen.findByText('Provider One')
+    screen.getByText('https://provider-one.example/v1')
+    screen.getByText('API key stored')
+    expect(document.body.textContent).not.to.contain(fakeProviderKey)
   })
 
   it('loads providers from the admin endpoint and renders redacted providers', async function () {
@@ -94,6 +144,54 @@ describe('ai-provider-admin', function () {
     )
   })
 
+  it('fills the DeepSeek preset and creates the normalized model request', async function () {
+    fetchMock.get('/admin/ai/providers', { providers: [] })
+    fetchMock.post('/admin/ai/providers', {
+      provider: providerFixture({
+        name: 'DeepSeek',
+        baseURL: 'https://api.deepseek.com/v1',
+        defaultModel: 'deepseek-chat',
+      }),
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('No AI providers configured')
+
+    fireEvent.change(screen.getByLabelText('Preset channels'), {
+      target: { value: 'deepseek' },
+    })
+    fireEvent.input(screen.getByLabelText('API key'), {
+      target: { value: fakeProviderKey },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: 'Add AI provider' }))
+
+    await screen.findByText('Provider added')
+
+    const createCall = fetchMock.callHistory
+      .calls('/admin/ai/providers')
+      .find(call => call.options.method === 'post')
+    if (!createCall) {
+      throw new Error('expected AI provider create request')
+    }
+    expect(JSON.parse(createCall.options.body as string)).to.deep.equal({
+      name: 'DeepSeek',
+      providerType: 'openai-compatible',
+      baseURL: 'https://api.deepseek.com/v1',
+      apiKey: fakeProviderKey,
+      enabled: true,
+      defaultModel: 'deepseek-chat',
+      models: [
+        {
+          id: 'deepseek-chat',
+          displayName: 'deepseek-chat',
+          source: 'manual',
+          enabled: true,
+        },
+      ],
+    })
+  })
+
   it('syncs models for a provider using the sync endpoint', async function () {
     fetchMock.get('/admin/ai/providers', {
       providers: [providerFixture()],
@@ -122,12 +220,13 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: 'Sync models' }))
-    await screen.findByRole('button', { name: 'Syncing...' })
-    expect(screen.getByRole('button', { name: 'Syncing...' })).to.have.property(
-      'disabled',
-      true
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sync models for Provider One' })
     )
+    await screen.findByText('Syncing...')
+    expect(
+      screen.getByRole('button', { name: 'Sync models for Provider One' })
+    ).to.have.property('disabled', true)
 
     await screen.findByText('Models synced')
     screen.getByText('model-one, model-two')
@@ -139,6 +238,32 @@ describe('ai-provider-admin', function () {
     expect(call.options.headers).to.include({
       'x-csrf-token': 'csrf-token',
     })
+  })
+
+  it('names provider action buttons with their provider', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [
+        providerFixture(),
+        providerFixture({
+          id: 'provider-two',
+          name: 'Provider Two',
+          baseURL: 'https://provider-two.example/v1',
+          enabled: false,
+        }),
+      ],
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    await screen.findByText('Provider Two')
+
+    screen.getByRole('button', { name: 'Sync models for Provider One' })
+    screen.getByRole('button', { name: 'Sync models for Provider Two' })
+    screen.getByRole('button', { name: 'Test Provider One' })
+    screen.getByRole('button', { name: 'Test Provider Two' })
+    screen.getByRole('button', { name: 'Disable Provider One' })
+    screen.getByRole('button', { name: 'Enable Provider Two' })
   })
 
   it('tests provider connectivity using the test endpoint', async function () {
@@ -155,12 +280,13 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: 'Test' }))
-    await screen.findByRole('button', { name: 'Testing...' })
-    expect(screen.getByRole('button', { name: 'Testing...' })).to.have.property(
-      'disabled',
-      true
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Test Provider One' })
     )
+    await screen.findByText('Testing...')
+    expect(
+      screen.getByRole('button', { name: 'Test Provider One' })
+    ).to.have.property('disabled', true)
 
     await screen.findByText('Provider test passed')
     screen.getByText('ok')
@@ -182,7 +308,9 @@ describe('ai-provider-admin', function () {
     initAiProviderAdmin(renderRoot())
 
     await screen.findByText('Provider One')
-    fireEvent.click(screen.getByRole('button', { name: 'Disable' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Disable Provider One' })
+    )
 
     await screen.findByText('Provider disabled')
     screen.getByText('Disabled')
@@ -321,9 +449,68 @@ describe('ai-provider-admin', function () {
     await screen.findByRole('alert')
     screen.getByText('Invalid AI provider input: baseURL must use https')
     expect(document.body.textContent).not.to.contain(fakeProviderKey)
+    expect((screen.getByLabelText('API key') as HTMLInputElement).value).to.equal(
+      ''
+    )
     expect(document.body.textContent).not.to.contain(
       'http://unsafe.example.test/private'
     )
+  })
+
+  it('does not render submitted API keys after replace validation errors', async function () {
+    fetchMock.get('/admin/ai/providers', {
+      providers: [providerFixture()],
+    })
+    fetchMock.patch('/admin/ai/providers/provider-one', {
+      status: 422,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid AI provider input',
+          fields: [{ field: 'apiKey', message: 'API key is invalid' }],
+        },
+      },
+    })
+
+    initAiProviderAdmin(renderRoot())
+
+    await screen.findByText('Provider One')
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Replace key for Provider One' })
+    )
+    fireEvent.input(screen.getByLabelText('New API key for Provider One'), {
+      target: { value: fakeProviderKey },
+    })
+    fireEvent.submit(
+      screen.getByRole('form', { name: 'Replace key for Provider One' })
+    )
+
+    await screen.findByRole('alert')
+    screen.getByText('Invalid AI provider input: API key is invalid')
+    expect(document.body.textContent).not.to.contain(fakeProviderKey)
+    expect(
+      (screen.getByLabelText('New API key for Provider One') as HTMLInputElement)
+        .value
+    ).to.equal('')
+  })
+
+  it('strips unexpected provider secret fields before storing client state', async function () {
+    const { initialProviderAdminState, providerAdminReducer } = await import(
+      '../../../../frontend/js/features/ai-provider-admin/state'
+    )
+
+    const state = providerAdminReducer(initialProviderAdminState, {
+      type: 'load:success',
+      providers: [
+        providerFixture({
+          apiKey: fakeProviderKey,
+          encryptedApiKey: 'encrypted-provider-key-value',
+        }),
+      ],
+    })
+
+    expect(JSON.stringify(state.providers)).not.to.contain(fakeProviderKey)
+    expect(JSON.stringify(state.providers)).not.to.contain('encryptedApiKey')
   })
 
   it('ignores provider test responses without a provider payload', async function () {
@@ -345,7 +532,9 @@ describe('ai-provider-admin', function () {
       initAiProviderAdmin(renderRoot())
 
       await screen.findByText('Provider One')
-      fireEvent.click(screen.getByRole('button', { name: 'Test' }))
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Test Provider One' })
+      )
 
       await screen.findByText('Provider test failed')
       screen.getByText('unknown')
