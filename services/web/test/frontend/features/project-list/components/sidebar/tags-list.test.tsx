@@ -1,4 +1,10 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { assert, expect } from 'chai'
 import fetchMock from 'fetch-mock'
 import TagsList from '../../../../../../frontend/js/features/project-list/components/sidebar/tags-list'
@@ -31,7 +37,17 @@ describe('<TagsList />', function () {
     fetchMock.post('express:/tag/:tagId/edit', 200)
     fetchMock.delete('express:/tag/:tagId', 200, { name: 'delete tag' })
 
-    renderWithProjectListContext(<TagsList />)
+    renderWithProjectListContext(<TagsList />, {
+      projectApiResponse: {
+        tagCounts: {
+          untagged: 3,
+          byTagId: {
+            abc123def456: 1,
+            bcd234efg567: 3,
+          },
+        },
+      },
+    })
 
     await fetchMock.callHistory.flush(true)
     await waitFor(
@@ -55,6 +71,25 @@ describe('<TagsList />', function () {
     })
     await screen.findByRole('button', {
       name: 'Another tag (3)',
+    })
+    await screen.findByRole('button', {
+      name: 'Uncategorized (3)',
+    })
+  })
+
+  it('falls back to loaded projects when server tag counts are absent', async function () {
+    cleanup()
+    fetchMock.removeRoutes().clearHistory()
+
+    renderWithProjectListContext(<TagsList />)
+
+    await fetchMock.callHistory.flush(true)
+
+    await screen.findByRole('button', {
+      name: 'Tag 1 (1)',
+    })
+    await screen.findByRole('button', {
+      name: 'Another tag (2)',
     })
     await screen.findByRole('button', {
       name: 'Uncategorized (3)',

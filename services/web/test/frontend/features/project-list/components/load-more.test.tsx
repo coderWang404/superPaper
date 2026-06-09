@@ -8,6 +8,7 @@ import {
   currentProjects,
   copyableProject,
 } from '../fixtures/projects-data'
+import { GetProjectsResponseBody } from '../../../../../types/project/dashboard/api'
 import { renderWithProjectListContext } from '../helpers/render-with-context'
 import ProjectListTable from '../../../../../frontend/js/features/project-list/components/table/project-list-table'
 
@@ -26,7 +27,12 @@ function makePagedProjects(offset: number, count: number) {
 }
 
 function mockProjectPageResponses(
-  responses: Array<{ projects: ReturnType<typeof makePagedProjects>; totalSize: number }>
+  responses: Array<
+    {
+      projects: ReturnType<typeof makePagedProjects>
+      totalSize: number
+    } & Partial<GetProjectsResponseBody>
+  >
 ) {
   fetchMock.post('express:/api/project', () => {
     const response = responses.shift()
@@ -173,6 +179,45 @@ describe('<LoadMore />', function () {
     })
   })
 
+  it('uses the server nextOffset when loading more', async function () {
+    const firstPage = makePagedProjects(0, 10)
+    const secondPage = makePagedProjects(20, 10)
+    mockProjectPageResponses([
+      {
+        projects: firstPage,
+        totalSize: 30,
+        page: { size: 20, offset: 0, nextOffset: 20 },
+      },
+      {
+        projects: secondPage,
+        totalSize: 30,
+        page: { size: 20, offset: 20, nextOffset: null },
+      },
+    ])
+
+    renderWithProjectListContext(
+      <>
+        <ProjectListTable />
+        <LoadMore />
+      </>,
+      { mockProjectApi: false }
+    )
+
+    await screen.findByText('Paged Project 1')
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Show 20 more projects/i })
+    )
+
+    await screen.findByText('Paged Project 30')
+
+    const requestBodies = getProjectApiRequestBodies()
+    expect(requestBodies[1]).to.deep.equal({
+      sort: { by: 'lastUpdated', order: 'desc' },
+      filters: { archived: false, trashed: false },
+      page: { size: 20, offset: 20 },
+    })
+  })
+
   it('keeps existing rows visible and shows loading rows while fetching the next page', async function () {
     const firstPage = makePagedProjects(0, 20)
     const secondPage = makePagedProjects(20, 5)
@@ -269,5 +314,47 @@ describe('<LoadMore />', function () {
       filters: { archived: false, trashed: false },
       page: { size: 20, offset: 120 },
     })
+  })
+
+  it('uses each server nextOffset when showing all projects', async function () {
+    const firstPage = makePagedProjects(0, 10)
+    const secondPage = makePagedProjects(20, 10)
+    const thirdPage = makePagedProjects(40, 5)
+    mockProjectPageResponses([
+      {
+        projects: firstPage,
+        totalSize: 45,
+        page: { size: 20, offset: 0, nextOffset: 20 },
+      },
+      {
+        projects: secondPage,
+        totalSize: 45,
+        page: { size: 20, offset: 20, nextOffset: 40 },
+      },
+      {
+        projects: thirdPage,
+        totalSize: 45,
+        page: { size: 20, offset: 40, nextOffset: null },
+      },
+    ])
+
+    renderWithProjectListContext(
+      <>
+        <ProjectListTable />
+        <LoadMore />
+      </>,
+      { mockProjectApi: false }
+    )
+
+    await screen.findByText('Paged Project 1')
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Show all projects/i })
+    )
+
+    await screen.findByText('Paged Project 45')
+
+    const requestBodies = getProjectApiRequestBodies()
+    expect(requestBodies[1].page).to.deep.equal({ size: 25, offset: 20 })
+    expect(requestBodies[2].page).to.deep.equal({ size: 5, offset: 40 })
   })
 })

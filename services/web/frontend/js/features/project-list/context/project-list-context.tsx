@@ -136,6 +136,16 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   const [totalProjectsCount, setTotalProjectsCount] = useState<number>(
     prefetchedProjectsBlob?.totalSize ?? 0
   )
+  const [serverPageNextOffset, setServerPageNextOffset] = useState<
+    number | null | undefined
+  >(prefetchedProjectsBlob?.page?.nextOffset)
+  const [isServerPagedResponse, setIsServerPagedResponse] = useState(
+    Boolean(prefetchedProjectsBlob?.page)
+  )
+  const [serverTagCounts, setServerTagCounts] =
+    useState<GetProjectsResponseBody['tagCounts']>(
+      prefetchedProjectsBlob?.tagCounts
+    )
   const [isPageLoading, setIsPageLoading] = useState(false)
   const [sort, setSort] = useState<Sort>({
     by: 'lastUpdated',
@@ -258,6 +268,9 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
         }
         setLoadedProjects(data.projects)
         setTotalProjectsCount(data.totalSize)
+        setServerPageNextOffset(data.page?.nextOffset)
+        setIsServerPagedResponse(Boolean(data.page))
+        setServerTagCounts(data.tagCounts)
       })
       .catch(debugConsole.error)
       .finally(() => {
@@ -288,6 +301,9 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
           }
           setLoadedProjects(data.projects)
           setTotalProjectsCount(data.totalSize)
+          setServerPageNextOffset(data.page?.nextOffset)
+          setIsServerPagedResponse(Boolean(data.page))
+          setServerTagCounts(data.tagCounts)
           setMaxVisibleProjects(MAX_PROJECT_PER_PAGE)
           setSelectedProjectIds(new Set())
         })
@@ -307,6 +323,20 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
 
   useEffect(() => {
     let filteredProjects = [...loadedProjects]
+
+    if (isServerPagedResponse) {
+      const hasMoreServerPages = serverPageNextOffset != null
+      const serverHiddenProjectsCount = Math.max(
+        hasMoreServerPages ? totalProjectsCount - loadedProjects.length : 0,
+        0
+      )
+      setVisibleProjects(filteredProjects.slice(0, maxVisibleProjects))
+      setHiddenProjectsCount(serverHiddenProjectsCount)
+      setLoadMoreCount(
+        Math.min(serverHiddenProjectsCount, MAX_PROJECT_PER_PAGE)
+      )
+      return
+    }
 
     if (searchText.length) {
       filteredProjects = filteredProjects.filter(project =>
@@ -387,6 +417,8 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
     setSelectedTagId,
     searchText,
     sort,
+    isServerPagedResponse,
+    serverPageNextOffset,
   ])
 
   useEffect(() => {
@@ -394,15 +426,19 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   }, [sort])
 
   const showAllProjects = useCallback(() => {
-    if (loadedProjects.length < totalProjectsCount) {
+    const hasMorePages =
+      loadedProjects.length < totalProjectsCount &&
+      (!isServerPagedResponse || serverPageNextOffset != null)
+
+    if (hasMorePages) {
       const requestGeneration = projectRequestGenerationRef.current
       const fetchRemainingProjects = async () => {
         setIsPageLoading(true)
-        let offset = loadedProjects.length
+        let offset = serverPageNextOffset ?? loadedProjects.length
         let totalSize = totalProjectsCount
         const projectsToAppend: Project[] = []
 
-        while (offset < totalSize) {
+        while (offset != null && offset < totalSize) {
           const pageSize = Math.min(
             MAX_PROJECTS_PER_SERVER_PAGE,
             totalSize - offset
@@ -417,10 +453,12 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
             return
           }
           projectsToAppend.push(...data.projects)
-          offset += data.projects.length
+          offset = data.page
+            ? data.page.nextOffset
+            : offset + data.projects.length
           totalSize = data.totalSize
 
-          if (data.projects.length === 0) {
+          if (offset == null || data.projects.length === 0) {
             break
           }
         }
@@ -429,6 +467,8 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
           uniqBy([...loadedProjects, ...projectsToAppend], 'id')
         )
         setTotalProjectsCount(totalSize)
+        setServerPageNextOffset(offset)
+        setIsServerPagedResponse(isServerPagedResponse)
         setMaxVisibleProjects(totalSize)
       }
 
@@ -449,22 +489,28 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   }, [
     buildProjectsRequest,
     hiddenProjectsCount,
+    isServerPagedResponse,
     loadedProjects.length,
     maxVisibleProjects,
+    serverPageNextOffset,
     totalProjectsCount,
   ])
 
   const loadMoreProjects = useCallback(() => {
-    if (
+    const hasMorePages =
       loadedProjects.length < totalProjectsCount &&
-      loadedProjects.length <= maxVisibleProjects
-    ) {
+      loadedProjects.length <= maxVisibleProjects &&
+      (!isServerPagedResponse || serverPageNextOffset != null)
+
+    if (hasMorePages) {
       const requestGeneration = projectRequestGenerationRef.current
       setIsPageLoading(true)
       getProjects(
         buildProjectsRequest({
           size: loadMoreCount,
-          offset: loadedProjects.length,
+          offset: isServerPagedResponse
+            ? serverPageNextOffset ?? loadedProjects.length
+            : loadedProjects.length,
         })
       )
         .then(data => {
@@ -475,6 +521,9 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
             uniqBy([...loadedProjects, ...data.projects], 'id')
           )
           setTotalProjectsCount(data.totalSize)
+          setServerPageNextOffset(data.page?.nextOffset)
+          setIsServerPagedResponse(Boolean(data.page))
+          setServerTagCounts(data.tagCounts)
           setMaxVisibleProjects(maxVisibleProjects =>
             maxVisibleProjects + data.projects.length
           )
@@ -492,9 +541,11 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
     setMaxVisibleProjects(maxVisibleProjects + loadMoreCount)
   }, [
     buildProjectsRequest,
+    isServerPagedResponse,
     loadedProjects.length,
     loadMoreCount,
     maxVisibleProjects,
+    serverPageNextOffset,
     totalProjectsCount,
   ])
 
@@ -543,6 +594,9 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
   )
 
   const untaggedProjectsCount = useMemo(() => {
+    if (serverTagCounts) {
+      return serverTagCounts.untagged
+    }
     const taggedProjectIds = uniq(flatten(tags.map(tag => tag.project_ids)))
     return loadedProjects.filter(
       project =>
@@ -550,11 +604,20 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
         !project.trashed &&
         !taggedProjectIds.includes(project.id)
     ).length
-  }, [tags, loadedProjects])
+  }, [tags, loadedProjects, serverTagCounts])
 
   const projectsPerTag = useMemo(() => {
     return tags.reduce<Record<Tag['_id'], { length: number }>>(
       (prev, curTag) => {
+        const serverCount = serverTagCounts?.byTagId[curTag._id]
+        if (serverCount != null) {
+          return {
+            ...prev,
+            [curTag._id]: {
+              length: serverCount,
+            },
+          }
+        }
         const projectIds = new Set(curTag.project_ids || [])
         return {
           ...prev,
@@ -568,7 +631,7 @@ export function ProjectListProvider({ children }: ProjectListProviderProps) {
       },
       {}
     )
-  }, [tags, loadedProjects])
+  }, [tags, loadedProjects, serverTagCounts])
 
   const selectFilter = useCallback(
     (filter: Filter) => {
