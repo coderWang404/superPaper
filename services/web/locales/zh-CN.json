@@ -2264,6 +2264,7 @@
   "symbol_palette_highlighted": "<0>符号</0> 面板",
   "symbol_palette_info_new": "单击按钮即可将数学符号插入到您的文档中。",
   "sync": "同步",
+  "syncModelsFor": "同步 __provider__ 的模型",
   "sync_dropbox_github": "与dropbox或GitHub同步",
   "sync_project_to_github_explanation": "您在 __appName__ 中的所有更改将被提交并与 GitHub 中的所有更新合并。",
   "sync_to_dropbox": "同步到 Dropbox",

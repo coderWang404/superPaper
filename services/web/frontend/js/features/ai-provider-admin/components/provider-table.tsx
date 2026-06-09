@@ -150,7 +150,10 @@ function ProviderRow({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            aria-label={`${t('syncModels')} for ${provider.name}`}
+            aria-label={t('syncModelsFor').replace(
+              '__provider__',
+              provider.name
+            )}
             disabled={Boolean(activeAction)}
             onClick={() => onSyncModels(provider.id)}
           >

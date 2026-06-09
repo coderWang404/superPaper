@@ -52,6 +52,7 @@ export type TranslationKey =
   | 'selectPreset'
   | 'syncingModels'
   | 'syncModels'
+  | 'syncModelsFor'
   | 'test'
   | 'testingProvider'
   | 'unknown'
@@ -111,6 +112,7 @@ export const TRANSLATIONS: Record<
     requestFailed: 'AI provider request failed',
     syncingModels: 'Syncing...',
     syncModels: 'Sync models',
+    syncModelsFor: 'Sync models for __provider__',
     test: 'Test',
     testingProvider: 'Testing...',
     unknown: 'unknown',
@@ -166,6 +168,7 @@ export const TRANSLATIONS: Record<
     requestFailed: 'AI 供应商请求失败',
     syncingModels: '正在同步...',
     syncModels: '同步模型',
+    syncModelsFor: '同步 __provider__ 的模型',
     test: '测试',
     testingProvider: '正在测试...',
     unknown: '未知',

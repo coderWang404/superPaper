@@ -2685,6 +2685,7 @@
   "symbol_palette_highlighted": "<0>Symbol</0> palette",
   "symbol_palette_info_new": "Insert math symbols into your document with the click of a button.",
   "sync": "Sync",
+  "syncModelsFor": "Sync models for __provider__",
   "sync_all_projects_with_dropbox": "Sync all projects with Dropbox.",
   "sync_dropbox_github": "Sync with Dropbox and GitHub",
   "sync_project_to_github_explanation": "Any changes you have made in __appName__ will be committed and merged with any updates in GitHub.",
