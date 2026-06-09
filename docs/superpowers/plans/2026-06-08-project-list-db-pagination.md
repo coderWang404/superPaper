@@ -364,38 +364,61 @@ git commit -m "feat(project-list): gate dashboard on DB pagination query"
 git push
 ```
 
-### Task 5: Indexes
+### Task 5: Index Review
 
 **Files:**
-- Modify: `services/web/app/src/models/Project.mjs`
-- Modify: `services/web/app/src/models/Tag.mjs`
+- Review: `services/web/app/src/models/Project.mjs`
+- Review: `services/web/app/src/models/Tag.mjs`
+- Review: `tools/migrations/20190912145024_create_projects_indexes.mjs`
+- Review: `tools/migrations/20190912145029_create_tags_indexes.mjs`
+- Review: `tools/migrations/20241204103349_create_reviewer_refs_index.mjs`
 
-- [ ] **Step 1: Add schema indexes**
+- [ ] **Step 1: Review existing indexes before adding new ones**
 
-Add non-unique indexes. Before adding each index, check current migrations/schema definitions to avoid re-declaring an equivalent existing index such as the unique `{ user_id: 1, name: 1 }` tag index:
+Do not add schema indexes until the existing migration history has been checked.
+The project list DB helper begins with an `$or` membership `$match` over
+`owner_ref`, `collaberator_refs`, `reviewer_refs`, `readOnly_refs`,
+`tokenAccessReadAndWrite_refs`, and `tokenAccessReadOnly_refs`.
+
+Existing migrations already provide the minimal membership indexes used by that
+front-loaded access match:
 
 ```js
-ProjectSchema.index({ owner_ref: 1, lastUpdated: -1, _id: 1 })
-ProjectSchema.index({ owner_ref: 1, name: 1, _id: 1 })
-ProjectSchema.index({ collaberator_refs: 1, lastUpdated: -1, _id: 1 })
-ProjectSchema.index({ reviewer_refs: 1, lastUpdated: -1, _id: 1 })
-ProjectSchema.index({ readOnly_refs: 1, lastUpdated: -1, _id: 1 })
-ProjectSchema.index({
-  tokenAccessReadAndWrite_refs: 1,
-  publicAccesLevel: 1,
-  lastUpdated: -1,
-  _id: 1,
-})
-ProjectSchema.index({
-  tokenAccessReadOnly_refs: 1,
-  publicAccesLevel: 1,
-  lastUpdated: -1,
-  _id: 1,
-})
-TagSchema.index({ user_id: 1, project_ids: 1 })
+{ owner_ref: 1 }
+{ collaberator_refs: 1 }
+{ readOnly_refs: 1 }
+{ tokenAccessReadAndWrite_refs: 1 }
+{ tokenAccessReadOnly_refs: 1 }
+{ reviewer_refs: 1 }
 ```
 
-- [ ] **Step 2: Verify model import**
+- [ ] **Step 2: Record the index decision**
+
+Decision after review: do not add the originally proposed compound schema
+indexes for this rollout.
+
+Reasons:
+- The proposed `{ <membership_ref>: 1, lastUpdated: -1, _id: 1 }` indexes are
+  prefix-duplicates of existing membership indexes and are unlikely to serve the
+  `$sort`, because sorting happens inside a `$facet` after `$addFields` derived
+  access/status fields.
+- Title sort uses a derived lower-case field and search uses a case-insensitive
+  literal substring regex, so a plain `{ name: 1 }` compound index would not
+  provide the intended sort/search benefit.
+- `TagSchema.index({ user_id: 1, project_ids: 1 })` is not used by the project
+  list pagination query, which loads all tags for the user and builds project id
+  sets in application code. The existing unique `{ user_id: 1, name: 1 }` tag
+  index already covers the `user_id` prefix for `getAllTags(userId)`.
+- `autoIndex` is disabled in this app, so production index additions should be
+  shipped as deliberate migrations after explain-plan evidence, not as schema
+  declarations.
+
+Optional future work: if production explain plans show token-shared projects are
+hot enough to need more selectivity, evaluate migration-backed indexes on
+`{ tokenAccessReadAndWrite_refs: 1, publicAccesLevel: 1 }` and
+`{ tokenAccessReadOnly_refs: 1, publicAccesLevel: 1 }`.
+
+- [ ] **Step 3: Verify the reviewed query path still passes**
 
 Run:
 
@@ -404,10 +427,10 @@ cd services/web
 yarn test:unit test/unit/src/Project/ProjectGetterProjectListPage.sequential.test.mjs test/unit/src/Tags/TagsHandler.test.mjs
 cd ../..
 git diff --check
-git add services/web/app/src/models/Project.mjs services/web/app/src/models/Tag.mjs
+git add docs/superpowers/plans/2026-06-08-project-list-db-pagination.md
 git diff --cached
 rg -n "apiKey|encryptedApiKey|password|secret|token" --glob '!node_modules' --glob '!services/web/locales/*.json' --glob '!services/web/frontend/extracted-translations.json' --glob '!*.md' --glob '!*.test.*' .
-git commit -m "perf(project-list): index dashboard membership queries"
+git commit -m "docs(project-list): record DB pagination index review"
 git push
 ```
 
