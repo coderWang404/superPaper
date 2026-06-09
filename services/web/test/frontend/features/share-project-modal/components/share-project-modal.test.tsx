@@ -717,8 +717,8 @@ describe('<ShareProjectModal/>', function () {
     })
 
     const user = userEvent.setup()
-    await user.click(screen.getByTestId('add-collaborator-select'))
-    await user.click(screen.getByText('Viewer'))
+    fireEvent.click(screen.getByTestId('add-collaborator-select'))
+    await user.click(await screen.findByRole('option', { name: 'Viewer' }))
 
     const submitButton = screen.getByRole('button', { name: 'Invite' })
     await userEvent.click(submitButton)

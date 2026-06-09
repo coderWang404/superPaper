@@ -46,7 +46,7 @@ function FileTreeFolderList({
         ref={dropRef}
         data-testid={dataTestId}
       >
-        <div className="file-tree-folder-list-inner">
+        <div className="file-tree-folder-list-inner" role="none">
           {folders.sort(compareFunction).map(folder => {
             return (
               <FileTreeFolder
