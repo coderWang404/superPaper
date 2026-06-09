@@ -60,6 +60,7 @@ describe('ProjectGetter.findUsersProjectListPage', function () {
     ctx.userId = new ObjectId()
     ctx.otherUserId = new ObjectId()
     ctx.ownerId = new ObjectId()
+    ctx.emailOnlyOwnerId = new ObjectId()
     ctx.lastUpdatedBy = new ObjectId()
 
     await db.users.insertMany([
@@ -80,6 +81,10 @@ describe('ProjectGetter.findUsersProjectListPage', function () {
         email: 'editor@example.com',
         first_name: 'Recent',
         last_name: 'Editor',
+      },
+      {
+        _id: ctx.emailOnlyOwnerId,
+        email: 'sort-email@example.com',
       },
     ])
   })
@@ -591,6 +596,64 @@ describe('ProjectGetter.findUsersProjectListPage', function () {
       size: 1,
       offset: 1,
       nextOffset: 2,
+    })
+  })
+
+  it('sorts by owner display value before pagination', async function (ctx) {
+    const missingOwnerId = new ObjectId()
+    await db.projects.insertMany([
+      buildProject({
+        name: 'Self Owned',
+        ownerRef: ctx.userId,
+        lastUpdated: new Date('2026-01-01T00:00:00Z'),
+      }),
+      buildProject({
+        name: 'Named Owner',
+        ownerRef: ctx.ownerId,
+        lastUpdated: new Date('2026-01-02T00:00:00Z'),
+        collaberatorRefs: [ctx.userId],
+      }),
+      buildProject({
+        name: 'Email Owner',
+        ownerRef: ctx.emailOnlyOwnerId,
+        lastUpdated: new Date('2026-01-03T00:00:00Z'),
+        collaberatorRefs: [ctx.userId],
+      }),
+      buildProject({
+        name: 'Missing Owner',
+        ownerRef: missingOwnerId,
+        lastUpdated: new Date('2026-01-04T00:00:00Z'),
+        collaberatorRefs: [ctx.userId],
+      }),
+      buildProject({
+        name: 'Token Viewer',
+        ownerRef: ctx.ownerId,
+        lastUpdated: new Date('2026-01-05T00:00:00Z'),
+        publicAccesLevel: 'tokenBased',
+        tokenReadOnlyRefs: [ctx.userId],
+      }),
+    ])
+
+    const result = await ProjectGetter.promises.findUsersProjectListPage(
+      ctx.userId.toString(),
+      {
+        filters: {},
+        sort: { by: 'owner', order: 'asc' },
+        page: { size: 3, offset: 1 },
+        tags: [],
+      }
+    )
+
+    expect(result.totalSize).to.equal(5)
+    expect(names(result.projects)).to.deep.equal([
+      'Token Viewer',
+      'Named Owner',
+      'Email Owner',
+    ])
+    expect(result.page).to.deep.equal({
+      size: 3,
+      offset: 1,
+      nextOffset: 4,
     })
   })
 })

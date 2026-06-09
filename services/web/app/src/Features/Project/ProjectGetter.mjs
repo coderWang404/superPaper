@@ -254,6 +254,7 @@ function buildProjectListPagePipeline({
     $facet: {
       projects: [
         ...filterStages,
+        ...buildProjectListProjectSortStages(sort),
         { $sort: buildProjectListSort(sort) },
         { $skip: page.offset },
         { $limit: page.size },
@@ -506,10 +507,108 @@ function buildProjectListTagCountFilters(filters) {
   }
 }
 
+function buildProjectListProjectSortStages(sort) {
+  if (sort.by !== 'owner') {
+    return []
+  }
+
+  return [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'owner_ref',
+        foreignField: '_id',
+        as: 'dashboardOwnerSortUsers',
+      },
+    },
+    {
+      $addFields: {
+        dashboardOwnerSortUser: {
+          $arrayElemAt: ['$dashboardOwnerSortUsers', 0],
+        },
+      },
+    },
+    {
+      $addFields: {
+        dashboardOwnerSortFullName: {
+          $trim: {
+            input: {
+              $concat: [
+                { $ifNull: ['$dashboardOwnerSortUser.first_name', ''] },
+                ' ',
+                { $ifNull: ['$dashboardOwnerSortUser.last_name', ''] },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        dashboardOwnerSortValue: {
+          $cond: [
+            { $eq: ['$dashboardAccessRank', 0] },
+            'You',
+            {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$source', Sources.TOKEN] },
+                    { $eq: ['$accessLevel', 'readOnly'] },
+                  ],
+                },
+                '',
+                {
+                  $cond: [
+                    { $ne: ['$dashboardOwnerSortFullName', ''] },
+                    '$dashboardOwnerSortFullName',
+                    { $ifNull: ['$dashboardOwnerSortUser.email', ''] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+    {
+      $addFields: {
+        dashboardOwnerSortBucket: {
+          $switch: {
+            branches: [
+              {
+                case: { $eq: ['$dashboardOwnerSortValue', ''] },
+                then: 0,
+              },
+              {
+                case: { $eq: ['$source', Sources.TOKEN] },
+                then: 1,
+              },
+              {
+                case: { $eq: ['$dashboardAccessRank', 0] },
+                then: 3,
+              },
+            ],
+            default: 2,
+          },
+        },
+      },
+    },
+  ]
+}
+
 function buildProjectListSort(sort) {
   const order = sort.order === 'asc' ? 1 : -1
   if (sort.by === 'title') {
     return { dashboardTitleSortKey: order, _id: 1 }
+  }
+  if (sort.by === 'owner') {
+    return {
+      dashboardOwnerSortBucket: order,
+      dashboardOwnerSortValue: order,
+      lastUpdated: order,
+      _id: 1,
+    }
   }
   return { lastUpdated: order, _id: 1 }
 }
