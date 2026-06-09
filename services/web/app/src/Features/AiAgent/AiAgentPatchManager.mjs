@@ -1051,6 +1051,7 @@ function materializeOperationHunks({ patch, operation, operationIndex }) {
         patch,
         operation,
         operationIndex,
+        operationHunkCount: existingHunks.length,
         hunk,
         hunkIndex,
       })
@@ -1068,8 +1069,17 @@ function materializeOperationHunks({ patch, operation, operationIndex }) {
   ]
 }
 
-function materializeHunk({ patch, operation, operationIndex, hunk, hunkIndex }) {
+function materializeHunk({
+  patch,
+  operation,
+  operationIndex,
+  operationHunkCount = 1,
+  hunk,
+  hunkIndex,
+}) {
   const operationId = operation.id || operationIdForIndex(operationIndex)
+  const shouldUseOperationText =
+    operation.type !== 'replace_text' || operationHunkCount <= 1
   const status = hunkStatusForPatch({
     patchStatus: patch.status,
     operationStatus: operation.status,
@@ -1087,8 +1097,12 @@ function materializeHunk({ patch, operation, operationIndex, hunk, hunkIndex }) 
     oldLines: hunk.oldLines ?? operation.diff?.oldLines ?? 0,
     newStart: hunk.newStart ?? operation.diff?.newStart ?? 1,
     newLines: hunk.newLines ?? operation.diff?.newLines ?? 0,
-    oldText: hunk.oldText ?? hunkTextBeforeOperation(operation),
-    newText: hunk.newText ?? hunkTextAfterOperation(operation),
+    oldText:
+      hunk.oldText ??
+      (shouldUseOperationText ? hunkTextBeforeOperation(operation) : undefined),
+    newText:
+      hunk.newText ??
+      (shouldUseOperationText ? hunkTextAfterOperation(operation) : undefined),
     baseSha256: hunk.baseSha256 || operation.baseSha256,
     proposedSha256: hunk.proposedSha256 || operation.proposedSha256,
     status,
@@ -1272,15 +1286,6 @@ async function assertApplySelectionsSafe({ patch, selections, docs, files }) {
   return { textPlans }
 }
 
-async function assertReplaceTextOperationSafe({ operation, patch, docs }) {
-  const currentContent = await assertExistingDocOperationSafe({
-    operation,
-    patch,
-    docs,
-  })
-  assertSingleOccurrence(currentContent, operation.oldText, operation.path)
-}
-
 async function planTextHunkApplications({
   patch,
   selections,
@@ -1311,6 +1316,7 @@ async function planTextHunkApplications({
   let workingContent = currentContent
 
   for (const { operation, hunk } of orderedSelections) {
+    assertTextHunkHasOwnContent({ operation, hunk })
     assertSingleOccurrence(workingContent, hunk.oldText, operation.path)
     const nextContent = workingContent.replace(hunk.oldText, hunk.newText)
     textPlans.set(hunk.id, {
@@ -1320,6 +1326,18 @@ async function planTextHunkApplications({
       afterSha256: sha256(nextContent),
     })
     workingContent = nextContent
+  }
+}
+
+function assertTextHunkHasOwnContent({ operation, hunk }) {
+  if (
+    operation.type === 'replace_text' &&
+    (typeof hunk.oldText !== 'string' || typeof hunk.newText !== 'string')
+  ) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_HUNK_TEXT_REQUIRED',
+      'Agent patch text hunks must include oldText and newText'
+    )
   }
 }
 
@@ -1686,15 +1704,17 @@ async function applyMoveEntityOperation({
 
 async function assertRollbackOperationsSafe({ projectId, operations }) {
   const [docs, files] = await getProjectEntities(projectId)
+  const rollbackDocTexts = new Map()
   for (const operation of operations) {
-    assertRollbackOperationSafe(operation, { docs, files })
+    assertRollbackOperationSafe(operation, { docs, files, rollbackDocTexts })
   }
 }
 
-function assertRollbackOperationSafe(operation, { docs, files }) {
+function assertRollbackOperationSafe(operation, { docs, files, rollbackDocTexts }) {
   if (operation.type === 'restore_doc_text') {
     const doc = docs[operation.path]
-    assertRollbackDoc(doc, operation.afterSha256)
+    assertRollbackDoc(doc, operation.afterSha256, rollbackDocTexts)
+    rollbackDocTexts.set(entityIdKey(operation.docId), operation.beforeText || '')
     return
   }
   if (operation.type === 'delete_created_doc') {
@@ -1789,19 +1809,25 @@ async function applyRollbackOperation({ projectId, userId, operation }) {
   )
 }
 
-function assertRollbackDoc(doc, expectedSha256) {
+function assertRollbackDoc(doc, expectedSha256, rollbackDocTexts = null) {
   if (!doc) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_ROLLBACK_CONFLICT',
       'Agent patch rollback target document was not found'
     )
   }
-  if (expectedSha256 && sha256(getDocText(doc)) !== expectedSha256) {
+  const currentText =
+    rollbackDocTexts?.get(entityIdKey(doc._id)) ?? getDocText(doc)
+  if (expectedSha256 && sha256(currentText) !== expectedSha256) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_ROLLBACK_CONFLICT',
       'Agent patch rollback target document changed'
     )
   }
+}
+
+function entityIdKey(id) {
+  return id?.toString?.() || id
 }
 
 function assertRollbackTargetEmpty(projectPath, { docs, files }) {
