@@ -125,6 +125,8 @@ module.exports = {
   allowAnonymousReadAndWriteSharing:
     process.env.SUPERPAPER_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING === 'true',
 
+  enableProjectListDbPagination: false,
+
   // Databases
   // ---------
   mongo: {

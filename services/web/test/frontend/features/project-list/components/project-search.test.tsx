@@ -15,6 +15,7 @@ import {
   useProjectListContext,
 } from '../../../../../frontend/js/features/project-list/context/project-list-context'
 import ProjectListTable from '../../../../../frontend/js/features/project-list/components/table/project-list-table'
+import { GetProjectsResponseBody } from '../../../../../types/project/dashboard/api'
 
 function makeSearchProject(id: string, name: string) {
   return {
@@ -27,7 +28,12 @@ function makeSearchProject(id: string, name: string) {
 }
 
 function mockProjectPageResponses(
-  responses: Array<{ projects: typeof projectsData; totalSize: number }>
+  responses: Array<
+    {
+      projects: typeof projectsData
+      totalSize: number
+    } & Partial<GetProjectsResponseBody>
+  >
 ) {
   fetchMock.post('express:/api/project', () => {
     const response = responses.shift()
@@ -282,6 +288,40 @@ describe('Project list search form', function () {
       filters: { archived: false, trashed: false },
       page: { size: 20, offset: 0 },
     })
+  })
+
+  it('does not locally filter a server-filtered page response', async function () {
+    const initialProjects = [makeSearchProject('first-1', 'Initial Project')]
+    const serverFilteredProjects = [
+      makeSearchProject('server-1', 'Authoritative Server Result'),
+    ]
+    mockProjectPageResponses([
+      {
+        projects: initialProjects,
+        totalSize: 25,
+        page: { size: 20, offset: 0, nextOffset: 20 },
+      },
+      {
+        projects: serverFilteredProjects,
+        totalSize: 1,
+        page: { size: 20, offset: 0, nextOffset: null },
+      },
+    ])
+
+    renderWithProjectListContext(<SearchHarness />, { mockProjectApi: false })
+
+    await screen.findByText('Initial Project')
+    const input = screen.getByRole('textbox', {
+      name: /search in all projects/i,
+    })
+
+    const clock = sinon.useFakeTimers()
+    fireEvent.change(input, { target: { value: 'alpha' } })
+    clock.tick(300)
+    await fetchMock.callHistory.flush(true)
+    clock.restore()
+
+    await screen.findByText('Authoritative Server Result')
   })
 
   it('ignores stale search responses when a newer request finishes first', async function () {

@@ -6,6 +6,7 @@ export default function LoadMore() {
   const {
     visibleProjects,
     hiddenProjectsCount,
+    isPageLoading,
     loadMoreCount,
     showAllProjects,
     loadMoreProjects,
@@ -19,6 +20,9 @@ export default function LoadMore() {
           <OLButton
             variant="secondary"
             className="project-list-load-more-button"
+            disabled={isPageLoading}
+            isLoading={isPageLoading}
+            loadingLabel={t('loading')}
             onClick={() => loadMoreProjects()}
           >
             {t('show_x_more_projects', { x: loadMoreCount })}
@@ -36,6 +40,7 @@ export default function LoadMore() {
             </span>{' '}
             <OLButton
               variant="link"
+              disabled={isPageLoading}
               onClick={() => showAllProjects()}
               className="btn-inline-link"
             >

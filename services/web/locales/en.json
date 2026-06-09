@@ -1636,6 +1636,7 @@
   "loading": "Loading",
   "loading_content": "Creating Project",
   "loading_github_repositories": "Loading your GitHub repositories",
+  "loading_more_projects": "Loading more projects",
   "loading_prices": "loading prices",
   "loading_python_runtime": "Loading Python runtime...",
   "loading_recent_github_commits": "Loading recent commits",

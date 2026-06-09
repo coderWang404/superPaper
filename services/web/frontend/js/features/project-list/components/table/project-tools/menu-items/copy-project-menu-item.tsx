@@ -36,6 +36,7 @@ function CopyProjectMenuItem() {
       const project = selectedProjects[0]
       eventTracking.sendMB('project-list-page-interaction', {
         action: 'clone',
+        page: '/',
         projectId: project.id,
         isSmallDevice,
       })
