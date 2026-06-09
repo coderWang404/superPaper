@@ -36,6 +36,19 @@ const TurnSchema = z.object({
   selection: SelectionSchema,
 })
 
+const ApplyPatchSchema = z
+  .object({
+    hunkIds: z.array(z.string().trim().min(1).max(160)).nonempty().optional(),
+    rejectUnselected: z.boolean().optional(),
+  })
+  .strict()
+
+const PatchHunkSelectionSchema = z
+  .object({
+    hunkIds: z.array(z.string().trim().min(1).max(160)).nonempty().optional(),
+  })
+  .strict()
+
 const RollbackSessionCheckpointSchema = z.object({
   commitHash: z.string().trim().regex(/^[a-f0-9]{40}$/i),
 })
@@ -144,10 +157,17 @@ function createResponseCloseAbortController(res) {
 
 async function applyPatch(req, res, next) {
   try {
+    const body = ApplyPatchSchema.parse(req.body || {})
     const patch = await applyAgentPatch({
       projectId: req.params.Project_id,
       userId: SessionManager.getLoggedInUserId(req.session),
       patchId: req.params.patchId,
+      ...(body.hunkIds
+        ? {
+            hunkIds: body.hunkIds,
+            rejectUnselected: body.rejectUnselected || false,
+          }
+        : {}),
     })
     res.json({ patch })
   } catch (err) {
@@ -157,10 +177,12 @@ async function applyPatch(req, res, next) {
 
 async function rejectPatch(req, res, next) {
   try {
+    const body = PatchHunkSelectionSchema.parse(req.body || {})
     const patch = await rejectAgentPatch({
       projectId: req.params.Project_id,
       userId: SessionManager.getLoggedInUserId(req.session),
       patchId: req.params.patchId,
+      ...(body.hunkIds ? { hunkIds: body.hunkIds } : {}),
     })
     res.json({ patch })
   } catch (err) {
@@ -170,10 +192,12 @@ async function rejectPatch(req, res, next) {
 
 async function rollbackPatch(req, res, next) {
   try {
+    const body = PatchHunkSelectionSchema.parse(req.body || {})
     const patch = await rollbackAgentPatch({
       projectId: req.params.Project_id,
       userId: SessionManager.getLoggedInUserId(req.session),
       patchId: req.params.patchId,
+      ...(body.hunkIds ? { hunkIds: body.hunkIds } : {}),
     })
     res.json({ patch })
   } catch (err) {

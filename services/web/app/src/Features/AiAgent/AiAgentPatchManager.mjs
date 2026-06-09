@@ -101,11 +101,19 @@ export async function createPatch({
     summary: String(summary || '').slice(0, 1000),
     riskLevel: riskLevelForOperations(normalizedOperations),
   })
+  patch.operations = materializePatchOperations(patch)
+  await patch.save()
 
   return publicPatch(patch)
 }
 
-export async function applyPatch({ projectId, userId, patchId }) {
+export async function applyPatch({
+  projectId,
+  userId,
+  patchId,
+  hunkIds = null,
+  rejectUnselected = false,
+}) {
   const patch = await AgentPatch.findOne({
     _id: patchId,
     projectId,
@@ -114,24 +122,43 @@ export async function applyPatch({ projectId, userId, patchId }) {
   if (!patch) {
     throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
   }
-  if (patch.status !== 'pending' && patch.status !== 'approved') {
+  if (
+    patch.status !== 'pending' &&
+    patch.status !== 'approved' &&
+    patch.status !== 'partially_applied'
+  ) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_NOT_PENDING',
       'Agent patch is not pending approval'
     )
   }
+  const selectedHunkIds = selectedHunkSetOrNull(hunkIds)
+  patch.operations = materializePatchOperations(patch)
+  assertRequestedHunksExist(patch, selectedHunkIds)
+  const operationSelections = applySelectionsForPatch({
+    patch,
+    selectedHunkIds,
+    rejectUnselected,
+  })
 
   const [docs, files] = await Promise.all([
     ProjectEntityHandler.promises.getAllDocs(projectId),
     ProjectEntityHandler.promises.getAllFiles(projectId),
   ])
+  await assertApplySelectionsSafe({
+    patch,
+    selections: operationSelections.toApply,
+    docs,
+    files,
+  })
   const appliedOperations = []
   const rollbackOperations = []
 
-  for (const operation of patch.operations || []) {
+  for (const { operation, hunk } of operationSelections.toApply) {
     if (operation.type === 'replace_text') {
       await applyReplaceTextOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -142,6 +169,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'create_doc') {
       await applyCreateDocOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -153,6 +181,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'delete_doc') {
       await applyDeleteDocOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -163,6 +192,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'rename_entity') {
       await applyRenameEntityOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -174,6 +204,7 @@ export async function applyPatch({ projectId, userId, patchId }) {
     } else if (operation.type === 'move_entity') {
       await applyMoveEntityOperation({
         operation,
+        hunk,
         projectId,
         userId,
         patch,
@@ -190,13 +221,23 @@ export async function applyPatch({ projectId, userId, patchId }) {
     }
   }
 
-  patch.status = 'applied'
+  markAppliedOperationSelections(operationSelections.toApply)
+  markRejectedOperationSelections(operationSelections.toReject)
+  patch.status = patchStatusFromOperations(patch.operations)
   patch.approvedByUserId = userId
-  patch.appliedByUserId = userId
+  if (operationSelections.toApply.length > 0) {
+    patch.appliedByUserId = userId
+    patch.appliedAt = new Date()
+  }
   patch.approvedAt = patch.approvedAt || new Date()
-  patch.appliedAt = new Date()
-  patch.appliedOperations = appliedOperations
-  patch.rollbackOperations = rollbackOperations
+  patch.appliedOperations = [
+    ...(patch.appliedOperations || []),
+    ...appliedOperations,
+  ]
+  patch.rollbackOperations = [
+    ...(patch.rollbackOperations || []),
+    ...rollbackOperations,
+  ]
   await patch.save()
   const publicAppliedPatch = publicPatch(patch)
 
@@ -218,6 +259,9 @@ export async function applyPatch({ projectId, userId, patchId }) {
     payload: {
       patchId: patch._id?.toString?.() || patch.id,
       operations: appliedOperations,
+      ...(selectedHunkIds
+        ? { hunkIds: operationSelections.toApply.map(({ hunk }) => hunk.id) }
+        : {}),
     },
   })
   publicAppliedPatch.compileResult = await compileAfterPatch({
@@ -226,15 +270,22 @@ export async function applyPatch({ projectId, userId, patchId }) {
     userId,
     patchId: patch._id?.toString?.() || patch.id,
   })
-  await AgentSession.updateOne(
-    { _id: patch.sessionId, projectId },
-    { $set: { status: 'completed', completedAt: new Date() } }
-  ).exec()
+  if (!hasPendingHunks(patch.operations)) {
+    await AgentSession.updateOne(
+      { _id: patch.sessionId, projectId },
+      { $set: { status: 'completed', completedAt: new Date() } }
+    ).exec()
+  }
 
   return publicAppliedPatch
 }
 
-export async function rollbackPatch({ projectId, userId, patchId }) {
+export async function rollbackPatch({
+  projectId,
+  userId,
+  patchId,
+  hunkIds = null,
+}) {
   const patch = await AgentPatch.findOne({
     _id: patchId,
     projectId,
@@ -243,29 +294,42 @@ export async function rollbackPatch({ projectId, userId, patchId }) {
   if (!patch) {
     throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
   }
-  if (patch.status !== 'applied') {
+  const selectedHunkIds = selectedHunkSetOrNull(hunkIds)
+  if (
+    !selectedHunkIds &&
+    patch.status !== 'applied' &&
+    patch.status !== 'partially_applied'
+  ) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_NOT_APPLIED',
       'Only applied agent patches can be rolled back'
     )
   }
 
+  patch.operations = materializePatchOperations(patch)
+  assertRequestedHunksExist(patch, selectedHunkIds)
   const rollbackOperations = patch.rollbackOperations || []
-  if (!rollbackOperations.length) {
+  const rollbackSelections = rollbackSelectionsForPatch({
+    patch,
+    rollbackOperations,
+    selectedHunkIds,
+  })
+  if (!rollbackSelections.operations.length) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_ROLLBACK_UNAVAILABLE',
       'Agent patch does not have a rollback snapshot'
     )
   }
 
-  const reversedOperations = [...rollbackOperations].reverse()
+  const reversedOperations = [...rollbackSelections.operations].reverse()
   await assertRollbackOperationsSafe({ projectId, operations: reversedOperations })
 
   for (const operation of reversedOperations) {
     await applyRollbackOperation({ projectId, userId, operation })
   }
 
-  patch.status = 'rolled_back'
+  markRolledBackOperationSelections(rollbackSelections.selections)
+  patch.status = patchStatusFromOperations(patch.operations)
   patch.rolledBackByUserId = userId
   patch.rolledBackAt = new Date()
   await patch.save()
@@ -277,7 +341,12 @@ export async function rollbackPatch({ projectId, userId, patchId }) {
     type: 'patch_rolled_back',
     payload: {
       patchId: patch._id?.toString?.() || patch.id,
-      operations: rollbackOperations.map(publicRollbackOperation),
+      operations: rollbackSelections.operations.map(publicRollbackOperation),
+      ...(selectedHunkIds
+        ? {
+            hunkIds: rollbackSelections.selections.map(({ hunk }) => hunk.id),
+          }
+        : {}),
     },
   })
 
@@ -292,7 +361,7 @@ export async function rollbackPatch({ projectId, userId, patchId }) {
   return publicRolledBackPatch
 }
 
-export async function rejectPatch({ projectId, userId, patchId }) {
+export async function rejectPatch({ projectId, userId, patchId, hunkIds = null }) {
   const patch = await AgentPatch.findOne({
     _id: patchId,
     projectId,
@@ -301,14 +370,31 @@ export async function rejectPatch({ projectId, userId, patchId }) {
   if (!patch) {
     throw new AiAgentPatchError('AGENT_PATCH_NOT_FOUND', 'Agent patch not found')
   }
-  if (patch.status !== 'pending' && patch.status !== 'approved') {
+  const selectedHunkIds = selectedHunkSetOrNull(hunkIds)
+  if (
+    patch.status !== 'pending' &&
+    patch.status !== 'approved' &&
+    patch.status !== 'partially_applied' &&
+    !(selectedHunkIds && patch.status === 'applied')
+  ) {
     throw new AiAgentPatchError(
       'AGENT_PATCH_NOT_PENDING',
       'Agent patch is not pending approval'
     )
   }
 
-  patch.status = 'rejected'
+  patch.operations = materializePatchOperations(patch)
+  assertRequestedHunksExist(patch, selectedHunkIds)
+  const operationSelections = rejectSelectionsForPatch({
+    patch,
+    selectedHunkIds,
+  })
+  markRejectedOperationSelections(operationSelections.toReject)
+
+  patch.status =
+    selectedHunkIds || (patch.operations || []).length > 0
+      ? patchStatusFromOperations(patch.operations)
+      : 'rejected'
   patch.rejectedByUserId = userId
   patch.rejectedAt = new Date()
   await patch.save()
@@ -321,17 +407,33 @@ export async function rejectPatch({ projectId, userId, patchId }) {
     payload: {
       patchId: patch._id?.toString?.() || patch.id,
       status: 'rejected',
+      ...(selectedHunkIds
+        ? { hunkIds: operationSelections.toReject.map(({ hunk }) => hunk.id) }
+        : {}),
     },
   })
-  await AgentSession.updateOne(
-    { _id: patch.sessionId, projectId },
-    { $set: { status: 'completed', completedAt: new Date() } }
-  ).exec()
+  await recordPatchEvent({
+    sessionId: patch.sessionId,
+    projectId,
+    userId,
+    type: 'patch_rejected',
+    payload: {
+      patchId: patch._id?.toString?.() || patch.id,
+      hunkIds: operationSelections.toReject.map(({ hunk }) => hunk.id),
+    },
+  })
+  if (!hasPendingHunks(patch.operations)) {
+    await AgentSession.updateOne(
+      { _id: patch.sessionId, projectId },
+      { $set: { status: 'completed', completedAt: new Date() } }
+    ).exec()
+  }
 
   return publicPatch(patch)
 }
 
 export function publicPatch(patch) {
+  const operations = materializePatchOperations(patch)
   return {
     id: patch._id?.toString?.() || patch.id,
     sessionId: patch.sessionId?.toString?.() || patch.sessionId,
@@ -340,14 +442,14 @@ export function publicPatch(patch) {
       patch.createdByUserId?.toString?.() || patch.createdByUserId,
     status: patch.status,
     baseRevision: patch.baseRevision || {},
-    operations: (patch.operations || []).map(publicOperation),
+    operations: operations.map(publicOperation),
     summary: patch.summary || '',
     riskLevel: patch.riskLevel || 'low',
     createdAt: patch.createdAt || null,
     appliedAt: patch.appliedAt || null,
     rolledBackAt: patch.rolledBackAt || null,
     rollbackAvailable:
-      patch.status === 'applied' && (patch.rollbackOperations || []).length > 0,
+      hasRollbackableHunks(operations, patch.rollbackOperations || []),
     compileResult: patch.compileResult || null,
   }
 }
@@ -562,7 +664,9 @@ function normalizeMoveEntityOperation(operation, { docs, files }) {
 
 function publicOperation(operation) {
   return {
+    id: operation.id,
     type: operation.type,
+    status: operation.status || 'pending',
     entityType: operation.entityType,
     path: operation.path,
     newName: operation.newName,
@@ -576,7 +680,503 @@ function publicOperation(operation) {
     proposedSha256: operation.proposedSha256,
     baseRev: operation.baseRev ?? null,
     diff: operation.diff,
+    hunks: (operation.hunks || []).map(publicHunk),
   }
+}
+
+function publicHunk(hunk) {
+  return {
+    id: hunk.id,
+    operationId: hunk.operationId,
+    operationIndex: hunk.operationIndex,
+    hunkIndex: hunk.hunkIndex,
+    type: hunk.type,
+    path: hunk.path,
+    newPath: hunk.newPath,
+    oldStart: hunk.oldStart,
+    oldLines: hunk.oldLines,
+    newStart: hunk.newStart,
+    newLines: hunk.newLines,
+    oldText: hunk.oldText || '',
+    newText: hunk.newText || '',
+    baseSha256: hunk.baseSha256,
+    proposedSha256: hunk.proposedSha256,
+    status: hunk.status || 'pending',
+    appliedAt: hunk.appliedAt || null,
+    rolledBackAt: hunk.rolledBackAt || null,
+    conflict: hunk.conflict || null,
+    diff: hunk.diff,
+  }
+}
+
+function selectedHunkSetOrNull(hunkIds) {
+  if (hunkIds == null) {
+    return null
+  }
+  const unique = new Set(hunkIds)
+  if (unique.size !== hunkIds.length) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_DUPLICATE_HUNK',
+      'Agent patch hunk ids must be unique'
+    )
+  }
+  return unique
+}
+
+function collectPatchHunks(patch) {
+  return (patch.operations || []).flatMap(operation =>
+    (operation.hunks || []).map(hunk => ({ operation, hunk }))
+  )
+}
+
+function assertRequestedHunksExist(patch, selectedHunkIds) {
+  if (!selectedHunkIds) {
+    return
+  }
+  const existingHunkIds = new Set(
+    collectPatchHunks(patch).map(({ hunk }) => hunk.id)
+  )
+  for (const hunkId of selectedHunkIds) {
+    if (!existingHunkIds.has(hunkId)) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_NOT_FOUND',
+        'Agent patch hunk was not found'
+      )
+    }
+  }
+}
+
+function applySelectionsForPatch({
+  patch,
+  selectedHunkIds,
+  rejectUnselected,
+}) {
+  const toApply = []
+  const toReject = []
+  for (const operation of patch.operations || []) {
+    if ((operation.hunks || []).length > 1) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_UNSUPPORTED',
+        'Agent patch operation has multiple hunks'
+      )
+    }
+    for (const hunk of operation.hunks || []) {
+      const isSelected = !selectedHunkIds || selectedHunkIds.has(hunk.id)
+      if (selectedHunkIds && isSelected && hunk.status !== 'pending') {
+        throw new AiAgentPatchError(
+          'AGENT_PATCH_HUNK_NOT_PENDING',
+          'Agent patch hunk is not pending approval'
+        )
+      }
+      if (isSelected && hunk.status === 'pending') {
+        toApply.push({ operation, hunk })
+      } else if (selectedHunkIds && rejectUnselected && hunk.status === 'pending') {
+        toReject.push({ operation, hunk })
+      }
+    }
+  }
+  if (selectedHunkIds && toApply.length === 0) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_HUNK_NOT_PENDING',
+      'Agent patch hunk is not pending approval'
+    )
+  }
+  return { toApply, toReject }
+}
+
+function rejectSelectionsForPatch({ patch, selectedHunkIds }) {
+  const toReject = []
+  for (const operation of patch.operations || []) {
+    if ((operation.hunks || []).length > 1) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_UNSUPPORTED',
+        'Agent patch operation has multiple hunks'
+      )
+    }
+    for (const hunk of operation.hunks || []) {
+      const isSelected = !selectedHunkIds || selectedHunkIds.has(hunk.id)
+      if (selectedHunkIds && isSelected && hunk.status !== 'pending') {
+        throw new AiAgentPatchError(
+          'AGENT_PATCH_HUNK_NOT_PENDING',
+          'Agent patch hunk is not pending approval'
+        )
+      }
+      if (isSelected && hunk.status === 'pending') {
+        toReject.push({ operation, hunk })
+      }
+    }
+  }
+  if (selectedHunkIds && toReject.length === 0) {
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_HUNK_NOT_PENDING',
+      'Agent patch hunk is not pending approval'
+    )
+  }
+  return { toReject }
+}
+
+function rollbackSelectionsForPatch({
+  patch,
+  rollbackOperations,
+  selectedHunkIds,
+}) {
+  const hunkEntries = collectPatchHunks(patch)
+  if (!selectedHunkIds) {
+    return {
+      operations: rollbackOperations,
+      selections: hunkEntries.filter(({ hunk }) => hunk.status === 'applied'),
+    }
+  }
+
+  const selectedEntries = hunkEntries.filter(({ hunk }) =>
+    selectedHunkIds.has(hunk.id)
+  )
+  for (const { hunk } of selectedEntries) {
+    if (hunk.status !== 'applied') {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_HUNK_NOT_APPLIED',
+        'Agent patch hunk is not applied'
+      )
+    }
+  }
+
+  const rollbackHunkIds = new Set(
+    rollbackOperations.map(operation => operation.hunkId).filter(Boolean)
+  )
+  for (const { hunk } of selectedEntries) {
+    if (!rollbackHunkIds.has(hunk.id)) {
+      throw new AiAgentPatchError(
+        'AGENT_PATCH_ROLLBACK_UNAVAILABLE',
+        'Agent patch hunk does not have a rollback snapshot'
+      )
+    }
+  }
+
+  return {
+    operations: rollbackOperations.filter(operation =>
+      selectedHunkIds.has(operation.hunkId)
+    ),
+    selections: selectedEntries,
+  }
+}
+
+function markAppliedOperationSelections(selections) {
+  const appliedAt = new Date()
+  for (const { operation, hunk } of selections) {
+    hunk.status = 'applied'
+    hunk.appliedAt = appliedAt
+    operation.status = operationStatusFromHunks(operation)
+  }
+}
+
+function markRejectedOperationSelections(selections) {
+  for (const { operation, hunk } of selections) {
+    hunk.status = 'rejected'
+    operation.status = operationStatusFromHunks(operation)
+  }
+}
+
+function markRolledBackOperationSelections(selections) {
+  const rolledBackAt = new Date()
+  for (const { operation, hunk } of selections) {
+    hunk.status = 'rolled_back'
+    hunk.rolledBackAt = rolledBackAt
+    operation.status = operationStatusFromHunks(operation)
+  }
+}
+
+function patchStatusFromOperations(operations) {
+  const statuses = (operations || []).flatMap(operation =>
+    (operation.hunks || []).map(hunk => hunk.status || operation.status)
+  )
+  if (statuses.length === 0 || statuses.every(status => status === 'pending')) {
+    return 'pending'
+  }
+  if (statuses.every(status => status === 'rejected')) {
+    return 'rejected'
+  }
+  if (statuses.every(status => status === 'rolled_back')) {
+    return 'rolled_back'
+  }
+  if (statuses.some(status => status === 'conflicted')) {
+    return 'conflicted'
+  }
+  if (
+    statuses.some(status => status === 'applied') &&
+    statuses.some(status => status !== 'applied')
+  ) {
+    return 'partially_applied'
+  }
+  if (statuses.some(status => status === 'applied')) {
+    return 'applied'
+  }
+  if (statuses.some(status => status === 'pending')) {
+    return 'pending'
+  }
+  if (statuses.some(status => status === 'rolled_back')) {
+    return 'rolled_back'
+  }
+  return 'pending'
+}
+
+function operationStatusFromHunks(operation) {
+  const statuses = (operation.hunks || []).map(hunk => hunk.status)
+  if (statuses.length === 0 || statuses.every(status => status === 'pending')) {
+    return 'pending'
+  }
+  if (statuses.every(status => status === 'applied')) {
+    return 'applied'
+  }
+  if (statuses.every(status => status === 'rejected')) {
+    return 'rejected'
+  }
+  if (statuses.some(status => status === 'conflicted')) {
+    return 'conflicted'
+  }
+  if (
+    statuses.some(status => status === 'applied') &&
+    statuses.some(status => status !== 'applied')
+  ) {
+    return 'partially_applied'
+  }
+  if (statuses.some(status => status === 'applied')) {
+    return 'applied'
+  }
+  if (statuses.some(status => status === 'pending')) {
+    return 'pending'
+  }
+  if (statuses.some(status => status === 'rolled_back')) {
+    return 'rolled_back'
+  }
+  return statuses[0] || 'pending'
+}
+
+function hasPendingHunks(operations) {
+  return (operations || []).some(operation =>
+    (operation.hunks || []).some(hunk => hunk.status === 'pending')
+  )
+}
+
+function hasRollbackableHunks(operations, rollbackOperations) {
+  if (!rollbackOperations.length) {
+    return false
+  }
+  const rollbackHunkIds = new Set(
+    rollbackOperations.map(operation => operation.hunkId).filter(Boolean)
+  )
+  return (operations || []).some(operation =>
+    (operation.hunks || []).some(
+      hunk =>
+        hunk.status === 'applied' &&
+        (rollbackHunkIds.size === 0 || rollbackHunkIds.has(hunk.id))
+    )
+  )
+}
+
+function materializePatchOperations(patch) {
+  return (patch.operations || []).map((operation, operationIndex) => {
+    const operationId = operation.id || operationIdForIndex(operationIndex)
+    const operationStatus = operationStatusForPatch({
+      patchStatus: patch.status,
+      operationStatus: operation.status,
+    })
+    const operationWithId = {
+      ...operation,
+      id: operationId,
+      status: operationStatus,
+    }
+
+    return {
+      ...operationWithId,
+      hunks: materializeOperationHunks({
+        patch,
+        operation: operationWithId,
+        operationIndex,
+      }),
+    }
+  })
+}
+
+function operationIdForIndex(index) {
+  return `op-${String(index + 1).padStart(4, '0')}`
+}
+
+function materializeOperationHunks({ patch, operation, operationIndex }) {
+  const existingHunks = Array.isArray(operation.hunks) ? operation.hunks : []
+  if (existingHunks.length > 0) {
+    return existingHunks.map((hunk, hunkIndex) =>
+      materializeHunk({
+        patch,
+        operation,
+        operationIndex,
+        hunk,
+        hunkIndex,
+      })
+    )
+  }
+
+  return [
+    materializeHunk({
+      patch,
+      operation,
+      operationIndex,
+      hunk: hunkFromOperation(operation),
+      hunkIndex: 0,
+    }),
+  ]
+}
+
+function materializeHunk({ patch, operation, operationIndex, hunk, hunkIndex }) {
+  const operationId = operation.id || operationIdForIndex(operationIndex)
+  const status = hunkStatusForPatch({
+    patchStatus: patch.status,
+    operationStatus: operation.status,
+    hunkStatus: hunk.status,
+  })
+  const materialized = {
+    ...hunk,
+    operationId,
+    operationIndex,
+    hunkIndex,
+    type: hunk.type || hunkTypeForOperation(operation),
+    path: hunk.path || operation.path,
+    newPath: hunk.newPath || operation.newPath,
+    oldStart: hunk.oldStart ?? operation.diff?.oldStart ?? 1,
+    oldLines: hunk.oldLines ?? operation.diff?.oldLines ?? 0,
+    newStart: hunk.newStart ?? operation.diff?.newStart ?? 1,
+    newLines: hunk.newLines ?? operation.diff?.newLines ?? 0,
+    oldText: hunk.oldText ?? hunkTextBeforeOperation(operation),
+    newText: hunk.newText ?? hunkTextAfterOperation(operation),
+    baseSha256: hunk.baseSha256 || operation.baseSha256,
+    proposedSha256: hunk.proposedSha256 || operation.proposedSha256,
+    status,
+    appliedAt: hunk.appliedAt || null,
+    rolledBackAt: hunk.rolledBackAt || null,
+    conflict: hunk.conflict || null,
+    diff: hunk.diff || operation.diff,
+  }
+  return {
+    ...materialized,
+    id:
+      materialized.id ||
+      hunkIdFor({
+        patch,
+        operation,
+        operationIndex,
+        hunk: materialized,
+        hunkIndex,
+      }),
+  }
+}
+
+function hunkFromOperation(operation) {
+  return {
+    type: hunkTypeForOperation(operation),
+    path: operation.path,
+    newPath: operation.newPath,
+    oldStart: operation.diff?.oldStart ?? 1,
+    oldLines: operation.diff?.oldLines ?? 0,
+    newStart: operation.diff?.newStart ?? 1,
+    newLines: operation.diff?.newLines ?? 0,
+    oldText: hunkTextBeforeOperation(operation),
+    newText: hunkTextAfterOperation(operation),
+    baseSha256: operation.baseSha256,
+    proposedSha256: operation.proposedSha256,
+    diff: operation.diff,
+  }
+}
+
+function hunkTypeForOperation(operation) {
+  return operation.type === 'replace_text' ? 'text' : operation.type
+}
+
+function hunkTextBeforeOperation(operation) {
+  if (operation.type === 'replace_text') {
+    return operation.oldText || ''
+  }
+  if (operation.type === 'delete_doc') {
+    return removedTextFromDiff(operation.diff)
+  }
+  if (
+    operation.type === 'rename_entity' ||
+    operation.type === 'move_entity'
+  ) {
+    return operation.path || ''
+  }
+  return ''
+}
+
+function hunkTextAfterOperation(operation) {
+  if (operation.type === 'replace_text') {
+    return operation.newText || ''
+  }
+  if (operation.type === 'create_doc') {
+    return operation.content || ''
+  }
+  if (
+    operation.type === 'rename_entity' ||
+    operation.type === 'move_entity'
+  ) {
+    return operation.newPath || ''
+  }
+  return ''
+}
+
+function removedTextFromDiff(diff) {
+  return (diff?.lines || [])
+    .filter(line => line.type === 'remove')
+    .map(line => line.content)
+    .join('\n')
+}
+
+function operationStatusForPatch({ patchStatus, operationStatus }) {
+  if (operationStatus) {
+    return operationStatus
+  }
+  return isTerminalPatchStatus(patchStatus) ? patchStatus : 'pending'
+}
+
+function hunkStatusForPatch({ patchStatus, operationStatus, hunkStatus }) {
+  if (hunkStatus) {
+    return hunkStatus
+  }
+  if (operationStatus) {
+    return operationStatus
+  }
+  return isTerminalPatchStatus(patchStatus) ? patchStatus : 'pending'
+}
+
+function isTerminalPatchStatus(status) {
+  if (
+    status === 'applied' ||
+    status === 'rejected' ||
+    status === 'conflicted' ||
+    status === 'rolled_back'
+  ) {
+    return true
+  }
+  return false
+}
+
+function hunkIdFor({ patch, operation, operationIndex, hunk, hunkIndex }) {
+  const operationId = operation.id || operationIdForIndex(operationIndex)
+  const patchId = patch._id?.toString?.() || patch.id || 'new'
+  const content = [
+    patchId,
+    operationId,
+    operation.type,
+    operation.path || '',
+    operation.newPath || '',
+    hunk.oldStart,
+    hunk.oldLines,
+    hunk.newStart,
+    hunk.newLines,
+    hunk.oldText || '',
+    hunk.newText || '',
+  ].join('\u001f')
+  return `${operationId}:h-${String(hunkIndex + 1).padStart(4, '0')}:${sha256(
+    content
+  ).slice(0, 12)}`
 }
 
 function riskLevelForOperations(operations) {
@@ -594,8 +1194,82 @@ function riskLevelForOperations(operations) {
   return operations.length === 1 ? 'low' : 'medium'
 }
 
+async function assertApplySelectionsSafe({ patch, selections, docs, files }) {
+  for (const { operation } of selections) {
+    if (operation.type === 'replace_text') {
+      await assertReplaceTextOperationSafe({ operation, patch, docs })
+    } else if (operation.type === 'create_doc') {
+      await assertCreateDocOperationSafe({ operation, patch, docs, files })
+    } else if (operation.type === 'delete_doc') {
+      await assertExistingDocOperationSafe({ operation, patch, docs })
+    } else if (
+      operation.type === 'rename_entity' ||
+      operation.type === 'move_entity'
+    ) {
+      await assertPathChangingOperationSafe({ operation, patch, docs, files })
+    }
+  }
+}
+
+async function assertReplaceTextOperationSafe({ operation, patch, docs }) {
+  const currentContent = await assertExistingDocOperationSafe({
+    operation,
+    patch,
+    docs,
+  })
+  assertSingleOccurrence(currentContent, operation.oldText, operation.path)
+}
+
+async function assertCreateDocOperationSafe({ operation, patch, docs, files }) {
+  if (docs[operation.path] || files[operation.path]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+}
+
+async function assertPathChangingOperationSafe({
+  operation,
+  patch,
+  docs,
+  files,
+}) {
+  await assertExistingDocOperationSafe({ operation, patch, docs })
+  if (docs[operation.newPath] || files[operation.newPath]) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target path already exists'
+    )
+  }
+}
+
+async function assertExistingDocOperationSafe({ operation, patch, docs }) {
+  const doc = docs[operation.path]
+  if (!doc) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document no longer exists'
+    )
+  }
+
+  const currentContent = getDocText(doc)
+  if (sha256(currentContent) !== operation.baseSha256) {
+    await markConflicted(patch)
+    throw new AiAgentPatchError(
+      'AGENT_PATCH_CONFLICT',
+      'Agent patch target document changed'
+    )
+  }
+  return currentContent
+}
+
 async function applyReplaceTextOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -636,6 +1310,8 @@ async function applyReplaceTextOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     baseSha256: operation.baseSha256,
@@ -643,6 +1319,8 @@ async function applyReplaceTextOperation({
   })
   rollbackOperations.push({
     type: 'restore_doc_text',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     beforeText: currentContent,
@@ -653,6 +1331,7 @@ async function applyReplaceTextOperation({
 
 async function applyCreateDocOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -678,12 +1357,16 @@ async function applyCreateDocOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: doc?._id?.toString?.() || doc?._id || null,
     appliedSha256: sha256(operation.content || ''),
   })
   rollbackOperations.push({
     type: 'delete_created_doc',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: doc?._id?.toString?.() || doc?._id || null,
     afterSha256: sha256(operation.content || ''),
@@ -692,6 +1375,7 @@ async function applyCreateDocOperation({
 
 async function applyDeleteDocOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -726,12 +1410,16 @@ async function applyDeleteDocOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     baseSha256: operation.baseSha256,
   })
   rollbackOperations.push({
     type: 'restore_deleted_doc',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     docId: operation.docId,
     beforeText: currentContent,
@@ -741,6 +1429,7 @@ async function applyDeleteDocOperation({
 
 async function applyRenameEntityOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -784,6 +1473,8 @@ async function applyRenameEntityOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     entityType: 'doc',
     path: operation.path,
     newPath: operation.newPath,
@@ -792,6 +1483,8 @@ async function applyRenameEntityOperation({
   })
   rollbackOperations.push({
     type: 'rename_entity_back',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     currentPath: operation.newPath,
     docId: operation.docId,
@@ -802,6 +1495,7 @@ async function applyRenameEntityOperation({
 
 async function applyMoveEntityOperation({
   operation,
+  hunk,
   projectId,
   userId,
   patch,
@@ -850,6 +1544,8 @@ async function applyMoveEntityOperation({
   )
   appliedOperations.push({
     type: operation.type,
+    operationId: operation.id,
+    hunkId: hunk?.id,
     entityType: 'doc',
     path: operation.path,
     newPath: operation.newPath,
@@ -859,6 +1555,8 @@ async function applyMoveEntityOperation({
   })
   rollbackOperations.push({
     type: 'move_entity_back',
+    operationId: operation.id,
+    hunkId: hunk?.id,
     path: operation.path,
     currentPath: operation.newPath,
     docId: operation.docId,

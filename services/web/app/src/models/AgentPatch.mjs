@@ -16,6 +16,7 @@ export const AgentPatchSchema = new Schema(
         'pending',
         'approved',
         'applied',
+        'partially_applied',
         'rejected',
         'conflicted',
         'rolled_back',
