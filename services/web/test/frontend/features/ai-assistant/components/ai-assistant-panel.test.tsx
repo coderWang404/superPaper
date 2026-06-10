@@ -90,6 +90,12 @@ describe('<AiAssistantPanel />', function () {
       'ai_assistant_agent_prompt_placeholder'
     )
     expect(extractedTranslations).to.have.property(
+      'ai_assistant_agent_welcome_title'
+    )
+    expect(extractedTranslations).to.have.property(
+      'ai_assistant_agent_welcome_description'
+    )
+    expect(extractedTranslations).to.have.property(
       'ai_assistant_agent_suggestion_review'
     )
     expect(extractedTranslations).to.have.property(

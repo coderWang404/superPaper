@@ -847,18 +847,14 @@ export default function AiAssistantPanel() {
               {(showChatWelcome || showAgentWelcome) && (
                 <div className="ai-assistant-welcome">
                   <h5>
-                    {t(
-                      mode === 'agent'
-                        ? 'ai_assistant_agent_welcome_title'
-                        : 'ai_assistant_welcome_title'
-                    )}
+                    {mode === 'agent'
+                      ? t('ai_assistant_agent_welcome_title')
+                      : t('ai_assistant_welcome_title')}
                   </h5>
                   <p>
-                    {t(
-                      mode === 'agent'
-                        ? 'ai_assistant_agent_welcome_description'
-                        : 'ai_assistant_welcome_description'
-                    )}
+                    {mode === 'agent'
+                      ? t('ai_assistant_agent_welcome_description')
+                      : t('ai_assistant_welcome_description')}
                   </p>
                 </div>
               )}
