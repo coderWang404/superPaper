@@ -717,8 +717,8 @@ describe('<ShareProjectModal/>', function () {
     })
 
     const user = userEvent.setup()
-    await user.click(screen.getByTestId('add-collaborator-select'))
-    await user.click(screen.getByText('Viewer'))
+    fireEvent.click(screen.getByTestId('add-collaborator-select'))
+    await user.click(await screen.findByRole('option', { name: 'Viewer' }))
 
     const submitButton = screen.getByRole('button', { name: 'Invite' })
     await userEvent.click(submitButton)
@@ -854,23 +854,27 @@ describe('<ShareProjectModal/>', function () {
     }
 
     await respondWithError('cannot_invite_non_user')
-    await screen.findByText(
+    await within(await screen.findByRole('alert')).findByText(
       `Can’t send invite. Recipient must already have an superPaper account`
     )
 
     await respondWithError('cannot_verify_user_not_robot')
-    await screen.findByText(
+    await within(await screen.findByRole('alert')).findByText(
       `Sorry, we could not verify that you are not a robot. Please check that Google reCAPTCHA is not being blocked by an ad blocker or firewall.`
     )
 
     await respondWithError('cannot_invite_self')
-    await screen.findByText(`Can’t send invite to yourself`)
+    await within(await screen.findByRole('alert')).findByText(
+      `Can’t send invite to yourself`
+    )
 
     await respondWithError('invalid_email')
-    await screen.findByText(`An email address is invalid`)
+    await within(await screen.findByRole('alert')).findByText(
+      `An email address is invalid`
+    )
 
     await respondWithError('too_many_requests')
-    await screen.findByText(
+    await within(await screen.findByRole('alert')).findByText(
       `Too many requests were received in a short space of time. Please wait for a few moments and try again.`
     )
   })

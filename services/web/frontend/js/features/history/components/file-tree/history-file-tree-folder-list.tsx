@@ -64,6 +64,16 @@ function HistoryFileTreeFolderList({
       <ul
         className={classNames('list-unstyled', rootClassName)}
         role={isNestedList ? 'group' : 'tree'}
+        onClick={event => {
+          if (isNestedList) {
+            event.stopPropagation()
+          }
+        }}
+        onKeyDown={event => {
+          if (isNestedList) {
+            event.stopPropagation()
+          }
+        }}
       >
         {folders.map(folder => (
           <HistoryFileTreeFolder

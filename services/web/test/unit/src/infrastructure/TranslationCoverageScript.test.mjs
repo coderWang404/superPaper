@@ -7,6 +7,7 @@ import {
   buildCoverageReport,
   evaluateCoverageChecks,
 } from '../../../../scripts/translations/checkCoverage.js'
+import { evaluateUnusedKeyChecks } from '../../../../scripts/translations/cleanupUnusedLocales.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const WEB_ROOT = Path.join(__dirname, '../../../../')
@@ -49,7 +50,7 @@ describe('translation coverage script', function () {
     ])
   })
 
-  it('fails check mode only when current zh-CN debt baselines are exceeded', function () {
+  it('fails check mode when current zh-CN debt baselines or key drift are exceeded', function () {
     const report = buildCoverageReport({
       locales: new Map([
         ['en', { a: 'A', b: 'B' }],
@@ -64,8 +65,8 @@ describe('translation coverage script', function () {
         extractedZhCnMissing: 2,
       })
     ).toMatchObject({
-      ok: true,
-      warnings: [
+      ok: false,
+      failures: [
         'zh-CN has 1 key not present in en.json.',
         'frontend/extracted-translations.json has 1 key not present in en.json.',
       ],
@@ -81,6 +82,8 @@ describe('translation coverage script', function () {
       failures: [
         'zh-CN is missing 1 en.json key, which exceeds the baseline of 0.',
         'frontend extracted translations are missing 2 zh-CN keys, which exceeds the baseline of 1.',
+        'zh-CN has 1 key not present in en.json.',
+        'frontend/extracted-translations.json has 1 key not present in en.json.',
       ],
     })
   })
@@ -94,5 +97,24 @@ describe('translation coverage script', function () {
     expect(lintLocales).toContain(
       'node scripts/translations/checkCoverage.js --check'
     )
+    expect(lintLocales).toContain(
+      'node scripts/translations/cleanupUnusedLocales.js --check'
+    )
+  })
+
+  it('allows the current unused-key debt baseline without allowing regressions', function () {
+    expect(evaluateUnusedKeyChecks(['unused_a', 'unused_b'], 2)).toMatchObject({
+      ok: true,
+      failures: [],
+      warnings: ['unused translation key debt is at the baseline: 2/2.'],
+    })
+
+    expect(evaluateUnusedKeyChecks(['unused_a', 'unused_b', 'unused_c'], 2))
+      .toMatchObject({
+        ok: false,
+        failures: [
+          'unused translation key debt is 3 keys, which exceeds the baseline of 2.',
+        ],
+      })
   })
 })

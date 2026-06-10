@@ -55,6 +55,7 @@ function CopyProjectButton({ project, children }: CopyButtonProps) {
     (clonedProject: ClonedProject, tags: { _id: string }[]) => {
       eventTracking.sendMB('project-list-page-interaction', {
         action: 'clone',
+        page: '/',
         projectId: project.id,
         isSmallDevice,
       })

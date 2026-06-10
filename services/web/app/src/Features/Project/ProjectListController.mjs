@@ -13,6 +13,7 @@ import logger from '@superpaper/logger'
 import NotificationsHandler from '../Notifications/NotificationsHandler.mjs'
 import { OError, V1ConnectionError } from '../Errors/Errors.js'
 import { User } from '../../models/User.mjs'
+import Settings from '@superpaper/settings'
 import UserPrimaryEmailCheckHandler from '../User/UserPrimaryEmailCheckHandler.mjs'
 import UserController from '../User/UserController.mjs'
 import TutorialHandler from '../Tutorial/TutorialHandler.mjs'
@@ -20,6 +21,7 @@ import UserSettingsHelper from './UserSettingsHelper.mjs'
 
 const DEFAULT_PROJECT_LIST_PAGE_SIZE = 20
 const MAX_PROJECT_LIST_PAGE_SIZE = 100
+const MAX_PROJECT_LIST_SEARCH_LENGTH = 200
 
 /**
  * @import { GetProjectsRequest, GetProjectsResponse, AllUsersProjects, MongoProject, FormattedProject, MongoTag } from "./types"
@@ -163,7 +165,12 @@ async function getProjectsJson(req, res) {
  * @param {Filters} filters
  * @param {Sort} sort
  * @param {Page} page
- * @returns {Promise<{totalSize: number, projects: Project[]}>}
+ * @returns {Promise<{
+ *   totalSize: number,
+ *   projects: Project[],
+ *   page?: { size: number, offset: number, nextOffset: number | null },
+ *   tagCounts: { untagged: number, byTagId: Record<string, number> },
+ * }>}
  * @private
  */
 async function _getProjects(
@@ -172,6 +179,16 @@ async function _getProjects(
   sort = { by: 'lastUpdated', order: 'desc' },
   page
 ) {
+  if (Settings.enableProjectListDbPagination && page != null) {
+    const tags = await TagsHandler.promises.getAllTags(userId)
+    return await ProjectGetter.promises.findUsersProjectListPage(userId, {
+      filters,
+      sort,
+      page: _normalizePage(page),
+      tags,
+    })
+  }
+
   /** @type {[AllUsersProjects, MongoTag[]]} */
   const results = await Promise.all([
     ProjectGetter.promises.findAllUsersProjects(
@@ -188,12 +205,25 @@ async function _getProjects(
     filters,
     userId
   )
+  const responseMeta = {
+    page: _buildPageResponse(page, filteredProjects.length),
+    tagCounts: _buildTagCounts(
+      _applyFilters(
+        formattedProjects,
+        tags,
+        _getTagCountFilters(filters),
+        userId
+      ),
+      tags
+    ),
+  }
   if (sort.by === 'owner') {
     const projectsWithUsers = await _injectProjectUsers(filteredProjects)
     const pagedProjects = _sortAndPaginate(projectsWithUsers, sort, page)
     return {
       totalSize: filteredProjects.length,
       projects: pagedProjects,
+      ...responseMeta,
     }
   }
 
@@ -204,6 +234,7 @@ async function _getProjects(
   return {
     totalSize: filteredProjects.length,
     projects,
+    ...responseMeta,
   }
 }
 
@@ -295,7 +326,10 @@ function _normalizeFilters(filters) {
   }
 
   if (filters.search !== undefined) {
-    if (typeof filters.search !== 'string') {
+    if (
+      typeof filters.search !== 'string' ||
+      filters.search.length > MAX_PROJECT_LIST_SEARCH_LENGTH
+    ) {
       return null
     }
     normalizedFilters.search = filters.search
@@ -485,6 +519,81 @@ function _normalizePage(page) {
   return {
     offset,
     size: Math.min(size, MAX_PROJECT_LIST_PAGE_SIZE),
+  }
+}
+
+/**
+ * @param {Page | undefined} page
+ * @param {number} totalSize
+ * @returns {{ size: number, offset: number, nextOffset: number | null } | undefined}
+ * @private
+ */
+function _buildPageResponse(page, totalSize) {
+  if (page == null) {
+    return undefined
+  }
+  const normalizedPage = _normalizePage(page)
+  const nextOffset = normalizedPage.offset + normalizedPage.size
+  return {
+    size: normalizedPage.size,
+    offset: normalizedPage.offset,
+    nextOffset: nextOffset < totalSize ? nextOffset : null,
+  }
+}
+
+/**
+ * Tag counts describe the active dashboard scope, not the currently selected
+ * tag. This keeps the sidebar stable while a tag filter is active.
+ *
+ * @param {Filters} filters
+ * @returns {Filters}
+ * @private
+ */
+function _getTagCountFilters(filters) {
+  return {
+    ...filters,
+    archived: false,
+    trashed: false,
+    tag: undefined,
+  }
+}
+
+/**
+ * @param {FormattedProject[]} projects
+ * @param {MongoTag[]} tags
+ * @returns {{ untagged: number, byTagId: Record<string, number> }}
+ * @private
+ */
+function _buildTagCounts(projects, tags) {
+  const activeProjectIds = new Set(
+    projects
+      .filter(project => !project.archived && !project.trashed)
+      .map(project => project.id)
+  )
+  const taggedActiveProjectIds = new Set()
+  /** @type {Record<string, number>} */
+  const byTagId = {}
+
+  for (const tag of tags) {
+    const tagId = tag._id?.toString()
+    if (!tagId) {
+      continue
+    }
+
+    let count = 0
+    for (const projectId of tag.project_ids || []) {
+      if (!activeProjectIds.has(projectId)) {
+        continue
+      }
+      count += 1
+      taggedActiveProjectIds.add(projectId)
+    }
+    byTagId[tagId] = count
+  }
+
+  return {
+    untagged: activeProjectIds.size - taggedActiveProjectIds.size,
+    byTagId,
   }
 }
 

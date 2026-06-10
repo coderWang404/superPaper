@@ -8,6 +8,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const EN_JSON = Path.join(__dirname, '../../locales/en.json')
 const CHECK = process.argv.includes('--check')
 const SYNC_NON_EN = process.argv.includes('--sync-non-en')
+const UNUSED_KEY_CHECK_BASELINE = 1456
+const UNUSED_KEY_SAMPLE_LIMIT = 20
 
 const COUNT_SUFFIXES = [
   '_plural',
@@ -19,7 +21,31 @@ const COUNT_SUFFIXES = [
   '_other',
 ]
 
-async function main() {
+export function evaluateUnusedKeyChecks(
+  unusedKeys,
+  baseline = UNUSED_KEY_CHECK_BASELINE
+) {
+  const failures = []
+  const warnings = []
+
+  if (unusedKeys.length > baseline) {
+    failures.push(
+      `unused translation key debt is ${unusedKeys.length} keys, which exceeds the baseline of ${baseline}.`
+    )
+  } else if (unusedKeys.length > 0) {
+    warnings.push(
+      `unused translation key debt is at the baseline: ${unusedKeys.length}/${baseline}.`
+    )
+  }
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    warnings,
+  }
+}
+
+export async function main() {
   const locales = loadLocale('en')
 
   const src = execSync(
@@ -132,6 +158,34 @@ async function main() {
     return
   }
 
+  if (CHECK) {
+    const result = evaluateUnusedKeyChecks(unusedKeys)
+    for (const warning of result.warnings) {
+      console.warn(`WARN: ${warning}`)
+    }
+    for (const failure of result.failures) {
+      console.error(`ERROR: ${failure}`)
+    }
+    if (!result.ok) {
+      console.warn('---')
+      console.warn(
+        `Found ${unusedKeys.length} unused translations keys. Sample:\n${unusedKeys
+          .slice(0, UNUSED_KEY_SAMPLE_LIMIT)
+          .map(s => ` - '${s}'`)
+          .join('\n')}`
+      )
+      console.warn('---')
+      console.warn(
+        'Try running:\n\n',
+        '   web$ make cleanup_unused_locales',
+        '\n'
+      )
+      console.warn('---')
+      throw new Error('found unused translations keys')
+    }
+    return
+  }
+
   console.warn('---')
   console.warn(
     `Found ${unusedKeys.length} unused translations keys:\n${unusedKeys
@@ -140,16 +194,6 @@ async function main() {
   )
   console.warn('---')
 
-  if (CHECK) {
-    console.warn('---')
-    console.warn(
-      'Try running:\n\n',
-      '   web$ make cleanup_unused_locales',
-      '\n'
-    )
-    console.warn('---')
-    throw new Error('found unused translations keys')
-  }
   console.log('Deleting unused translations keys')
   for (const key of unusedKeys) {
     delete locales[key]
@@ -158,9 +202,15 @@ async function main() {
   await fs.promises.writeFile(EN_JSON, sorted)
 }
 
-try {
-  await main()
-} catch (error) {
-  console.error(error)
-  process.exit(1)
+function isMainModule() {
+  return process.argv[1] === fileURLToPath(import.meta.url)
+}
+
+if (isMainModule()) {
+  try {
+    await main()
+  } catch (error) {
+    console.error(error)
+    process.exit(1)
+  }
 }

@@ -43,6 +43,7 @@ import {
   type ProjectAiAgentEvent,
   type ProjectAiAgentPatch,
   type ProjectAiAgentPatchDiffLine,
+  type ProjectAiAgentPatchHunk,
   type ProjectAiAgentSession,
 } from '@/features/ai-agent/api'
 import AiMarkdown from './ai-markdown'
@@ -2693,14 +2694,73 @@ function AgentPatchReview({
   const [rollingBack, setRollingBack] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const busy = applying || rejecting || rollingBack
+  const hunkItems = useMemo(() => getPatchHunkItems(patch), [patch])
+  const [selectedHunkIds, setSelectedHunkIds] = useState<Set<string>>(
+    () => new Set()
+  )
+  const selectedHunks = hunkItems.filter(({ hunk }) =>
+    selectedHunkIds.has(hunk.id)
+  )
+  const selectedHunkIdList = selectedHunks.map(({ hunk }) => hunk.id)
+  const selectedPendingHunkIds = selectedHunks
+    .filter(({ hunk }) => hunk.status === 'pending')
+    .map(({ hunk }) => hunk.id)
+  const selectedAppliedHunkIds = selectedHunks
+    .filter(({ hunk }) => hunk.status === 'applied')
+    .map(({ hunk }) => hunk.id)
+  const hasSelectedHunks = selectedHunks.length > 0
+  const canApplySelected =
+    hasSelectedHunks && selectedPendingHunkIds.length === selectedHunks.length
+  const canRejectSelected = canApplySelected
+  const canRollbackSelected =
+    hasSelectedHunks &&
+    selectedAppliedHunkIds.length === selectedHunks.length &&
+    Boolean(patch.rollbackAvailable)
 
-  async function handleApply() {
+  useEffect(() => {
+    setSelectedHunkIds(currentSelection => {
+      const selectableIds = new Set(
+        hunkItems
+          .filter(({ hunk }) => isSelectablePatchHunk(hunk))
+          .map(({ hunk }) => hunk.id)
+      )
+      const nextSelection = new Set(
+        [...currentSelection].filter(hunkId => selectableIds.has(hunkId))
+      )
+      if (nextSelection.size === currentSelection.size) {
+        return currentSelection
+      }
+      return nextSelection
+    })
+  }, [hunkItems])
+
+  function updatePatch(responsePatch: ProjectAiAgentPatch) {
+    setPatch(responsePatch)
+    onSessionStatusChange(getPatchReviewSessionStatus(responsePatch))
+  }
+
+  function toggleSelectedHunk(hunkId: string, selected: boolean) {
+    setSelectedHunkIds(currentSelection => {
+      const nextSelection = new Set(currentSelection)
+      if (selected) {
+        nextSelection.add(hunkId)
+      } else {
+        nextSelection.delete(hunkId)
+      }
+      return nextSelection
+    })
+  }
+
+  async function handleApply(hunkIds?: string[]) {
     setApplying(true)
     setError(null)
     try {
-      const response = await applyProjectAiAgentPatch(projectId, patch.id)
-      setPatch(response.patch)
-      onSessionStatusChange('completed')
+      const response = await applyProjectAiAgentPatch(
+        projectId,
+        patch.id,
+        hunkIds?.length ? { hunkIds } : undefined
+      )
+      updatePatch(response.patch)
     } catch (applyError) {
       setError(getErrorMessage(applyError))
     } finally {
@@ -2708,13 +2768,16 @@ function AgentPatchReview({
     }
   }
 
-  async function handleReject() {
+  async function handleReject(hunkIds?: string[]) {
     setRejecting(true)
     setError(null)
     try {
-      const response = await rejectProjectAiAgentPatch(projectId, patch.id)
-      setPatch(response.patch)
-      onSessionStatusChange('completed')
+      const response = await rejectProjectAiAgentPatch(
+        projectId,
+        patch.id,
+        hunkIds?.length ? { hunkIds } : undefined
+      )
+      updatePatch(response.patch)
     } catch (rejectError) {
       setError(getErrorMessage(rejectError))
     } finally {
@@ -2722,13 +2785,16 @@ function AgentPatchReview({
     }
   }
 
-  async function handleRollback() {
+  async function handleRollback(hunkIds?: string[]) {
     setRollingBack(true)
     setError(null)
     try {
-      const response = await rollbackProjectAiAgentPatch(projectId, patch.id)
-      setPatch(response.patch)
-      onSessionStatusChange('completed')
+      const response = await rollbackProjectAiAgentPatch(
+        projectId,
+        patch.id,
+        hunkIds?.length ? { hunkIds } : undefined
+      )
+      updatePatch(response.patch)
     } catch (rollbackError) {
       setError(getErrorMessage(rollbackError))
     } finally {
@@ -2759,11 +2825,64 @@ function AgentPatchReview({
               <div className="ai-assistant-agent-patch-path">
                 {operation.path}
               </div>
-              <pre className="ai-assistant-agent-patch-diff">
-                {operation.diff.lines.map((line, index) => (
-                  <DiffLine line={line} key={`${operation.path}-${index}`} />
-                ))}
-              </pre>
+              {operation.hunks?.length ? (
+                <div className="ai-assistant-agent-patch-hunks">
+                  {operation.hunks.map(hunk => (
+                    <label
+                      className={`ai-assistant-agent-patch-hunk ${hunk.status}`}
+                      key={hunk.id}
+                    >
+                      <span className="ai-assistant-agent-patch-hunk-header">
+                        <input
+                          aria-label={t('ai_assistant_select_patch_hunk', {
+                            index: hunk.hunkIndex + 1,
+                            path: hunk.path,
+                            status: formatPatchStatus(hunk.status, t),
+                          })}
+                          checked={selectedHunkIds.has(hunk.id)}
+                          disabled={busy || !isSelectablePatchHunk(hunk)}
+                          type="checkbox"
+                          onChange={event =>
+                            toggleSelectedHunk(
+                              hunk.id,
+                              event.currentTarget.checked
+                            )
+                          }
+                        />
+                        <span className="ai-assistant-agent-patch-hunk-title">
+                          {t('ai_assistant_patch_hunk_title', {
+                            index: hunk.hunkIndex + 1,
+                            path: hunk.path,
+                          })}
+                        </span>
+                        <span
+                          className={`ai-assistant-agent-patch-status ${patchStatusClassName(
+                            hunk.status
+                          )}`}
+                        >
+                          {formatPatchStatus(hunk.status, t)}
+                        </span>
+                      </span>
+                      {hunk.conflict?.message && (
+                        <span className="ai-assistant-agent-patch-hunk-conflict">
+                          {hunk.conflict.message}
+                        </span>
+                      )}
+                      <pre className="ai-assistant-agent-patch-diff">
+                        {hunk.diff.lines.map((line, index) => (
+                          <DiffLine line={line} key={`${hunk.id}-${index}`} />
+                        ))}
+                      </pre>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <pre className="ai-assistant-agent-patch-diff">
+                  {operation.diff.lines.map((line, index) => (
+                    <DiffLine line={line} key={`${operation.path}-${index}`} />
+                  ))}
+                </pre>
+              )}
             </div>
           ))}
         </div>
@@ -2786,7 +2905,7 @@ function AgentPatchReview({
               disabled={busy}
               isLoading={rejecting}
               loadingLabel={t('ai_assistant_rejecting')}
-              onClick={handleReject}
+              onClick={() => handleReject()}
             >
               {t('reject')}
             </OLButton>
@@ -2797,13 +2916,54 @@ function AgentPatchReview({
               disabled={busy}
               isLoading={applying}
               loadingLabel={t('ai_assistant_applying')}
-              onClick={handleApply}
+              onClick={() => handleApply()}
             >
               {t('ai_assistant_apply_patch')}
             </OLButton>
           </>
         )}
-        {patch.status === 'applied' && patch.rollbackAvailable && (
+        {canRejectSelected && (
+          <OLButton
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            isLoading={rejecting}
+            loadingLabel={t('ai_assistant_rejecting')}
+            onClick={() => handleReject(selectedHunkIdList)}
+          >
+            {t('ai_assistant_reject_selected_hunks')}
+          </OLButton>
+        )}
+        {canApplySelected && (
+          <OLButton
+            type="button"
+            size="sm"
+            variant="primary"
+            disabled={busy}
+            isLoading={applying}
+            loadingLabel={t('ai_assistant_applying')}
+            onClick={() => handleApply(selectedHunkIdList)}
+          >
+            {t('ai_assistant_apply_selected_hunks')}
+          </OLButton>
+        )}
+        {(patch.status === 'applied' || patch.status === 'partially_applied') &&
+          patch.rollbackAvailable &&
+          !canRollbackSelected && (
+            <OLButton
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={busy || hasSelectedHunks}
+              isLoading={rollingBack}
+              loadingLabel={t('ai_assistant_rolling_back')}
+              onClick={() => handleRollback()}
+            >
+              {t('ai_assistant_rollback_patch')}
+            </OLButton>
+          )}
+        {canRollbackSelected && (
           <OLButton
             type="button"
             size="sm"
@@ -2811,9 +2971,9 @@ function AgentPatchReview({
             disabled={busy}
             isLoading={rollingBack}
             loadingLabel={t('ai_assistant_rolling_back')}
-            onClick={handleRollback}
+            onClick={() => handleRollback(selectedHunkIdList)}
           >
-            {t('ai_assistant_rollback_patch')}
+            {t('ai_assistant_rollback_selected_hunks')}
           </OLButton>
         )}
       </div>
@@ -2821,14 +2981,21 @@ function AgentPatchReview({
   )
 }
 
-function patchStatusClassName(status: ProjectAiAgentPatch['status']) {
+type AgentPatchReviewStatus =
+  | ProjectAiAgentPatch['status']
+  | ProjectAiAgentPatchHunk['status']
+
+function patchStatusClassName(status: AgentPatchReviewStatus) {
   return status.replaceAll('_', '-')
 }
 
-function formatPatchStatus(
-  status: ProjectAiAgentPatch['status'],
-  t: TFunction
-) {
+function formatPatchStatus(status: AgentPatchReviewStatus, t: TFunction) {
+  if (status === 'pending') {
+    return t('ai_assistant_patch_status_pending')
+  }
+  if (status === 'partially_applied') {
+    return t('ai_assistant_patch_status_partially_applied')
+  }
   if (status === 'rolled_back') {
     return t('ai_assistant_patch_status_rolled_back')
   }
@@ -2842,6 +3009,32 @@ function formatPatchStatus(
     return t('ai_assistant_patch_status_conflicted')
   }
   return status
+}
+
+function getPatchHunkItems(patch: ProjectAiAgentPatch) {
+  return patch.operations.flatMap(operation =>
+    (operation.hunks ?? []).map(hunk => ({ operation, hunk }))
+  )
+}
+
+function isSelectablePatchHunk(hunk: ProjectAiAgentPatchHunk) {
+  return hunk.status === 'pending' || hunk.status === 'applied'
+}
+
+function patchHasPendingHunks(patch: ProjectAiAgentPatch) {
+  return getPatchHunkItems(patch).some(({ hunk }) => hunk.status === 'pending')
+}
+
+function getPatchReviewSessionStatus(
+  patch: ProjectAiAgentPatch
+): ProjectAiAgentSession['status'] {
+  if (patch.status === 'pending') {
+    return 'waiting_for_approval'
+  }
+  if (patch.status === 'partially_applied' && patchHasPendingHunks(patch)) {
+    return 'waiting_for_approval'
+  }
+  return 'completed'
 }
 
 function DiffLine({ line }: { line: ProjectAiAgentPatchDiffLine }) {

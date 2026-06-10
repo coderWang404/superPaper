@@ -17,7 +17,7 @@
 - AI Agent patch-wide apply/rollback exists. Per-hunk approval is still open and changes patch semantics, so it needs a short design first.
 - AI Agent stop/cancel plumbing exists, but the Cline SDK abort call should pass the active Cline session id.
 - Project List still loads and filters the full project set in memory. API shape exists, but server-side pagination/search is not implemented.
-- zh-CN is missing 594 keys compared with `en.json`; current locale lint does not prevent new missing zh-CN keys.
+- zh-CN is missing 547 keys compared with `en.json`; locale lint now prevents new zh-CN missing-key, zh-CN extra-key, and extracted-translation drift beyond the current guardrails.
 - Session regeneration, password policy, and login throttling exist. Remaining short-term security work is validation evidence and malformed password-update input handling.
 - Editor/file tree/PDF/history accessibility is partially done. Remaining short-term work is tree hierarchy semantics, PDF accessible names, and targeted restore/share error tests.
 
@@ -67,7 +67,7 @@
 - Modify: `services/web/test/unit/src/infrastructure/Translations.test.mjs` or add a focused translation script test if local pattern exists.
 
 - [ ] Add `--check` mode using set-based diffs for `en - zh-CN`, `zh-CN - en`, `frontend/extracted - en`, and `frontend/extracted - zh-CN`.
-- [ ] Use current debt as explicit baseline: zh-CN missing must not exceed 594; frontend-extracted zh-CN missing must not exceed 459 until later fill batches reduce it.
+- [ ] Use current debt as explicit baseline: zh-CN missing must not exceed 547; frontend-extracted zh-CN missing must not exceed 116 until later fill batches reduce it.
 - [ ] Wire the guardrail into `bin/lint_locales`.
 - [ ] Add high-value zh-CN keys for editor sidebar/history/share/PDF labels called out by the audit.
 - [ ] Verify `bin/lint_locales`, `bin/check_extracted_translations`, and targeted i18n tests, then commit.
@@ -126,6 +126,7 @@
 - Create: `docs/superpowers/specs/2026-06-08-agent-per-hunk-approval-design.md`
 - Create: `docs/superpowers/plans/2026-06-08-agent-per-hunk-approval.md`
 - Define stable hunk ids, selected-hunk apply request shape, partial rollback semantics, and conflict handling.
+- Current implementation supports selected hunk review for materialized one-hunk operations. A follow-up design is still required before supporting multiple text hunks inside one `replace_text` operation, because partial application changes the base revision, rollback snapshot, and remaining hunk conflict semantics.
 
 **Admin React Migration:**
 - Create: `docs/superpowers/specs/2026-06-08-admin-ai-react-migration-design.md`

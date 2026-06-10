@@ -1036,6 +1036,58 @@ describe('<AiAssistantPanel />', function () {
     expect(summary.getAttribute('style')).to.contain('translate(-380px, -80px)')
   })
 
+  it('reclamps the floating agent run summary when the viewport resizes', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentTurnStreamWithWorkspaceArtifacts()
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Edit real files.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+
+    const summary = await screen.findByRole('region', {
+      name: 'Run summary',
+    })
+    const innerWidthStub = sinon.stub(window, 'innerWidth').value(900)
+    const innerHeightStub = sinon.stub(window, 'innerHeight').value(700)
+    sinon.stub(summary, 'getBoundingClientRect').returns({
+      x: 400,
+      y: 150,
+      left: 400,
+      top: 150,
+      right: 780,
+      bottom: 370,
+      width: 380,
+      height: 220,
+      toJSON() {
+        return {}
+      },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Float run summary' }))
+    fireEvent.mouseDown(
+      screen.getByRole('button', { name: 'Drag run summary' }),
+      { clientX: 120, clientY: 80 }
+    )
+    fireEvent.mouseMove(window, { clientX: 220, clientY: 180 })
+    fireEvent.mouseUp(window)
+    expect(summary.getAttribute('style')).to.contain('translate(100px, 100px)')
+
+    innerWidthStub.value(700)
+    innerHeightStub.value(350)
+    fireEvent.resize(window)
+
+    expect(summary.getAttribute('style')).to.contain('translate(4px, 64px)')
+  })
+
   it('bounds persisted agent events while keeping run-summary artifacts', async function () {
     mockConfig()
     mockAgentConfig()
@@ -1063,6 +1115,10 @@ describe('<AiAssistantPanel />', function () {
       'checkpoint-before',
       'workspace-diff',
       'checkpoint-after',
+      'patch-created',
+      'patch-applied',
+      'patch-rejected',
+      'patch-rolled-back',
     ])
     expect(persistedEvents.map(event => event.id)).not.to.include('tool-1')
   })
@@ -1302,6 +1358,169 @@ describe('<AiAssistantPanel />', function () {
       '/project/project123/ai/agent/patches/patch-one/rollback'
     )[0]
     expect(JSON.parse(rollbackCall.options.body as string)).to.deep.equal({})
+  })
+
+  it('applies selected agent patch hunks from the review panel', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentPlanThenActTurnStreamWithPatch(mockPatchWithHunks())
+    mockAgentStartAct()
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/apply', {
+      patch: {
+        ...mockPatchWithHunks({
+          firstHunkStatus: 'applied',
+          secondHunkStatus: 'pending',
+        }),
+        status: 'partially_applied',
+        appliedAt: '2026-05-16T00:00:00.000Z',
+        rollbackAvailable: true,
+      },
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Update wording.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByText('Agent answer')
+    fireEvent.click(screen.getByRole('button', { name: 'Start Act' }))
+    await screen.findByText('Mode changed')
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+
+    await screen.findByText('Patch review')
+    fireEvent.click(screen.getByText('Review diff'))
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Select hunk 1 in /main.tex, pending',
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Apply selected' }))
+
+    await screen.findByText('partially applied')
+    await screen.findByText('Act: review')
+    const applyCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/apply'
+    )[0]
+    expect(JSON.parse(applyCall.options.body as string)).to.deep.equal({
+      hunkIds: ['op-0001:h-0001:111111111111'],
+    })
+  })
+
+  it('rejects selected agent patch hunks from the review panel', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentPlanThenActTurnStreamWithPatch(mockPatchWithHunks())
+    mockAgentStartAct()
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/reject', {
+      patch: {
+        ...mockPatchWithHunks({
+          firstHunkStatus: 'rejected',
+          secondHunkStatus: 'pending',
+        }),
+        status: 'pending',
+        rollbackAvailable: false,
+      },
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Update wording.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByText('Agent answer')
+    fireEvent.click(screen.getByRole('button', { name: 'Start Act' }))
+    await screen.findByText('Mode changed')
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+
+    await screen.findByText('Patch review')
+    fireEvent.click(screen.getByText('Review diff'))
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Select hunk 1 in /main.tex, pending',
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Reject selected' }))
+
+    await screen.findByText('rejected')
+    await screen.findByText('Act: review')
+    const rejectCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/reject'
+    )[0]
+    expect(JSON.parse(rejectCall.options.body as string)).to.deep.equal({
+      hunkIds: ['op-0001:h-0001:111111111111'],
+    })
+  })
+
+  it('rolls back selected agent patch hunks from the review panel', async function () {
+    mockConfig()
+    mockAgentConfig()
+    mockAgentSession()
+    mockAgentPlanThenActTurnStreamWithPatch(
+      mockPatchWithHunks({
+        firstHunkStatus: 'applied',
+        secondHunkStatus: 'applied',
+        status: 'applied',
+        rollbackAvailable: true,
+      })
+    )
+    mockAgentStartAct()
+    fetchMock.post('/project/project123/ai/agent/patches/patch-one/rollback', {
+      patch: {
+        ...mockPatchWithHunks({
+          firstHunkStatus: 'rolled_back',
+          secondHunkStatus: 'applied',
+          status: 'partially_applied',
+          rollbackAvailable: true,
+        }),
+        appliedAt: '2026-05-16T00:00:00.000Z',
+        rolledBackAt: '2026-05-16T00:01:00.000Z',
+      },
+    })
+
+    renderWithEditorContext(<AiAssistantPanel />)
+
+    await waitForElementToBeRemoved(() => screen.getByText('Loading AI…'))
+    fireEvent.click(screen.getByRole('button', { name: 'Agent' }))
+    await screen.findByText('Plan')
+
+    fireEvent.change(screen.getByLabelText('Ask about this project'), {
+      target: { value: 'Update wording.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }))
+    await screen.findByText('Agent answer')
+    fireEvent.click(screen.getByRole('button', { name: 'Start Act' }))
+    await screen.findByText('Mode changed')
+    fireEvent.click(screen.getByRole('button', { name: 'Run' }))
+
+    await screen.findByText('Patch review')
+    fireEvent.click(screen.getByText('Review diff'))
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Select hunk 1 in /main.tex, applied',
+      })
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Roll back selected' }))
+
+    await screen.findByText('rolled back')
+    await screen.findByText('Act: completed')
+    const rollbackCall = fetchMock.callHistory.calls(
+      '/project/project123/ai/agent/patches/patch-one/rollback'
+    )[0]
+    expect(JSON.parse(rollbackCall.options.body as string)).to.deep.equal({
+      hunkIds: ['op-0001:h-0001:111111111111'],
+    })
   })
 
   it('rejects agent patches from the review panel', async function () {
@@ -1823,9 +2042,53 @@ function mockAgentTurnStreamWithManyEvents() {
     {
       type: 'event',
       event: {
-        id: 'workspace-diff',
+        id: 'patch-created',
         sessionId: 'session-one',
         sequence: 152,
+        type: 'patch_created',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'patch-applied',
+        sessionId: 'session-one',
+        sequence: 153,
+        type: 'patch_applied',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'patch-rejected',
+        sessionId: 'session-one',
+        sequence: 154,
+        type: 'patch_rejected',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'patch-rolled-back',
+        sessionId: 'session-one',
+        sequence: 155,
+        type: 'patch_rolled_back',
+        payload: { patchId: 'patch-one' },
+        createdAt: null,
+      },
+    },
+    {
+      type: 'event',
+      event: {
+        id: 'workspace-diff',
+        sessionId: 'session-one',
+        sequence: 156,
         type: 'workspace_diff',
         payload: {
           diff: [
@@ -1845,7 +2108,7 @@ function mockAgentTurnStreamWithManyEvents() {
       event: {
         id: 'checkpoint-after',
         sessionId: 'session-one',
-        sequence: 153,
+        sequence: 157,
         type: 'checkpoint_created',
         payload: {
           phase: 'after',
@@ -2110,7 +2373,7 @@ function mockAgentStartAct() {
   )
 }
 
-function mockAgentPlanThenActTurnStreamWithPatch() {
+function mockAgentPlanThenActTurnStreamWithPatch(patch = mockPatch()) {
   let callCount = 0
   fetchMock.post(
     '/project/project123/ai/agent/sessions/session-one/turns',
@@ -2118,7 +2381,7 @@ function mockAgentPlanThenActTurnStreamWithPatch() {
       callCount += 1
       return callCount === 1
         ? mockAgentPlanResponse()
-        : mockAgentPatchResponse()
+        : mockAgentPatchResponse(patch)
     },
     { repeat: 2 }
   )
@@ -2163,7 +2426,7 @@ function mockAgentPlanResponse() {
   }
 }
 
-function mockAgentPatchResponse() {
+function mockAgentPatchResponse(patch = mockPatch()) {
   return {
     status: 200,
     headers: { 'Content-Type': 'application/x-ndjson' },
@@ -2175,7 +2438,7 @@ function mockAgentPatchResponse() {
           sessionId: 'session-one',
           sequence: 2,
           type: 'patch_created',
-          payload: { patch: mockPatch() },
+          payload: { patch },
           createdAt: null,
         },
       }) +
@@ -2199,6 +2462,102 @@ function mockAgentPatchResponse() {
         answer: 'Patch ready for review.',
       }) +
       '\n',
+  }
+}
+
+function mockPatchWithHunks({
+  firstHunkStatus = 'pending',
+  secondHunkStatus = 'pending',
+  status = 'pending',
+  rollbackAvailable = false,
+}: {
+  firstHunkStatus?: string
+  secondHunkStatus?: string
+  status?: string
+  rollbackAvailable?: boolean
+} = {}) {
+  const patch = mockPatch()
+  const firstDiff = {
+    path: '/main.tex',
+    oldStart: 1,
+    oldLines: 1,
+    newStart: 1,
+    newLines: 1,
+    lines: [
+      { type: 'remove', content: 'Old first sentence.' },
+      { type: 'add', content: 'New first sentence.' },
+    ],
+  }
+  const secondDiff = {
+    path: '/main.tex',
+    oldStart: 4,
+    oldLines: 1,
+    newStart: 4,
+    newLines: 1,
+    lines: [
+      { type: 'remove', content: 'Old second sentence.' },
+      { type: 'add', content: 'New second sentence.' },
+    ],
+  }
+
+  return {
+    ...patch,
+    status,
+    rollbackAvailable,
+    operations: [
+      {
+        ...patch.operations[0],
+        id: 'op-0001',
+        status:
+          firstHunkStatus === secondHunkStatus
+            ? firstHunkStatus
+            : 'partially_applied',
+        hunks: [
+          {
+            id: 'op-0001:h-0001:111111111111',
+            operationId: 'op-0001',
+            operationIndex: 0,
+            hunkIndex: 0,
+            type: 'text',
+            path: '/main.tex',
+            oldStart: 1,
+            oldLines: 1,
+            newStart: 1,
+            newLines: 1,
+            oldText: 'Old first sentence.',
+            newText: 'New first sentence.',
+            baseSha256: 'a'.repeat(64),
+            proposedSha256: 'b'.repeat(64),
+            status: firstHunkStatus,
+            appliedAt: firstHunkStatus === 'applied' ? '2026-05-16T00:00:00.000Z' : null,
+            rolledBackAt: null,
+            conflict: null,
+            diff: firstDiff,
+          },
+          {
+            id: 'op-0001:h-0002:222222222222',
+            operationId: 'op-0001',
+            operationIndex: 0,
+            hunkIndex: 1,
+            type: 'text',
+            path: '/main.tex',
+            oldStart: 4,
+            oldLines: 1,
+            newStart: 4,
+            newLines: 1,
+            oldText: 'Old second sentence.',
+            newText: 'New second sentence.',
+            baseSha256: 'c'.repeat(64),
+            proposedSha256: 'd'.repeat(64),
+            status: secondHunkStatus,
+            appliedAt: secondHunkStatus === 'applied' ? '2026-05-16T00:00:00.000Z' : null,
+            rolledBackAt: null,
+            conflict: null,
+            diff: secondDiff,
+          },
+        ],
+      },
+    ],
   }
 }
 

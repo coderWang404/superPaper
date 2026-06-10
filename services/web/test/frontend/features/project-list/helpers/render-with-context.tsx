@@ -4,6 +4,7 @@ import React from 'react'
 import { ColorPickerProvider } from '../../../../../frontend/js/features/project-list/context/color-picker-context'
 import { ProjectListProvider } from '../../../../../frontend/js/features/project-list/context/project-list-context'
 import { Project } from '../../../../../types/project/dashboard/api'
+import { GetProjectsResponseBody } from '../../../../../types/project/dashboard/api'
 import { projectsData } from '../fixtures/projects-data'
 import { SplitTestProvider } from '@/shared/context/split-test-context'
 import { UserProvider } from '@/shared/context/user-context'
@@ -11,13 +12,14 @@ import { UserProvider } from '@/shared/context/user-context'
 type Options = {
   projects?: Project[]
   mockProjectApi?: boolean
+  projectApiResponse?: Partial<GetProjectsResponseBody>
 }
 
 export function renderWithProjectListContext(
   component: React.ReactElement,
   options: Options = {}
 ) {
-  let { projects, mockProjectApi = true } = options
+  let { projects, mockProjectApi = true, projectApiResponse } = options
 
   if (!projects) {
     projects = projectsData
@@ -26,7 +28,7 @@ export function renderWithProjectListContext(
   if (mockProjectApi) {
     fetchMock.post('express:/api/project', {
       status: 200,
-      body: { projects, totalSize: projects.length },
+      body: { projects, totalSize: projects.length, ...projectApiResponse },
     })
   }
 

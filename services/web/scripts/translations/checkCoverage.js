@@ -10,8 +10,8 @@ const EXTRACTED_TRANSLATIONS = Path.join(
   '../../frontend/extracted-translations.json'
 )
 const CHECK_BASELINES = {
-  zhCnMissing: 594,
-  extractedZhCnMissing: 459,
+  zhCnMissing: 547,
+  extractedZhCnMissing: 116,
 }
 const DRIFT_SAMPLE_LIMIT = 20
 const CHECK = process.argv.includes('--check')
@@ -92,7 +92,7 @@ export function evaluateCoverageChecks(
     )
   }
   if (zhCnExtraneous > 0) {
-    warnings.push(
+    failures.push(
       `zh-CN has ${zhCnExtraneous} ${pluralize(
         zhCnExtraneous,
         'key'
@@ -100,7 +100,7 @@ export function evaluateCoverageChecks(
     )
   }
   if (extractedMissingEn > 0) {
-    warnings.push(
+    failures.push(
       `frontend/extracted-translations.json has ${extractedMissingEn} ${pluralize(
         extractedMissingEn,
         'key'

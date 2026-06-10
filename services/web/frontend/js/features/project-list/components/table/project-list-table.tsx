@@ -29,6 +29,7 @@ function ProjectListTable() {
     visibleProjects,
     sort,
     selectedProjects,
+    isPageLoading,
     selectOrUnselectAllProjects,
   } = useProjectListContext()
   const { handleSort } = useSort()
@@ -154,8 +155,41 @@ function ProjectListTable() {
             </td>
           </tr>
         )}
+        {isPageLoading && (
+          <ProjectListLoadingRows loadingText={t('loading_more_projects')} />
+        )}
       </tbody>
     </OLTable>
+  )
+}
+
+function ProjectListLoadingRows({ loadingText }: { loadingText: string }) {
+  return (
+    <>
+      {Array.from({ length: 3 }, (_, index) => (
+        <tr
+          className="project-list-loading-row"
+          data-testid="project-list-loading-row"
+          key={index}
+        >
+          <td colSpan={7}>
+            {index === 0 && (
+              <span
+                role="status"
+                aria-label={loadingText}
+                className="visually-hidden"
+              >
+                {loadingText}
+              </span>
+            )}
+            <span className="project-list-loading-row-content">
+              <span className="project-list-loading-bar project-list-loading-bar-name" />
+              <span className="project-list-loading-bar project-list-loading-bar-meta" />
+            </span>
+          </td>
+        </tr>
+      ))}
+    </>
   )
 }
 

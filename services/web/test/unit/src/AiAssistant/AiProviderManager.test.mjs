@@ -110,6 +110,71 @@ describe('AiProviderManager', function () {
       id: 'provider-id',
       hasApiKey: true,
     })
+    expect(providers[0]).not.to.have.property('apiKey')
+    expect(providers[0]).not.to.have.property('encryptedApiKey')
+  })
+
+  it('updates providers with encrypted API keys and returns a redacted provider', async function (ctx) {
+    ctx.AiProvider.findByIdAndUpdate = sinon.stub().returns({
+      exec: sinon.stub().resolves({
+        ...ctx.savedProvider,
+        name: 'Updated Hub',
+        encryptedApiKey: 'encrypted-new-key',
+      }),
+    })
+    ctx.encryptApiKey.resolves('encrypted-new-key')
+
+    const provider = await ctx.Manager.updateProvider('provider-id', {
+      name: ' Updated Hub ',
+      baseURL: 'https://updated.example.test/',
+      apiKey: 'new-test-key',
+      enabled: false,
+      defaultModel: 'gpt-4.1',
+      models: [{ id: 'gpt-4.1' }],
+    })
+
+    expect(ctx.encryptApiKey).to.have.been.calledWith('new-test-key')
+    expect(ctx.AiProvider.findByIdAndUpdate).to.have.been.calledOnce
+    const [providerId, update, options] =
+      ctx.AiProvider.findByIdAndUpdate.firstCall.args
+    expect(providerId).to.equal('provider-id')
+    expect(update).to.deep.equal({
+      name: 'Updated Hub',
+      baseURL: 'https://updated.example.test',
+      encryptedApiKey: 'encrypted-new-key',
+      enabled: false,
+      models: [
+        {
+          id: 'gpt-4.1',
+          displayName: 'gpt-4.1',
+          source: 'manual',
+          enabled: true,
+        },
+      ],
+      defaultModel: 'gpt-4.1',
+    })
+    expect(update).not.to.have.property('apiKey')
+    expect(options).to.deep.equal({ new: true })
+    expect(provider).to.include({
+      id: 'provider-id',
+      name: 'Updated Hub',
+      hasApiKey: true,
+    })
+    expect(provider).not.to.have.property('apiKey')
+    expect(provider).not.to.have.property('encryptedApiKey')
+  })
+
+  it('returns null when updating a missing provider', async function (ctx) {
+    ctx.AiProvider.findByIdAndUpdate = sinon.stub().returns({
+      exec: sinon.stub().resolves(null),
+    })
+
+    const provider = await ctx.Manager.updateProvider('missing-provider', {
+      enabled: false,
+    })
+
+    expect(provider).to.equal(null)
+    expect(ctx.AiProvider.findByIdAndUpdate).to.have.been.calledOnce
   })
 
   it('rejects syncing legacy providers with non-https base URLs', async function (ctx) {
@@ -126,6 +191,47 @@ describe('AiProviderManager', function () {
     expect(ctx.syncOpenAICompatibleModels).not.to.have.been.called
   })
 
+  it('syncs models and returns a redacted provider', async function (ctx) {
+    ctx.savedProvider.save = sinon.stub().resolves({
+      ...ctx.savedProvider,
+      models: [
+        {
+          id: 'gpt-4.1',
+          displayName: 'gpt-4.1',
+          source: 'synced',
+          enabled: true,
+        },
+      ],
+      encryptedApiKey: 'encrypted-key',
+    })
+    ctx.AiProvider.findById = sinon.stub().returns({
+      exec: sinon.stub().resolves(ctx.savedProvider),
+    })
+
+    const provider = await ctx.Manager.syncModels('provider-id')
+
+    expect(ctx.decryptApiKey).to.have.been.calledWith('encrypted-key')
+    expect(ctx.syncOpenAICompatibleModels).to.have.been.calledWith({
+      baseURL: 'https://ai.example.test',
+      apiKey: 'test-key',
+    })
+    expect(ctx.savedProvider.models).to.deep.equal([
+      {
+        id: 'gpt-4.1',
+        displayName: 'gpt-4.1',
+        source: 'synced',
+        enabled: true,
+      },
+    ])
+    expect(ctx.savedProvider.healthStatus).to.equal('ok')
+    expect(provider).to.include({
+      id: 'provider-id',
+      hasApiKey: true,
+    })
+    expect(provider).not.to.have.property('apiKey')
+    expect(provider).not.to.have.property('encryptedApiKey')
+  })
+
   it('returns null when testing a missing provider', async function (ctx) {
     ctx.AiProvider.findById = sinon.stub().returns({
       exec: sinon.stub().resolves(null),
@@ -136,5 +242,38 @@ describe('AiProviderManager', function () {
     expect(result).to.equal(null)
     expect(ctx.decryptApiKey).not.to.have.been.called
     expect(ctx.syncOpenAICompatibleModels).not.to.have.been.called
+  })
+
+  it('tests providers with a redacted provider payload', async function (ctx) {
+    ctx.savedProvider.save = sinon.stub().resolves(ctx.savedProvider)
+    ctx.AiProvider.findById = sinon.stub().returns({
+      exec: sinon.stub().resolves(ctx.savedProvider),
+    })
+
+    const result = await ctx.Manager.testProvider('provider-id')
+
+    expect(result).to.deep.equal({
+      ok: true,
+      provider: {
+        id: 'provider-id',
+        name: 'Claude Hub',
+        providerType: 'openai-compatible',
+        baseURL: 'https://ai.example.test',
+        enabled: true,
+        hasApiKey: true,
+        models: [
+          {
+            id: 'gpt-4.1',
+            displayName: 'gpt-4.1',
+            source: 'synced',
+            enabled: true,
+          },
+        ],
+        defaultModel: null,
+        healthStatus: 'ok',
+      },
+    })
+    expect(JSON.stringify(result)).not.to.include('test-key')
+    expect(JSON.stringify(result)).not.to.include('encrypted-key')
   })
 })
