@@ -19,6 +19,7 @@ import {
 import { EditorViewContext } from '../../../../../frontend/js/features/ide-react/context/editor-view-context'
 import customLocalStorage from '../../../../../frontend/js/infrastructure/local-storage'
 import zhCnTranslations from '../../../../../locales/zh-CN.json'
+import extractedTranslations from '../../../../../frontend/extracted-translations.json'
 
 describe('<AiAssistantPanel />', function () {
   let originalClipboard: Clipboard | undefined
@@ -84,6 +85,18 @@ describe('<AiAssistantPanel />', function () {
     )
     expect(zhCnTranslations.ai_assistant_agent_prompt_placeholder).to.equal(
       '描述希望 Agent 规划的项目修改。'
+    )
+    expect(extractedTranslations).to.have.property(
+      'ai_assistant_agent_prompt_placeholder'
+    )
+    expect(extractedTranslations).to.have.property(
+      'ai_assistant_agent_suggestion_review'
+    )
+    expect(extractedTranslations).to.have.property(
+      'ai_assistant_agent_suggestion_compile'
+    )
+    expect(extractedTranslations).to.have.property(
+      'ai_assistant_agent_suggestion_improve'
     )
   })
 

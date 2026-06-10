@@ -74,16 +74,6 @@ type ChatConversation = {
 
 type SetChatConversations = Dispatch<SetStateAction<ChatConversation[]>>
 
-const PROMPT_SUGGESTION_KEYS = [
-  'ai_assistant_suggestion_explain',
-  'ai_assistant_suggestion_compile',
-  'ai_assistant_suggestion_improve',
-]
-const AGENT_PROMPT_SUGGESTION_KEYS = [
-  'ai_assistant_agent_suggestion_review',
-  'ai_assistant_agent_suggestion_compile',
-  'ai_assistant_agent_suggestion_improve',
-]
 const AGENT_SESSION_RESTART_STATUSES = new Set(['failed', 'cancelled'])
 const READABLE_AGENT_MESSAGE_KINDS = new Set(['context', 'plan'])
 const AGENT_RESULT_PREVIEW_CHARS = 900
@@ -918,11 +908,11 @@ export default function AiAssistantPanel() {
                 if (prompt.trim() && !submitting) handleSubmit(e as any)
               }
             }}
-            placeholder={t(
+            placeholder={
               mode === 'agent'
-                ? 'ai_assistant_agent_prompt_placeholder'
-                : 'ai_assistant_prompt_placeholder'
-            )}
+                ? t('ai_assistant_agent_prompt_placeholder')
+                : t('ai_assistant_prompt_placeholder')
+            }
             rows={4}
           />
           <div className="ai-assistant-composer-footer">
@@ -973,13 +963,28 @@ function PromptSuggestions({
   t: TFunction
   onSelect: (prompt: string) => void
 }) {
-  const keys = mode === 'agent' ? AGENT_PROMPT_SUGGESTION_KEYS : PROMPT_SUGGESTION_KEYS
+  const suggestions =
+    mode === 'agent'
+      ? [
+          t('ai_assistant_agent_suggestion_review'),
+          t('ai_assistant_agent_suggestion_compile'),
+          t('ai_assistant_agent_suggestion_improve'),
+        ]
+      : [
+          t('ai_assistant_suggestion_explain'),
+          t('ai_assistant_suggestion_compile'),
+          t('ai_assistant_suggestion_improve'),
+        ]
 
   return (
     <div className="ai-assistant-suggestions">
-      {keys.map(key => (
-        <button type="button" key={key} onClick={() => onSelect(t(key))}>
-          {t(key)}
+      {suggestions.map(suggestion => (
+        <button
+          type="button"
+          key={suggestion}
+          onClick={() => onSelect(suggestion)}
+        >
+          {suggestion}
         </button>
       ))}
     </div>
